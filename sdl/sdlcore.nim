@@ -327,4 +327,4 @@ proc `windowTitle=`*(title: string) =
     coreWindow.setTitle(title)
 
 #stops the game, does not quit immediately
-proc quit*() = coreRunning = false
+proc quitApp*() = coreRunning = false

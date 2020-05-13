@@ -1,4 +1,5 @@
-import core, gl, strutils
+import gl, strutils, gltypes
+export gl
 
 #basic camera
 type Camera* = ref object
@@ -10,59 +11,70 @@ type Tex* = object
 
 #defines a color
 type Col* = object
-    r*, g*, b*, a*: uint8 #TODO should be floats
+    r*, g*, b*, a*: float32 #TODO should be floats
 
 #converts a hex string to a color
 export parseHexInt
 template `%`*(str: string): Col =
-    Col(r: str[0..1].parseHexInt().uint8, g: str[2..3].parseHexInt().uint8, b: str[4..5].parseHexInt().uint8, a: 255)
+    Col(r: str[0..1].parseHexInt().uint8 / 255.0, g: str[2..3].parseHexInt().uint8 / 255.0, b: str[4..5].parseHexInt().uint8 / 255.0, a: 255)
 
-# TODO move to other graphics file
-#[
+#types of blending
+type Blending* = object
+    src*: GLenum
+    dst*: Glenum
 
-#graphics
+const blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
+const blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
+const blendDisabled* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
 
-proc `color=`*(core: Core, value: Col) {.inline.} =
-    core.renderer.setDrawColor(value.r, value.g, value.b, value.a)
+#TEXTURE
 
-#returns a texture region by name
-proc `$`*(core: Core, name: string): Tex = 
-    return core.atlas.getOrDefault(name, core.atlas["error"])
+#an openGL image
+type Texture* = ref object
+    handle: Gluint
+    uwrap, vwrap: Glenum
+    minfilter, magfilter: Glenum
+    target: Glenum
 
+#binds the texture
+proc use*(texture: Texture) =
+    #TODO only texture2D can be bound to
+    glBindTexture(texture.target, texture.handle)
 
-#parse an atlas from a string
-proc loadAtlas(atlas: string): Table[string, tuple[x: int, y: int, w: int, h: int]] =
-    result = initTable[string, tuple[x: int, y: int, w: int, h: int]]()
-    let lines = splitLines(atlas)
-    var index = 6
+proc dispose*(texture: Texture) = 
+    glDeleteTexture(texture.handle)
 
-    while index < lines.len - 1:
-        #name of region
-        var key = lines[index]
-        index += 2
-        #xy
-        var numbers = lines[index]
-        var x, y : int
-        var xyoffset = "  xy: ".len
-        xyoffset += numbers.parseInt(x, xyoffset)
-        discard numbers.parseInt(y, xyoffset + 2)
-        index += 1
+#assigns min and mag filters
+proc `filter=`*(texture: Texture, filter: Glenum) =
+    texture.minfilter = filter
+    texture.magfilter = filter
+    texture.use()
+    glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.GLint)
+    glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.GLint)
 
-        #size
-        var sizes = lines[index]
-        var width, height : int
-        var sizeoffset = "  size: ".len
-        sizeoffset += sizes.parseInt(width, sizeoffset)
-        discard sizes.parseInt(height, sizeoffset + 2)
-        index += 4
+#assigns wrap modes for each axis
+proc `wrap=`*(texture: Texture, wrap: Glenum) =
+    texture.uwrap = wrap
+    texture.vwrap = wrap
+    texture.use()
+    glTexParameteri(texture.target, GlTextureWrapS, texture.uwrap.GLint)
+    glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
 
-        result[key] = (x, y, width, height)
+proc newTexture*(): Texture = 
+    result = Texture(handle: glGenTexture(), uwrap: GlClampToEdge, vwrap: GlClampToEdge, minfilter: GlNearest, magfilter: GlNearest, target: GlTexture2D)
+    result.use()
+    #set parameters
+    glTexParameteri(result.target, GlTextureMinFilter, result.minfilter.GLint)
+    glTexParameteri(result.target, GlTextureMagFilter, result.magfilter.GLint)
+    glTexParameteri(result.target, GlTextureWrapS, result.uwrap.GLint)
+    glTexParameteri(result.target, GlTextureWrapT, result.vwrap.GLint)
 
-#loads 'sprites.atlas' into the core
-#TODO: remove and load implicitly
-proc createAtlas*(core: Core) =
-    let atlasTex = core.renderer.loadTextureRW(staticReadRW(assetsFolder & "sprites.png"), freesrc = 1)
-    let map = loadAtlas(staticReadString(assetsFolder & "sprites.atlas"))
-    core.atlas = initTable[string, Tex]()
-    for key, val in map.pairs:
-        core.atlas[key] = Tex(texture: atlasTex, region: rect(val.x.cint, val.y.cint, val.w.cint, val.h.cint)) ]#
+#loads texture data; the texture must be bound for this to work.
+proc load(texture: Texture, width: int, height: int, pixels: var openArray[uint8]) =
+    glPixelStorei(GlUnpackAlignment, 1)
+    glTexImage2D(texture.target, 0, GlRGBA.Glint, width.GLsizei, height.GLsizei, 0, GlRGBA, GlUnsignedByte, addr pixels)
+
+#region of a texture
+type TexReg* = object
+    texture: Texture
+    u, v, u2, v2: float32

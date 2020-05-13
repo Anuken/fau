@@ -34,12 +34,17 @@ type Mesh* = ref object
 
 proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType: Glenum = GlTriangles): Mesh = 
     result = Mesh(isStatic: isStatic, attributes: attrs, primitiveType: primitiveType)
+    result.vertexHandle = glGenBuffer()
 
     #calculate total vertex size
     for attr in result.attributes.mitems:
         #calculate vertex offset
         attr.offset = result.vertexSize
         result.vertexSize += attr.size().GLsizei
+    
+
+proc update*(mesh: Mesh) = 
+    mesh.dirty = true
 
 proc beginBind(mesh: Mesh, shader: Shader) =
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vertexHandle)

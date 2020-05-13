@@ -1,4 +1,4 @@
-import core, graphics/shader, sugar
+import core, graphics/shader, graphics/mesh, sugar, sequtils, gltypes, keycodes
 
 const vertexShader = """
 
@@ -35,10 +35,19 @@ void main(){
 """
 
 proc init() =
-    echo "init() called!"
-    let shader = newShader(vertexShader, fragmentShader)
-    echo "compiled shader successfully."
-    
+  echo "init() called!"
+  let shader = newShader(vertexShader, fragmentShader)
+  echo "compiled shader successfully."
+
+  let vertices: seq[GLfloat] = @[
+    0.0'f32, 0.0'f32, 0.0'f32, 0.0'f32, 0.0'f32, 0.0'f32
+  ]
+  let mesh = newMesh(@[attribPos, attribTexCoords, attribColor])
+  
+proc update() = 
+  if tapped(keyEscape):
+    quitApp()
+  #echo "frame = " & $frameId & " delta = " & $deltaTime & " fps = " & $fps
 
 #TODO remove, this is just for testing
-initCore(init, () => echo "frame = " & $frameId & " delta = " & $deltaTime & " fps = " & $fps)
+initCore(init, update)
