@@ -1,4 +1,5 @@
 when defined(JS):
-    include web/webgl
+    include web/webcore
 else:
     include sdl/sdlcore
+    

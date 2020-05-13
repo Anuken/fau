@@ -15,8 +15,8 @@ const attribTexCoords* = VertexAttribute(componentType: cGL_FLOAT, components: 2
 const attribColor* = VertexAttribute(componentType: GL_UNSIGNED_BYTE, components: 4, alias: "a_color", normalized: true)
 
 type Mesh* = ref object
-    vertices: seq[float32]
-    indices: seq[uint16]
+    vertices: seq[GLfloat]
+    indices: seq[GLShort]
     attributes: seq[VertexAttribute]
     vertexHandle, indexHandle: GLuint
     isStatic: bool
@@ -28,7 +28,7 @@ proc render*(mesh: Mesh, shader: Shader) =
 
     if mesh.dirty:
         mesh.dirty = false
-        glBufferData(GL_ARRAY_BUFFER, mesh.vertices.len, addr mesh.vertices, if mesh.isStatic: GL_STATIC_DRAW else: GL_DYNAMIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, mesh.vertices.len, mesh.vertices, if mesh.isStatic: GL_STATIC_DRAW else: GL_DYNAMIC_DRAW)
 
     #[
      for(int i = 0; i < numAttributes; i++){
