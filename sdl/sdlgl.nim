@@ -591,10 +591,10 @@ proc findCoreGL(glVersion: string) =
 
 
 proc gladLoadGL(load: proc): bool =
-  glGetString = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
-  if glGetString == nil: return false
+  glGetStringBASE = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
+  if glGetStringBASE == nil: return false
 
-  var glVersion = cast[cstring](glGetString(GL_VERSION))
+  var glVersion = cast[cstring](glGetStringBASE(GL_VERSION))
   if glVersion == nil: return false
 
   findCoreGL($glVersion)
@@ -691,7 +691,7 @@ proc load_GL_ES_VERSION_2_0(load: proc) =
   glGetShaderInfoLogBASE = cast[proc (shader: GLuint, bufSize: GLsizei, length: ptr GLsizei, infoLog: cstring) {.cdecl, gcsafe.}](load("glGetShaderInfoLog"))
   glGetShaderPrecisionFormat = cast[proc (shadertype: GLenum, precisiontype: GLenum, range: ptr GLint, precision: ptr GLint) {.cdecl, gcsafe.}](load("glGetShaderPrecisionFormat"))
   glGetShaderSource = cast[proc (shader: GLuint, bufSize: GLsizei, length: ptr GLsizei, source: cstring) {.cdecl, gcsafe.}](load("glGetShaderSource"))
-  glGetString = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
+  glGetStringBASE = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
   glGetTexParameterfv = cast[proc (target: GLenum, pname: GLenum, params: ptr GLfloat) {.cdecl, gcsafe.}](load("glGetTexParameterfv"))
   glGetTexParameteriv = cast[proc (target: GLenum, pname: GLenum, params: ptr GLint) {.cdecl, gcsafe.}](load("glGetTexParameteriv"))
   glGetUniformfv = cast[proc (program: GLuint, location: GLint, params: ptr GLfloat) {.cdecl, gcsafe.}](load("glGetUniformfv"))
@@ -782,10 +782,10 @@ proc findCoreGLES2(glVersion: string) =
 
 
 proc gladLoadGLES2(load: proc): bool =
-  glGetString = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
-  if glGetString == nil: return false
+  glGetStringBASE = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
+  if glGetStringBASE == nil: return false
 
-  var glVersion = cast[cstring](glGetString(GL_VERSION))
+  var glVersion = cast[cstring](glGetStringBASE(GL_VERSION))
   if glVersion == nil: return false
 
   findCoreGLES2($glVersion)

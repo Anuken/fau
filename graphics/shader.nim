@@ -1,11 +1,18 @@
-import ../gl, tables
+import ../gl, tables, options
+
+type ShaderAttr* = object
+    name*: string
+    gltype*: GLenum
+    size*: GLint
+    length*: Glsizei
+    location*: GLint
 
 type Shader* = ref object
     handle, vertHandle, fragHandle: GLuint
     compileLog: string
     compiled: bool
     uniforms: Table[string, int]
-    attributes: Table[string, int]
+    attributes: Table[string, ShaderAttr]
 
 proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
     result = glCreateShader(shaderType)
@@ -69,16 +76,29 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
         var alen: GLsizei
         var asize: GLint
         var atype: GLenum
-        var aname: cstring = cast[cstring](alloc(256))
-        glGetActiveAttrib(program, i.GLuint, 256.GLsizei, addr alen, addr asize, addr atype, aname)
-        
-        dealloc(aname)
+        var aname: string
+        glGetActiveAttrib(program, i.GLuint, alen, asize, atype, aname)
+        let aloc = glGetAttribLocation(program, aname)
+        result.attributes[aname] = ShaderAttr(name: aname, size: asize, length: alen, gltype: atype, location: aloc)
 
 
 #attribute functions
 
-proc getAttributeLoc*(alias: string): int = 
-    return -1
+proc getAttributeLoc*(shader: Shader, alias: string): int = 
+    if not shader.attributes.hasKey(alias): return -1
+    return shader.attributes[alias].location
+
+proc getAttribute*(shader: Shader, alias: string): Option[ShaderAttr] = 
+    if not shader.attributes.hasKey(alias): return none(ShaderAttr)
+    return some(shader.attributes[alias])
+
+proc enableAttribute*(shader: Shader, location: GLuint, size: GLint, gltype: Glenum, normalize: GLboolean, stride: GLsizei, offset: int) = 
+    glEnableVertexAttribArray(location)
+    glVertexAttribPointer(location, size, gltype, normalize, stride, cast[pointer](offset));
+
+proc disableAttribute*(shader: Shader, alias: string) = 
+    if shader.attributes.hasKey(alias):
+        glDisableVertexAttribArray(shader.attributes[alias].location.GLuint)
 
 #uniform setting functions
 

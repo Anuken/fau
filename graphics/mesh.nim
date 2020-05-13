@@ -1,4 +1,4 @@
-import ../gl, shader
+import ../gl, shader, options
 
 type VertexAttribute* = object
     componentType: GLuint
@@ -6,6 +6,14 @@ type VertexAttribute* = object
     normalized: bool
     offset: int
     alias: string
+
+#returns the size of avertex attribute in bytes
+proc size(attr: VertexAttribute): int =
+    return case attr.componentType:
+        of cGL_FLOAT, cGL_FIXED: 4 * attr.components
+        of GL_UNSIGNED_BYTE, cGL_BYTE: attr.components
+        of GL_UNSIGNED_SHORT, cGL_SHORT: 2 * attr.components
+        else: 0
 
 #standard attributes
 const attribPos* = VertexAttribute(componentType: cGL_FLOAT, components: 2, alias: "a_position")
@@ -22,35 +30,45 @@ type Mesh* = ref object
     isStatic: bool
     dirty: bool
     primitiveType: GLenum
+    vertexSize: Glsizei
 
-proc render*(mesh: Mesh, shader: Shader) =
+proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType: Glenum = GlTriangles): Mesh = 
+    result = Mesh(isStatic: isStatic, attributes: attrs, primitiveType: primitiveType)
+
+    #calculate total vertex size
+    for attr in result.attributes.mitems:
+        #calculate vertex offset
+        attr.offset = result.vertexSize
+        result.vertexSize += attr.size().GLsizei
+
+proc beginBind(mesh: Mesh, shader: Shader) =
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vertexHandle)
 
     if mesh.dirty:
         mesh.dirty = false
         glBufferData(GL_ARRAY_BUFFER, mesh.vertices.len, mesh.vertices, if mesh.isStatic: GL_STATIC_DRAW else: GL_DYNAMIC_DRAW)
+    
+    for attrib in mesh.attributes:
+        let sato = shader.getAttribute(attrib.alias)
+        if sato.isSome:
+            let sat = sato.get()
+            shader.enableAttribute(sat.location.GLuint, sat.size, sat.gltype, attrib.normalized, mesh.vertexSize, attrib.offset)
 
-    #[
-     for(int i = 0; i < numAttributes; i++){
-                final VertexAttribute attribute = attributes.get(i);
-                final int location = shader.getAttributeLocation(attribute.alias);
-                if(location < 0) continue;
-                shader.enableVertexAttribute(location);
-
-                shader.setVertexAttribute(location, attribute.numComponents, attribute.type, attribute.normalized,
-                attributes.vertexSize, attribute.offset);
-            }
-    ]#
+proc endBind(mesh: Mesh, shader: Shader) =
 
     for attrib in mesh.attributes:
-        let location = shader.getAttribute(attrib.alias)
-
-    glDrawArrays(mesh.primitiveType, 0.GLint, mesh.vertices.len.GLint)
+        shader.disableAttribute(attrib.alias)
 
     glBindBuffer(GL_ARRAY_BUFFER, 0)
 
-#proc beginBind(mesh: Mesh, shader: Shader) =
-#    glBindBuffer(GL_ARRAY_BUFFER, mesh.vertexHandle)
+proc render*(mesh: Mesh, shader: Shader) =
+    beginBind(mesh, shader)
+        
+    glDrawArrays(mesh.primitiveType, 0.GLint, mesh.vertices.len.GLint)
 
-#proc endBind(mesh: Mesh, shader: Shader) =
-#    glBindBuffer(GL_ARRAY_BUFFER, 0)
+    endBind(mesh, shader)
+
+proc dispose*(mesh: Mesh) =
+    glBindBuffer(GlArrayBuffer, 0)
+    glDeleteBuffer(mesh.vertexHandle)
+    glDeleteBuffer(mesh.indexHandle)
