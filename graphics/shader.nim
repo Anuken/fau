@@ -12,24 +12,19 @@ proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
     if result == 0: return 0.GLuint
 
     #attach source
-    var srcArray = [source.cstring]
-    glShaderSource(result, 1, cast[cstringArray](addr srcArray), nil)
+    glShaderSource(result, source)
     glCompileShader(result)
 
     #check compiled status
-    var compiled: GLint
-    glGetShaderiv(result, GL_COMPILE_STATUS, addr compiled)
+    let compiled = glGetShaderiv(result, GL_COMPILE_STATUS)
 
     if compiled == 0:
         shader.compiled = false
         shader.compileLog &= ("[" & (if shaderType == GL_FRAGMENT_SHADER: "fragment shader" else: "vertex shader") & "]\n")
-        var infoLen: GLint
-        glGetShaderiv(result, GL_INFO_LOG_LENGTH, addr infoLen)
+        let infoLen = glGetShaderiv(result, GL_INFO_LOG_LENGTH)
         if infoLen > 1:
-            var infoLog : cstring = cast[cstring](alloc(infoLen + 1))
-            glGetShaderInfoLog(result, infoLen, nil, infoLog)
+            let infoLog = glGetShaderInfoLog(result)
             shader.compileLog &= infoLog #append reason to log
-            dealloc(infoLog)
         glDeleteShader(result)
 
 proc dispose*(shader: Shader) = 
@@ -56,25 +51,20 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
     glAttachShader(program, result.fragHandle)
     glLinkProgram(program)
 
-    var status: GLint
-    glGetProgramiv(program, GL_LINK_STATUS, addr status)
+    let status = glGetProgramiv(program, GL_LINK_STATUS)
 
     if status == 0:
-        var infoLen: GLint
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, addr infoLen)
+        let infoLen = glGetProgramiv(program, GL_INFO_LOG_LENGTH)
         if infoLen > 1:
-            var infoLog : cstring = cast[cstring](alloc(infoLen + 1))
-            glGetProgramInfoLog(program, infoLen, nil, infoLog)
+            let infoLog = glGetProgramInfoLog(program)
             result.compileLog &= infoLog #append reason to log
             result.compiled = false
-            dealloc(infoLog)
         raise Exception.newException("Failed to link shader: " & result.compileLog) 
 
     result.handle = program
 
     #fetch attributes for shader
-    var numAttrs: GLint
-    glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, addr numAttrs)
+    let numAttrs = glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES)
     for i in 0..<numAttrs:
         var alen: GLsizei
         var asize: GLint
