@@ -1,5 +1,8 @@
 import sdl2, sdl2/image, tables, streams, times, sdlgl, ../keycodes
 
+echo $SDL_GL_MULTISAMPLEBUFFERS.int
+echo $SDL_GL_MULTISAMPLESAMPLES.int
+
 #SDL error check template
 template sdlFailIf(cond: typed, reason: string) =
     if cond: raise Exception.newException(reason & ", SDL error: " & $getError())
