@@ -536,7 +536,7 @@ proc glVertexAttrib4fv*(index: GLuint, v: openArray[GLfloat]) = glVertexAttrib4f
 #buffers
 
 proc glBufferData*(target: GLenum, size: GLsizeiptr, data: var openArray[GLfloat], usage: GLenum) = 
-  glBufferDataBASE(target, size, addr data, usage)
+  glBufferDataBASE(target, size, data[0].addr, usage)
 
 #uniforms
 

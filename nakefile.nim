@@ -4,5 +4,5 @@ const
     exeName = "testing"
 
 task "debug", "Debug build":
-    cd "src"
+    cd "test"
     shell nimExe, "c", "-r", "-d:debug", "-o:../build/" & exeName, exeName

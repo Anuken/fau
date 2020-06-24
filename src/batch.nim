@@ -14,15 +14,9 @@ proc draw*(batch: Batch, region: TexReg, x: float32, y: float32, w: float32, h: 
     batch.index += 4
 
 proc flush*(batch: Batch) =
-    glDisable(GlDepthTest)
 
     batch.shader.use()
-
-    if batch.blending == blendDisabled:
-        glDisable(GlBlend)
-    else:
-        glEnable(GlBlend)
-        glBlendFuncSeparate(batch.blending.src, batch.blending.dst, batch.blending.src, batch.blending.dst)
+    batch.blending.use()
 
     batch.mesh.update()
     batch.mesh.render(batch.shader)

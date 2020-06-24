@@ -1,7 +1,18 @@
-import sdl2, sdl2/image, tables, streams, times, sdlgl, ../keycodes
+import sdl2, sdl2/image, tables, streams, times, sdlgl
 
-echo $SDL_GL_MULTISAMPLEBUFFERS.int
-echo $SDL_GL_MULTISAMPLESAMPLES.int
+type KeyCode* = enum
+    keyA, keyB, keyC, keyD, keyE, keyF, keyG, keyH, keyI, keyJ, keyK, keyL, keyM, keyN, keyO, keyP, keyQ, keyR, keyS, keyT, keyU, 
+    keyV, keyW, keyX, keyY, keyZ, key1, key2, key3, key4, key5, key6, key7, key8, key9, key0, keyReturn, keyEscape, keyBackspace, 
+    keyTab, keySpace, keyMinus, keyEquals, keyLeftbracket, keyRightbracket, keyBackslash, keyNonushash, keySemicolon, keyApostrophe, keyGrave, keyComma, keyPeriod, 
+    keySlash, keyCapslock, keyF1, keyF2, keyF3, keyF4, keyF5, keyF6, keyF7, keyF8, keyF9, keyF10, keyF11, keyF12, keyPrintscreen, keyScrolllock, 
+    keyPause, keyInsert, keyHome, keyPageup, keyDelete, keyEnd, keyPagedown, keyRight, keyLeft, keyDown, keyUp, keyNumlockclear, keyKpDivide, keyKpMultiply, 
+    keyKpMinus, keyKpPlus, keyKpEnter, keyKp1, keyKp2, keyKp3, keyKp4, keyKp5, keyKp6, keyKp7, keyKp8, keyKp9, keyKp0, keyKpPeriod, keyNonusbackslash, 
+    keyApplication, keyPower, keyKpEquals, keyF13, keyF14, keyF15, keyF16, keyF17, keyF18, keyF19, keyF20, keyF21, keyF22, keyF23, keyF24, 
+    keyExecute, keyHelp, keyMenu, keySelect, keyStop, keyAgain, keyUndo, keyCut, keyCopy, keyPaste, keyFind, keyMute, keyVolumeup, keyVolumedown, 
+    keyKpComma, keyAlterase, keySysreq, keyCancel, keyClear, keyPrior, keyReturn2, keySeparator, keyOut, keyOper, keyClearagain, 
+    keyCrsel, keyExsel, keyThousandsseparator, keyDecimalseparator, keyCurrencyunit, keyCurrencysubunit, keyLctrl, keyLshift, keyLalt, keyLgui, keyRctrl, 
+    keyRshift, keyRalt, keyRgui, keyMode, keyUnknown,
+    keyMouseLeft, keyMouseMiddle, keyMouseRight
 
 #SDL error check template
 template sdlFailIf(cond: typed, reason: string) =
@@ -19,6 +30,8 @@ var lastFrameTime: int64 = -1
 var frameCounterStart: int64
 var frames: int
 var startTime: Time
+
+var screenW*, screenH*, mouseX*, mouseY*: int
 
 #input
 var keysPressed: array[KeyCode, bool]
@@ -211,17 +224,6 @@ proc down*(key: KeyCode): bool {.inline.} = keysPressed[key]
 proc tapped*(key: KeyCode): bool {.inline.} = keysJustDown[key]
 proc released*(key: KeyCode): bool {.inline.} = keysJustUp[key]
 
-#returns window size
-proc screen*(): tuple[w: int, h: int] {.inline.} = 
-    var w, h: cint
-    coreWindow.getSize(w, h)
-    return (w.int, h.int)
-
-proc mouse*(): tuple[x: int, y: int] {.inline.} = 
-    var mouseX, mouseY: cint
-    getMouseState(mouseX, mouseY)
-    (mouseX.int, screen().h - 1 - mouseY.int)
-
 proc preUpdate() =
     let time = (getTime() - startTime).inNanoseconds
     if lastFrameTime == -1:
@@ -235,6 +237,14 @@ proc preUpdate() =
         frameCounterStart = time
     
     inc frames
+
+    var w, h: cint
+    coreWindow.getSize(w, h)
+    (screenW, screenH) = (w.int, h.int)
+
+    var mx, my: cint
+    getMouseState(mx, my)
+    (mouseX, mouseY) = (mouseX.int, screenH - 1 - mouseY.int)
 
     #poll input
     var event = defaultEvent
@@ -276,7 +286,7 @@ proc postUpdate() =
 
 #external functions for use by outside classes
 
-proc initCore*(initProc: proc(), loopProc: proc(), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown") =
+proc initCore*(initProc: proc(), loopProc: proc(), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", depthBits = 0, stencilBits = 0) =
 
     sdlFailIf(not sdl2.init(INIT_VIDEO or INIT_TIMER or INIT_EVENTS)): "SDL2 initialization failed"
     defer: sdl2.quit()
@@ -296,8 +306,8 @@ proc initCore*(initProc: proc(), loopProc: proc(), windowWidth = 800, windowHeig
     setAttr(SDL_GL_GREEN_SIZE, 8)
     setAttr(SDL_GL_BLUE_SIZE, 8)
     setAttr(SDL_GL_ALPHA_SIZE, 8)
-    setAttr(SDL_GL_DEPTH_SIZE, 0)
-    setAttr(SDL_GL_STENCIL_SIZE, 0)
+    setAttr(SDL_GL_DEPTH_SIZE, depthBits.cint)
+    setAttr(SDL_GL_STENCIL_SIZE, stencilBits.cint)
     setAttr(SDL_GL_DOUBLEBUFFER, 1)
     
     coreWindow = createWindow(title = windowTitle, x = SDL_WINDOWPOS_CENTERED, y = SDL_WINDOWPOS_CENTERED, w = windowWidth.cint, h = windowHeight.cint, 
