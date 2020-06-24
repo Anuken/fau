@@ -1,18 +1,21 @@
-import gl, strutils, gltypes, nimPNG, tables, options, strformat
-export gl
+import gl, strutils, gltypes, nimPNG, tables
+export gltypes
 
 #basic camera
 type Camera* = ref object
     x*, y*, w*, h*: float
 
 #defines a color
-type Col* = object
+type Color* = object
     r*, g*, b*, a*: float32 #TODO should be floats
+
+proc rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color =
+    result = Color(r: r, g: g, b: b, a: a)
 
 #converts a hex string to a color
 export parseHexInt
-template `%`*(str: string): Col =
-    Col(r: str[0..1].parseHexInt().uint8 / 255.0, g: str[2..3].parseHexInt().uint8 / 255.0, b: str[4..5].parseHexInt().uint8 / 255.0, a: 255)
+template `%`*(str: string): Color =
+    Color(r: str[0..1].parseHexInt().uint8 / 255.0, g: str[2..3].parseHexInt().uint8 / 255.0, b: str[4..5].parseHexInt().uint8 / 255.0, a: 255)
 
 #types of blending
 type Blending* = object
@@ -31,6 +34,12 @@ proc use*(blend: Blending) =
         glEnable(GlBlend)
         glBlendFunc(blend.src, blend.dst)
 
+#UTILITIES
+
+proc clearScreen*(col: Color) =
+    glClearColor(col.r, col.g, col.b, col.a)
+    glClear(GlColorBufferBit)
+
 #TEXTURE
 
 #an openGL image
@@ -42,11 +51,10 @@ type Texture* = ref object
     width*, height*: int
 
 #binds the texture
-proc use*(texture: Texture) =
-    #TODO only texture2D can be bound to
+proc use*(texture: Texture, unit: GLenum = GlTexture0) =
+    glActiveTexture(unit)
     glBindTexture(texture.target, texture.handle)
-    #glActiveTexture(GlTexture0) #TODO necessary, or not?
-
+    
 proc dispose*(texture: Texture) = 
     glDeleteTexture(texture.handle)
 
@@ -64,6 +72,26 @@ proc `wrap=`*(texture: Texture, wrap: Glenum) =
     texture.vwrap = wrap
     texture.use()
     glTexParameteri(texture.target, GlTextureWrapS, texture.uwrap.GLint)
+    glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
+
+proc `filterMin=`*(texture: Texture, filter: Glenum) =
+    texture.minfilter = filter
+    texture.use()
+    glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.GLint)
+
+proc `filterMag=`*(texture: Texture, filter: Glenum) =
+    texture.magfilter = filter
+    texture.use()
+    glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.GLint)
+
+proc `wrapU=`*(texture: Texture, wrap: Glenum) =
+    texture.uwrap = wrap
+    texture.use()
+    glTexParameteri(texture.target, GlTextureWrapS, texture.uwrap.GLint)
+
+proc `wrapV=`*(texture: Texture, wrap: Glenum) =
+    texture.vwrap = wrap
+    texture.use()
     glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
 
 #loads texture data; the texture must be bound for this to work.
@@ -202,19 +230,12 @@ proc getAttributeLoc*(shader: Shader, alias: string): int =
     if not shader.attributes.hasKey(alias): return -1
     return shader.attributes[alias].location
 
-proc getAttribute*(shader: Shader, alias: string): Option[ShaderAttr] = 
-    if not shader.attributes.hasKey(alias): return none(ShaderAttr)
-    return some(shader.attributes[alias])
-
 proc enableAttribute*(shader: Shader, location: GLuint, size: GLint, gltype: Glenum, normalize: GLboolean, stride: GLsizei, offset: int) = 
     glEnableVertexAttribArray(location)
     glVertexAttribPointer(location, size, gltype, normalize, stride, cast[pointer](offset));
 
-proc disableAttribute*(shader: Shader, alias: string) = 
-    if shader.attributes.hasKey(alias):
-        glDisableVertexAttribArray(shader.attributes[alias].location.GLuint)
-
 #uniform setting functions
+#note that all of these bind the shader; this is optimized away later
 
 proc findUniform(shader: Shader, name: string): int =
     if shader.uniforms.hasKey(name):
@@ -224,22 +245,27 @@ proc findUniform(shader: Shader, name: string): int =
     return location
 
 proc seti*(shader: Shader, name: string, value: int) =
+    shader.use()
     let loc = shader.findUniform(name)
     if loc != -1: glUniform1i(loc.GLint, value.GLint)
 
 proc setf*(shader: Shader, name: string, value: float) =
+    shader.use()
     let loc = shader.findUniform(name)
     if loc != -1: glUniform1f(loc.GLint, value.GLfloat)
 
 proc setf*(shader: Shader, name: string, value1, value2: float) =
+    shader.use()
     let loc = shader.findUniform(name)
     if loc != -1: glUniform2f(loc.GLint, value1.GLfloat, value2.GLfloat)
 
 proc setf*(shader: Shader, name: string, value1, value2, value3: float) =
+    shader.use()
     let loc = shader.findUniform(name)
     if loc != -1: glUniform3f(loc.GLint, value1.GLfloat, value2.GLfloat, value3.GLfloat)
 
 proc setf*(shader: Shader, name: string, value1, value2, value3, value4: float) =
+    shader.use()
     let loc = shader.findUniform(name)
     if loc != -1: glUniform4f(loc.GLint, value1.GLfloat, value2.GLfloat, value3.GLfloat, value4.GLfloat)
 
@@ -285,24 +311,26 @@ proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType
         result.vertexSize += attr.size().GLsizei
 
 proc beginBind(mesh: Mesh, shader: Shader) =
-    
     for attrib in mesh.attributes:
-        let sato = shader.getAttribute(attrib.alias)
-        if sato.isSome:
-            let sat = sato.get()
-
-            glEnableVertexAttribArray(sat.location.GLuint)
-            glVertexAttribPointer(sat.location.GLuint, attrib.components, attrib.componentType, attrib.normalized, mesh.vertexSize, 
+        let loc = shader.getAttributeLoc(attrib.alias)
+        if loc != -1:
+            glEnableVertexAttribArray(loc.GLuint)
+            glVertexAttribPointer(loc.GLuint, attrib.components, attrib.componentType, attrib.normalized, mesh.vertexSize, 
                 cast[pointer](cast[uint64](mesh.vertices[0].addr) + attrib.offset.uint64));
 
 proc endBind(mesh: Mesh, shader: Shader) =
-
     for attrib in mesh.attributes:
-        shader.disableAttribute(attrib.alias)
+        if shader.attributes.hasKey(attrib.alias):
+            glDisableVertexAttribArray(shader.attributes[attrib.alias].location.GLuint)
 
 proc render*(mesh: Mesh, shader: Shader) =
-    beginBind(mesh, shader)
-    
-    glDrawArrays(mesh.primitiveType, 0.GLint, mesh.vertices.len.GLint div 4)
+    shader.use() #binds the shader if it isn't already bound
 
+    beginBind(mesh, shader)
+
+    if mesh.indices.len == 0:
+        glDrawArrays(mesh.primitiveType, 0.GLint, mesh.vertices.len.GLint div 4)
+    else:
+        glDrawElements(mesh.primitiveType,  mesh.vertices.len.GLint div 4, GlUnsignedShort, mesh.indices[0].addr)
+    
     endBind(mesh, shader)

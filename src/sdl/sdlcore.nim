@@ -1,4 +1,4 @@
-import sdl2, sdl2/image, tables, streams, times, sdlgl
+import sdl2, sdl2/image, tables, streams, times, sdlgl, ../gltypes
 
 type KeyCode* = enum
     keyA, keyB, keyC, keyD, keyE, keyF, keyG, keyH, keyI, keyJ, keyK, keyL, keyM, keyN, keyO, keyP, keyQ, keyR, keyS, keyT, keyU, 
@@ -271,6 +271,14 @@ proc preUpdate() =
         of MouseWheel:
             lastScrollX = if event.wheel.x < 0: -1 else: 1
             lastScrollY = if event.wheel.y < 0: -1 else: 1
+        of WindowEvent:
+            case event.window.event
+            of WindowEvent_Resized:
+                let width = event.window.data1.cint
+                let height = event.window.data2.cint
+                glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
+            else:
+                discard
         else:
             discard
 
@@ -327,6 +335,12 @@ proc initCore*(initProc: proc(), loopProc: proc(), windowWidth = 800, windowHeig
     echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
 
     startTime = getTime()
+
+    var w, h: cint
+    coreWindow.getSize(w, h)
+    (screenW, screenH) = (w.int, h.int)
+
+    glViewport(0.GLint, 0.GLint, screenW.GLsizei, screenH.GLsizei)
 
     initProc()
 
