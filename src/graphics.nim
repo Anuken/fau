@@ -193,10 +193,6 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
         glGetActiveAttrib(program, i.GLuint, alen, asize, atype, aname)
         let aloc = glGetAttribLocation(program, aname)
 
-        #TODO remove
-        when not defined(release):
-            echo fmt"shader attribute name={aname} size={asize} type={atype} len={alen}"
-
         result.attributes[aname] = ShaderAttr(name: aname, size: asize, length: alen, gltype: atype, location: aloc)
 
 
@@ -259,21 +255,21 @@ type VertexAttribute* = object
 #returns the size of avertex attribute in bytes
 proc size(attr: VertexAttribute): int =
     return case attr.componentType:
-        of cGL_FLOAT, cGL_FIXED: 4 * attr.components
-        of GL_UNSIGNED_BYTE, cGL_BYTE: attr.components
-        of GL_UNSIGNED_SHORT, cGL_SHORT: 2 * attr.components
+        of cGlFloat, cGlFixed: 4 * attr.components
+        of GlUnsignedByte, cGlByte: attr.components
+        of GlUnsignedShort, cGlShort: 2 * attr.components
         else: 0
 
 #standard attributes
 const attribPos* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_position")
 const attribPos3* = VertexAttribute(componentType: cGlFloat, components: 3, alias: "a_position")
 const attribNormal* = VertexAttribute(componentType: cGlFloat, components: 3, alias: "a_normal")
-const attribTexCoords* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_tex")
+const attribTexCoords* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_texc")
 const attribColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_color", normalized: true)
 
 type Mesh* = ref object
-    vertices: seq[GLfloat]
-    indices: seq[GLShort]
+    vertices*: seq[GLfloat]
+    indices*: seq[GLshort]
     attributes: seq[VertexAttribute]
     isStatic: bool
     primitiveType*: GLenum
@@ -288,9 +284,6 @@ proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType
         attr.offset = result.vertexSize
         result.vertexSize += attr.size().GLsizei
 
-proc `vertices=`*(mesh: Mesh, verts: var seq[GLfloat]) =
-    mesh.vertices = verts
-
 proc beginBind(mesh: Mesh, shader: Shader) =
     
     for attrib in mesh.attributes:
@@ -300,7 +293,7 @@ proc beginBind(mesh: Mesh, shader: Shader) =
 
             glEnableVertexAttribArray(sat.location.GLuint)
             glVertexAttribPointer(sat.location.GLuint, attrib.components, attrib.componentType, attrib.normalized, mesh.vertexSize, 
-                cast[pointer](cast[int](mesh.vertices[0].addr) + attrib.offset));
+                cast[pointer](cast[uint64](mesh.vertices[0].addr) + attrib.offset.uint64));
 
 proc endBind(mesh: Mesh, shader: Shader) =
 
@@ -310,6 +303,6 @@ proc endBind(mesh: Mesh, shader: Shader) =
 proc render*(mesh: Mesh, shader: Shader) =
     beginBind(mesh, shader)
     
-    glDrawArrays(mesh.primitiveType, 0.GLint, mesh.vertices.len.GLint)
+    glDrawArrays(mesh.primitiveType, 0.GLint, mesh.vertices.len.GLint div 4)
 
     endBind(mesh, shader)
