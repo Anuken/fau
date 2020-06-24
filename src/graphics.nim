@@ -1,5 +1,7 @@
-import gl, strutils, gltypes, nimPNG, tables
-export gltypes
+import gl, strutils, gltypes, nimPNG, tables, gmath
+export gltypes, gmath
+
+#RENDERING
 
 #basic camera
 type Camera* = ref object
