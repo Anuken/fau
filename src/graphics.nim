@@ -4,8 +4,28 @@ export gltypes, gmath
 #RENDERING
 
 #basic camera
-type Camera* = ref object
-    x*, y*, w*, h*: float
+type Cam* = ref object
+    pos*: Vec2
+    w*, h*: float32
+    mat*, inv: Mat
+
+proc newCam*(): Cam = Cam(pos: vec2(0.0, 0.0), w: 10, h: 10)
+
+proc update*(cam: Cam) = 
+    cam.mat = ortho(cam.pos.x - cam.w/2, cam.pos.y - cam.h/2, cam.w, cam.h)
+    cam.inv = cam.mat.inv()
+
+proc resize*(cam: Cam, w, h: float32) = 
+    cam.w = w
+    cam.h = h
+    cam.update()
+
+proc unproject*(cam: Cam, vec: Vec2): Vec2 = 
+    vec2((2 * (vec.x - cam.pos.x)) / cam.w - 1, (2 * (vec.y - cam.pos.y)) / cam.h - 1) * cam.inv
+
+proc project*(cam: Cam, vec: Vec2): Vec2 = 
+    let pro = vec * cam.mat
+    return vec2(cam.w * (cam.pos.x + 1) / 2 + pro.x, cam.h * (cam.pos.y + 1) / 2 + pro.y)
 
 #defines a color
 type Color* = object
@@ -13,6 +33,10 @@ type Color* = object
 
 proc rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color =
     result = Color(r: r, g: g, b: b, a: a)
+
+#convert a color to a ABGR float representation; result may be NaN (?)
+proc toFloat*(color: Color): float32 = 
+    cast[float32](((255 * color.a).int shl 24) or ((255 * color.b).int shl 16) or ((255 * color.g).int shl 8) or ((255 * color.r).int))
 
 #converts a hex string to a color
 export parseHexInt
@@ -137,9 +161,11 @@ proc loadTexture*(path: string): Texture =
     return loadTexture(bytes)
 
 #region of a texture
-type TexReg* = object
-    texture: Texture
-    u, v, u2, v2: float32
+type Patch* = object
+    texture*: Texture
+    u*, v*, u2*, v2*: float32
+
+converter toPatch*(texture: Texture): Patch = Patch(texture: texture, u: 0.0, v: 0.0, u2: 1.0, v2: 1.0)
 
 #SHADER
 
@@ -186,12 +212,47 @@ proc dispose*(shader: Shader) =
 proc use*(shader: Shader) =
     glUseProgram(shader.handle)
 
+proc preprocess(source: string, fragment: bool): string =
+    #disallow gles qualifiers
+    if source.contains("#ifdef GL_ES"):
+        raise newException(GlError, "Shader contains GL_ES specific code; this should be handled by the preprocessor. Code: \n" & source);
+    
+    #disallow explicit versions
+    if source.contains("#version"):
+        raise newException(GlError, "Shader contains explicit version requirement; this should be handled by the preprocessor. Code: \n" & source)
+
+    #add GL_ES precision qualifiers
+    if fragment: 
+        return """
+
+        #ifdef GL_ES
+        precision mediump float;
+        precision mediump int;
+        #else
+        #define lowp  
+        #define mediump 
+        #define highp 
+        #endif
+
+        """ & source
+    else:
+        #strip away precision qualifiers
+        return """
+
+        #ifndef GL_ES
+        #define lowp  
+        #define mediump 
+        #define highp 
+        #endif
+
+        """ & source
+
 proc newShader*(vertexSource, fragmentSource: string): Shader =
     result = Shader()
     result.uniforms = initTable[string, int]()
     result.compiled = true
-    result.vertHandle = loadSource(result, GL_VERTEX_SHADER, vertexSource)
-    result.fragHandle = loadSource(result, GL_FRAGMENT_SHADER, fragmentSource)
+    result.vertHandle = loadSource(result, GL_VERTEX_SHADER, preprocess(vertexSource, false))
+    result.fragHandle = loadSource(result, GL_FRAGMENT_SHADER, preprocess(fragmentSource, true))
 
     if not result.compiled:
         raise Exception.newException("Failed to compile shader: \n" & result.compileLog)
@@ -225,7 +286,6 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
 
         result.attributes[aname] = ShaderAttr(name: aname, size: asize, length: alen, gltype: atype, location: aloc)
 
-
 #attribute functions
 
 proc getAttributeLoc*(shader: Shader, alias: string): int = 
@@ -250,6 +310,11 @@ proc seti*(shader: Shader, name: string, value: int) =
     shader.use()
     let loc = shader.findUniform(name)
     if loc != -1: glUniform1i(loc.GLint, value.GLint)
+
+proc setmat4*(shader: Shader, name: string, value: Mat) =
+    shader.use()
+    let loc = shader.findUniform(name)
+    if loc != -1: glUniformMatrix4fv(loc.GLint, 1, false, value.toMat4())
 
 proc setf*(shader: Shader, name: string, value: float) =
     shader.use()
@@ -294,6 +359,7 @@ const attribPos3* = VertexAttribute(componentType: cGlFloat, components: 3, alia
 const attribNormal* = VertexAttribute(componentType: cGlFloat, components: 3, alias: "a_normal")
 const attribTexCoords* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_texc")
 const attribColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_color", normalized: true)
+const attribMixColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_mixcolor", normalized: true)
 
 type Mesh* = ref object
     vertices*: seq[GLfloat]
@@ -303,6 +369,7 @@ type Mesh* = ref object
     primitiveType*: GLenum
     vertexSize: Glsizei
 
+#creates a mesh with a set of attributes
 proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType: Glenum = GlTriangles): Mesh = 
     result = Mesh(isStatic: isStatic, attributes: attrs, primitiveType: primitiveType)
 
@@ -325,14 +392,16 @@ proc endBind(mesh: Mesh, shader: Shader) =
         if shader.attributes.hasKey(attrib.alias):
             glDisableVertexAttribArray(shader.attributes[attrib.alias].location.GLuint)
 
-proc render*(mesh: Mesh, shader: Shader) =
+proc render*(mesh: Mesh, shader: Shader, count: int = -1) =
     shader.use() #binds the shader if it isn't already bound
+    
+    let amount = if count < 0: mesh.vertices.len div 4 else: count div 4
 
     beginBind(mesh, shader)
 
     if mesh.indices.len == 0:
-        glDrawArrays(mesh.primitiveType, 0.GLint, mesh.vertices.len.GLint div 4)
+        glDrawArrays(mesh.primitiveType, 0.GLint, amount.Glint)
     else:
-        glDrawElements(mesh.primitiveType,  mesh.vertices.len.GLint div 4, GlUnsignedShort, mesh.indices[0].addr)
+        glDrawElements(mesh.primitiveType,  amount.Glint, GlUnsignedShort, mesh.indices[0].addr)
     
     endBind(mesh, shader)
