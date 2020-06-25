@@ -363,7 +363,7 @@ const attribMixColor* = VertexAttribute(componentType: GlUnsignedByte, component
 
 type Mesh* = ref object
     vertices*: seq[GLfloat]
-    indices*: seq[GLshort]
+    indices*: seq[Glushort]
     attributes: seq[VertexAttribute]
     isStatic: bool
     primitiveType*: GLenum
@@ -395,13 +395,13 @@ proc endBind(mesh: Mesh, shader: Shader) =
 proc render*(mesh: Mesh, shader: Shader, count: int = -1) =
     shader.use() #binds the shader if it isn't already bound
     
-    let amount = if count < 0: mesh.vertices.len div 4 else: count div 4
+    let amount = if count < 0: mesh.vertices.len else: count
 
     beginBind(mesh, shader)
 
     if mesh.indices.len == 0:
-        glDrawArrays(mesh.primitiveType, 0.GLint, amount.Glint)
+        glDrawArrays(mesh.primitiveType, 0.GLint, amount.Glint div 4)
     else:
-        glDrawElements(mesh.primitiveType,  amount.Glint, GlUnsignedShort, mesh.indices[0].addr)
+        glDrawElements(mesh.primitiveType, amount.Glint, GlUnsignedShort, mesh.indices[0].addr)
     
     endBind(mesh, shader)

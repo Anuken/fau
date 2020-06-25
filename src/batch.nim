@@ -27,17 +27,17 @@ proc newBatch*(size: int = 8192): Batch =
 
     #set up default indices
     let len = size * 6
-    result.mesh.indices = newSeq[Glshort](len)
+    result.mesh.indices = newSeq[GLushort](len)
     var j = 0
     var i = 0
     
     while i < len:
-        result.mesh.indices[i] = j.Glshort
-        result.mesh.indices[i + 1] = (j+1).Glshort
-        result.mesh.indices[i + 2] = (j+2).Glshort
-        result.mesh.indices[i + 3] = (j+2).Glshort
-        result.mesh.indices[i + 4] = (j+3).Glshort
-        result.mesh.indices[i + 5] = (j).Glshort
+        result.mesh.indices[i] = j.GLushort
+        result.mesh.indices[i + 1] = (j+1).GLushort
+        result.mesh.indices[i + 2] = (j+2).GLushort
+        result.mesh.indices[i + 3] = (j+2).GLushort
+        result.mesh.indices[i + 4] = (j+3).GLushort
+        result.mesh.indices[i + 5] = (j).GLushort
         i += 6
         j += 4
     
@@ -52,7 +52,6 @@ proc newBatch*(size: int = 8192): Batch =
     varying vec4 v_color;
     varying vec4 v_mixcolor;
     varying vec2 v_texc;
-
     void main(){
         v_color = a_color;
         v_mixcolor = a_mixcolor;
@@ -60,12 +59,12 @@ proc newBatch*(size: int = 8192): Batch =
         gl_Position = u_proj * a_position;
     }
     """,
+
     """
     varying lowp vec4 v_color;
     varying lowp vec4 v_mixcolor;
     varying vec2 v_texc;
     uniform sampler2D u_texture;
-
     void main(){
         vec4 c = texture2D(u_texture, v_texc);
         gl_FragColor = v_color * mix(c, vec4(v_mixcolor.rgb, c.a), v_mixcolor.a);
@@ -83,12 +82,19 @@ proc `mixColor=`*(batch: Batch, color: Color) =
 proc flush*(batch: Batch) =
     if batch.index == 0: return
 
+    batch.lastTexture.use()
+
     batch.shader.seti("u_texture", 0)
     batch.shader.setmat4("u_proj", batch.mat)
 
     batch.blending.use()
 
-    batch.mesh.render(batch.shader, count = batch.index)
+    echo "rendering " & $(batch.index div spriteSize * 6)
+    echo $batch.mesh.indices[0..5]
+    echo $batch.mesh.vertices[0..23]
+    echo "\n\n"
+
+    batch.mesh.render(batch.shader, batch.index div spriteSize * 6)
     
     batch.index = 0
 
@@ -134,35 +140,34 @@ proc draw*(batch: Batch, region: Patch, x: float32, y: float32, width: float32, 
     let color = batch.colorPack
     let mixColor = batch.mixColorPack
     let idx = batch.index
-    var vertices = batch.mesh.vertices
 
-    vertices[idx] = x1
-    vertices[idx + 1] = y1
-    vertices[idx + 2] = u
-    vertices[idx + 3] = v
-    vertices[idx + 4] = color
-    vertices[idx + 5] = mixColor
+    batch.mesh.vertices[idx] = x1
+    batch.mesh.vertices[idx + 1] = y1
+    batch.mesh.vertices[idx + 2] = u
+    batch.mesh.vertices[idx + 3] = v
+    batch.mesh.vertices[idx + 4] = color
+    batch.mesh.vertices[idx + 5] = mixColor
 
-    vertices[idx + 6] = x2
-    vertices[idx + 7] = y2
-    vertices[idx + 8] = u
-    vertices[idx + 9] = v2
-    vertices[idx + 10] = color
-    vertices[idx + 11] = mixColor
+    batch.mesh.vertices[idx + 6] = x2
+    batch.mesh.vertices[idx + 7] = y2
+    batch.mesh.vertices[idx + 8] = u
+    batch.mesh.vertices[idx + 9] = v2
+    batch.mesh.vertices[idx + 10] = color
+    batch.mesh.vertices[idx + 11] = mixColor
 
-    vertices[idx + 12] = x3
-    vertices[idx + 13] = y3
-    vertices[idx + 14] = u2
-    vertices[idx + 15] = v2
-    vertices[idx + 16] = color
-    vertices[idx + 17] = mixColor
+    batch.mesh.vertices[idx + 12] = x3
+    batch.mesh.vertices[idx + 13] = y3
+    batch.mesh.vertices[idx + 14] = u2
+    batch.mesh.vertices[idx + 15] = v2
+    batch.mesh.vertices[idx + 16] = color
+    batch.mesh.vertices[idx + 17] = mixColor
 
-    vertices[idx + 18] = x4
-    vertices[idx + 19] = y4
-    vertices[idx + 20] = u2
-    vertices[idx + 21] = v
-    vertices[idx + 22] = color
-    vertices[idx + 23] = mixColor
+    batch.mesh.vertices[idx + 18] = x4
+    batch.mesh.vertices[idx + 19] = y4
+    batch.mesh.vertices[idx + 20] = u2
+    batch.mesh.vertices[idx + 21] = v
+    batch.mesh.vertices[idx + 22] = color
+    batch.mesh.vertices[idx + 23] = mixColor
 
     batch.index += spriteSize
 
