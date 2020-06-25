@@ -1,5 +1,9 @@
 import math
 
+#these are probably not great style but I'm sick of casting everything manually
+
+#converter convertf32*(i: int): float32 {.inline.} = i.float32
+
 type Vec2* = object
     x*, y*: float32
 
@@ -12,6 +16,11 @@ proc `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
 proc `+`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x + other.x, vec.y + other.y)
 proc `/`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x / other.x, vec.y / other.y)
 proc `*`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x * other.x, vec.y * other.y)
+
+proc `-=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x - other.x, vec.y - other.y)
+proc `+=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x + other.x, vec.y + other.y)
+proc `/=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x / other.x, vec.y / other.y)
+proc `*=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x * other.x, vec.y * other.y)
 
 #vector-number operations
 

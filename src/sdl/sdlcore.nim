@@ -1,4 +1,4 @@
-import sdl2, sdl2/image, tables, streams, times, sdlgl, ../gltypes
+import sdl2, tables, streams, times, sdlgl, ../gltypes, ../graphics
 
 type KeyCode* = enum
     keyA, keyB, keyC, keyD, keyE, keyF, keyG, keyH, keyI, keyJ, keyK, keyL, keyM, keyN, keyO, keyP, keyQ, keyR, keyS, keyT, keyU, 
@@ -31,7 +31,10 @@ var frameCounterStart: int64
 var frames: int
 var startTime: Time
 
-var screenW*, screenH*, mouseX*, mouseY*: int
+var screenW*, screenH*, mouseX*, mouseY*: float32
+
+proc mouse*(): Vec2 = vec2(mouseX, mouseY)
+proc screen*(): Vec2 = vec2(screenW, screenH)
 
 #input
 var keysPressed: array[KeyCode, bool]
@@ -240,11 +243,11 @@ proc preUpdate() =
 
     var w, h: cint
     coreWindow.getSize(w, h)
-    (screenW, screenH) = (w.int, h.int)
+    (screenW, screenH) = (w.float32, h.float32)
 
     var mx, my: cint
     getMouseState(mx, my)
-    (mouseX, mouseY) = (mouseX.int, screenH - 1 - mouseY.int)
+    (mouseX, mouseY) = (mouseX.float32, screenH - 1 - mouseY.float32)
 
     #poll input
     var event = defaultEvent
@@ -294,7 +297,7 @@ proc postUpdate() =
 
 #external functions for use by outside classes
 
-proc initCore*(initProc: proc(), loopProc: proc(), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", depthBits = 0, stencilBits = 0) =
+proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", depthBits = 0, stencilBits = 0) =
 
     sdlFailIf(not sdl2.init(INIT_VIDEO or INIT_TIMER or INIT_EVENTS)): "SDL2 initialization failed"
     defer: sdl2.quit()
@@ -323,8 +326,8 @@ proc initCore*(initProc: proc(), loopProc: proc(), windowWidth = 800, windowHeig
     sdlFailIf coreWindow.isNil: "Window could not be created"
     defer: coreWindow.destroy()
 
-    sdlFailIf(image.init(IMG_INIT_PNG) != IMG_INIT_PNG): "SDL2 Image initialization failed"
-    defer: image.quit()
+    #sdlFailIf(image.init(IMG_INIT_PNG) != IMG_INIT_PNG): "SDL2 Image initialization failed"
+    #defer: image.quit()
 
     let gl = sdl2.glCreateContext(coreWindow)
     sdlFailIf gl.isNil: "GL context could not be created"
@@ -338,7 +341,7 @@ proc initCore*(initProc: proc(), loopProc: proc(), windowWidth = 800, windowHeig
 
     var w, h: cint
     coreWindow.getSize(w, h)
-    (screenW, screenH) = (w.int, h.int)
+    (screenW, screenH) = (w.float32, h.float32)
 
     glViewport(0.GLint, 0.GLint, screenW.GLsizei, screenH.GLsizei)
 

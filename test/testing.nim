@@ -1,89 +1,59 @@
-import ../src/core, ../src/graphics, strformat, ../src/batch, polymorph, math
+import ../src/core, ../src/graphics, strformat, ../src/batch, polymorph, math, random, times, sequtils
 
-# Uses typedefs passed as components
 registerComponents(defaultComponentOptions):
   type
     Pos = object
-      pos: Vec2
-    Spinner = object
+      x, y: float32
     Bouncer = object
       vel: Vec2
     Render = object
 
-# Create systems to act on the components
+const hsize = 70.0
 
-const hsize = 100.0
 var texture: Texture
 var cam: Cam
 var draw: Batch
+var patch: Patch
 
 makeSystem("render", [Pos, Render]):
+
+  init:
+    const texBytes = staticRead("/home/anuke/Projects/fuse/test/test.png")
+
+    cam = newCam()
+    draw = newBatch()
+    texture = loadTextureBytes(texBytes)
+    patch = texture
+
+    randomize()
+
+    for i in 0..1000:
+      discard newEntityWith(Render(), Pos(x: rand(-500..500).float32, y: rand(-500..500).float32), Bouncer(vel: vec2(rand(-10..10).float32, rand(-10..10).float32)))
+
+  start:
+    if keyEscape.tapped: quitApp()
+
+    clearScreen(rgba(0, 0, 0, 1))
+
+    cam.resize(screenW, screenH)
+    cam.update()
+
+    draw.mat = cam.mat
+  
   all: 
-    draw.draw(texture, item.pos.pos.x - hsize/2.0, item.pos.pos.y - hsize/2.0, hsize, hsize)
+    draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
+  
+  finish:
+    draw.flush()
+
 
 makeSystem("bounce", [Pos, Bouncer]):
   all: 
-    item.pos.pos += item.velocity.vel
+    item.pos.x += item.bouncer.vel.x
+    item.pos.y += item.bouncer.vel.y
+    if item.pos.x > screenW/2.0 - hsize/2.0 or item.pos.x < -screenW/2.0 + hsize/2.0: item.bouncer.vel *= vec2(-1.0, 1.0)
+    if item.pos.y > screenH/2.0 - hsize/2.0 or item.pos.y < -screenH/2.0 + hsize/2.0: item.bouncer.vel *= vec2(1.0, -1.0)
 
-makeSystem("spin", [Pos, Spinner]):
-  all: 
-    item.pos.pos += vec2(sin(item.pos.pos.x / 20.0), sin(item.pos.pos.y / 20.0)) * 10.0
-
-# Seal and generate ECS
 makeEcs()
 commitSystems("run")
-
-let
-  newEntityWith(Render(), Pos(pos: vec2(100.0, 100.0), Spinner()))
-  newEntityWith(Render(), Pos(pos: vec2(600.0, 400.0), Bouncer(velocity: vec2(1.0, 1.0))))
-
-proc init() =
-  cam = newCam()
-  draw = newBatch()
-  texture = loadTexture("/home/anuke/Projects/fuse/test/test.png")
-
-proc update() = 
-  if keyEscape.tapped: quitApp()
-
-  clearScreen(rgba(0, 0, 0, 1))
-
-  cam.resize(screenW.float32, screenH.float32)
-  cam.update()
-
-  draw.mat = cam.mat
-
-  run()
-
-  draw.flush()
-
-initCore(init, update, windowTitle = "it works.")
-
-#[
-var texture: Texture
-var cam: Cam
-var draw: Batch
-
-proc init() =
-  cam = newCam()
-  draw = newBatch()
-  texture = loadTexture("/home/anuke/Projects/fuse/test/test.png")
-  
-proc update() = 
-  if keyEscape.tapped: quitApp()
-
-  clearScreen(rgba(0, 0, 0, 1))
-
-  cam.resize(screenW.float32, screenH.float32)
-  cam.update()
-
-  draw.mat = cam.mat
-
-  for i in 0..5:
-    const space = 50.0
-    draw.color = rgba(i.float / 5.0, 1, 1, 1)
-    draw.draw(texture, i.float32*space, i.float32*space, 100, 100, rotation = frameId.float32)
-
-  draw.flush()
-  
-initCore(init, update, windowTitle = "it works.")
-]#
+initCore(run, windowTitle = "fuse")

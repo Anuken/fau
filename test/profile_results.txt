@@ -1,0 +1,303 @@
+total executions of each stack trace:
+Entry: 1/69 Calls: 230/602 = 38.21% [sum: 230; 230/602 = 38.21%]
+  batch.nim: draw 349/602 = 57.97%
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 2/69 Calls: 102/602 = 16.94% [sum: 332; 332/602 = 55.15%]
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 3/69 Calls: 87/602 = 14.45% [sum: 419; 419/602 = 69.60%]
+  batch.nim: prepare 119/602 = 19.77%
+  batch.nim: draw 349/602 = 57.97%
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 4/69 Calls: 18/602 = 2.99% [sum: 437; 437/602 = 72.59%]
+  sdlcore.nim: postUpdate 18/602 = 2.99%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 5/69 Calls: 12/602 = 1.99% [sum: 449; 449/602 = 74.58%]
+  system.nim: .. 12/602 = 1.99%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 6/69 Calls: 9/602 = 1.50% [sum: 458; 458/602 = 76.08%]
+  hashes.nim: murmurHash 22/602 = 3.65%
+  hashes.nim: hash 22/602 = 3.65%
+  hashcommon.nim: rawGet 28/602 = 4.65%
+  tables.nim: [] 17/602 = 2.82%
+  graphics.nim: endBind 32/602 = 5.32%
+  graphics.nim: render 32/602 = 5.32%
+  batch.nim: flush 32/602 = 5.32%
+  batch.nim: prepare 119/602 = 19.77%
+  batch.nim: draw 349/602 = 57.97%
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 7/69 Calls: 8/602 = 1.33% [sum: 466; 466/602 = 77.41%]
+  gc.nim: newObj 33/602 = 5.48%
+  gc.nim: newSeq 34/602 = 5.65%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 8/69 Calls: 7/602 = 1.16% [sum: 473; 473/602 = 78.57%]
+  hashes.nim: rotl32 11/602 = 1.83%
+  hashes.nim: murmurHash 22/602 = 3.65%
+  hashes.nim: hash 22/602 = 3.65%
+  hashcommon.nim: rawGet 28/602 = 4.65%
+  tables.nim: [] 17/602 = 2.82%
+  graphics.nim: endBind 32/602 = 5.32%
+  graphics.nim: render 32/602 = 5.32%
+  batch.nim: flush 32/602 = 5.32%
+  batch.nim: prepare 119/602 = 19.77%
+  batch.nim: draw 349/602 = 57.97%
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 9/69 Calls: 7/602 = 1.16% [sum: 480; 480/602 = 79.73%]
+  comparisons.nim: <=% 10/602 = 1.66%
+  gc.nim: newObj 33/602 = 5.48%
+  gc.nim: newSeq 34/602 = 5.65%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 10/69 Calls: 6/602 = 1.00% [sum: 486; 486/602 = 80.73%]
+  arithmetics.nim: -% 28/602 = 4.65%
+  gc.nim: usrToCell 18/602 = 2.99%
+  gc.nim: asgnRef 45/602 = 7.48%
+  components.nim: genRender 15/602 = 2.49%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 11/69 Calls: 6/602 = 1.00% [sum: 492; 492/602 = 81.73%]
+  gmath.nim: vec2 6/602 = 1.00%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 12/69 Calls: 5/602 = 0.83% [sum: 497; 497/602 = 82.56%]
+  arithmetics.nim: -% 28/602 = 4.65%
+  gc.nim: usrToCell 18/602 = 2.99%
+  gc.nim: asgnRef 45/602 = 7.48%
+  components.nim: genPos 8/602 = 1.33%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 13/69 Calls: 5/602 = 0.83% [sum: 502; 502/602 = 83.39%]
+  arithmetics.nim: +% 20/602 = 3.32%
+  gc.nim: cellToUsr 5/602 = 0.83%
+  gc.nim: newObj 33/602 = 5.48%
+  gc.nim: newSeq 34/602 = 5.65%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 14/69 Calls: 5/602 = 0.83% [sum: 507; 507/602 = 84.22%]
+  arithmetics.nim: -% 28/602 = 4.65%
+  gc.nim: usrToCell 18/602 = 2.99%
+  gc.nim: asgnRef 45/602 = 7.48%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 15/69 Calls: 4/602 = 0.66% [sum: 511; 511/602 = 84.88%]
+  arithmetics.nim: +% 20/602 = 3.32%
+  gc.nim: incRef 11/602 = 1.83%
+  gc.nim: asgnRef 45/602 = 7.48%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 16/69 Calls: 4/602 = 0.66% [sum: 515; 515/602 = 85.55%]
+  random.nim: rotl 4/602 = 0.66%
+  random.nim: next 6/602 = 1.00%
+  random.nim: rand 13/602 = 2.16%
+  random.nim: rand 13/602 = 2.16%
+  random.nim: rand 13/602 = 2.16%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 17/69 Calls: 4/602 = 0.66% [sum: 519; 519/602 = 86.21%]
+  comparisons.nim: <% 14/602 = 2.33%
+  gc.nim: newObj 33/602 = 5.48%
+  gc.nim: newSeq 34/602 = 5.65%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 18/69 Calls: 4/602 = 0.66% [sum: 523; 523/602 = 86.88%]
+  hashes.nim: rotl32 11/602 = 1.83%
+  hashes.nim: murmurHash 22/602 = 3.65%
+  hashes.nim: hash 22/602 = 3.65%
+  hashcommon.nim: rawGet 28/602 = 4.65%
+  tables.nim: hasKey 12/602 = 1.99%
+  graphics.nim: endBind 32/602 = 5.32%
+  graphics.nim: render 32/602 = 5.32%
+  batch.nim: flush 32/602 = 5.32%
+  batch.nim: prepare 119/602 = 19.77%
+  batch.nim: draw 349/602 = 57.97%
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 19/69 Calls: 4/602 = 0.66% [sum: 527; 527/602 = 87.54%]
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 20/69 Calls: 3/602 = 0.50% [sum: 530; 530/602 = 88.04%]
+  random.nim: rand 13/602 = 2.16%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 21/69 Calls: 3/602 = 0.50% [sum: 533; 533/602 = 88.54%]
+  random.nim: rand 13/602 = 2.16%
+  random.nim: rand 13/602 = 2.16%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 22/69 Calls: 3/602 = 0.50% [sum: 536; 536/602 = 89.04%]
+  strmantle.nim: eqStrings 3/602 = 0.50%
+  hashcommon.nim: rawGet 28/602 = 4.65%
+  tables.nim: hasKey 12/602 = 1.99%
+  graphics.nim: endBind 32/602 = 5.32%
+  graphics.nim: render 32/602 = 5.32%
+  batch.nim: flush 32/602 = 5.32%
+  batch.nim: prepare 119/602 = 19.77%
+  batch.nim: draw 349/602 = 57.97%
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 23/69 Calls: 3/602 = 0.50% [sum: 539; 539/602 = 89.53%]
+  comparisons.nim: <=% 10/602 = 1.66%
+  alloc.nim: interiorAllocatedPtr 5/602 = 0.83%
+  gc.nim: newObj 33/602 = 5.48%
+  gc.nim: newSeq 34/602 = 5.65%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 24/69 Calls: 3/602 = 0.50% [sum: 542; 542/602 = 90.03%]
+  arithmetics.nim: +% 20/602 = 3.32%
+  gc.nim: incRef 11/602 = 1.83%
+  gc.nim: asgnRef 45/602 = 7.48%
+  sealing.nim: newEntity 8/602 = 1.33%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 25/69 Calls: 3/602 = 0.50% [sum: 545; 545/602 = 90.53%]
+  arithmetics.nim: -% 28/602 = 4.65%
+  gc.nim: decRef 16/602 = 2.66%
+  gc.nim: asgnRef 45/602 = 7.48%
+  components.nim: genRender 15/602 = 2.49%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 26/69 Calls: 2/602 = 0.33% [sum: 547; 547/602 = 90.86%]
+  nimz.nim: readBit 2/602 = 0.33%
+  nimz.nim: huffmanDecodeSymbol 3/602 = 0.50%
+  nimz.nim: inflateHuffmanBlock 5/602 = 0.83%
+  nimz.nim: nzInflate 5/602 = 0.83%
+  nimz.nim: zlib_decompress 5/602 = 0.83%
+  nimPNG.nim: parseChunk 5/602 = 0.83%
+  nimPNG.nim: parsePNG 6/602 = 1.00%
+  nimPNG.nim: decodePNG 7/602 = 1.16%
+  nimPNG.nim: decodePNG32Impl 7/602 = 1.16%
+  graphics.nim: loadTexture 7/602 = 1.16%
+  graphics.nim: loadTexture 7/602 = 1.16%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 27/69 Calls: 2/602 = 0.33% [sum: 549; 549/602 = 91.20%]
+  arithmetics.nim: -% 28/602 = 4.65%
+  gc.nim: decRef 16/602 = 2.66%
+  gc.nim: asgnRef 45/602 = 7.48%
+  sealing.nim: newEntity 8/602 = 1.33%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 28/69 Calls: 2/602 = 0.33% [sum: 551; 551/602 = 91.53%]
+  tables.nim: hasKey 12/602 = 1.99%
+  graphics.nim: endBind 32/602 = 5.32%
+  graphics.nim: render 32/602 = 5.32%
+  batch.nim: flush 32/602 = 5.32%
+  batch.nim: prepare 119/602 = 19.77%
+  batch.nim: draw 349/602 = 57.97%
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 29/69 Calls: 2/602 = 0.33% [sum: 553; 553/602 = 91.86%]
+  graphics.nim: endBind 32/602 = 5.32%
+  graphics.nim: render 32/602 = 5.32%
+  batch.nim: flush 32/602 = 5.32%
+  batch.nim: prepare 119/602 = 19.77%
+  batch.nim: draw 349/602 = 57.97%
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 30/69 Calls: 2/602 = 0.33% [sum: 555; 555/602 = 92.19%]
+  arithmetics.nim: -% 28/602 = 4.65%
+  gc.nim: usrToCell 18/602 = 2.99%
+  gc.nim: asgnRef 45/602 = 7.48%
+  sealing.nim: newEntity 8/602 = 1.33%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 31/69 Calls: 2/602 = 0.33% [sum: 557; 557/602 = 92.52%]
+  hashes.nim: murmurHash 22/602 = 3.65%
+  hashes.nim: hash 22/602 = 3.65%
+  hashcommon.nim: rawGet 28/602 = 4.65%
+  tables.nim: hasKey 12/602 = 1.99%
+  graphics.nim: endBind 32/602 = 5.32%
+  graphics.nim: render 32/602 = 5.32%
+  batch.nim: flush 32/602 = 5.32%
+  batch.nim: prepare 119/602 = 19.77%
+  batch.nim: draw 349/602 = 57.97%
+  testing.nim: update 453/602 = 75.25%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 32/69 Calls: 2/602 = 0.33% [sum: 559; 559/602 = 92.86%]
+  random.nim: next 6/602 = 1.00%
+  random.nim: rand 13/602 = 2.16%
+  random.nim: rand 13/602 = 2.16%
+  random.nim: rand 13/602 = 2.16%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 33/69 Calls: 2/602 = 0.33% [sum: 561; 561/602 = 93.19%]
+  comparisons.nim: <% 14/602 = 2.33%
+  gc.nim: decRef 16/602 = 2.66%
+  gc.nim: asgnRef 45/602 = 7.48%
+  components.nim: genRender 15/602 = 2.49%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 34/69 Calls: 2/602 = 0.33% [sum: 563; 563/602 = 93.52%]
+  hashcommon.nim: isFilled 4/602 = 0.66%
+  tables.nim: enlarge 5/602 = 0.83%
+  tables.nim: []= 7/602 = 1.16%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 35/69 Calls: 2/602 = 0.33% [sum: 565; 565/602 = 93.85%]
+  arithmetics.nim: +% 20/602 = 3.32%
+  gc.nim: incRef 11/602 = 1.83%
+  gc.nim: asgnRef 45/602 = 7.48%
+  components.nim: genPos 8/602 = 1.33%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 36/69 Calls: 2/602 = 0.33% [sum: 567; 567/602 = 94.19%]
+  comparisons.nim: <% 14/602 = 2.33%
+  gc.nim: decRef 16/602 = 2.66%
+  gc.nim: asgnRef 45/602 = 7.48%
+  components.nim: genBouncer 4/602 = 0.66%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 37/69 Calls: 2/602 = 0.33% [sum: 569; 569/602 = 94.52%]
+  tableimpl.nim: rawInsert 2/602 = 0.33%
+  tables.nim: enlarge 5/602 = 0.83%
+  tables.nim: []= 7/602 = 1.16%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%
+Entry: 38/69 Calls: 2/602 = 0.33% [sum: 571; 571/602 = 94.85%]
+  arithmetics.nim: +% 20/602 = 3.32%
+  testing.nim: init 127/602 = 21.10%
+  sdlcore.nim: initCore 601/602 = 99.83%
+  testing.nim: testing 602/602 = 100.00%

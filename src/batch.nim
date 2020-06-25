@@ -14,7 +14,7 @@ type Batch* = ref object
     colorPack: float32
     mixColorPack: float32
     
-proc newBatch*(size: int = 8192): Batch = 
+proc newBatch*(size: int = 8191): Batch = 
     result = Batch(
         mesh: newMesh(@[attribPos, attribTexCoords, attribColor, attribMixColor]),
         blending: blendNormal, 
@@ -83,16 +83,10 @@ proc flush*(batch: Batch) =
     if batch.index == 0: return
 
     batch.lastTexture.use()
+    batch.blending.use()
 
     batch.shader.seti("u_texture", 0)
     batch.shader.setmat4("u_proj", batch.mat)
-
-    batch.blending.use()
-
-    echo "rendering " & $(batch.index div spriteSize * 6)
-    echo $batch.mesh.indices[0..5]
-    echo $batch.mesh.vertices[0..23]
-    echo "\n\n"
 
     batch.mesh.render(batch.shader, batch.index div spriteSize * 6)
     
@@ -140,34 +134,37 @@ proc draw*(batch: Batch, region: Patch, x: float32, y: float32, width: float32, 
     let color = batch.colorPack
     let mixColor = batch.mixColorPack
     let idx = batch.index
+    
+    #this seems to be faster.
+    let verts = addr batch.mesh.vertices
 
-    batch.mesh.vertices[idx] = x1
-    batch.mesh.vertices[idx + 1] = y1
-    batch.mesh.vertices[idx + 2] = u
-    batch.mesh.vertices[idx + 3] = v
-    batch.mesh.vertices[idx + 4] = color
-    batch.mesh.vertices[idx + 5] = mixColor
+    verts[][idx] = x1
+    verts[][idx + 1] = y1
+    verts[][idx + 2] = u
+    verts[][idx + 3] = v
+    verts[][idx + 4] = color
+    verts[][idx + 5] = mixColor
 
-    batch.mesh.vertices[idx + 6] = x2
-    batch.mesh.vertices[idx + 7] = y2
-    batch.mesh.vertices[idx + 8] = u
-    batch.mesh.vertices[idx + 9] = v2
-    batch.mesh.vertices[idx + 10] = color
-    batch.mesh.vertices[idx + 11] = mixColor
+    verts[][idx + 6] = x2
+    verts[][idx + 7] = y2
+    verts[][idx + 8] = u
+    verts[][idx + 9] = v2
+    verts[][idx + 10] = color
+    verts[][idx + 11] = mixColor
 
-    batch.mesh.vertices[idx + 12] = x3
-    batch.mesh.vertices[idx + 13] = y3
-    batch.mesh.vertices[idx + 14] = u2
-    batch.mesh.vertices[idx + 15] = v2
-    batch.mesh.vertices[idx + 16] = color
-    batch.mesh.vertices[idx + 17] = mixColor
+    verts[][idx + 12] = x3
+    verts[][idx + 13] = y3
+    verts[][idx + 14] = u2
+    verts[][idx + 15] = v2
+    verts[][idx + 16] = color
+    verts[][idx + 17] = mixColor
 
-    batch.mesh.vertices[idx + 18] = x4
-    batch.mesh.vertices[idx + 19] = y4
-    batch.mesh.vertices[idx + 20] = u2
-    batch.mesh.vertices[idx + 21] = v
-    batch.mesh.vertices[idx + 22] = color
-    batch.mesh.vertices[idx + 23] = mixColor
+    verts[][idx + 18] = x4
+    verts[][idx + 19] = y4
+    verts[][idx + 20] = u2
+    verts[][idx + 21] = v
+    verts[][idx + 22] = color
+    verts[][idx + 23] = mixColor
 
     batch.index += spriteSize
 

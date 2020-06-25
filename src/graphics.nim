@@ -141,6 +141,16 @@ proc newTexture(): Texture =
     glTexParameteri(result.target, GlTextureWrapT, result.vwrap.GLint)
 
 #load texture from bytes
+proc loadTextureBytes*(bytes: string): Texture =
+    result = newTexture()
+
+    #creates a base texture
+    let data = decodePNG32(bytes)
+    var se = cast[seq[uint8]](data.data)
+
+    result.load(data.width, data.height, se)
+
+#load texture from bytes
 proc loadTexture*(bytes: openArray[uint8]): Texture =
     result = newTexture()
 
@@ -165,7 +175,7 @@ type Patch* = object
     texture*: Texture
     u*, v*, u2*, v2*: float32
 
-converter toPatch*(texture: Texture): Patch = Patch(texture: texture, u: 0.0, v: 0.0, u2: 1.0, v2: 1.0)
+converter toPatch*(texture: Texture): Patch {.inline.} = Patch(texture: texture, u: 0.0, v: 0.0, u2: 1.0, v2: 1.0)
 
 #SHADER
 
