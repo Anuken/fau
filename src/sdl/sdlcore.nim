@@ -208,16 +208,11 @@ proc mapMouseCode(button: uint8): KeyCode =
 
 #IO
 
-#TODO make this return something else, as sdl can't be imported
-template staticReadRW(filename: string): ptr RWops =
-    const file = staticRead(filename)
-    rwFromConstMem(file.cstring, file.len)
-  
-template staticReadStream(filename: string): string =
+template staticReadStream*(filename: string): string =
     const file = staticRead(filename)
     newStringStream(file)
 
-template staticReadString(filename: string): string = 
+template staticReadString*(filename: string): string = 
     const str = staticRead(filename)
     str
 

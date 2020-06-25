@@ -1,4 +1,4 @@
-import ../src/core, ../src/graphics, strformat, ../src/batch, polymorph, math, random, times, sequtils
+import ../src/core, ../src/graphics, ../src/batch, polymorph, math, random
 
 registerComponents(defaultComponentOptions):
   type
@@ -15,14 +15,20 @@ var cam: Cam
 var draw: Batch
 var patch: Patch
 
+makeSystem("bounce", [Pos, Bouncer]):
+  all: 
+    item.pos.x += item.bouncer.vel.x
+    item.pos.y += item.bouncer.vel.y
+    if item.pos.x > screenW/2.0 - hsize/2.0 or item.pos.x < -screenW/2.0 + hsize/2.0: item.bouncer.vel *= vec2(-1.0, 1.0)
+    if item.pos.y > screenH/2.0 - hsize/2.0 or item.pos.y < -screenH/2.0 + hsize/2.0: item.bouncer.vel *= vec2(1.0, -1.0)
+
 makeSystem("render", [Pos, Render]):
 
   init:
-    const texBytes = staticRead("/home/anuke/Projects/fuse/test/test.png")
 
     cam = newCam()
     draw = newBatch()
-    texture = loadTextureBytes(texBytes)
+    texture = loadTextureBytes(staticReadString("/home/anuke/Projects/fuse/test/test.png"))
     patch = texture
 
     randomize()
@@ -45,14 +51,6 @@ makeSystem("render", [Pos, Render]):
   
   finish:
     draw.flush()
-
-
-makeSystem("bounce", [Pos, Bouncer]):
-  all: 
-    item.pos.x += item.bouncer.vel.x
-    item.pos.y += item.bouncer.vel.y
-    if item.pos.x > screenW/2.0 - hsize/2.0 or item.pos.x < -screenW/2.0 + hsize/2.0: item.bouncer.vel *= vec2(-1.0, 1.0)
-    if item.pos.y > screenH/2.0 - hsize/2.0 or item.pos.y < -screenH/2.0 + hsize/2.0: item.bouncer.vel *= vec2(1.0, -1.0)
 
 makeEcs()
 commitSystems("run")

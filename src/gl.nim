@@ -6,9 +6,11 @@ when defined(JS):
 else:
     import sdl/sdlgl as wrap
 
+#Thrown when something goes wrong with openGL
 type
   GlError* = object of CatchableError
 
+#checks openGL calls for errors when not in release mode
 template glCheck(body: untyped) =
     when not defined(release):
         body
@@ -16,7 +18,7 @@ template glCheck(body: untyped) =
         #check for errors
         var error = wrap.glGetError()
 
-        if error != GlNoError and error != GL_INVALID_ENUM:
+        if error != GlNoError:
             let message = case error:
                 of GL_INVALID_VALUE: "Invalid value"
                 of GL_INVALID_OPERATION: "Invalid operation"

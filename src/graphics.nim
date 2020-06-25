@@ -265,7 +265,7 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
     result.fragHandle = loadSource(result, GL_FRAGMENT_SHADER, preprocess(fragmentSource, true))
 
     if not result.compiled:
-        raise Exception.newException("Failed to compile shader: \n" & result.compileLog)
+        raise newException(GLerror, "Failed to compile shader: \n" & result.compileLog)
 
     var program = glCreateProgram()
     glAttachShader(program, result.vertHandle)
