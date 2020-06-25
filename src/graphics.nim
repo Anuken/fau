@@ -1,4 +1,4 @@
-import gl, strutils, gltypes, nimPNG, tables, gmath
+import gl, strutils, gltypes, nimPNG, tables, gmath, core
 export gltypes, gmath
 
 #RENDERING
@@ -82,7 +82,9 @@ proc use*(texture: Texture, unit: GLenum = GlTexture0) =
     glBindTexture(texture.target, texture.handle)
     
 proc dispose*(texture: Texture) = 
-    glDeleteTexture(texture.handle)
+    if texture.handle != 0:
+        glDeleteTexture(texture.handle)
+        texture.handle = 0
 
 #assigns min and mag filters
 proc `filter=`*(texture: Texture, filter: Glenum) =
@@ -415,3 +417,82 @@ proc render*(mesh: Mesh, shader: Shader, count: int = -1) =
         glDrawElements(mesh.primitiveType, amount.Glint, GlUnsignedShort, mesh.indices[0].addr)
     
     endBind(mesh, shader)
+
+const defaultFramebufferHandle = 0
+
+type Framebuffer* = ref object
+    handle: Gluint
+    width: int
+    height: int
+    texture: Texture
+
+#accessors
+proc width*(buffer: Framebuffer): int {.inline.} = buffer.width
+proc height*(buffer: Framebuffer): int {.inline.} = buffer.height
+proc texture*(buffer: Framebuffer): Texture {.inline.} = buffer.texture
+
+proc dispose*(buffer: Framebuffer) = 
+    buffer.texture.dispose()
+    glDeleteFramebuffer(buffer.handle)
+
+proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
+    let 
+        width = max(fwidth, 2)
+        height = max(fheight, 2)
+    
+    #don't resize unnecessarily
+    if width == fwidth and height == fheight: return
+    
+    #dispose old buffer handle.
+    buffer.dispose()
+
+    buffer.handle = glGenFramebuffer()
+    buffer.texture = Texture(handle: glGenTexture(), width: width, height: height)
+
+    glBindTexture(GlTexture2D, buffer.texture.handle)
+    glFramebufferTexture2D(GlFramebuffer, GlColorAttachment0, GlTexture2D, buffer.texture.handle, 0)
+    
+    glTexImage2D(GlTexture2D, 0, GlRgba.Glint, width.GLsizei, height.GLsizei, 0, GlRgba, GlUnsignedByte, nil)
+    
+    glBindRenderbuffer(GlRenderBuffer, 0)
+    glBindTexture(GlTexture2D, 0)
+
+    let status = glCheckFramebufferStatus(GlFramebuffer)
+
+    glBindFramebuffer(GlFramebuffer, defaultFramebufferHandle)
+
+    #check for errors
+    if status != GlFramebufferComplete:
+        let message = case status:
+            of GlFramebufferIncompleteAttachment: "Framebuffer couldn't be constructed: incomplete attachment"
+            of GlFramebufferIncompleteDimensions: "Framebuffer couldn't be constructed: incomplete dimensions"
+            of GlFramebufferIncompleteMissingAttachment: "Framebuffer couldn't be constructed: missing attachment"
+            of GlFramebufferUnsupported: "Framebuffer couldn't be constructed: unsupported combination of formats"
+            else: "Framebuffer couldn't be constructed: Error code " & $status
+        
+        raise GlError.newException(message)
+
+proc newFramebuffer*(width: int = 2, height: int = 2): Framebuffer = 
+    result = Framebuffer(width: width, height: height)
+    result.resize(width, height)
+
+var currentBuffer: Framebuffer
+
+proc use(buffer: Framebuffer) = 
+    glBindFramebuffer(GlFramebuffer, buffer.handle)
+    glViewport(0, 0, buffer.width.Glsizei, buffer.height.Glsizei)
+
+template begin*(buffer: Framebuffer, body: untyped) =
+    let lastBound = currentBuffer
+    currentBuffer = buffer
+
+    buffer.use()
+    body
+
+    if lastBound.isNil:
+        glViewport(0, 0, screenW.GLsizei, screenH.GLsizei)
+        glBindFramebuffer(GlFramebuffer, defaultFramebufferHandle)
+    else:
+        lastBound.use()
+    
+    currentBuffer = lastBound

@@ -34,8 +34,7 @@ makeSystem("render", [Pos, Render]):
     randomize()
 
     for i in 0..1000:
-      let e = newEntityWith(Render(), Pos(x: rand(-500..500).float32, y: rand(-500..500).float32), Bouncer(vel: vec2(rand(-10..10).float32, rand(-10..10).float32)))
-      if i == 0: echo e
+      discard newEntityWith(Render(), Pos(x: rand(-500..500).float32, y: rand(-500..500).float32), Bouncer(vel: vec2(rand(-10..10).float32, rand(-10..10).float32)))
 
   start:
     if keyEscape.tapped: quitApp()

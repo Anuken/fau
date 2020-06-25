@@ -1,4 +1,4 @@
-import sdl2, tables, streams, times, sdlgl, ../gltypes, ../graphics
+import sdl2, tables, streams, times, sdlgl, ../gltypes, ../gmath
 
 type KeyCode* = enum
     keyA, keyB, keyC, keyD, keyE, keyF, keyG, keyH, keyI, keyJ, keyK, keyL, keyM, keyN, keyO, keyP, keyQ, keyR, keyS, keyT, keyU, 
