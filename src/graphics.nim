@@ -172,6 +172,10 @@ proc loadTexture*(path: string): Texture =
 
     return loadTexture(bytes)
 
+proc loadTextureStatic*(path: static[string]): Texture =
+    const bytes = staticRead(path)
+    return loadTextureBytes(bytes)
+
 #region of a texture
 type Patch* = object
     texture*: Texture
@@ -397,7 +401,7 @@ proc beginBind(mesh: Mesh, shader: Shader) =
         if loc != -1:
             glEnableVertexAttribArray(loc.GLuint)
             glVertexAttribPointer(loc.GLuint, attrib.components, attrib.componentType, attrib.normalized, mesh.vertexSize, 
-                cast[pointer](cast[uint64](mesh.vertices[0].addr) + attrib.offset.uint64));
+                cast[pointer](cast[int64](mesh.vertices[0].addr) + attrib.offset.int64));
 
 proc endBind(mesh: Mesh, shader: Shader) =
     for attrib in mesh.attributes:
@@ -432,6 +436,8 @@ proc height*(buffer: Framebuffer): int {.inline.} = buffer.height
 proc texture*(buffer: Framebuffer): Texture {.inline.} = buffer.texture
 
 proc dispose*(buffer: Framebuffer) = 
+    if buffer.handle == 0: return #don't double dispose
+
     buffer.texture.dispose()
     glDeleteFramebuffer(buffer.handle)
 
@@ -441,20 +447,23 @@ proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
         height = max(fheight, 2)
     
     #don't resize unnecessarily
-    if width == fwidth and height == fheight: return
+    if width == buffer.width and height == buffer.height: return
     
     #dispose old buffer handle.
     buffer.dispose()
+    buffer.width = width
+    buffer.height = height
 
     buffer.handle = glGenFramebuffer()
     buffer.texture = Texture(handle: glGenTexture(), width: width, height: height)
 
     glBindTexture(GlTexture2D, buffer.texture.handle)
-    glFramebufferTexture2D(GlFramebuffer, GlColorAttachment0, GlTexture2D, buffer.texture.handle, 0)
-    
     glTexImage2D(GlTexture2D, 0, GlRgba.Glint, width.GLsizei, height.GLsizei, 0, GlRgba, GlUnsignedByte, nil)
-    
-    glBindRenderbuffer(GlRenderBuffer, 0)
+
+    glBindFramebuffer(GlFramebuffer, buffer.handle)
+
+    glFramebufferTexture2D(GlFramebuffer, GlColorAttachment0, GlTexture2D, buffer.texture.handle, 0)
+
     glBindTexture(GlTexture2D, 0)
 
     let status = glCheckFramebufferStatus(GlFramebuffer)
@@ -464,11 +473,11 @@ proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
     #check for errors
     if status != GlFramebufferComplete:
         let message = case status:
-            of GlFramebufferIncompleteAttachment: "Framebuffer couldn't be constructed: incomplete attachment"
-            of GlFramebufferIncompleteDimensions: "Framebuffer couldn't be constructed: incomplete dimensions"
-            of GlFramebufferIncompleteMissingAttachment: "Framebuffer couldn't be constructed: missing attachment"
-            of GlFramebufferUnsupported: "Framebuffer couldn't be constructed: unsupported combination of formats"
-            else: "Framebuffer couldn't be constructed: Error code " & $status
+            of GlFramebufferIncompleteAttachment: "Framebuffer error: incomplete attachment"
+            of GlFramebufferIncompleteDimensions: "Framebuffer error: incomplete dimensions"
+            of GlFramebufferIncompleteMissingAttachment: "Framebuffer error: missing attachment"
+            of GlFramebufferUnsupported: "Framebuffer error: unsupported combination of formats"
+            else: "Framebuffer: Error code " & $status
         
         raise GlError.newException(message)
 

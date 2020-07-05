@@ -14,6 +14,7 @@ var texture: Texture
 var cam: Cam
 var draw: Batch
 var patch: Patch
+var buffer: Framebuffer
 
 makeSystem("bounce", [Pos, Bouncer]):
   all: 
@@ -28,7 +29,8 @@ makeSystem("render", [Pos, Render]):
 
     cam = newCam()
     draw = newBatch()
-    texture = loadTextureBytes(staticReadString("/home/anuke/Projects/fuse/test/test.png"))
+    buffer = newFramebuffer()
+    texture = loadTextureStatic("/home/anuke/Projects/fuse/test/test.png")
     patch = texture
 
     randomize()
@@ -40,6 +42,7 @@ makeSystem("render", [Pos, Render]):
     if keyEscape.tapped: quitApp()
 
     clearScreen(rgba(0, 0, 0, 1))
+    buffer.resize(screenW.int, screenH.int)
 
     cam.resize(screenW, screenH)
     cam.update()
