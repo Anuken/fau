@@ -416,19 +416,21 @@ proc render*(mesh: Mesh, shader: Shader, count: int = -1) =
     beginBind(mesh, shader)
 
     if mesh.indices.len == 0:
-        glDrawArrays(mesh.primitiveType, 0.GLint, amount.Glint div 4)
+        glDrawArrays(mesh.primitiveType, 0.GLint, (amount.Glint * 4) div mesh.vertexSize)
     else:
         glDrawElements(mesh.primitiveType, amount.Glint, GlUnsignedShort, mesh.indices[0].addr)
     
     endBind(mesh, shader)
-
-const defaultFramebufferHandle = 0
 
 type Framebuffer* = ref object
     handle: Gluint
     width: int
     height: int
     texture: Texture
+    previous: Framebuffer
+
+const defaultFramebufferHandle = 0
+var currentBuffer: Framebuffer
 
 #accessors
 proc width*(buffer: Framebuffer): int {.inline.} = buffer.width
@@ -455,20 +457,20 @@ proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
     buffer.height = height
 
     buffer.handle = glGenFramebuffer()
-    buffer.texture = Texture(handle: glGenTexture(), width: width, height: height)
-
-    glBindTexture(GlTexture2D, buffer.texture.handle)
-    glTexImage2D(GlTexture2D, 0, GlRgba.Glint, width.GLsizei, height.GLsizei, 0, GlRgba, GlUnsignedByte, nil)
+    buffer.texture = Texture(handle: glGenTexture(), target: GlTexture2D, width: width, height: height)
 
     glBindFramebuffer(GlFramebuffer, buffer.handle)
+    glBindTexture(GlTexture2D, buffer.texture.handle)
 
+    buffer.texture.filter = GlNearest
+
+    glTexImage2D(GlTexture2D, 0, GlRgba.Glint, width.GLsizei, height.GLsizei, 0, GlRgba, GlUnsignedByte, nil)
     glFramebufferTexture2D(GlFramebuffer, GlColorAttachment0, GlTexture2D, buffer.texture.handle, 0)
-
-    glBindTexture(GlTexture2D, 0)
 
     let status = glCheckFramebufferStatus(GlFramebuffer)
 
-    glBindFramebuffer(GlFramebuffer, defaultFramebufferHandle)
+    #restore old buffer
+    glBindFramebuffer(GlFramebuffer, if currentBuffer.isNil: defaultFramebufferHandle.GLuint else: currentBuffer.handle)
 
     #check for errors
     if status != GlFramebufferComplete:
@@ -482,26 +484,37 @@ proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
         raise GlError.newException(message)
 
 proc newFramebuffer*(width: int = 2, height: int = 2): Framebuffer = 
-    result = Framebuffer(width: width, height: height)
+    result = Framebuffer()
     result.resize(width, height)
 
-var currentBuffer: Framebuffer
 
-proc use(buffer: Framebuffer) = 
+#Begin rendering to the buffer
+proc start*(buffer: Framebuffer) = 
+    if buffer == currentBuffer: raise GLerror.newException("Can't begin framebuffer twice")
+
+    #save current for ending
+    buffer.previous = currentBuffer
+    currentBuffer = buffer
+
     glBindFramebuffer(GlFramebuffer, buffer.handle)
     glViewport(0, 0, buffer.width.Glsizei, buffer.height.Glsizei)
 
-template begin*(buffer: Framebuffer, body: untyped) =
-    let lastBound = currentBuffer
-    currentBuffer = buffer
+#Begin rendering to the buffer, but clear it as well
+proc start*(buffer: Framebuffer, clearColor: Color) =
+    buffer.start()
+    clearScreen(clearColor)
 
-    buffer.use()
-    body
-
-    if lastBound.isNil:
-        glViewport(0, 0, screenW.GLsizei, screenH.GLsizei)
+#End rendering to the buffer
+proc stop*(buffer: Framebuffer) =
+    if buffer.previous.isNil:
         glBindFramebuffer(GlFramebuffer, defaultFramebufferHandle)
+        glViewport(0, 0, screenW.GLsizei, screenH.GLsizei)
     else:
-        lastBound.use()
+        glBindFramebuffer(GlFramebuffer, buffer.previous.handle)
+        glViewport(0, 0, buffer.previous.width.Glsizei, buffer.previous.height.Glsizei)
     
-    currentBuffer = lastBound
+    currentBuffer = buffer.previous
+
+proc newScreenMesh*(): Mesh = 
+    result = newMesh(@[attribPos, attribTexCoords], isStatic = true, primitiveType = GlTriangleFan)
+    result.vertices = @[-1'f32, -1'f32, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1]

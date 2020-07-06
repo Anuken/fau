@@ -15,6 +15,8 @@ var cam: Cam
 var draw: Batch
 var patch: Patch
 var buffer: Framebuffer
+var screenm: Mesh
+var screensp: Shader
 
 makeSystem("bounce", [Pos, Bouncer]):
   all: 
@@ -27,11 +29,36 @@ makeSystem("render", [Pos, Render]):
 
   init:
 
+    screenm = newScreenMesh()
     cam = newCam()
     draw = newBatch()
     buffer = newFramebuffer()
     texture = loadTextureStatic("/home/anuke/Projects/fuse/test/test.png")
     patch = texture
+
+    screensp = newShader(
+      """
+      attribute vec4 a_position;
+      attribute vec2 a_texc;
+
+      varying vec2 v_texc;
+
+      void main(){
+          v_texc = a_texc;
+          gl_Position = a_position;
+      }
+      """,
+
+      """
+      uniform sampler2D u_texture;
+
+      varying vec2 v_texc;
+
+      void main(){
+        gl_FragColor = texture2D(u_texture, v_texc);
+      }
+      """
+    )
 
     randomize()
 
@@ -41,19 +68,24 @@ makeSystem("render", [Pos, Render]):
   start:
     if keyEscape.tapped: quitApp()
 
-    clearScreen(rgba(0, 0, 0, 1))
     buffer.resize(screenW.int, screenH.int)
-
+    buffer.start(rgba(0, 0, 0, 1))
+    
     cam.resize(screenW, screenH)
     cam.update()
 
     draw.mat = cam.mat
-  
+    
   all: 
     draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
   
   finish:
+    
     draw.flush()
+    buffer.stop()
+    
+    buffer.texture.use()
+    screenm.render(screensp)
 
 makeEcs()
 commitSystems("run")
