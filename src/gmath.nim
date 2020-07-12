@@ -61,18 +61,21 @@ proc dst*(vec: Vec2, other: Vec2): float32 {.inline.} = sqrt(vec.dst2(other))
 proc within*(vec: Vec2, other: Vec2, distance: float32): bool {.inline.} = vec.dst2(other) <= distance*distance
 
 #3x3 matrix for 2D transformations
-const M00 = 0
-const M01 = 3
-const M02 = 6
-const M10 = 1
-const M11 = 4
-const M12 = 7
-const M20 = 2
-const M21 = 5
-const M22 = 8
+const 
+    M00 = 0
+    M01 = 3
+    M02 = 6
+    M10 = 1
+    M11 = 4
+    M12 = 7
+    M20 = 2
+    M21 = 5
+    M22 = 8
 
 type Mat* = object
     val*: array[9, float32]
+
+proc newMat*(values: array[9, float32]): Mat {.inline.} = Mat(val: values)
 
 #converts a 2D orthographics 3x3 matrix to a 4x4 matrix for shaders
 proc toMat4*(matrix: Mat): array[16, float32] =
@@ -87,8 +90,7 @@ proc toMat4*(matrix: Mat): array[16, float32] =
     result[15] = 1
 
 #creates an identity matrix
-proc idt*(): Mat = 
-    result = Mat(val: [1'f32, 0, 0, 0, 1, 0, 0, 0, 1])
+proc idt*(): Mat = newMat [1'f32, 0, 0, 0, 1, 0, 0, 0, 1]
 
 #orthographic projection matrix
 proc ortho*(x, y, width, height: float32): Mat =
@@ -102,7 +104,7 @@ proc ortho*(x, y, width, height: float32): Mat =
     return Mat(val: [xOrth, 0, 0, 0, yOrth, 0, tx, ty, 1])
 
 proc `*`*(self: Mat, m: Mat): Mat =
-    return Mat(val: [
+    return newMat [
         self.val[M00] * m.val[M00] + self.val[M01] * m.val[M10] + self.val[M02] * m.val[M20], 
         self.val[M00] * m.val[M01] + self.val[M01] * m.val[M11] + self.val[M02] * m.val[M21],
         self.val[M00] * m.val[M02] + self.val[M01] * m.val[M12] + self.val[M02] * m.val[M22],
@@ -114,7 +116,7 @@ proc `*`*(self: Mat, m: Mat): Mat =
         self.val[M20] * m.val[M00] + self.val[M21] * m.val[M10] + self.val[M22] * m.val[M20],
         self.val[M20] * m.val[M01] + self.val[M21] * m.val[M11] + self.val[M22] * m.val[M21],
         self.val[M20] * m.val[M02] + self.val[M21] * m.val[M12] + self.val[M22] * m.val[M22]
-    ])
+    ]
 
 proc det*(self: Mat): float32 =
     return self.val[M00] * self.val[M11] * self.val[M22] + self.val[M01] * self.val[M12] * self.val[M20] + self.val[M02] * self.val[M10] * self.val[M21] -
@@ -125,7 +127,7 @@ proc inv*(self: Mat): Mat =
 
     if invd == 0.0: raise newException(ArithmeticError, "Can't invert a singular matrix")
 
-    return Mat(val: [
+    return newMat [
         self.val[M11] * self.val[M22] - self.val[M21] * self.val[M12] * invd,
         self.val[M20] * self.val[M12] - self.val[M10] * self.val[M22] * invd,
         self.val[M10] * self.val[M21] - self.val[M20] * self.val[M11] * invd,
@@ -135,6 +137,6 @@ proc inv*(self: Mat): Mat =
         self.val[M01] * self.val[M12] - self.val[M11] * self.val[M02] * invd,
         self.val[M10] * self.val[M02] - self.val[M00] * self.val[M12] * invd,
         self.val[M00] * self.val[M11] - self.val[M10] * self.val[M01] * invd
-    ])
+    ]
 
 proc `*`*(self: Vec2, mat: Mat): Vec2 = vec2(self.x * mat.val[0] + self.y * mat.val[3] + mat.val[6], self.x * mat.val[1] + self.y * mat.val[4] + mat.val[7])

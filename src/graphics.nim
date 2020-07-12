@@ -422,6 +422,11 @@ proc render*(mesh: Mesh, shader: Shader, count: int = -1) =
     
     endBind(mesh, shader)
 
+#creates a mesh with position and tex coordinate attrributes that covers the screen.
+proc newScreenMesh*(): Mesh = 
+    result = newMesh(@[attribPos, attribTexCoords], isStatic = true, primitiveType = GlTriangleFan)
+    result.vertices = @[-1'f32, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1]
+
 type Framebuffer* = ref object
     handle: Gluint
     width: int
@@ -514,7 +519,3 @@ proc stop*(buffer: Framebuffer) =
         glViewport(0, 0, buffer.previous.width.Glsizei, buffer.previous.height.Glsizei)
     
     currentBuffer = buffer.previous
-
-proc newScreenMesh*(): Mesh = 
-    result = newMesh(@[attribPos, attribTexCoords], isStatic = true, primitiveType = GlTriangleFan)
-    result.vertices = @[-1'f32, -1'f32, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1]

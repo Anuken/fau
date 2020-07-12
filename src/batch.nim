@@ -135,36 +135,36 @@ proc draw*(batch: Batch, region: Patch, x: float32, y: float32, width: float32, 
     let mixColor = batch.mixColorPack
     let idx = batch.index
     
-    #this seems to be faster.
+    #using pointers seems to be faster.
     let verts = addr batch.mesh.vertices
 
-    verts[][idx] = x1
-    verts[][idx + 1] = y1
-    verts[][idx + 2] = u
-    verts[][idx + 3] = v
-    verts[][idx + 4] = color
-    verts[][idx + 5] = mixColor
+    verts[idx] = x1
+    verts[idx + 1] = y1
+    verts[idx + 2] = u
+    verts[idx + 3] = v
+    verts[idx + 4] = color
+    verts[idx + 5] = mixColor
 
-    verts[][idx + 6] = x2
-    verts[][idx + 7] = y2
-    verts[][idx + 8] = u
-    verts[][idx + 9] = v2
-    verts[][idx + 10] = color
-    verts[][idx + 11] = mixColor
+    verts[idx + 6] = x2
+    verts[idx + 7] = y2
+    verts[idx + 8] = u
+    verts[idx + 9] = v2
+    verts[idx + 10] = color
+    verts[idx + 11] = mixColor
 
-    verts[][idx + 12] = x3
-    verts[][idx + 13] = y3
-    verts[][idx + 14] = u2
-    verts[][idx + 15] = v2
-    verts[][idx + 16] = color
-    verts[][idx + 17] = mixColor
+    verts[idx + 12] = x3
+    verts[idx + 13] = y3
+    verts[idx + 14] = u2
+    verts[idx + 15] = v2
+    verts[idx + 16] = color
+    verts[idx + 17] = mixColor
 
-    verts[][idx + 18] = x4
-    verts[][idx + 19] = y4
-    verts[][idx + 20] = u2
-    verts[][idx + 21] = v
-    verts[][idx + 22] = color
-    verts[][idx + 23] = mixColor
+    verts[idx + 18] = x4
+    verts[idx + 19] = y4
+    verts[idx + 20] = u2
+    verts[idx + 21] = v
+    verts[idx + 22] = color
+    verts[idx + 23] = mixColor
 
     batch.index += spriteSize
 

@@ -1,4 +1,4 @@
-import ../src/core, ../src/graphics, ../src/batch, polymorph, math, random
+import ../src/core, ../src/graphics, ../src/batch, ../src/common, polymorph, math, random
 
 registerComponents(defaultComponentOptions):
   type
@@ -55,7 +55,8 @@ makeSystem("render", [Pos, Render]):
       varying vec2 v_texc;
 
       void main(){
-        gl_FragColor = texture2D(u_texture, v_texc);
+        vec2 coords = v_texc + vec2(sin(v_texc.y * 50.0) / 60.0, sin(v_texc.x * 50.0) / 60.0);
+        gl_FragColor = texture2D(u_texture, coords) + vec4(v_texc, 1.0, 1.0);
       }
       """
     )
