@@ -176,7 +176,7 @@ proc postUpdate() =
 
     inc frameId
 
-proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", depthBits = 0, stencilBits = 0) =
+proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0, stencilBits = 0) =
     
     discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
         raise Exception.newException("Error initializing GLFW: " & $desc & " (error code: " & $code & ")")
@@ -184,11 +184,23 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
     if init() == 0: raise newException(Exception, "Failed to Initialize GLFW")
 
+    echo "Initialized GLFW v" & $VERSION_MAJOR & "." & $VERSION_MINOR
+
+    defaultWindowHints()
+    windowHint(DEPTH_BITS, depthBits.cint)
+    windowHint(STENCIL_BITS, stencilBits.cint)
+    windowHint(CONTEXT_VERSION_MINOR, 0)
+    windowHint(CONTEXT_VERSION_MAJOR, 2)
+    windowHint(DOUBLEBUFFER, 1)
+    windowHint(MAXIMIZED, maximize.cint)
+
     window = createWindow(windowWidth.cint, windowHeight.cint, windowTitle, nil, nil)
     window.makeContextCurrent()
 
     if not loadGl(getProcAddress):
         raise Exception.newException("Failed to load OpenGL.")
+
+    echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
 
     #listen to window size changes and relevant events.
 
