@@ -176,6 +176,17 @@ proc postUpdate() =
 
     inc frameId
 
+
+#wraps the main loop for emscripten compatibility
+proc mainLoop(target: proc()) =
+    when defined(emscripten):
+        proc emscripten_set_main_loop(f: proc() {.cdecl.}, a: cint, b: bool) {.importc.}
+
+        emscripten_set_main_loop(target, 0, true)
+    else:
+        while window.windowShouldClose() == 0 and coreRunning:
+            target()
+
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0, stencilBits = 0) =
     
     discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
@@ -264,10 +275,11 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
     initProc()
 
-    while windowShouldClose(window) == 0 and coreRunning:
+    mainLoop(proc() =
         preUpdate()
         loopProc()
         postUpdate()
+    )
 
     window.destroyWindow()
     terminate()

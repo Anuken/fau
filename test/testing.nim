@@ -90,4 +90,4 @@ makeSystem("render", [Pos, Render]):
 
 makeEcs()
 commitSystems("run")
-initCore(run, windowTitle = "fuse")
+initCore(run, windowTitle = "cats")
