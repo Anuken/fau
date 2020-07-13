@@ -49,7 +49,7 @@ var
   glBlendEquationSeparate*: proc (modeRGB: GLenum, modeAlpha: GLenum) {.cdecl, gcsafe.}
   glBlendFunc*: proc (sfactor: GLenum, dfactor: GLenum) {.cdecl, gcsafe.}
   glBlendFuncSeparate*: proc (sfactorRGB: GLenum, dfactorRGB: GLenum, sfactorAlpha: GLenum, dfactorAlpha: GLenum) {.cdecl, gcsafe.}
-  glBufferDataBASE: proc (target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenum) {.cdecl, gcsafe.}
+  glBufferData*: proc (target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenum) {.cdecl, gcsafe.}
   glBufferSubData*: proc (target: GLenum, offset: GLintptr, size: GLsizeiptr, data: pointer) {.cdecl, gcsafe.}
   glCheckFramebufferStatus*: proc (target: GLenum): GLenum {.cdecl, gcsafe.}
   glClear*: proc (mask: GLbitfield) {.cdecl, gcsafe.}
@@ -295,7 +295,7 @@ proc load_GL_VERSION_1_5(load: proc) =
   glDeleteBuffers = cast[proc (n: GLsizei, buffers: ptr GLuint) {.cdecl, gcsafe.}](load("glDeleteBuffers"))
   glGenBuffers = cast[proc (n: GLsizei, buffers: ptr GLuint) {.cdecl, gcsafe.}](load("glGenBuffers"))
   glIsBuffer = cast[proc (buffer: GLuint): GLboolean {.cdecl, gcsafe.}](load("glIsBuffer"))
-  glBufferDataBASE = cast[proc (target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenum) {.cdecl, gcsafe.}](load("glBufferData"))
+  glBufferData = cast[proc (target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenum) {.cdecl, gcsafe.}](load("glBufferData"))
   glBufferSubData = cast[proc (target: GLenum, offset: GLintptr, size: GLsizeiptr, data: pointer) {.cdecl, gcsafe.}](load("glBufferSubData"))
   glGetBufferParameteriv = cast[proc (target: GLenum, pname: GLenum, params: ptr GLint) {.cdecl, gcsafe.}](load("glGetBufferParameteriv"))
 
@@ -533,11 +533,6 @@ proc glVertexAttrib2fv*(index: GLuint, v: openArray[GLfloat]) = glVertexAttrib2f
 proc glVertexAttrib3fv*(index: GLuint, v: openArray[GLfloat]) = glVertexAttrib3fvBASE(index, cast[ptr GLfloat](unsafeAddr v))
 proc glVertexAttrib4fv*(index: GLuint, v: openArray[GLfloat]) = glVertexAttrib4fvBASE(index, cast[ptr GLfloat](unsafeAddr v))
 
-#buffers
-
-proc glBufferData*(target: GLenum, size: GLsizeiptr, data: var openArray[GLfloat], usage: GLenum) = 
-  glBufferDataBASE(target, size, data[0].addr, usage)
-
 #uniforms
 
 proc glUniform1fv*(location: GLint, count: GLsizei, value: openArray[GLfloat]) = glUniform1fvBASE(location, count, cast[ptr GLfloat](unsafeAddr value))
@@ -575,8 +570,8 @@ proc findCoreGL(glVersion: string) =
       version = version.replace(p)
       break
 
-  var major = ord(glVersion[0]) - ord('0')
-  var minor = ord(glVersion[2]) - ord('0')
+  var major = ord(version[0]) - ord('0')
+  var minor = ord(version[2]) - ord('0')
 
   glVersionMajor = major
   glVersionMinor = minor
@@ -632,7 +627,7 @@ proc load_GL_ES_VERSION_2_0(load: proc) =
   glBlendEquationSeparate = cast[proc (modeRGB: GLenum, modeAlpha: GLenum) {.cdecl, gcsafe.}](load("glBlendEquationSeparate"))
   glBlendFunc = cast[proc (sfactor: GLenum, dfactor: GLenum) {.cdecl, gcsafe.}](load("glBlendFunc"))
   glBlendFuncSeparate = cast[proc (sfactorRGB: GLenum, dfactorRGB: GLenum, sfactorAlpha: GLenum, dfactorAlpha: GLenum) {.cdecl, gcsafe.}](load("glBlendFuncSeparate"))
-  glBufferDataBASE = cast[proc (target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenum) {.cdecl, gcsafe.}](load("glBufferData"))
+  glBufferData = cast[proc (target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenum) {.cdecl, gcsafe.}](load("glBufferData"))
   glBufferSubData = cast[proc (target: GLenum, offset: GLintptr, size: GLsizeiptr, data: pointer) {.cdecl, gcsafe.}](load("glBufferSubData"))
   glCheckFramebufferStatus = cast[proc (target: GLenum): GLenum {.cdecl, gcsafe.}](load("glCheckFramebufferStatus"))
   glClear = cast[proc (mask: GLbitfield) {.cdecl, gcsafe.}](load("glClear"))

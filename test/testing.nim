@@ -1,5 +1,39 @@
 import ../src/core, ../src/graphics, ../src/batch, ../src/common, polymorph, math, random
 
+#code without polymorph - this works with --gc:arc
+#[
+
+var texture: Texture
+var cam: Cam
+var draw: Batch
+var patch: Patch
+var buffer: Framebuffer
+var screenm: Mesh
+var screensp: Shader
+
+proc init() =
+  screenm = newScreenMesh()
+  cam = newCam()
+  draw = newBatch()
+  buffer = newFramebuffer()
+  texture = loadTextureStatic("/home/anuke/Projects/fuse/test/test.png")
+  patch = texture
+
+proc render() =
+  clearScreen(rgba(1.0, 0.0, 0.0, 1.0))
+  
+  cam.resize(screenW, screenH)
+  cam.update()
+
+  draw.mat = cam.mat
+
+  draw.draw(patch, 0, 0, 100, 100)
+
+  draw.flush()
+
+initCore(render, init)
+]#
+
 registerComponents(defaultComponentOptions):
   type
     Pos = object

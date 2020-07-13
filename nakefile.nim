@@ -18,6 +18,10 @@ task "release", "Release build":
     cd "test"
     shell nimExe, "c", "-r", "-d:release", "-d:danger", "-o:../build/" & app, app
 
+task "web", "Deploy web build":
+    cd "test"
+    shell "nim c -d:emscripten testing.nim"
+
 task "profile", "Run with a profiler":
     cd "test"
     shell nimExe, "c", "-r", "-d:release", "-d:danger", "--profiler:on", "--stacktrace:on", "-o:../build/" & app, app

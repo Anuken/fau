@@ -380,14 +380,38 @@ const attribMixColor* = VertexAttribute(componentType: GlUnsignedByte, component
 type Mesh* = ref object
     vertices*: seq[GLfloat]
     indices*: seq[Glushort]
+    vertexBuffer: GLuint
+    indexBuffer: GLuint
     attributes: seq[VertexAttribute]
     isStatic: bool
+    modifiedVert: bool
+    modifiedInd: bool
     primitiveType*: GLenum
     vertexSize: Glsizei
 
+#marks a mesh as modified, so its vertices get reuploaded
+proc update*(mesh: Mesh) = 
+    mesh.modifiedVert = true
+    mesh.modifiedInd = true
+
+#schedules an index buffer update
+proc updateIndices*(mesh: Mesh) = mesh.modifiedInd = true
+
+#schedules a vertex buffer update
+proc updateVertices*(mesh: Mesh) = mesh.modifiedVert = true
+
 #creates a mesh with a set of attributes
-proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType: Glenum = GlTriangles): Mesh = 
-    result = Mesh(isStatic: isStatic, attributes: attrs, primitiveType: primitiveType)
+proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[GLfloat] = @[]): Mesh = 
+    result = Mesh(
+        isStatic: isStatic, 
+        attributes: attrs, 
+        primitiveType: primitiveType, 
+        vertices: vertices, 
+        modifiedVert: true,
+        modifiedInd: true,
+        vertexBuffer: glGenBuffer(),
+        indexBuffer: glGenBuffer()
+    )
 
     #calculate total vertex size
     for attr in result.attributes.mitems:
@@ -396,12 +420,32 @@ proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType
         result.vertexSize += attr.size().GLsizei
 
 proc beginBind(mesh: Mesh, shader: Shader) =
+    #draw usage
+    let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
+
+    #bind the vertex buffer
+    glBindBuffer(GlArrayBuffer, mesh.vertexBuffer)
+
+    #bind indices if there are any
+    if mesh.indices.len > 0:
+        glBindBuffer(GlElementArrayBuffer, mesh.indexBuffer)
+
+    #update vertices if modified
+    if mesh.modifiedVert:
+        glBufferData(GlArrayBuffer, mesh.vertices.len * 4, mesh.vertices[0].addr, usage)
+        mesh.modifiedVert = false
+    
+    #update indices if relevant and modified
+    if mesh.modifiedInd and mesh.indices.len > 0:
+        glBufferData(GlElementArrayBuffer, mesh.indices.len * 2, mesh.indices[0].addr, usage)
+        mesh.modifiedInd = false
+
     for attrib in mesh.attributes:
         let loc = shader.getAttributeLoc(attrib.alias)
         if loc != -1:
             glEnableVertexAttribArray(loc.GLuint)
             glVertexAttribPointer(loc.GLuint, attrib.components, attrib.componentType, attrib.normalized, mesh.vertexSize, 
-                cast[pointer](cast[int64](mesh.vertices[0].addr) + attrib.offset.int64));
+                cast[pointer](attrib.offset));
 
 proc endBind(mesh: Mesh, shader: Shader) =
     for attrib in mesh.attributes:
@@ -418,14 +462,12 @@ proc render*(mesh: Mesh, shader: Shader, count: int = -1) =
     if mesh.indices.len == 0:
         glDrawArrays(mesh.primitiveType, 0.GLint, (amount.Glint * 4) div mesh.vertexSize)
     else:
-        glDrawElements(mesh.primitiveType, amount.Glint, GlUnsignedShort, mesh.indices[0].addr)
+        glDrawElements(mesh.primitiveType, amount.Glint, GlUnsignedShort, nil)
     
     endBind(mesh, shader)
 
-#creates a mesh with position and tex coordinate attrributes that covers the screen.
-proc newScreenMesh*(): Mesh = 
-    result = newMesh(@[attribPos, attribTexCoords], isStatic = true, primitiveType = GlTriangleFan)
-    result.vertices = @[-1'f32, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1]
+#creates a mesh with position and tex coordinate attributes that covers the screen.
+proc newScreenMesh*(): Mesh = newMesh(@[attribPos, attribTexCoords], isStatic = true, primitiveType = GlTriangleFan, vertices = @[-1'f32, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1])
 
 type Framebuffer* = ref object
     handle: Gluint

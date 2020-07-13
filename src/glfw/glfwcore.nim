@@ -176,13 +176,16 @@ proc postUpdate() =
 
     inc frameId
 
+var theLoop: proc()
+
+proc emscripten_set_main_loop(f: proc() {.cdecl.}, a: cint, b: bool) {.importc.}
 
 #wraps the main loop for emscripten compatibility
 proc mainLoop(target: proc()) =
-    when defined(emscripten):
-        proc emscripten_set_main_loop(f: proc() {.cdecl.}, a: cint, b: bool) {.importc.}
+    theLoop = target
 
-        emscripten_set_main_loop(target, 0, true)
+    when defined(emscripten):
+        emscripten_set_main_loop(proc() {.cdecl.} = theLoop(), 0, true)
     else:
         while window.windowShouldClose() == 0 and coreRunning:
             target()

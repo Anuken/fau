@@ -88,6 +88,7 @@ proc flush*(batch: Batch) =
     batch.shader.seti("u_texture", 0)
     batch.shader.setmat4("u_proj", batch.mat)
 
+    batch.mesh.updateVertices()
     batch.mesh.render(batch.shader, batch.index div spriteSize * 6)
     
     batch.index = 0

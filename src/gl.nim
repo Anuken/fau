@@ -40,6 +40,8 @@ var lastActiveTextureUnit = 0.GLenum
 var lastBoundTextures: array[32, int]
 #last program activated
 var lastProgram = -1
+#last bound buffer
+var lastArrayBuffer = -1
 #enabled state
 var lastEnabled: array[36349, bool]
 #blending S/D factor
@@ -59,7 +61,16 @@ proc glActiveTexture*(texture: GLenum) {.inline.} =
 
 proc glAttachShader*(program: GLuint, shader: GLuint) {.inline.} = glCheck(): wrap.glAttachShader(program, shader)
 proc glBindAttribLocation*(program: GLuint, index: GLuint, name: cstring) {.inline.} = glCheck(): wrap.glBindAttribLocation(program, index, name)
-proc glBindBuffer*(target: GLenum, buffer: GLuint) {.inline.} = glCheck(): wrap.glBindBuffer(target, buffer)
+
+proc glBindBuffer*(target: GLenum, buffer: GLuint) {.inline.} = 
+    #don't bind the same array buffer twice
+    #TODO make sure this works
+    if target == GlArrayBuffer and buffer.int == lastArrayBuffer: return
+
+    glCheck(): wrap.glBindBuffer(target, buffer)
+
+    if target == GLArrayBuffer: lastArrayBuffer = buffer.int
+
 proc glBindFramebuffer*(target: GLenum, framebuffer: GLuint) {.inline.} = glCheck(): wrap.glBindFramebuffer(target, framebuffer)
 proc glBindRenderbuffer*(target: GLenum, renderbuffer: GLuint) {.inline.} = glCheck(): wrap.glBindRenderbuffer(target, renderbuffer)
 
@@ -87,7 +98,7 @@ proc glBlendFunc*(sfactor: GLenum, dfactor: GLenum) {.inline.} =
     lastDfactor = dfactor
 
 proc glBlendFuncSeparate*(sfactorRGB: GLenum, dfactorRGB: GLenum, sfactorAlpha: GLenum, dfactorAlpha: GLenum) {.inline.} = glCheck(): wrap.glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha)
-proc glBufferData*(target: GLenum, size: GLsizeiptr, data: var openArray[GLfloat], usage: GLenum) {.inline.} = glCheck(): wrap.glBufferData(target, size, data, usage)
+proc glBufferData*(target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenum) {.inline.} = glCheck(): wrap.glBufferData(target, size, data, usage)
 proc glBufferSubData*(target: GLenum, offset: GLintptr, size: GLsizeiptr, data: pointer) {.inline.} = glCheck(): wrap.glBufferSubData(target, offset, size, data)
 proc glCheckFramebufferStatus*(target: GLenum): GLenum {.inline.} = glCheck(): result = wrap.glCheckFramebufferStatus(target)
 proc glClear*(mask: GLbitfield) {.inline.} = glCheck(): wrap.glClear(mask)
@@ -103,7 +114,12 @@ proc glCopyTexSubImage2D*(target: GLenum, level: GLint, xoffset: GLint, yoffset:
 proc glCreateProgram*(): GLuint {.inline.} = glCheck(): result = wrap.glCreateProgram()
 proc glCreateShader*(`type`: GLenum): GLuint {.inline.} = glCheck(): result = wrap.glCreateShader(`type`)
 proc glCullFace*(mode: GLenum) {.inline.} = glCheck(): wrap.glCullFace(mode)
-proc glDeleteBuffer*(buffer: GLuint) {.inline.} = glCheck(): wrap.glDeleteBuffer(buffer)
+
+proc glDeleteBuffer*(buffer: GLuint) {.inline.} = 
+    lastArrayBuffer = -1
+
+    glCheck(): wrap.glDeleteBuffer(buffer)
+
 proc glDeleteFramebuffer*(framebuffer: GLuint) {.inline.} = glCheck(): wrap.glDeleteFramebuffer(framebuffer)
 
 proc glDeleteProgram*(program: GLuint) {.inline.} = 
