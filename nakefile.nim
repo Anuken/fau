@@ -19,6 +19,7 @@ task "release", "Release build":
     shell nimExe, "c", "-r", "-d:release", "-d:danger", "-o:../build/" & app, app
 
 task "web", "Deploy web build":
+    createDir "build/web"
     cd "test"
     shell "nim c -d:emscripten -d:release -d:danger testing.nim"
 

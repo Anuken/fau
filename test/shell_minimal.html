@@ -37,7 +37,9 @@
         })(),
         printErr: function(text) {
           if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-          console.error(text);
+          if (!text.includes("instead of signal()")) { //don't care about this error message
+            console.error(text);
+          }
         },
         canvas: (function() {
           var canvas = document.getElementById('canvas');
@@ -70,7 +72,7 @@
           Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
         },
         onRuntimeInitialized: function() {
-          console.log('module loaded');
+          console.log('Module loaded.');
           setTimeout(function() {
             Module.setCanvasSize(window.innerWidth, window.innerHeight);
           }, 0);
