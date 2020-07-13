@@ -20,7 +20,7 @@ task "release", "Release build":
 
 task "web", "Deploy web build":
     cd "test"
-    shell "nim c -d:emscripten testing.nim"
+    shell "nim c -d:emscripten -d:release -d:danger testing.nim"
 
 task "profile", "Run with a profiler":
     cd "test"
