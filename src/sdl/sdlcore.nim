@@ -266,6 +266,20 @@ proc postUpdate() =
 
     inc frameId
 
+var theLoop: proc()
+
+proc emscripten_set_main_loop(f: proc() {.cdecl.}, a: cint, b: bool) {.importc.}
+
+#wraps the main loop for emscripten compatibility
+proc mainLoop(target: proc()) =
+    theLoop = target
+
+    when defined(emscripten):
+        emscripten_set_main_loop(proc() {.cdecl.} = theLoop(), 0, true)
+    else:
+        while coreRunning:
+            target()
+
 #external functions for use by outside classes
 
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", depthBits = 0, stencilBits = 0) =
@@ -318,10 +332,11 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
     initProc()
 
-    while coreRunning:
+    mainLoop(proc() =
         preUpdate()
         loopProc()
         postUpdate()
+    )
 
 #set window title
 proc `windowTitle=`*(title: string) =

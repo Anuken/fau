@@ -21,7 +21,7 @@ task "release", "Release build":
 task "web", "Deploy web build":
     createDir "build/web"
     cd "test"
-    shell "nim c -d:emscripten -d:release -d:danger testing.nim"
+    shell "nim c -d:emscripten -d:danger testing.nim"
 
 task "profile", "Run with a profiler":
     cd "test"

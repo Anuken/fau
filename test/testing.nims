@@ -3,6 +3,8 @@ if defined(emscripten):
 
   #--nimcache:tmp # Store intermediate files close by in the ./tmp dir.
 
+  --passC:"-flto"
+  --passL:"-flto"
   --os:linux # Emscripten pretends to be linux.
   --cpu:i386 # Emscripten is 32bits.
   --cc:clang # Emscripten is very close to clang, so we ill replace it.
@@ -13,7 +15,14 @@ if defined(emscripten):
   --listCmd # List what commands we are running so that we can debug them.
 
   --gc:arc # GC:arc is friendlier with crazy platforms.
-  --exceptions:goto # Goto exceptions are friendlier with crazy platforms.
+  --d:danger
 
   # Pass this to Emscripten linker to generate html file scaffold for us.
-  switch("passL", "-o ../build/web/testing.html --shell-file shell_minimal.html")
+  switch("passL", "-o ../build/web/index.html --shell-file shell_minimal.html -O3 -s LLD_REPORT_UNDEFINED -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1")
+else:
+  --gc:arc
+
+  when defined(MacOSX):
+    switch("clang.linkerexe", "g++")
+  else:
+    switch("gcc.linkerexe", "g++")

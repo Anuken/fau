@@ -123,11 +123,11 @@ proc `wrapV=`*(texture: Texture, wrap: Glenum) =
     glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
 
 #loads texture data; the texture must be bound for this to work.
-proc load(texture: Texture, width: int, height: int, pixels: var openArray[uint8]) =
+proc load(texture: Texture, width: int, height: int, pixels: pointer) =
     #bind texture
     texture.use()
     glPixelStorei(GlUnpackAlignment, 1)
-    glTexImage2D(texture.target, 0, GlRGBA.Glint, width.GLsizei, height.GLsizei, 0, GlRGBA, GlUnsignedByte, addr pixels)
+    glTexImage2D(texture.target, 0, GlRGBA.Glint, width.GLsizei, height.GLsizei, 0, GlRGBA, GlUnsignedByte, pixels)
     texture.width = width
     texture.height = height
 
@@ -146,31 +146,12 @@ proc newTexture(): Texture =
 proc loadTextureBytes*(bytes: string): Texture =
     result = newTexture()
 
-    #creates a base texture
-    let data = decodePNG32(bytes)
-    var se = cast[seq[uint8]](data.data)
-
-    result.load(data.width, data.height, se)
-
-#load texture from bytes
-proc loadTexture*(bytes: openArray[uint8]): Texture =
-    result = newTexture()
-
-    #creates a base texture
     let data = decodePNG32(bytes)
 
-    if data.isOk:
-        result.load(data.value.width, data.value.height, data.value.data)
-    else:
-        raise newException(IOError, data.error)
+    result.load(data.width, data.height, addr data.data[0])
 
 #load texture from path
-proc loadTexture*(path: string): Texture =
-    let f = open(path)
-    var bytes = newSeq[uint8](f.getFileSize())
-    discard f.readBytes(bytes, 0, bytes.len)
-
-    return loadTexture(bytes)
+proc loadTexture*(path: string): Texture = loadTextureBytes(readFile(path))
 
 proc loadTextureStatic*(path: static[string]): Texture =
     const bytes = staticRead(path)

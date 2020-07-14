@@ -1,38 +1,4 @@
-import ../src/core, ../src/graphics, ../src/batch, ../src/common, polymorph, math, random
-
-#code without polymorph - this works with --gc:arc
-#[
-
-var texture: Texture
-var cam: Cam
-var draw: Batch
-var patch: Patch
-var buffer: Framebuffer
-var screenm: Mesh
-var screensp: Shader
-
-proc init() =
-  screenm = newScreenMesh()
-  cam = newCam()
-  draw = newBatch()
-  buffer = newFramebuffer()
-  texture = loadTextureStatic("/home/anuke/Projects/fuse/test/test.png")
-  patch = texture
-
-proc render() =
-  clearScreen(rgba(1.0, 0.0, 0.0, 1.0))
-  
-  cam.resize(screenW, screenH)
-  cam.update()
-
-  draw.mat = cam.mat
-
-  draw.draw(patch, 0, 0, 100, 100)
-
-  draw.flush()
-
-initCore(render, init)
-]#
+import ../src/core, ../src/graphics, ../src/batch, ../src/common, ../src/audio, polymorph, math, random
 
 registerComponents(defaultComponentOptions):
   type
@@ -51,6 +17,7 @@ var patch: Patch
 var buffer: Framebuffer
 var screenm: Mesh
 var screensp: Shader
+var sounded = false
 
 makeSystem("bounce", [Pos, Bouncer]):
   all: 
@@ -97,8 +64,10 @@ makeSystem("render", [Pos, Render]):
 
     randomize()
 
+    const speed = 3
+
     for i in 0..1000:
-      discard newEntityWith(Render(), Pos(x: rand(-500..500).float32, y: rand(-500..500).float32), Bouncer(vel: vec2(rand(-10..10).float32, rand(-10..10).float32)))
+      discard newEntityWith(Render(), Pos(x: rand(-500..500).float32, y: rand(-500..500).float32), Bouncer(vel: vec2(rand(-speed..speed).float32, rand(-speed..speed).float32)))
 
   start:
     if keyEscape.tapped: quitApp()
@@ -110,6 +79,31 @@ makeSystem("render", [Pos, Render]):
     cam.update()
 
     draw.mat = cam.mat
+
+    if keyMouseLeft.tapped and not sounded:
+      sounded = true
+      var so = Soloud_create()
+      echo so.Soloud_init()
+
+      Soloud_setGlobalVolume(so, 1);
+
+      const musData = staticRead("music.ogg")
+      const len = musData.len
+
+      let music = WavStream_create()
+      echo music.WavStream_loadMem(cast[ptr cuchar](musData.cstring), len.cuint)
+      echo so.Soloud_play(music)
+      
+      #[
+      let wav = Wav_create()
+      echo Wav_load(wav, "beam.ogg")
+      echo so.Soloud_play(wav)
+
+    
+      let speech = Speech_create()
+
+      echo Speech_setText(speech, "Hello c-api")
+      echo so.Soloud_play(speech);]#
     
   all: 
     draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
