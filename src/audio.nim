@@ -1,6 +1,6 @@
 #proxy file for multiple audio backends
 
-import audio/soloud
+import audio/soloud_gen
 
 #TODO handle web focus properly
 var so = SoloudCreate()

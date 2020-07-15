@@ -22,6 +22,9 @@ if defined(emscripten):
 else:
   --gc:arc
 
+  when defined(Windows):
+    switch("passL", "-static-libstdc++ -static-libgcc")
+
   when defined(MacOSX):
     switch("clang.linkerexe", "g++")
   else:

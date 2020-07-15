@@ -84,17 +84,6 @@ makeSystem("render", [Pos, Render]):
 
     draw.mat = cam.mat
     
-    #[
-    let wav = Wav_create()
-    echo Wav_load(wav, "beam.ogg")
-    echo so.Soloud_play(wav)
-
-  
-    let speech = Speech_create()
-
-    echo Speech_setText(speech, "Hello c-api")
-    echo so.Soloud_play(speech);]#
-    
   all: 
     draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
   
