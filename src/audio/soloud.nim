@@ -19,8 +19,6 @@ cOverride:
 
 cIncludeDir(incl)
 
-#TODO use the generated wrapper file instead
-
 when defined(emscripten):
   {.passL: "-lpthread".}
   cDefine("WITH_SDL2_STATIC")

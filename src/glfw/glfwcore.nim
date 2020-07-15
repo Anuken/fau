@@ -178,13 +178,13 @@ proc postUpdate() =
 
 var theLoop: proc()
 
-proc emscripten_set_main_loop(f: proc() {.cdecl.}, a: cint, b: bool) {.importc.}
-
 #wraps the main loop for emscripten compatibility
 proc mainLoop(target: proc()) =
     theLoop = target
 
     when defined(emscripten):
+        proc emscripten_set_main_loop(f: proc() {.cdecl.}, a: cint, b: bool) {.importc.}
+
         emscripten_set_main_loop(proc() {.cdecl.} = theLoop(), 0, true)
     else:
         while window.windowShouldClose() == 0 and coreRunning:
