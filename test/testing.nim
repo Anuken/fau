@@ -62,6 +62,10 @@ makeSystem("render", [Pos, Render]):
       """
     )
 
+    let music = loadMusicStatic("/home/anuke/Projects/fuse/test/music.ogg")
+    music.filterEcho(0.4, 0.8, 0.5)
+    music.play(pitch = 0.7)
+
     randomize()
 
     const speed = 3
@@ -79,31 +83,17 @@ makeSystem("render", [Pos, Render]):
     cam.update()
 
     draw.mat = cam.mat
-
-    if keyMouseLeft.tapped and not sounded:
-      sounded = true
-      var so = Soloud_create()
-      echo so.Soloud_init()
-
-      Soloud_setGlobalVolume(so, 1);
-
-      const musData = staticRead("music.ogg")
-      const len = musData.len
-
-      let music = WavStream_create()
-      echo music.WavStream_loadMem(cast[ptr cuchar](musData.cstring), len.cuint)
-      echo so.Soloud_play(music)
-      
-      #[
-      let wav = Wav_create()
-      echo Wav_load(wav, "beam.ogg")
-      echo so.Soloud_play(wav)
-
     
-      let speech = Speech_create()
+    #[
+    let wav = Wav_create()
+    echo Wav_load(wav, "beam.ogg")
+    echo so.Soloud_play(wav)
 
-      echo Speech_setText(speech, "Hello c-api")
-      echo so.Soloud_play(speech);]#
+  
+    let speech = Speech_create()
+
+    echo Speech_setText(speech, "Hello c-api")
+    echo so.Soloud_play(speech);]#
     
   all: 
     draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
