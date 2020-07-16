@@ -34,6 +34,9 @@ type Color* = object
 proc rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color =
     result = Color(r: r, g: g, b: b, a: a)
 
+proc rgb*(r: float32, g: float32, b: float32): Color =
+    result = Color(r: r, g: g, b: b, a: 1.0)
+
 #convert a color to a ABGR float representation; result may be NaN (?)
 proc toFloat*(color: Color): float32 = 
     cast[float32](((255 * color.a).int shl 24) or ((255 * color.b).int shl 16) or ((255 * color.g).int shl 8) or ((255 * color.r).int))
@@ -50,7 +53,7 @@ type Blending* = object
 
 const blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
 const blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
-const blendDisabled* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
+const blendDisabled* = Blending(src: GlZero, dst: GlZero)
 
 #activate a blending function
 proc use*(blend: Blending) = 
@@ -123,7 +126,7 @@ proc `wrapV=`*(texture: Texture, wrap: Glenum) =
     glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
 
 #loads texture data; the texture must be bound for this to work.
-proc load(texture: Texture, width: int, height: int, pixels: pointer) =
+proc load*(texture: Texture, width: int, height: int, pixels: pointer) =
     #bind texture
     texture.use()
     glPixelStorei(GlUnpackAlignment, 1)
@@ -132,8 +135,8 @@ proc load(texture: Texture, width: int, height: int, pixels: pointer) =
     texture.height = height
 
 #creates a base texture with no data uploaded
-proc newTexture(): Texture = 
-    result = Texture(handle: glGenTexture(), uwrap: GlClampToEdge, vwrap: GlClampToEdge, minfilter: GlNearest, magfilter: GlNearest, target: GlTexture2D)
+proc newTexture*(width, height: int = 1): Texture = 
+    result = Texture(handle: glGenTexture(), uwrap: GlClampToEdge, vwrap: GlClampToEdge, minfilter: GlNearest, magfilter: GlNearest, target: GlTexture2D, width: width, height: height)
     result.use()
 
     #set parameters
@@ -161,6 +164,16 @@ proc loadTextureStatic*(path: static[string]): Texture =
 type Patch* = object
     texture*: Texture
     u*, v*, u2*, v2*: float32
+
+#creates a patch based on pixel coordinates of a texture
+proc newPatch*(texture: Texture, x, y, width, height: int): Patch = 
+    Patch(texture: texture, u: x / texture.width, v: y / texture.height, u2: (x + width) / texture.width, v2: (y + height) / texture.height)
+
+#properties that calculate size of a patch in pixels
+proc x*(patch: Patch): int = (patch.u * patch.texture.width.float32).int
+proc y*(patch: Patch): int = (patch.v * patch.texture.height.float32).int
+proc width*(patch: Patch): int = ((patch.u2 - patch.u) * patch.texture.width.float32).int
+proc height*(patch: Patch): int = ((patch.v2 - patch.v) * patch.texture.height.float32).int
 
 converter toPatch*(texture: Texture): Patch {.inline.} = Patch(texture: texture, u: 0.0, v: 0.0, u2: 1.0, v2: 1.0)
 

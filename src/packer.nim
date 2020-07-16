@@ -1,14 +1,16 @@
 # Simple texture packer algorithm.
 # Taken from https://github.com/liquid600pgm/rapid/issues/17#issuecomment-593066196
 
+import os, tables, graphics, flippy, vmath
+
 type
   Node = object
     x, y, w: int16
-  Packer = ref object
-    w, h: int32
+  Packer* = ref object
+    w, h: int
     nodes: seq[Node]
 
-proc newPacker*(width, height: int32): Packer =
+proc newPacker*(width, height: int): Packer =
   result = Packer(w: width, h: height)
   result.nodes.add Node(w: width.int16)
 
@@ -97,3 +99,37 @@ proc pack*(atlas: Packer, width, height: int, padding = 1): tuple[x, y: int] =
   result = packInternal(atlas, width + padding*2, height + padding*2)
   result.x += padding
   result.y += padding
+
+type TexturePacker* = ref object
+  texture: Texture
+  packer: Packer
+  image*: Image
+
+# Creates a new texture packer limited by the specified width/height
+proc newTexturePacker*(width, height: int): TexturePacker =
+  TexturePacker(
+    packer: newPacker(width, height), 
+    texture: newTexture(width, height),
+    image: newImage(width, height, 4)
+    )
+
+proc pack*(packer: TexturePacker, name: string, image: Image): Patch =
+  let (x, y) = packer.packer.pack(image.width, image.height)
+
+  packer.image.blit(image, vmath.vec2(x.float32, y.float32))
+  return newPatch(packer.texture, x, y, image.width, image.height)
+
+# Updates the texture of a texture packer. Call this when you're done packing.
+proc update*(packer: TexturePacker) =
+  packer.texture.load(packer.image.width, packer.image.height, addr packer.image.data[0])
+
+type Atlas* = ref object
+  regions: Table[string, Patch]
+
+proc newAtlas*(): Atlas = Atlas(regions: initTable[string, Patch]())
+
+# accesses a region from an atlas
+proc `[]`*(atlas: Atlas, name: string): Patch = atlas.regions.getOrDefault(name, atlas.regions["error"])
+
+#TODO
+proc packDirectory(directory: static[string]) = discard

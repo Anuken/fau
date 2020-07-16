@@ -1,18 +1,39 @@
-import typography, streams, flippy
+import typography, streams, flippy, packer, graphics, tables, batch, unicode
 
-proc loadFont*(path: static[string]) =
-    const data = staticRead(path)
-    let str = newStringStream(data)
+type Gfont* = ref object
+  font: Font
+  patches: Table[string, Patch]
+  offsets: Table[string, Vec2]
 
-    let font = readFontTtf(str)
+proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128): Gfont =
+  const data = staticRead(path)
+  let str = newStringStream(data)
 
-    font.size = 16
+  let font = readFontTtf(str)
+  font.size = size
 
-    let image = font.getGlyphImage("A")
-    
-    echo font.name
-    echo font.glyphs["A"].path
-    echo $image.width & " x " & $image.height
-    echo image.data
+  result = Gfont(font: font, patches: initTable[string, Patch]())
 
-    image.save("itisA.png")
+  let packer = newTexturePacker(textureSize, textureSize)
+
+  for ch in 0x0020'u16..0x00FF'u16:
+    let code = $char(ch)
+    if not font.glyphs.hasKey(code): continue
+
+    let offset = font.getGlyphImageOffset(font.glyphs[code])
+    let image = font.getGlyphImage(code)
+    let patch = packer.pack(code, image)
+    result.patches[code] = patch
+    result.offsets[code] = vec2(offset.x, offset.y)
+
+  packer.update()
+  packer.image.save("packed.png")
+
+proc draw*(font: Gfont, batch: Batch, pos: Vec2, text: string, color: Color = rgba(1, 1, 1, 1), alignH: HAlignMode = Left, alignV: VAlignMode = Top) =
+  let layout = font.font.typeset(text, hAlign = alignH, vAlign = alignV)
+  batch.color = color
+
+  for ch in layout:
+    if font.patches.hasKey(ch.character):
+      let offset = font.offsets[ch.character]
+      batch.draw(font.patches[ch.character], ch.rect.x + pos.x + offset.x, ch.rect.y + pos.y - ch.rect.h - offset.y, ch.rect.w, ch.rect.h)

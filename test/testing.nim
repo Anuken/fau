@@ -9,6 +9,7 @@ registerComponents(defaultComponentOptions):
     Render = object
 
 const hsize = 70.0
+const scl = 4.0
 
 var texture: Texture
 var cam: Cam
@@ -18,6 +19,7 @@ var buffer: Framebuffer
 var screenm: Mesh
 var screensp: Shader
 var sounded = false
+var ffont: Gfont
 
 makeSystem("bounce", [Pos, Bouncer]):
   all: 
@@ -35,9 +37,8 @@ makeSystem("render", [Pos, Render]):
     draw = newBatch()
     buffer = newFramebuffer()
     texture = loadTextureStatic("/home/anuke/Projects/fuse/test/test.png")
+    ffont = loadFont("/home/anuke/Documents/font.ttf", textureSize = 128)
     patch = texture
-
-    loadFont("/home/anuke/Projects/fuse/test/font.ttf")
 
     screensp = newShader(
       """
@@ -58,13 +59,14 @@ makeSystem("render", [Pos, Render]):
       varying vec2 v_texc;
 
       void main(){
-        vec2 coords = v_texc + vec2(sin(v_texc.y * 50.0) / 60.0, sin(v_texc.x * 50.0) / 60.0);
-        gl_FragColor = texture2D(u_texture, coords) + vec4(v_texc, 1.0, 1.0);
+        //vec2 coords = v_texc + vec2(sin(v_texc.y * 50.0) / 60.0, sin(v_texc.x * 50.0) / 60.0);
+        //gl_FragColor = texture2D(u_texture, coords) + vec4(v_texc, 1.0, 1.0);
+        gl_FragColor = texture2D(u_texture, v_texc);
       }
       """
     )
 
-    #let music = loadMusicStatic("/home/anuke/Projects/fuse/test/music.ogg")
+    #let music = loadMusicStatic("/home/anuke/Music/music.ogg")
     #music.filterEcho(0.4, 0.8, 0.5)
     #music.play(pitch = 0.7)
 
@@ -81,15 +83,16 @@ makeSystem("render", [Pos, Render]):
     buffer.resize(screenW.int, screenH.int)
     buffer.start(rgba(0, 0, 0, 1))
     
-    cam.resize(screenW, screenH)
+    cam.resize(screenW / scl, screenH / scl)
     cam.update()
 
     draw.mat = cam.mat
     
-  all: 
-    draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
+  all: discard
+    #draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
   
   finish:
+    ffont.draw(draw, vec2(0, 0), "rather strange font rendering")
     
     draw.flush()
     buffer.stop()

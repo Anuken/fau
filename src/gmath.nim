@@ -125,7 +125,7 @@ proc det*(self: Mat): float32 =
 proc inv*(self: Mat): Mat =
     let invd = 1 / self.det()
 
-    if invd == 0.0: raise newException(ArithmeticError, "Can't invert a singular matrix")
+    if invd == 0.0: raise newException(Exception, "Can't invert a singular matrix")
 
     return newMat [
         self.val[M11] * self.val[M22] - self.val[M21] * self.val[M12] * invd,
