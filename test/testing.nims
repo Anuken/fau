@@ -1,3 +1,5 @@
+--path:"../src"
+
 if defined(emscripten):
   # This path will only run if -d:emscripten is passed to nim.
 

@@ -1,4 +1,4 @@
-import ../src/core, ../src/graphics, ../src/batch, ../src/common, ../src/audio, polymorph, math, random
+import core, graphics, batch, common, audio, polymorph, math, random, font
 
 registerComponents(defaultComponentOptions):
   type
@@ -37,6 +37,8 @@ makeSystem("render", [Pos, Render]):
     texture = loadTextureStatic("/home/anuke/Projects/fuse/test/test.png")
     patch = texture
 
+    loadFont("/home/anuke/Projects/fuse/test/font.ttf")
+
     screensp = newShader(
       """
       attribute vec4 a_position;
@@ -62,9 +64,9 @@ makeSystem("render", [Pos, Render]):
       """
     )
 
-    let music = loadMusicStatic("/home/anuke/Projects/fuse/test/music.ogg")
-    music.filterEcho(0.4, 0.8, 0.5)
-    music.play(pitch = 0.7)
+    #let music = loadMusicStatic("/home/anuke/Projects/fuse/test/music.ogg")
+    #music.filterEcho(0.4, 0.8, 0.5)
+    #music.play(pitch = 0.7)
 
     randomize()
 
