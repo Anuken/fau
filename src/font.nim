@@ -27,7 +27,6 @@ proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128):
     result.offsets[code] = vec2(offset.x, offset.y)
 
   packer.update()
-  packer.image.save("packed.png")
 
 proc draw*(font: Gfont, batch: Batch, pos: Vec2, text: string, color: Color = rgba(1, 1, 1, 1), alignH: HAlignMode = Left, alignV: VAlignMode = Top) =
   let layout = font.font.typeset(text, hAlign = alignH, vAlign = alignV)

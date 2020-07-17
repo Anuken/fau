@@ -59,16 +59,16 @@ makeSystem("render", [Pos, Render]):
       varying vec2 v_texc;
 
       void main(){
-        //vec2 coords = v_texc + vec2(sin(v_texc.y * 50.0) / 60.0, sin(v_texc.x * 50.0) / 60.0);
-        //gl_FragColor = texture2D(u_texture, coords) + vec4(v_texc, 1.0, 1.0);
-        gl_FragColor = texture2D(u_texture, v_texc);
+        vec2 coords = v_texc + vec2(sin(v_texc.y * 50.0) / 60.0, sin(v_texc.x * 50.0) / 60.0);
+        gl_FragColor = texture2D(u_texture, coords) + vec4(v_texc, 1.0, 1.0);
+        //gl_FragColor = texture2D(u_texture, v_texc);
       }
       """
     )
 
-    #let music = loadMusicStatic("/home/anuke/Music/music.ogg")
-    #music.filterEcho(0.4, 0.8, 0.5)
-    #music.play(pitch = 0.7)
+    let music = loadMusicStatic("/home/anuke/Music/music.ogg")
+    music.filterEcho(0.4, 0.8, 0.5)
+    music.play(pitch = 0.7)
 
     randomize()
 
@@ -88,8 +88,8 @@ makeSystem("render", [Pos, Render]):
 
     draw.mat = cam.mat
     
-  all: discard
-    #draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
+  all:
+    draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
   
   finish:
     ffont.draw(draw, vec2(0, 0), "rather strange font rendering")
