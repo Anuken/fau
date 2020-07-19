@@ -1,10 +1,7 @@
 import gltypes
 export gltypes
 
-when defined(JS):
-    import web/webgl as wrap
-else:
-    import sdl/sdlgl as wrap
+import backend/glad as wrap
 
 #Thrown when something goes wrong with openGL
 type
@@ -12,25 +9,25 @@ type
 
 #checks openGL calls for errors when not in release mode
 template glCheck(body: untyped) =
-    when not defined(release):
-        body
-        
-        #check for errors
-        var error = wrap.glGetError()
+  when not defined(release):
+    body
+    
+    #check for errors
+    var error = wrap.glGetError()
 
-        if error != GlNoError:
-            let message = case error:
-                of GL_INVALID_VALUE: "Invalid value"
-                of GL_INVALID_OPERATION: "Invalid operation"
-                of GL_INVALID_FRAMEBUFFER_OPERATION: "Invalid framebuffer operration"
-                of GL_INVALID_ENUM: "Invalid enum"
-                of GL_OUT_OF_MEMORY: "Out of memory"
-                else: "Code " & $error
+    if error != GlNoError:
+      let message = case error:
+        of GL_INVALID_VALUE: "Invalid value"
+        of GL_INVALID_OPERATION: "Invalid operation"
+        of GL_INVALID_FRAMEBUFFER_OPERATION: "Invalid framebuffer operration"
+        of GL_INVALID_ENUM: "Invalid enum"
+        of GL_OUT_OF_MEMORY: "Out of memory"
+        else: "Code " & $error
 
-            raise newException(GlError, message)
+      raise newException(GlError, message)
 
-    else:
-        body
+  else:
+    body
 
 #openGL wrapper functions. these are optimized
 
@@ -52,50 +49,50 @@ var lastDfactor: GLenum = GlZero
 for x in lastBoundTextures.mitems: x = -1
 
 proc glActiveTexture*(texture: GLenum) {.inline.} = 
-    #don't active texture0 twice
-    if lastActiveTextureUnit == texture: return
+  #don't active texture0 twice
+  if lastActiveTextureUnit == texture: return
 
-    glCheck(): wrap.glActiveTexture(texture)
+  glCheck(): wrap.glActiveTexture(texture)
 
-    lastActiveTextureUnit = texture
+  lastActiveTextureUnit = texture
 
 proc glAttachShader*(program: GLuint, shader: GLuint) {.inline.} = glCheck(): wrap.glAttachShader(program, shader)
 proc glBindAttribLocation*(program: GLuint, index: GLuint, name: cstring) {.inline.} = glCheck(): wrap.glBindAttribLocation(program, index, name)
 
 proc glBindBuffer*(target: GLenum, buffer: GLuint) {.inline.} = 
-    #don't bind the same array buffer twice
-    #TODO make sure this works
-    if target == GlArrayBuffer and buffer.int == lastArrayBuffer: return
+  #don't bind the same array buffer twice
+  #TODO make sure this works
+  if target == GlArrayBuffer and buffer.int == lastArrayBuffer: return
 
-    glCheck(): wrap.glBindBuffer(target, buffer)
+  glCheck(): wrap.glBindBuffer(target, buffer)
 
-    if target == GLArrayBuffer: lastArrayBuffer = buffer.int
+  if target == GLArrayBuffer: lastArrayBuffer = buffer.int
 
 proc glBindFramebuffer*(target: GLenum, framebuffer: GLuint) {.inline.} = glCheck(): wrap.glBindFramebuffer(target, framebuffer)
 proc glBindRenderbuffer*(target: GLenum, renderbuffer: GLuint) {.inline.} = glCheck(): wrap.glBindRenderbuffer(target, renderbuffer)
 
 proc glBindTexture*(target: GLenum, texture: GLuint) {.inline.} = 
-    if target == GlTexture2D:
-        #get current bound texture unit
-        let index = lastActiveTextureUnit.int - GLTexture0.int
-        if index >= 0 and index < lastBoundTextures.len:
-            #if it was already bound, return
-            if lastBoundTextures[index] == texture.int: return
-            lastBoundTextures[index] = texture.int
+  if target == GlTexture2D:
+    #get current bound texture unit
+    let index = lastActiveTextureUnit.int - GLTexture0.int
+    if index >= 0 and index < lastBoundTextures.len:
+      #if it was already bound, return
+      if lastBoundTextures[index] == texture.int: return
+      lastBoundTextures[index] = texture.int
 
-    glCheck(): wrap.glBindTexture(target, texture)
+  glCheck(): wrap.glBindTexture(target, texture)
 
 proc glBlendColor*(red: GLfloat, green: GLfloat, blue: GLfloat, alpha: GLfloat) {.inline.} = glCheck(): wrap.glBlendColor(red, green, blue, alpha)
 proc glBlendEquation*(mode: GLenum) {.inline.} = glCheck(): wrap.glBlendEquation(mode)
 proc glBlendEquationSeparate*(modeRGB: GLenum, modeAlpha: GLenum) {.inline.} = glCheck(): wrap.glBlendEquationSeparate(modeRGB, modeAlpha)
 
 proc glBlendFunc*(sfactor: GLenum, dfactor: GLenum) {.inline.} = 
-    if lastSfactor == sfactor and lastDfactor == dfactor: return
+  if lastSfactor == sfactor and lastDfactor == dfactor: return
 
-    glCheck(): wrap.glBlendFunc(sfactor, dfactor)
+  glCheck(): wrap.glBlendFunc(sfactor, dfactor)
 
-    lastSfactor = sfactor
-    lastDfactor = dfactor
+  lastSfactor = sfactor
+  lastDfactor = dfactor
 
 proc glBlendFuncSeparate*(sfactorRGB: GLenum, dfactorRGB: GLenum, sfactorAlpha: GLenum, dfactorAlpha: GLenum) {.inline.} = glCheck(): wrap.glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha)
 proc glBufferData*(target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenum) {.inline.} = glCheck(): wrap.glBufferData(target, size, data, usage)
@@ -116,27 +113,27 @@ proc glCreateShader*(`type`: GLenum): GLuint {.inline.} = glCheck(): result = wr
 proc glCullFace*(mode: GLenum) {.inline.} = glCheck(): wrap.glCullFace(mode)
 
 proc glDeleteBuffer*(buffer: GLuint) {.inline.} = 
-    lastArrayBuffer = -1
+  lastArrayBuffer = -1
 
-    glCheck(): wrap.glDeleteBuffer(buffer)
+  glCheck(): wrap.glDeleteBuffer(buffer)
 
 proc glDeleteFramebuffer*(framebuffer: GLuint) {.inline.} = glCheck(): wrap.glDeleteFramebuffer(framebuffer)
 
 proc glDeleteProgram*(program: GLuint) {.inline.} = 
-    #reset last used program when deleted.
-    if program == lastProgram.GLuint: lastProgram = -1
+  #reset last used program when deleted.
+  if program == lastProgram.GLuint: lastProgram = -1
 
-    glCheck(): wrap.glDeleteProgram(program)
+  glCheck(): wrap.glDeleteProgram(program)
 
 proc glDeleteRenderbuffer*(renderbuffer: GLuint) {.inline.} = glCheck(): wrap.glDeleteRenderbuffer(renderbuffer)
 proc glDeleteShader*(shader: GLuint) {.inline.} = glCheck(): wrap.glDeleteShader(shader)
 
 proc glDeleteTexture*(texture: GLuint) {.inline.} = 
-    #clear bound textures, their IDs may be reused after deletion
-    for tex in lastBoundTextures.mitems: 
-        if tex == texture.int: tex = -1
+  #clear bound textures, their IDs may be reused after deletion
+  for tex in lastBoundTextures.mitems: 
+    if tex == texture.int: tex = -1
 
-    glCheck(): wrap.glDeleteTexture(texture)
+  glCheck(): wrap.glDeleteTexture(texture)
 
 proc glDepthFunc*(`func`: GLenum) {.inline.} = glCheck(): wrap.glDepthFunc(`func`)
 proc glDepthMask*(flag: GLboolean) {.inline.} = glCheck(): wrap.glDepthMask(flag)
@@ -144,11 +141,11 @@ proc glDepthRangef*(n: GLfloat, f: GLfloat) {.inline.} = glCheck(): wrap.glDepth
 proc glDetachShader*(program: GLuint, shader: GLuint) {.inline.} = glCheck(): wrap.glDetachShader(program, shader)
 
 proc glDisable*(cap: GLenum) {.inline.} = 
-    #skip disabling twice
-    if not lastEnabled[cap.int]: return
-    
-    glCheck(): wrap.glDisable(cap)
-    lastEnabled[cap.int] = false
+  #skip disabling twice
+  if not lastEnabled[cap.int]: return
+  
+  glCheck(): wrap.glDisable(cap)
+  lastEnabled[cap.int] = false
 
 
 proc glDisableVertexAttribArray*(index: GLuint) {.inline.} = glCheck(): wrap.glDisableVertexAttribArray(index)
@@ -156,11 +153,11 @@ proc glDrawArrays*(mode: GLenum, first: GLint, count: GLsizei) {.inline.} = glCh
 proc glDrawElements*(mode: GLenum, count: GLsizei, `type`: GLenum, indices: pointer) {.inline.} = glCheck(): wrap.glDrawElements(mode, count, `type`, indices)
 
 proc glEnable*(cap: GLenum) {.inline.} = 
-    #skip enabling twice
-    if lastEnabled[cap.int]: return
-    
-    glCheck(): wrap.glEnable(cap)
-    lastEnabled[cap.int] = true
+  #skip enabling twice
+  if lastEnabled[cap.int]: return
+  
+  glCheck(): wrap.glEnable(cap)
+  lastEnabled[cap.int] = true
 
 proc glEnableVertexAttribArray*(index: GLuint) {.inline.} = glCheck(): wrap.glEnableVertexAttribArray(index)
 proc glFinish*() {.inline.} = glCheck(): wrap.glFinish()
@@ -236,11 +233,11 @@ proc glUniformMatrix3fv*(location: GLint, count: GLsizei, transpose: GLboolean, 
 proc glUniformMatrix4fv*(location: GLint, count: GLsizei, transpose: GLboolean, value: openArray[GLfloat]) {.inline.} = glCheck(): wrap.glUniformMatrix4fv(location, count, transpose, value)
 
 proc glUseProgram*(program: GLuint) {.inline.} = 
-    #don't use programs twice
-    if lastProgram == program.int: return
+  #don't use programs twice
+  if lastProgram == program.int: return
 
-    glCheck(): wrap.glUseProgram(program)
-    lastProgram = program.int
+  glCheck(): wrap.glUseProgram(program)
+  lastProgram = program.int
 
 proc glValidateProgram*(program: GLuint) {.inline.} = glCheck(): wrap.glValidateProgram(program)
 proc glVertexAttrib1f*(index: GLuint, x: GLfloat) {.inline.} = glCheck(): wrap.glVertexAttrib1f(index, x)
