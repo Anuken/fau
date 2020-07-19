@@ -1,4 +1,7 @@
-import backend/glfwcore, graphics, times
+include backend/glfwcore
+
+import common, batch, times
+export common
 
 var lastFrameTime: int64 = -1
 var frameCounterStart: int64
@@ -21,10 +24,31 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     
     inc frames
 
+    (fuse.widthf, fuse.heightf) = (fuse.width.float32, fuse.height.float32)
+
     loopProc()
+
+    #flush any pending draw operations
+    drawFlush()
 
     inc fuse.frameId
   ), 
   (proc() =
+    #add default framebuffer to state
+    fuse.bufferStack.add newDefaultFramebuffer()
+    
+    #create default batch
+    let batch = newBatch()
+    batch.use()
+    
+    #use standard blending
+    fuse.batchBlending = blendNormal
+
+    #set matrix to ortho
+    fuse.batchMat = ortho(0, 0, fuse.width.float32, fuse.height.float32)
+
+    #create default camera
+    fuse.cam = newCam(fuse.width.float32, fuse.height.float32)
+    
     initProc()
   ), windowWidth = windowWidth, windowHeight = windowHeight, windowTitle = windowTitle, maximize = maximize, clearColor = clearColor)

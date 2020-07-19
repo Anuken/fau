@@ -1,4 +1,4 @@
-import core, graphics, batch, common, audio, polymorph, math, random, font
+import core, audio, polymorph, math, random, font
 
 registerComponents(defaultComponentOptions):
   type
@@ -12,29 +12,24 @@ const hsize = 70.0
 const scl = 4.0
 
 var texture: Texture
-var cam: Cam
-var draw: Batch
 var patch: Patch
 var buffer: Framebuffer
 var screenm: Mesh
 var screensp: Shader
-var sounded = false
 var ffont: Gfont
 
 makeSystem("bounce", [Pos, Bouncer]):
   all: 
     item.pos.x += item.bouncer.vel.x
     item.pos.y += item.bouncer.vel.y
-    if item.pos.x > screenW/2.0 - hsize/2.0 or item.pos.x < -screenW/2.0 + hsize/2.0: item.bouncer.vel *= vec2(-1.0, 1.0)
-    if item.pos.y > screenH/2.0 - hsize/2.0 or item.pos.y < -screenH/2.0 + hsize/2.0: item.bouncer.vel *= vec2(1.0, -1.0)
+    if item.pos.x > fuse.widthf/2.0 - hsize/2.0 or item.pos.x < -fuse.widthf/2.0 + hsize/2.0: item.bouncer.vel *= vec2(-1.0, 1.0)
+    if item.pos.y > fuse.heightf/2.0 - hsize/2.0 or item.pos.y < -fuse.heightf/2.0 + hsize/2.0: item.bouncer.vel *= vec2(1.0, -1.0)
 
 makeSystem("render", [Pos, Render]):
 
   init:
 
     screenm = newScreenMesh()
-    cam = newCam()
-    draw = newBatch()
     buffer = newFramebuffer()
     texture = loadTextureStatic("/home/anuke/Projects/fuse/test/test.png")
     ffont = loadFont("/home/anuke/Documents/font.ttf", textureSize = 128)
@@ -80,21 +75,19 @@ makeSystem("render", [Pos, Render]):
   start:
     if keyEscape.tapped: quitApp()
 
-    buffer.resize(screenW.int, screenH.int)
+    buffer.resize(fuse.width, fuse.height)
     buffer.start(rgba(0, 0, 0, 1))
     
-    cam.resize(screenW / scl, screenH / scl)
-    cam.update()
-
-    draw.mat = cam.mat
+    fuse.cam.resize(fuse.widthf / scl, fuse.heightf / scl)
+    fuse.cam.use()
     
   all:
-    draw.draw(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
+    drawRect(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
   
   finish:
-    ffont.draw(draw, vec2(0, 0), "rather strange font rendering")
+    ffont.draw(vec2(0, 0), "perfectly normal font rendering")
     
-    draw.flush()
+    drawFlush()
     buffer.stop()
     
     buffer.texture.use()
@@ -102,4 +95,4 @@ makeSystem("render", [Pos, Render]):
 
 makeEcs()
 commitSystems("run")
-initCore(run, windowTitle = "cats")
+initFuse(run, windowTitle = "cats")

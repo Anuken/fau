@@ -1,5 +1,4 @@
-import staticglfw, glad, ../graphics, ../common
-
+import staticglfw, glad, ../common
 
 var running: bool = true
 var window: Window

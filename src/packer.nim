@@ -1,7 +1,7 @@
 # Simple texture packer algorithm.
 # Taken from https://github.com/liquid600pgm/rapid/issues/17#issuecomment-593066196
 
-import os, tables, graphics, flippy, vmath
+import tables, common, flippy, vmath
 
 type
   Node = object

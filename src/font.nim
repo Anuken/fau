@@ -1,4 +1,4 @@
-import typography, streams, flippy, packer, graphics, tables, batch, unicode
+import typography, streams, flippy, packer, common, tables, unicode
 
 type Gfont* = ref object
   font: Font
@@ -28,11 +28,11 @@ proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128):
 
   packer.update()
 
-proc draw*(font: Gfont, batch: Batch, pos: Vec2, text: string, color: Color = rgba(1, 1, 1, 1), alignH: HAlignMode = Left, alignV: VAlignMode = Top) =
+proc draw*(font: Gfont, pos: Vec2, text: string, color: Color = rgba(1, 1, 1, 1), alignH: HAlignMode = Left, alignV: VAlignMode = Top) =
   let layout = font.font.typeset(text, hAlign = alignH, vAlign = alignV)
-  batch.color = color
+  let col = color.toInt()
 
   for ch in layout:
     if font.patches.hasKey(ch.character):
       let offset = font.offsets[ch.character]
-      batch.draw(font.patches[ch.character], ch.rect.x + pos.x + offset.x, ch.rect.y + pos.y - ch.rect.h - offset.y, ch.rect.w, ch.rect.h)
+      drawRect(font.patches[ch.character], ch.rect.x + pos.x + offset.x, ch.rect.y + pos.y - ch.rect.h - offset.y, ch.rect.w, ch.rect.h, color = col)

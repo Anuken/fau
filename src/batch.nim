@@ -1,4 +1,4 @@
-import graphics, math
+import common, math
 
 const vertexSize = 6
 const spriteSize = 4 * vertexSize
@@ -6,28 +6,22 @@ const spriteSize = 4 * vertexSize
 type Batch* = ref object
   mesh: Mesh
   shader: Shader
-  blending: Blending
   lastTexture: Texture
-  mat: Mat
   index: int
   size: int
-  colorPack: float32
-  mixColorPack: float32
   
-proc newBatch*(size: int = 8191): Batch = 
+proc newBatch*(size: int = 4092): Batch = 
   result = Batch(
-    mesh: newMesh(@[attribPos, attribTexCoords, attribColor, attribMixColor]),
-    blending: blendNormal, 
+    mesh: newMesh(
+      @[attribPos, attribTexCoords, attribColor, attribMixColor],
+      vertices = newSeq[Glfloat](size * spriteSize),
+      indices = newSeq[Glushort](size * 6)
+    ),
     size: size * spriteSize
   )
 
-  result.mesh.vertices = newSeq[Glfloat](size * spriteSize)
-  result.mat = ortho(0.0, 0.0, screenW.float32, screenH.float32)
-  result.colorPack = rgba(1.0, 1.0, 1.0, 1.0).toFloat
-
   #set up default indices
   let len = size * 6
-  result.mesh.indices = newSeq[GLushort](len)
   var j = 0
   var i = 0
   
@@ -71,38 +65,29 @@ proc newBatch*(size: int = 8191): Batch =
   }
   """)
 
-#TODO these colors methods are bad style - no sense simply copying libGDX's color code.
-
-proc `color=`*(batch: Batch, color: Color) =
-  batch.colorPack = color.toFloat()
-  
-proc `mixColor=`*(batch: Batch, color: Color) =
-  batch.colorPack = color.toFloat()
-
 proc flush*(batch: Batch) =
   if batch.index == 0: return
 
   batch.lastTexture.use()
-  batch.blending.use()
+  fuse.batchBlending.use()
 
-  batch.shader.seti("u_texture", 0)
-  batch.shader.setmat4("u_proj", batch.mat)
+  #use global shader if there is one set
+  let shader = if fuse.batchShader.isNil: batch.shader else: fuse.batchShader
+
+  shader.seti("u_texture", 0)
+  shader.setmat4("u_proj", fuse.batchMat)
 
   batch.mesh.updateVertices()
   batch.mesh.render(batch.shader, batch.index div spriteSize * 6)
   
   batch.index = 0
 
-proc `mat=`*(batch: Batch, mat: Mat) = 
-  batch.flush()
-  batch.mat = mat
-
 proc prepare(batch: Batch, texture: Texture) =
   if batch.lastTexture != texture or batch.index >= batch.size:
     batch.flush()
     batch.lastTexture = texture
 
-proc draw*(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0) =
+proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt) =
   batch.prepare(region.texture)
 
   #bottom left and top right corner points relative to origin
@@ -131,8 +116,8 @@ proc draw*(batch: Batch, region: Patch, x: float32, y: float32, width: float32, 
   let u2 = region.u2
   let v2 = region.v
 
-  let color = batch.colorPack
-  let mixColor = batch.mixColorPack
+  let cc = cast[float32](color)
+  let mc = cast[float32](mixColor)
   let idx = batch.index
   
   #using pointers seems to be faster.
@@ -142,32 +127,33 @@ proc draw*(batch: Batch, region: Patch, x: float32, y: float32, width: float32, 
   verts[idx + 1] = y1
   verts[idx + 2] = u
   verts[idx + 3] = v
-  verts[idx + 4] = color
-  verts[idx + 5] = mixColor
+  verts[idx + 4] = cc
+  verts[idx + 5] = mc
 
   verts[idx + 6] = x2
   verts[idx + 7] = y2
   verts[idx + 8] = u
   verts[idx + 9] = v2
-  verts[idx + 10] = color
-  verts[idx + 11] = mixColor
+  verts[idx + 10] = cc
+  verts[idx + 11] = mc
 
   verts[idx + 12] = x3
   verts[idx + 13] = y3
   verts[idx + 14] = u2
   verts[idx + 15] = v2
-  verts[idx + 16] = color
-  verts[idx + 17] = mixColor
+  verts[idx + 16] = cc
+  verts[idx + 17] = mc
 
   verts[idx + 18] = x4
   verts[idx + 19] = y4
   verts[idx + 20] = u2
   verts[idx + 21] = v
-  verts[idx + 22] = color
-  verts[idx + 23] = mixColor
+  verts[idx + 22] = cc
+  verts[idx + 23] = mc
 
   batch.index += spriteSize
 
-#TODO ???
 proc use*(batch: Batch) =
-  state.batchFlush = proc() = batch.flush()
+  fuse.batchFlush = proc() = batch.flush()
+  fuse.batchDraw = proc(region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt) = 
+    batch.draw(region, x, y, width, height, originX, originY, rotation)

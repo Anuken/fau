@@ -1,8 +1,5 @@
-#proxy file for multiple audio backends
-
 import audio/soloud_gen
 
-#TODO handle web focus properly
 var so = SoloudCreate()
 
 discard so.SoloudInit()
