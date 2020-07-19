@@ -102,7 +102,6 @@ proc prepare(batch: Batch, texture: Texture) =
         batch.flush()
         batch.lastTexture = texture
 
-
 proc draw*(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0) =
     batch.prepare(region.texture)
 
@@ -168,4 +167,3 @@ proc draw*(batch: Batch, region: Patch, x: float32, y: float32, width: float32, 
     verts[idx + 23] = mixColor
 
     batch.index += spriteSize
-
