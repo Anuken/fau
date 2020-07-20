@@ -7,57 +7,62 @@ import math
 type Vec2* = object
   x*, y*: float32
 
-proc vec2*(x, y: float32): Vec2 {.inline.} = Vec2(x: x, y: y)
+func vec2*(x, y: float32): Vec2 {.inline.} = Vec2(x: x, y: y)
 
 #vector-vector operations
 
-proc `-`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x - other.x, vec.y - other.y)
-proc `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
-proc `+`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x + other.x, vec.y + other.y)
-proc `/`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x / other.x, vec.y / other.y)
-proc `*`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x * other.x, vec.y * other.y)
+func `-`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x - other.x, vec.y - other.y)
+func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
+func `+`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x + other.x, vec.y + other.y)
+func `/`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x / other.x, vec.y / other.y)
+func `*`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x * other.x, vec.y * other.y)
 
-proc `-=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x - other.x, vec.y - other.y)
-proc `+=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x + other.x, vec.y + other.y)
-proc `/=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x / other.x, vec.y / other.y)
-proc `*=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x * other.x, vec.y * other.y)
+func `-=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x - other.x, vec.y - other.y)
+func `-=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x - other, vec.y - other)
+func `+=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x + other.x, vec.y + other.y)
+func `+=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x + other, vec.y + other)
+func `/=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x / other.x, vec.y / other.y)
+func `/=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x / other, vec.y / other)
+func `*=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x * other.x, vec.y * other.y)
+func `*=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x * other, vec.y * other)
 
 #vector-number operations
 
-proc `-`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x - other, vec.y - other)
-proc `+`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x + other, vec.y + other)
-proc `*`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x * other, vec.y * other)
-proc `/`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x / other, vec.y / other)
+func `-`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x - other, vec.y - other)
+func `+`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x + other, vec.y + other)
+func `*`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x * other, vec.y * other)
+func `/`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x / other, vec.y / other)
 
 #utility methods
 
 #all angles are in radians
-proc angle*(vec: Vec2): float32 {.inline.} = arctan2(vec.y, vec.x)
-proc angleTo*(vec: Vec2, other: Vec2): float32 {.inline.} = arctan2(other.y - vec.y, other.x - vec.x)
+func angle*(vec: Vec2): float32 {.inline.} = arctan2(vec.y, vec.x)
+func angle*(vec: Vec2, other: Vec2): float32 {.inline.} = arctan2(other.y - vec.y, other.x - vec.x)
 
-proc rotate*(vec: Vec2, rads: float32): Vec2 = 
+func rotate*(vec: Vec2, rads: float32): Vec2 = 
   let co = cos(rads)
   let si = sin(rads)
   return vec2(vec.x * co - vec.y * si, vec.x * si + vec.y * co)
 
-proc len*(vec: Vec2): float32 {.inline.} = sqrt(vec.x * vec.x + vec.y * vec.y)
-proc len2*(vec: Vec2): float32 {.inline.} = vec.x * vec.x + vec.y * vec.y
+func len*(vec: Vec2): float32 {.inline.} = sqrt(vec.x * vec.x + vec.y * vec.y)
+func len2*(vec: Vec2): float32 {.inline.} = vec.x * vec.x + vec.y * vec.y
+func `len=`*(vec: var Vec2, b: float32) = vec *= b / vec.len
 
-proc nor*(vec: Vec2): Vec2 {.inline.} = vec / vec.len
+func nor*(vec: Vec2): Vec2 {.inline.} = vec / vec.len
 
-proc limit*(vec: Vec2, limit: float32): Vec2 {.inline.} = 
+func lim*(vec: Vec2, limit: float32): Vec2 = 
   let l2 = vec.len2
   let limit2 = limit*limit
   return if l2 > limit2: vec / sqrt(limit2 / l2) else: vec
 
-proc dst2*(vec: Vec2, other: Vec2): float32 {.inline.} = 
+func dst2*(vec: Vec2, other: Vec2): float32 {.inline.} = 
   let dx = vec.x - other.x
   let dy = vec.y - other.y
   return dx * dx + dy * dy
 
-proc dst*(vec: Vec2, other: Vec2): float32 {.inline.} = sqrt(vec.dst2(other))
+func dst*(vec: Vec2, other: Vec2): float32 {.inline.} = sqrt(vec.dst2(other))
 
-proc within*(vec: Vec2, other: Vec2, distance: float32): bool {.inline.} = vec.dst2(other) <= distance*distance
+func within*(vec: Vec2, other: Vec2, distance: float32): bool {.inline.} = vec.dst2(other) <= distance*distance
 
 proc `$`*(vec: Vec2): string = $vec.x & ", " & $vec.y
 

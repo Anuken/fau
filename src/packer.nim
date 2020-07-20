@@ -1,18 +1,22 @@
-# Simple texture packer algorithm.
+# Simple texture packer algorithm. Generic; does not come with any specific requirements or image handling
 # Taken from https://github.com/liquid600pgm/rapid/issues/17#issuecomment-593066196
-
-import tables, common, flippy, vmath
 
 type
   Node = object
     x, y, w: int16
   Packer* = ref object
-    w, h: int
+    w*, h*: int
     nodes: seq[Node]
 
+#Resize a packer to new, larger dimensions.
+proc resize*(packer: Packer, width, height: int) =
+  packer.nodes.add Node(x: int16 packer.w, y: 0, w: int16 width - packer.w)
+  packer.w = width
+  packer.h = height
+
 proc newPacker*(width, height: int): Packer =
-  result = Packer(w: width, h: height)
-  result.nodes.add Node(w: width.int16)
+  result = Packer()
+  result.resize(width, height)
 
 proc rectFits(atlas: Packer, idx: int32, w,h: int16): int16 =
   if atlas.nodes[idx].x + w > atlas.w: return -1
@@ -30,7 +34,7 @@ proc rectFits(atlas: Packer, idx: int32, w,h: int16): int16 =
     inc(i)
   return y # recta fits
 
-proc addSkylineNode(atlas: Packer, idx: int32, x,y,w,h: int16) =
+proc addNode(atlas: Packer, idx: int32, x,y,w,h: int16) =
   atlas.nodes.insert(Node(x: x, y: y + h, w: w), idx)
   var i = idx+1 # New Iterator
   # delete skyline segments that fall under the shadow of the new segment
@@ -88,48 +92,15 @@ proc packInternal(atlas: Packer, width, height: int): tuple[x, y: int] =
           bestY = y
       inc(i) # next node
   if bestIDX != -1: # Can be packed
-    addSkylineNode(atlas, bestIDX, bestX, bestY, w, h)
+    addNode(atlas, bestIDX, bestX, bestY, w, h)
     # Return Packing Position
     result.x = bestX; result.y = bestY
-  else: result.x = -1; result.y = -1 # not packed
+  else: result = (-1, -1) # not packed
 
 # Packs a rectangle at a position. Returns the position, or -1 if packing failed.
 # Applies a default padding of one pixel around the rectangle.
 proc pack*(atlas: Packer, width, height: int, padding = 1): tuple[x, y: int] =
   result = packInternal(atlas, width + padding*2, height + padding*2)
-  result.x += padding
-  result.y += padding
-
-type TexturePacker* = ref object
-  texture: Texture
-  packer: Packer
-  image*: Image
-
-# Creates a new texture packer limited by the specified width/height
-proc newTexturePacker*(width, height: int): TexturePacker =
-  TexturePacker(
-    packer: newPacker(width, height), 
-    texture: newTexture(width, height),
-    image: newImage(width, height, 4)
-    )
-
-proc pack*(packer: TexturePacker, name: string, image: Image): Patch =
-  let (x, y) = packer.packer.pack(image.width, image.height)
-
-  packer.image.blit(image, vmath.vec2(x.float32, y.float32))
-  return newPatch(packer.texture, x, y, image.width, image.height)
-
-# Updates the texture of a texture packer. Call this when you're done packing.
-proc update*(packer: TexturePacker) =
-  packer.texture.load(packer.image.width, packer.image.height, addr packer.image.data[0])
-
-type Atlas* = ref object
-  regions: Table[string, Patch]
-
-proc newAtlas*(): Atlas = Atlas(regions: initTable[string, Patch]())
-
-# accesses a region from an atlas
-proc `[]`*(atlas: Atlas, name: string): Patch = atlas.regions.getOrDefault(name, atlas.regions["error"])
-
-#TODO
-proc packDirectory(directory: static[string]) = discard
+  if result.x != -1:
+    result.x += padding
+    result.y += padding

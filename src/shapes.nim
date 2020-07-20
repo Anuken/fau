@@ -26,6 +26,63 @@ proc fillQuad*(x1, y1, c1, x2, y2, c2, x3, y3, c3, x4, y4, c4: float32) =
 proc fillQuad*(x1, y1, x2, y2, x3, y3, x4, y4, color: float32) = 
   fillQuad(x1, y1, color, x2, y2, color, x3, y3, color, x4, y4, color)
 
+proc fillTri*(x1, y1, x2, y2, x3, y3, color: float32) = 
+  fillQuad(x1, y1, color, x2, y2, color, x3, y3, color, x3, y3, color)
+
+proc fillPoly*(x, y: float32, sides: int, radius: float32, rotation = 0'f32, color: float32 = colorWhiteF) =
+  let space = PI*2 / sides.float32
+
+  for i in countup(0, sides-3, 3):
+    fillQuad(
+      x + cos(space * i.float32 + rotation) * radius,
+      y + sin(space * i.float32 + rotation) * radius,
+      x + cos(space * (i + 1).float32 + rotation) * radius,
+      y + sin(space * (i + 1).float32 + rotation) * radius,
+      x + cos(space * (i + 2).float32 + rotation) * radius,
+      y + sin(space * (i + 2).float32 + rotation) * radius,
+      x + cos(space * (i + 3).float32 + rotation) * radius,
+      y + sin(space * (i + 3).float32 + rotation) * radius,
+      color
+    )
+  
+  let md = sides mod 3
+
+  if md != 0:
+    for i in (sides - md - 1)..<sides:
+      fillTri(
+        x, y,
+        x + cos(space * i.float32 + rotation) * radius,
+        y + sin(space * i.float32 + rotation) * radius,
+        x + cos(space * (i + 1).float32 + rotation) * radius,
+        y + sin(space * (i + 1).float32 + rotation) * radius,
+        color
+      )
+
+proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0'f32, color: float32 = colorWhiteF) =
+  fillPoly(pos.x, pos.y, sides, radius, rotation, color)
+
+proc fillLight*(x, y, radius: float32, sides = 20, centerColor = colorWhiteF, edgeColor = colorClearF) = 
+  let 
+    sides = ceil(sides.float32 / 2.0).int * 2
+    space = PI * 2.0 / sides.float32
+
+  for i in countup(0, sides - 1, 2):
+    fillQuad(
+      x, y, centerColor,
+      x + cos(space * i.float32) * radius,
+      y + sin(space * i.float32) * radius,
+      edgeColor,
+      x + cos(space * (i + 1).float32) * radius,
+      y + sin(space * (i + 1).float32) * radius,
+      edgeColor,
+      x + cos(space * (i + 2).float32) * radius,
+      y + sin(space * (i + 2).float32) * radius,
+      edgeColor
+    )
+
+proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhiteF, edgeColor = colorClearF) = 
+  fillLight(pos.x, pos.y, radius, sides, centerColor, edgeColor)
+
 proc line*(p1, p2: Vec2, stroke: float32 = 1.0, color: float32 = colorWhiteF, square = true) = 
   let hstroke = stroke / 2.0
   let diff = (p2 - p1).nor * hstroke
@@ -49,11 +106,10 @@ proc line*(p1, p2: Vec2, stroke: float32 = 1.0, color: float32 = colorWhiteF, sq
     color
   )
 
-proc line*(p1x, p1y, p2x, p2y, stroke: float32 = 1.0, color: float32 = colorWhiteF, square = true) {.inline.} = 
+proc line*(p1x, p1y, p2x, p2y, stroke: float32 = 1.0, color = colorWhiteF, square = true) {.inline.} = 
   line(vec2(p1x, p1y), vec2(p2x, p2y), stroke, color, square)
 
-
-proc poly*(x, y: float32, sides: int, radius: float32, angle = 0'f32, stroke = 1'f32, color: float32 = colorWhiteF) = 
+proc poly*(x, y: float32, sides: int, radius: float32, rotation = 0'f32, stroke = 1'f32, color: float32 = colorWhiteF) = 
   let 
     space = PI*2 / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)
@@ -62,7 +118,7 @@ proc poly*(x, y: float32, sides: int, radius: float32, angle = 0'f32, stroke = 1
   
   for i in 0..<sides:
     let 
-      a = space * i.float32 + angle
+      a = space * i.float32 + rotation
       cosf = cos(a)
       sinf = sin(a)
       cos2f = cos(a + space)
@@ -76,5 +132,5 @@ proc poly*(x, y: float32, sides: int, radius: float32, angle = 0'f32, stroke = 1
       color
     )
 
-proc poly*(pos: Vec2, sides: int, radius: float32, angle = 0'f32, stroke = 1'f32, color: float32 = colorWhiteF) = 
-  poly(pos.x, pos.y, sides, radius, angle, stroke, color)
+proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0'f32, stroke = 1'f32, color: float32 = colorWhiteF) = 
+  poly(pos.x, pos.y, sides, radius, rotation, stroke, color)

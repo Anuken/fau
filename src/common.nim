@@ -1,4 +1,6 @@
-import gl, strutils, gltypes, nimPNG, tables, fmath, streams
+import gl, strutils, gltypes, nimPNG, tables, fmath, streams, flippy, packer
+from vmath import nil
+
 export gltypes, fmath
 
 #KEYS
@@ -62,13 +64,16 @@ proc rgb*(r: float32, g: float32, b: float32): Color =
 proc toFloat*(color: Color): float32 = 
   cast[float32](((255 * color.a).int shl 24) or ((255 * color.b).int shl 16) or ((255 * color.g).int shl 8) or ((255 * color.r).int))
 
+converter floatColor*(color: Color): float32 = color.toFloat
+
 let colorWhiteF* = rgb(1, 1, 1).toFloat()
 let colorClearF* = rgba(0, 0, 0, 0).toFloat()
 
-#converts a hex string to a color
+#converts a hex string to a color at compile-time; no overhead
 export parseHexInt
 template `%`*(str: string): Color =
-  Color(r: str[0..1].parseHexInt().uint8 / 255.0, g: str[2..3].parseHexInt().uint8 / 255.0, b: str[4..5].parseHexInt().uint8 / 255.0, a: 255)
+  const ret = Color(r: str[0..1].parseHexInt().float32 / 255.0, g: str[2..3].parseHexInt().float32 / 255.0, b: str[4..5].parseHexInt().float32 / 255.0, a: if str.len > 6: str[6..7].parseHexInt().float32 / 255.0 else: 1.0)
+  ret
 
 #types of blending
 type Blending* = object
@@ -564,6 +569,44 @@ proc newFramebuffer*(width: int = 2, height: int = 2): Framebuffer =
 
 #Returns a new default framebuffer object.
 proc newDefaultFramebuffer*(): Framebuffer = Framebuffer(handle: glGetIntegerv(GlFramebufferBinding).GLuint, isDefault: true)
+
+#PACKER STUFF
+
+#Dynamic packer that writes its results to a GL texture.
+type TexturePacker* = ref object
+  texture: Texture
+  packer: Packer
+  image*: Image
+
+# Creates a new texture packer limited by the specified width/height
+proc newTexturePacker*(width, height: int): TexturePacker =
+  TexturePacker(
+    packer: newPacker(width, height), 
+    texture: newTexture(width, height),
+    image: newImage(width, height, 4)
+  )
+
+proc pack*(packer: TexturePacker, name: string, image: Image): Patch =
+  let (x, y) = packer.packer.pack(image.width, image.height)
+
+  packer.image.blit(image, vmath.vec2(x.float32, y.float32))
+  return newPatch(packer.texture, x, y, image.width, image.height)
+
+# Updates the texture of a texture packer. Call this when you're done packing.
+proc update*(packer: TexturePacker) =
+  packer.texture.load(packer.image.width, packer.image.height, addr packer.image.data[0])
+
+#ATLAS
+
+type Atlas* = ref object
+  regions: Table[string, Patch]
+
+proc newAtlas*(): Atlas = Atlas(regions: initTable[string, Patch]())
+
+# accesses a region from an atlas
+proc `[]`*(atlas: Atlas, name: string): Patch = atlas.regions.getOrDefault(name, atlas.regions["error"])
+
+#STATE
 
 #Hold all the graphics state.
 type FuseState = object

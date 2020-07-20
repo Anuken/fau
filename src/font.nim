@@ -1,18 +1,36 @@
-import typography, streams, flippy, packer, common, tables, unicode
+import streams, flippy, common, tables, unicode
 
-type Gfont* = ref object
-  font: Font
-  patches: Table[string, Patch]
-  offsets: Table[string, Vec2]
+from typography import getGlyphImageOffset, getGlyphImage, typeset
 
-proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128): Gfont =
+type 
+  Font* = ref object
+    font: typography.Font
+    patches: Table[string, Patch]
+    offsets: Table[string, Vec2]
+  Align* = object
+    h: typography.HAlignMode
+    v: typography.VAlignMode
+
+const 
+  alignCenter* = Align(h: typography.Center, v: typography.Middle)
+  alignTop* = Align(h: typography.Center, v: typography.Top)
+  alignBot* = Align(h: typography.Center, v: typography.Bottom)
+  alignLeft* = Align(h: typography.Left, v: typography.Middle)
+  alignRight* = Align(h: typography.Right, v: typography.Middle)
+
+  alignTopLeft* = Align(h: typography.Left, v: typography.Top)
+  alignTopRight* = Align(h: typography.Right, v: typography.Top)
+  alignBotLeft* = Align(h: typography.Left, v: typography.Bottom)
+  alignBotRight* = Align(h: typography.Right, v: typography.Bottom)
+
+proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128): Font =
   const data = staticRead(path)
   let str = newStringStream(data)
 
-  let font = readFontTtf(str)
+  let font = typography.readFontTtf(str)
   font.size = size
 
-  result = Gfont(font: font, patches: initTable[string, Patch]())
+  result = Font(font: font, patches: initTable[string, Patch]())
 
   let packer = newTexturePacker(textureSize, textureSize)
 
@@ -28,8 +46,8 @@ proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128):
 
   packer.update()
 
-proc draw*(font: Gfont, pos: Vec2, text: string, color: Color = rgba(1, 1, 1, 1), alignH: HAlignMode = Left, alignV: VAlignMode = Top) =
-  let layout = font.font.typeset(text, hAlign = alignH, vAlign = alignV)
+proc draw*(font: Font, pos: Vec2, text: string, color: Color = rgba(1, 1, 1, 1), align: Align = alignCenter) =
+  let layout = font.font.typeset(text, hAlign = align.h, vAlign = align.v)
   let col = color.toFloat()
 
   for ch in layout:

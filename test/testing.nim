@@ -16,7 +16,7 @@ var patch: Patch
 var buffer: Framebuffer
 var screenm: Mesh
 var screensp: Shader
-var ffont: Gfont
+var ffont: Font
 
 makeSystem("bounce", [Pos, Bouncer]):
   all: 
@@ -85,11 +85,12 @@ makeSystem("render", [Pos, Render]):
     #drawRect(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
   
   finish:
-    #ffont.draw(vec2(0, 0), "perfectly normal font rendering")
+    ffont.draw(vec2(0, 0), "perfectly normal font rendering")
 
     line(vec2(0, 0), mouseWorld())
-    poly(mouseWorld(), 5, 30, stroke = 10.0, angle = mouseWorld().angleTo(vec2(0, 0)))
-    
+    #fillPoly(mouseWorld(), 5, 30, rotation = mouseWorld().angleTo(vec2(0, 0)))
+    fillLight(mouseWorld(), 50.0, sides = 40, centerColor = %"fcba03")
+
     drawFlush()
     buffer.stop()
     
