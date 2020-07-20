@@ -87,13 +87,19 @@ proc prepare(batch: Batch, texture: Texture) =
     batch.flush()
     batch.lastTexture = texture
 
-proc draw*(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat]) =
+proc draw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat]) =
   batch.prepare(texture)
 
-  batch.mesh.vertices.add(vertices)
+  let verts = addr batch.mesh.vertices
+  let idx = batch.index
+
+  #copy over the vertices
+  for i in 0..<spriteSize:
+    verts[i + idx] = vertices[i]
+
   batch.index += spriteSize
 
-proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt) =
+proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: float32 = colorWhiteF, mixColor: float32 = colorClearF) =
   batch.prepare(region.texture)
 
   #bottom left and top right corner points relative to origin
@@ -121,9 +127,6 @@ proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, h
   let v = region.v2
   let u2 = region.u2
   let v2 = region.v
-
-  let cc = cast[float32](color)
-  let mc = cast[float32](mixColor)
   let idx = batch.index
   
   #using pointers seems to be faster.
@@ -133,35 +136,35 @@ proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, h
   verts[idx + 1] = y1
   verts[idx + 2] = u
   verts[idx + 3] = v
-  verts[idx + 4] = cc
-  verts[idx + 5] = mc
+  verts[idx + 4] = color
+  verts[idx + 5] = mixColor
 
   verts[idx + 6] = x2
   verts[idx + 7] = y2
   verts[idx + 8] = u
   verts[idx + 9] = v2
-  verts[idx + 10] = cc
-  verts[idx + 11] = mc
+  verts[idx + 10] = color
+  verts[idx + 11] = mixColor
 
   verts[idx + 12] = x3
   verts[idx + 13] = y3
   verts[idx + 14] = u2
   verts[idx + 15] = v2
-  verts[idx + 16] = cc
-  verts[idx + 17] = mc
+  verts[idx + 16] = color
+  verts[idx + 17] = mixColor
 
   verts[idx + 18] = x4
   verts[idx + 19] = y4
   verts[idx + 20] = u2
   verts[idx + 21] = v
-  verts[idx + 22] = cc
-  verts[idx + 23] = mc
+  verts[idx + 22] = color
+  verts[idx + 23] = mixColor
 
   batch.index += spriteSize
 
 proc use*(batch: Batch) =
   fuse.batchFlush = proc() = batch.flush()
-  fuse.batchDraw = proc(region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt) = 
+  fuse.batchDraw = proc(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) = 
     batch.draw(region, x, y, width, height, originX, originY, rotation)
-  fuse.batchDrawVert = proc(texture: Texture, vertices: var array[spriteSize, Glfloat]) = 
+  fuse.batchDrawVert = proc(texture: Texture, vertices: array[spriteSize, Glfloat]) {.nosinks.} = 
     batch.draw(texture, vertices)

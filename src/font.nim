@@ -30,7 +30,7 @@ proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128):
 
 proc draw*(font: Gfont, pos: Vec2, text: string, color: Color = rgba(1, 1, 1, 1), alignH: HAlignMode = Left, alignV: VAlignMode = Top) =
   let layout = font.font.typeset(text, hAlign = alignH, vAlign = alignV)
-  let col = color.toInt()
+  let col = color.toFloat()
 
   for ch in layout:
     if font.patches.hasKey(ch.character):

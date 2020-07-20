@@ -31,12 +31,11 @@ proc `/`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x / other, vec.
 
 #utility methods
 
-#all angles are in degrees
-proc angle*(vec: Vec2): float32 {.inline.} = arctan2(vec.y, vec.x).radToDeg
-proc angleTo*(vec: Vec2, other: Vec2): float32 {.inline.} = arctan2(other.y - vec.y, other.x - vec.x).radToDeg
+#all angles are in radians
+proc angle*(vec: Vec2): float32 {.inline.} = arctan2(vec.y, vec.x)
+proc angleTo*(vec: Vec2, other: Vec2): float32 {.inline.} = arctan2(other.y - vec.y, other.x - vec.x)
 
-proc rotate*(vec: Vec2, degrees: float32): Vec2 = 
-  let rads = degrees.degToRad
+proc rotate*(vec: Vec2, rads: float32): Vec2 = 
   let co = cos(rads)
   let si = sin(rads)
   return vec2(vec.x * co - vec.y * si, vec.x * si + vec.y * co)
@@ -59,6 +58,8 @@ proc dst2*(vec: Vec2, other: Vec2): float32 {.inline.} =
 proc dst*(vec: Vec2, other: Vec2): float32 {.inline.} = sqrt(vec.dst2(other))
 
 proc within*(vec: Vec2, other: Vec2, distance: float32): bool {.inline.} = vec.dst2(other) <= distance*distance
+
+proc `$`*(vec: Vec2): string = $vec.x & ", " & $vec.y
 
 #3x3 matrix for 2D transformations
 const 
@@ -128,15 +129,15 @@ proc inv*(self: Mat): Mat =
   if invd == 0.0: raise newException(Exception, "Can't invert a singular matrix")
 
   return newMat [
-    self.val[M11] * self.val[M22] - self.val[M21] * self.val[M12] * invd,
-    self.val[M20] * self.val[M12] - self.val[M10] * self.val[M22] * invd,
-    self.val[M10] * self.val[M21] - self.val[M20] * self.val[M11] * invd,
-    self.val[M21] * self.val[M02] - self.val[M01] * self.val[M22] * invd,
-    self.val[M00] * self.val[M22] - self.val[M20] * self.val[M02] * invd,
-    self.val[M20] * self.val[M01] - self.val[M00] * self.val[M21] * invd,
-    self.val[M01] * self.val[M12] - self.val[M11] * self.val[M02] * invd,
-    self.val[M10] * self.val[M02] - self.val[M00] * self.val[M12] * invd,
-    self.val[M00] * self.val[M11] - self.val[M10] * self.val[M01] * invd
+    (self.val[M11] * self.val[M22] - self.val[M21] * self.val[M12]) * invd,
+    (self.val[M20] * self.val[M12] - self.val[M10] * self.val[M22]) * invd,
+    (self.val[M10] * self.val[M21] - self.val[M20] * self.val[M11]) * invd,
+    (self.val[M21] * self.val[M02] - self.val[M01] * self.val[M22]) * invd,
+    (self.val[M00] * self.val[M22] - self.val[M20] * self.val[M02]) * invd,
+    (self.val[M20] * self.val[M01] - self.val[M00] * self.val[M21]) * invd,
+    (self.val[M01] * self.val[M12] - self.val[M11] * self.val[M02]) * invd,
+    (self.val[M10] * self.val[M02] - self.val[M00] * self.val[M12]) * invd,
+    (self.val[M00] * self.val[M11] - self.val[M10] * self.val[M01]) * invd
   ]
 
 proc `*`*(self: Vec2, mat: Mat): Vec2 = vec2(self.x * mat.val[0] + self.y * mat.val[3] + mat.val[6], self.x * mat.val[1] + self.y * mat.val[4] + mat.val[7])

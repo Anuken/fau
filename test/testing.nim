@@ -1,4 +1,4 @@
-import core, audio, polymorph, math, random, font
+import core, audio, polymorph, math, random, font, shapes
 
 registerComponents(defaultComponentOptions):
   type
@@ -54,9 +54,9 @@ makeSystem("render", [Pos, Render]):
       varying vec2 v_texc;
 
       void main(){
-        vec2 coords = v_texc + vec2(sin(v_texc.y * 50.0) / 60.0, sin(v_texc.x * 50.0) / 60.0);
-        gl_FragColor = texture2D(u_texture, coords) + vec4(v_texc, 1.0, 1.0);
-        //gl_FragColor = texture2D(u_texture, v_texc);
+        //vec2 coords = v_texc + vec2(sin(v_texc.y * 50.0) / 60.0, sin(v_texc.x * 50.0) / 60.0);
+        //gl_FragColor = texture2D(u_texture, coords) + vec4(v_texc, 1.0, 1.0);
+        gl_FragColor = texture2D(u_texture, v_texc);
       }
       """
     )
@@ -81,11 +81,14 @@ makeSystem("render", [Pos, Render]):
     fuse.cam.resize(fuse.widthf / scl, fuse.heightf / scl)
     fuse.cam.use()
     
-  all:
-    drawRect(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
+  all: discard
+    #drawRect(patch, item.pos.x - hsize/2.0, item.pos.y - hsize/2.0, hsize, hsize)
   
   finish:
-    ffont.draw(vec2(0, 0), "perfectly normal font rendering")
+    #ffont.draw(vec2(0, 0), "perfectly normal font rendering")
+
+    line(vec2(0, 0), mouseWorld())
+    poly(mouseWorld(), 5, 30, stroke = 10.0, angle = mouseWorld().angleTo(vec2(0, 0)))
     
     drawFlush()
     buffer.stop()

@@ -33,7 +33,7 @@ template staticReadString*(filename: string): string =
 type Cam* = ref object
   pos*: Vec2
   w*, h*: float32
-  mat*, inv: Mat
+  mat*, inv*: Mat
 
 proc update*(cam: Cam) = 
   cam.mat = ortho(cam.pos.x - cam.w/2, cam.pos.y - cam.h/2, cam.w, cam.h)
@@ -48,13 +48,6 @@ proc resize*(cam: Cam, w, h: float32) =
   cam.h = h
   cam.update()
 
-proc unproject*(cam: Cam, vec: Vec2): Vec2 = 
-  vec2((2 * (vec.x - cam.pos.x)) / cam.w - 1, (2 * (vec.y - cam.pos.y)) / cam.h - 1) * cam.inv
-
-proc project*(cam: Cam, vec: Vec2): Vec2 = 
-  let pro = vec * cam.mat
-  return vec2(cam.w * (cam.pos.x + 1) / 2 + pro.x, cam.h * (cam.pos.y + 1) / 2 + pro.y)
-
 #defines a color
 type Color* = object
   r*, g*, b*, a*: float32 #TODO should be floats
@@ -65,12 +58,12 @@ proc rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color =
 proc rgb*(r: float32, g: float32, b: float32): Color =
   result = Color(r: r, g: g, b: b, a: 1.0)
 
-#convert a color to a ABGR float representation; result may be NaN (?)
-proc toInt*(color: Color): uint32 = 
-  (((255 * color.a).int shl 24) or ((255 * color.b).int shl 16) or ((255 * color.g).int shl 8) or ((255 * color.r).int)).uint32
+#convert a color to a ABGR float representation; result may be NaN
+proc toFloat*(color: Color): float32 = 
+  cast[float32](((255 * color.a).int shl 24) or ((255 * color.b).int shl 16) or ((255 * color.g).int shl 8) or ((255 * color.r).int))
 
-let colorWhiteInt* = rgb(1, 1, 1).toInt()
-let colorClearInt* = rgba(0, 0, 0, 0).toInt()
+let colorWhiteF* = rgb(1, 1, 1).toFloat()
+let colorClearF* = rgba(0, 0, 0, 0).toFloat()
 
 #converts a hex string to a color
 export parseHexInt
@@ -577,7 +570,7 @@ type FuseState = object
   #Reference to proc that flushes the batch
   batchFlush*: proc()
   #Reference to a proc that draws a patch at specified coordinates
-  batchDraw*: proc(region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt)
+  batchDraw*: proc(region: Patch, x, y, width, height, originX = 0'f32, originY = 0'f32, rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF)
   #Reference to a proc that draws custom vertices
   batchDrawVert*: proc(texture: Texture, vertices: array[24, Glfloat])
   #The currently-used batch shader
@@ -608,7 +601,15 @@ type FuseState = object
 #Global instance of fuse state.
 var fuse* = FuseState()
 
+proc unproject*(cam: Cam, vec: Vec2): Vec2 = 
+  vec2((2 * vec.x) / fuse.widthf - 1, (2 * vec.y) / fuse.heightf - 1) * cam.inv
+
+proc project*(cam: Cam, vec: Vec2): Vec2 = 
+  let pro = vec * cam.mat
+  return vec2(fuse.widthf * (1) / 2 + pro.x, fuse.heightf * ( 1) / 2 + pro.y)
+
 proc mouse*(): Vec2 = vec2(fuse.mouseX, fuse.mouseY)
+proc mouseWorld*(): Vec2 = fuse.cam.unproject(vec2(fuse.mouseX, fuse.mouseY))
 proc screen*(): Vec2 = vec2(fuse.width.float32, fuse.height.float32)
 
 #Flush the batched items.
@@ -624,8 +625,8 @@ proc drawMat*(mat: Mat) {.inline.} =
   drawFlush()
   fuse.batchMat = mat
 
-proc drawRect*(region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, 
-  rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt) {.inline.} = 
+proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, 
+  rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
   fuse.batchDraw(region, x, y, width, height, originX, originY, rotation, color, mixColor)
 
 proc drawVert*(texture: Texture, vertices: array[24, Glfloat]) {.inline.} = 

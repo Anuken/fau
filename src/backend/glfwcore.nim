@@ -182,7 +182,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   )
 
   discard window.setCursorPosCallback(proc(window: Window, x: cdouble, y: cdouble) {.cdecl.} = 
-    (fuse.mouseX, fuse.mouseY) = (x.float32, y.float32)
+    (fuse.mouseX, fuse.mouseY) = (x.float32, fuse.height.float32 - 1 - y.float32)
   )
 
   discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} = 
@@ -225,7 +225,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
   window.getCursorPos(addr inMouseX, addr inMouseY)
   window.getFramebufferSize(addr inWidth, addr inHeight)
-  fuse.mouseX = inMouseX.float32
+  fuse.mouseX = inHeight.float32 - 1 - inMouseX.float32
   fuse.mouseY = inMouseY.float32
   fuse.width = inWidth.int
   fuse.height = inHeight.int
