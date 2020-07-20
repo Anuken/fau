@@ -49,6 +49,11 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
     #create default camera
     fuse.cam = newCam(fuse.width.float32, fuse.height.float32)
+
+    var whiteData = [255'u8, 255, 255, 255]
+    
+    #create a white texture
+    fuse.whiteTex = loadTexturePtr(1, 1, addr whiteData)
     
     initProc()
   ), windowWidth = windowWidth, windowHeight = windowHeight, windowTitle = windowTitle, maximize = maximize, clearColor = clearColor)

@@ -176,6 +176,15 @@ proc newTexture*(width, height: int = 1): Texture =
   glTexParameteri(result.target, GlTextureWrapS, result.uwrap.GLint)
   glTexParameteri(result.target, GlTextureWrapT, result.vwrap.GLint)
 
+#load texture from ptr to decoded PNG data
+proc loadTexturePtr*(width, height: int, data: pointer): Texture =
+  result = newTexture()
+
+  result.width = width
+  result.height = height
+
+  result.load(width, height, data)
+
 #load texture from bytes
 proc loadTextureBytes*(bytes: string): Texture =
   result = newTexture()
@@ -569,12 +578,16 @@ type FuseState = object
   batchFlush*: proc()
   #Reference to a proc that draws a patch at specified coordinates
   batchDraw*: proc(region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt)
+  #Reference to a proc that draws custom vertices
+  batchDrawVert*: proc(texture: Texture, vertices: array[24, Glfloat])
   #The currently-used batch shader
   batchShader*: Shader
   #The current blending type used by the batch
   batchBlending*: Blending
   #The matrix being used by the batch
   batchMat*: Mat
+  #TODO move this white texture to the atlas
+  whiteTex*: Texture
   #The global camera.
   cam*: Cam
   #Currently bound framebuffers
@@ -614,6 +627,9 @@ proc drawMat*(mat: Mat) {.inline.} =
 proc drawRect*(region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, 
   rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt) {.inline.} = 
   fuse.batchDraw(region, x, y, width, height, originX, originY, rotation, color, mixColor)
+
+proc drawVert*(texture: Texture, vertices: array[24, Glfloat]) {.inline.} = 
+  fuse.batchDrawVert(texture, vertices)
 
 #Activates a camera.
 proc use*(cam: Cam) =

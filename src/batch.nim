@@ -87,6 +87,12 @@ proc prepare(batch: Batch, texture: Texture) =
     batch.flush()
     batch.lastTexture = texture
 
+proc draw*(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat]) =
+  batch.prepare(texture)
+
+  batch.mesh.vertices.add(vertices)
+  batch.index += spriteSize
+
 proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt) =
   batch.prepare(region.texture)
 
@@ -157,3 +163,5 @@ proc use*(batch: Batch) =
   fuse.batchFlush = proc() = batch.flush()
   fuse.batchDraw = proc(region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: uint32 = colorWhiteInt, mixColor: uint32 = colorClearInt) = 
     batch.draw(region, x, y, width, height, originX, originY, rotation)
+  fuse.batchDrawVert = proc(texture: Texture, vertices: var array[spriteSize, Glfloat]) = 
+    batch.draw(texture, vertices)
