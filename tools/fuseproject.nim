@@ -12,7 +12,7 @@ const
   ]
 
 task "pack", "Pack textures":
-  direshell &"fusepack -p:{getCurrentDir()}/assets-raw -o:{getCurrentDir()}/assets/atlas"
+  direshell &"fusepack -p:{getCurrentDir()}/assets-raw/sprites -o:{getCurrentDir()}/assets/atlas"
 
 task "debug", "Debug build":
   runTask("pack")
@@ -113,10 +113,15 @@ else:
     switch("gcc.linkerexe", "g++")
 """
 
-proc fuseproject(name: string) =
+const ignoreTemplate = """
+build
+nakefile
+"""
+
+proc fuseproject(name: string, path = getHomeDir() / "Projects") =
   echo &"Generating project '{name}'..."
 
-  let dir = getHomeDir() / "Projects" / name
+  let dir = path / name
 
   if dir.dirExists:
     echo &"Directory {dir} already exists. Exiting."
@@ -126,12 +131,13 @@ proc fuseproject(name: string) =
   setCurrentDir dir
 
   createDir dir/"assets"
-  createDir dir/"assets-raw"
+  createDir dir/"assets-raw/sprites"
 
   #write a nakefile with basic setup
   writeFile("nakefile.nim", nakeTemplate.replace("{{APP_NAME}}", name))
   writeFile(&"{name.toLowerAscii()}.nim", projectTemplate.replace("{{APP_NAME}}", name))
   writeFile("config.nims", cfgTemplate)
+  writeFile(".gitignore", ignoreTemplate)
 
   echo &"Project generated in {dir}"
 
