@@ -182,7 +182,6 @@ var
 # Extensions
 var GLAD_GL_EXT_framebuffer_object*: bool
 
-
 proc hasExt(extname: string): bool =
   if extname.len == 0:
     return false
