@@ -196,9 +196,7 @@ proc hasExt(extname: string): bool =
 
   while true:
     loc = extensions.find(extname)
-    echo "loc < 0 ? " & $(loc < 0)
     if loc < 0:
-      echo "nope"
       return false
 
     terminatorLoc = loc + extname.len
