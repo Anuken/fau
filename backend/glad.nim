@@ -182,7 +182,6 @@ var
 # Extensions
 var GLAD_GL_EXT_framebuffer_object*: bool
 
-
 proc hasExt(extname: string): bool =
   if extname.len == 0:
     return false
@@ -197,7 +196,9 @@ proc hasExt(extname: string): bool =
 
   while true:
     loc = extensions.find(extname)
+    echo "loc < 0 ? " & $(loc < 0)
     if loc < 0:
+      echo "nope"
       return false
 
     terminatorLoc = loc + extname.len
