@@ -8,7 +8,9 @@ var frameCounterStart: int64
 var frames: int
 var startTime: Time
 
-proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0)) =
+proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
+  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas") =
+
   initCore(
   (proc() =
     let time = (times.getTime() - startTime).inNanoseconds
@@ -50,10 +52,15 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     #create default camera
     fuse.cam = newCam(fuse.width.float32, fuse.height.float32)
 
-    var whiteData = [255'u8, 255, 255, 255]
-    
-    #create a white texture
-    fuse.whiteTex = loadTexturePtr(1, 1, addr whiteData)
+    #load sprites
+    fuse.atlas = loadAtlasStatic(atlasFile)
+
+    #load white region
+    fuse.white = fuse.atlas["white"]
+
+    #center the UVs to prevent artifacts
+    let avg = ((fuse.white.u + fuse.white.u2) / 2.0, (fuse.white.v + fuse.white.v2) / 2.0)
+    (fuse.white.u, fuse.white.v, fuse.white.u2, fuse.white.v2) = (avg[0], avg[1], avg[0], avg[1])
     
     initProc()
   ), windowWidth = windowWidth, windowHeight = windowHeight, windowTitle = windowTitle, maximize = maximize, clearColor = clearColor)

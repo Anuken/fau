@@ -7,21 +7,29 @@ for v in quadv.mitems: v = 0.0
 proc fillQuad*(x1, y1, c1, x2, y2, c2, x3, y3, c3, x4, y4, c4: float32) = 
   quadv[0] = x1
   quadv[1] = y1
+  quadv[2] = fuse.white.u
+  quadv[3] = fuse.white.v
   quadv[4] = c1
 
   quadv[6] = x2
   quadv[7] = y2
+  quadv[8] = fuse.white.u
+  quadv[9] = fuse.white.v
   quadv[10] = c2
 
   quadv[12] = x3
   quadv[13] = y3
+  quadv[14] = fuse.white.u
+  quadv[15] = fuse.white.v
   quadv[16] = c3
 
   quadv[18] = x4
   quadv[19] = y4
+  quadv[20] = fuse.white.u
+  quadv[21] = fuse.white.v
   quadv[22] = c4
 
-  drawVert(fuse.whiteTex, quadv)
+  drawVert(fuse.white.texture, quadv)
 
 proc fillQuad*(x1, y1, x2, y2, x3, y3, x4, y4, color: float32) = 
   fillQuad(x1, y1, color, x2, y2, color, x3, y3, color, x4, y4, color)

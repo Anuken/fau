@@ -1,4 +1,4 @@
-import gl, strutils, gltypes, nimPNG, tables, fmath, streams, flippy, packer
+import gl, strutils, gltypes, nimPNG, tables, fmath, streams, flippy, packer, macros
 from vmath import nil
 
 export gltypes, fmath
@@ -21,13 +21,15 @@ type KeyCode* = enum
 
 #IO
 
-template staticReadStream*(filename: string): string =
-  const file = staticRead(filename)
-  newStringStream(file)
+const rootDir = getProjectPath()
 
 template staticReadString*(filename: string): string = 
-  const str = staticRead(filename)
+  const realDir = rootDir & "/" & filename
+  const str = staticRead(realDir)
   str
+
+template staticReadStream*(filename: string): StringStream =
+  newStringStream(staticReadString(filename))
 
 #RENDERING
 
@@ -210,6 +212,8 @@ proc x*(patch: Patch): int = (patch.u * patch.texture.width.float32).int
 proc y*(patch: Patch): int = (patch.v * patch.texture.height.float32).int
 proc width*(patch: Patch): int = ((patch.u2 - patch.u) * patch.texture.width.float32).int
 proc height*(patch: Patch): int = ((patch.v2 - patch.v) * patch.texture.height.float32).int
+proc widthf*(patch: Patch): float32 = ((patch.u2 - patch.u) * patch.texture.width.float32)
+proc heightf*(patch: Patch): float32 = ((patch.v2 - patch.v) * patch.texture.height.float32)
 
 converter toPatch*(texture: Texture): Patch {.inline.} = Patch(texture: texture, u: 0.0, v: 0.0, u2: 1.0, v2: 1.0)
 
@@ -599,12 +603,34 @@ proc update*(packer: TexturePacker) =
 #ATLAS
 
 type Atlas* = ref object
-  regions: Table[string, Patch]
+  patches*: Table[string, Patch]
+  texture*: Texture
 
-proc newAtlas*(): Atlas = Atlas(regions: initTable[string, Patch]())
+#Loads an atlas from static resources.
+proc loadAtlasStatic*(path: static[string]): Atlas =
+  result = Atlas()
+
+  const dataPath = path & ".dat"
+  const pngPath = path & ".png"
+  
+  result.texture = loadTextureStatic(pngPath)
+  let stream = staticReadStream(dataPath)
+
+  let amount = stream.readInt32()
+  for i in 0..<amount:
+    let 
+      nameLen = stream.readInt16()
+      name = stream.readStr(nameLen)
+      x = stream.readInt16()
+      y = stream.readInt16()
+      width = stream.readInt16()
+      height = stream.readInt16()
+      patch = newPatch(result.texture, x, y, width, height)
+
+    result.patches[name] = patch
 
 # accesses a region from an atlas
-proc `[]`*(atlas: Atlas, name: string): Patch = atlas.regions.getOrDefault(name, atlas.regions["error"])
+proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.patches["error"])
 
 #STATE
 
@@ -622,12 +648,14 @@ type FuseState = object
   batchBlending*: Blending
   #The matrix being used by the batch
   batchMat*: Mat
-  #TODO move this white texture to the atlas
-  whiteTex*: Texture
+  #A white 1x1 patch
+  white*: Patch
   #The global camera.
   cam*: Cam
   #Currently bound framebuffers
   bufferStack*: seq[Framebuffer]
+  #Global texture atlas.
+  atlas*: Atlas
   #Game window size
   width*, height*: int
   #Game window size in floats
@@ -655,6 +683,8 @@ proc mouse*(): Vec2 = vec2(fuse.mouseX, fuse.mouseY)
 proc mouseWorld*(): Vec2 = fuse.cam.unproject(vec2(fuse.mouseX, fuse.mouseY))
 proc screen*(): Vec2 = vec2(fuse.width.float32, fuse.height.float32)
 
+converter findPatch*(name: string): Patch {.inline.} = fuse.atlas[name]
+
 #Flush the batched items.
 proc drawFlush*() {.inline.} = fuse.batchFlush()
 
@@ -667,6 +697,16 @@ proc drawShader*(shader: Shader) {.inline.} =
 proc drawMat*(mat: Mat) {.inline.} = 
   drawFlush()
   fuse.batchMat = mat
+
+proc draw*(region: Patch, x, y: float32, widthScl = 1'f32, heightScl = 1'f32, originXScl = 0.5'f32, originYScl = 0.5'f32, 
+  rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
+  let 
+    width = region.widthf * widthScl
+    height = region.heightf * heightScl
+    originX = width * originXScl
+    originY = height * originYScl
+
+  fuse.batchDraw(region, x - width / 2.0, y - height / 2.0, width, height, originX, originY, rotation, color, mixColor)
 
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, 
   rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
