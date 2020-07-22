@@ -1,4 +1,4 @@
-import sdl2, times, sdlgl, ../gltypes, ../gmath, ../common
+import sdl2, times, glad, ../gltypes, ../common
 
 #SDL error check template
 template sdlFailIf(cond: typed, reason: string) =
@@ -7,20 +7,6 @@ template sdlFailIf(cond: typed, reason: string) =
 #whether the app is running, main loop
 var coreRunning: bool = true
 var coreWindow: WindowPtr
-
-#graphics stuff
-var frameId*: int64
-var fps*: int
-var deltaTime*: float
-var lastFrameTime: int64 = -1
-var frameCounterStart: int64
-var frames: int
-var startTime: Time
-
-var screenW*, screenH*, mouseX*, mouseY*: float32
-
-proc mouse*(): Vec2 = vec2(mouseX, mouseY)
-proc screen*(): Vec2 = vec2(screenW, screenH)
 
 #input
 var keysPressed: array[KeyCode, bool]
@@ -169,10 +155,7 @@ proc toKeyCode(scancode: int): KeyCode =
     of 162: keyClearagain
     of 163: keyCrsel
     of 164: keyExsel
-    of 178: keyThousandsseparator
     of 179: keyDecimalseparator
-    of 180: keyCurrencyunit
-    of 181: keyCurrencysubunit
     of 224: keyLctrl
     of 225: keyLshift
     of 226: keyLalt
@@ -199,26 +182,14 @@ proc tapped*(key: KeyCode): bool {.inline.} = keysJustDown[key]
 proc released*(key: KeyCode): bool {.inline.} = keysJustUp[key]
 
 proc preUpdate() =
-  let time = (getTime() - startTime).inNanoseconds
-  if lastFrameTime == -1:
-    lastFrameTime = time
-  deltaTime = float(time - lastFrameTime) / 1000000000.0 * 60.0
-  lastFrameTime = time
-
-  if time - frameCounterStart >= 1000000000:
-    fps = frames
-    frames = 0
-    frameCounterStart = time
-  
-  inc frames
 
   var w, h: cint
   coreWindow.getSize(w, h)
-  (screenW, screenH) = (w.float32, h.float32)
+  (fuse.width, fuse.height) = (w.int, h.int)
 
   var mx, my: cint
   getMouseState(mx, my)
-  (mouseX, mouseY) = (mouseX.float32, screenH - 1 - mouseY.float32)
+  (fuse.mouseX, fuse.mouseY) = (mx.float32, fuse.heightf - 1 - my.float32)
 
   #poll input
   var event = defaultEvent
@@ -263,8 +234,6 @@ proc postUpdate() =
   for x in keysJustUp.mitems: x = false
   lastScrollX = 0
   lastScrollY = 0
-
-  inc frameId
 
 var theLoop: proc()
 
@@ -322,13 +291,11 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
   echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
 
-  startTime = getTime()
-
   var w, h: cint
   coreWindow.getSize(w, h)
-  (screenW, screenH) = (w.float32, h.float32)
+  (fuse.width, fuse.height) = (w.int, h.int)
 
-  glViewport(0.GLint, 0.GLint, screenW.GLsizei, screenH.GLsizei)
+  glViewport(0.GLint, 0.GLint, fuse.width.GLsizei, fuse.height.GLsizei)
 
   initProc()
 
