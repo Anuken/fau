@@ -1,5 +1,9 @@
 import math
 
+#utility functions
+
+func lerp*(a, b, progress: float32): float32 = a + (b - a) * progress
+
 #these are probably not great style but I'm sick of casting everything manually
 
 #converter convertf32*(i: int): float32 {.inline.} = i.float32

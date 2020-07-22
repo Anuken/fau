@@ -301,6 +301,7 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
   result = Shader()
   result.uniforms = initTable[string, int]()
   result.compiled = true
+  
   result.vertHandle = loadSource(result, GL_VERTEX_SHADER, preprocess(vertexSource, false))
   result.fragHandle = loadSource(result, GL_FRAGMENT_SHADER, preprocess(fragmentSource, true))
 
@@ -375,6 +376,9 @@ proc setf*(shader: Shader, name: string, value1, value2: float) =
   shader.use()
   let loc = shader.findUniform(name)
   if loc != -1: glUniform2f(loc.GLint, value1.GLfloat, value2.GLfloat)
+
+proc setf*(shader: Shader, name: string, value: Vec2) =
+  shader.setf(name, value.x, value.y)
 
 proc setf*(shader: Shader, name: string, value1, value2, value3: float) =
   shader.use()

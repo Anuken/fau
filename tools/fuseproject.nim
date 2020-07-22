@@ -6,9 +6,9 @@ const
   app = "{{APP_NAME}}"
 
   builds = [
-    #(name: "linux64", os: "linux", cpu: "amd64", args: ""),
+    (name: "linux64", os: "linux", cpu: "amd64", args: ""),
     (name: "win32", os: "windows", cpu: "i386", args: "--gcc.exe:i686-w64-mingw32-gcc --gcc.linkerexe:i686-w64-mingw32-g++"),
-    #(name: "win64", os: "windows", cpu: "amd64", args: "--gcc.exe:x86_64-w64-mingw32-gcc --gcc.linkerexe:x86_64-w64-mingw32-g++"),
+    (name: "win64", os: "windows", cpu: "amd64", args: "--gcc.exe:x86_64-w64-mingw32-gcc --gcc.linkerexe:x86_64-w64-mingw32-g++"),
   ]
 
 task "pack", "Pack textures":
@@ -106,11 +106,11 @@ initFuse(run, init, windowTitle = "{{APP_NAME}}")
 const cfgTemplate = """
 --path:"../fuse"
 --gc:arc
+--passC:"-flto"
+--passL:"-flto"
 
 if defined(emscripten):
 
-  --passC:"-flto"
-  --passL:"-flto"
   --os:linux
   --cpu:i386
   --cc:clang

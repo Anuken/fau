@@ -1,4 +1,4 @@
-import audio/soloud_gen
+import audio/soloud_gen, common
 
 var so: ptr Soloud
 
@@ -12,6 +12,12 @@ proc initAudio*(visualize = false) =
 type Sound* = ref object
   handle: ptr AudioSource
 
+proc getFft*(): array[256, float32] =
+  let data = so.Soloud_calcFFT()
+  let dataArr = cast[ptr UncheckedArray[cfloat]](data)
+  for i in 0..<256:
+    result[i] = dataArr[i].float32
+
 proc filterEcho*(sound: Sound, delay = 0.4, decay = 0.9, filtering = 0.5) =
   let filter = EchoFilterCreate()
   discard filter.EchoFilterSetParamsEx(delay, decay, filtering)
@@ -19,7 +25,7 @@ proc filterEcho*(sound: Sound, delay = 0.4, decay = 0.9, filtering = 0.5) =
   sound.handle.WavStreamSetFilter(0, filter)
 
 proc loadMusicStatic*(path: static[string]): Sound =
-  const musData = staticRead(path)
+  const musData = staticReadString(path)
   const len = musData.len
 
   let handle = WavStreamCreate()
@@ -27,7 +33,7 @@ proc loadMusicStatic*(path: static[string]): Sound =
   return Sound(handle: handle)
 
 proc loadSoundStatic*(path: static[string]): Sound =
-  const musData = staticRead(path)
+  const musData = staticReadString(path)
   const len = musData.len
 
   let handle = WavCreate()
