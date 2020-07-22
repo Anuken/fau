@@ -8,19 +8,31 @@
       body {
         margin: 0px;
         padding: 0px;
+        background-color: white;
       }
       canvas.emscripten {
         border: none;
-        background-color: white;
+        background-color: rgba(0, 0, 0, 0);
         position: absolute;
         left: 0px;
         right: 0px;
         outline: none;
       }
+
+      #loadtext{
+        position:absolute;
+        z-index:0;
+        text-align: center;
+        width: 100%;
+        font-size: 40px;
+        font-family: "Courier New", Courier, monospace;
+        color: lightslategray;
+      }
     </style>
   </head>
   <body>
 
+    <div id="loadtext"><i>Loading...</i></div>
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
 
     <script type='text/javascript'>
