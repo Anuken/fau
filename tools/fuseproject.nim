@@ -1,4 +1,4 @@
-import os, strformat, cligen, strutils
+import os, strformat, cligen, strutils, tables, sequtils
 
 const nakeTemplate = """
 import nake, os, strformat
@@ -51,8 +51,9 @@ task "deploy", "Build for all platforms":
   direShell(&"zip -9r {app}-web.zip web/*")
 """
 
-const projectTemplate = """
-import core, audio, polymorph, math, random, font, shapes
+const projectPresets = {
+  "ecs": """
+import core, polymorph
 
 const scl = 4.0
 
@@ -80,7 +81,27 @@ makeSystem("logic", [Pos]):
 makeEcs()
 commitSystems("run")
 initFuse(run, windowTitle = "{{APP_NAME}}")
+""",
+
+  "simple": """
+import core
+
+const scl = 4.0
+
+proc init() = 
+  discard
+
+proc run() =
+  if keyEscape.tapped: quitApp()
+
+  fuse.cam.resize(fuse.widthf / scl, fuse.heightf / scl)
+  fuse.cam.use()
+
+  fillPoly(0, 0, 6, 30)
+
+initFuse(run, init, windowTitle = "{{APP_NAME}}")
 """
+}.toTable
 
 const cfgTemplate = """
 --path:"../fuse"
@@ -118,14 +139,39 @@ build
 nakefile
 """
 
-proc fuseproject(name: string, path = getHomeDir() / "Projects") =
+const vsTemplate = """
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "debug",
+      "type": "shell",
+      "command": "nake debug",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
+"""
+
+proc fuseproject(name: string, directory = getHomeDir() / "Projects", preset = "ecs") =
   echo &"Generating project '{name}'..."
 
-  let dir = path / name
+  let dir = directory / name
 
   if dir.dirExists:
     echo &"Directory {dir} already exists. Exiting."
     return
+
+  if not projectPresets.hasKey(preset):
+    let choices = toSeq(projectPresets.keys).join(", ")
+    echo &"Invalid preset: '{preset}'. Choices: {choices}"
+    return
+
+  let presetText = projectPresets[preset]
   
   createDir dir
   setCurrentDir dir
@@ -133,12 +179,18 @@ proc fuseproject(name: string, path = getHomeDir() / "Projects") =
   createDir dir/"assets"
   createDir dir/"assets-raw/sprites"
 
+  createDir dir/".vscode"
+
   #write a nakefile with basic setup
   writeFile("nakefile.nim", nakeTemplate.replace("{{APP_NAME}}", name))
-  writeFile(&"{name.toLowerAscii()}.nim", projectTemplate.replace("{{APP_NAME}}", name))
+  writeFile(&"{name.toLowerAscii()}.nim", presetText.replace("{{APP_NAME}}", name))
   writeFile("config.nims", cfgTemplate)
   writeFile(".gitignore", ignoreTemplate)
+  writeFile(dir/".vscode/tasks.json", vsTemplate)
 
   echo &"Project generated in {dir}"
 
-dispatch(fuseproject)
+dispatch(fuseproject, help = {
+  "name": "name of project",
+  "directory": "directory to place project in"
+})

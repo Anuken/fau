@@ -1,7 +1,7 @@
 include backend/glfwcore
 
-import common, batch, times
-export common
+import common, batch, times, audio, shapes, font
+export common, audio, shapes, font
 
 var lastFrameTime: int64 = -1
 var frameCounterStart: int64
@@ -9,7 +9,7 @@ var frames: int
 var startTime: Time
 
 proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
-  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas") =
+  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas", visualizer = false) =
 
   initCore(
   (proc() =
@@ -36,6 +36,9 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     inc fuse.frameId
   ), 
   (proc() =
+    #initialize audio
+    initAudio(visualizer)
+
     #add default framebuffer to state
     fuse.bufferStack.add newDefaultFramebuffer()
     

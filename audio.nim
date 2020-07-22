@@ -1,8 +1,13 @@
 import audio/soloud_gen
 
-var so = SoloudCreate()
+var so: ptr Soloud
 
-discard so.SoloudInit()
+proc initAudio*(visualize = false) =
+  so = SoloudCreate()
+  if visualize:
+    discard so.SoloudInitEx(SOLOUD_ENABLE_VISUALIZATION.cuint, SOLOUD_AUTO.cuint, SOLOUD_AUTO.cuint, SOLOUD_AUTO.cuint, SOLOUD_AUTO.cuint)
+  else:
+    discard so.SoloudInit()
 
 type Sound* = ref object
   handle: ptr AudioSource
