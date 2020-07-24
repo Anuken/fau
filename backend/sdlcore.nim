@@ -280,9 +280,6 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   sdlFailIf coreWindow.isNil: "Window could not be created"
   defer: coreWindow.destroy()
 
-  #sdlFailIf(image.init(IMG_INIT_PNG) != IMG_INIT_PNG): "SDL2 Image initialization failed"
-  #defer: image.quit()
-
   let gl = sdl2.glCreateContext(coreWindow)
   sdlFailIf gl.isNil: "GL context could not be created"
   

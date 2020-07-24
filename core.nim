@@ -42,9 +42,11 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     #add default framebuffer to state
     fuse.bufferStack.add newDefaultFramebuffer()
     
-    #create default batch
-    let batch = newBatch()
-    batch.use()
+    #create and use batch
+    newBatch().use()
+
+    #enable sorting by default
+    fuse.batchSort = true
     
     #use standard blending
     fuse.batchBlending = blendNormal

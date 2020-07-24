@@ -636,22 +636,33 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
 # accesses a region from an atlas
 proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.patches["error"])
 
+#Batch "interface"
+type GenericBatch* = object of RootObj
+  #Reference to proc that flushes the batch
+  flushProc*: proc()
+  #Reference to a proc that draws a patch at specified coordinates
+  drawProc*: proc(region: Patch, x, y, width, height, originX = 0'f32, originY = 0'f32, rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF)
+  #Reference to a proc that draws custom vertices
+  drawVertProc*: proc(texture: Texture, vertices: array[24, Glfloat])
+  #Reference to a proc that draws anything inside a proc - used for sorting
+  drawBlock*: proc(value: proc())
+
 #STATE
 
 #Hold all the graphics state.
 type FuseState = object
-  #Reference to proc that flushes the batch
-  batchFlush*: proc()
-  #Reference to a proc that draws a patch at specified coordinates
-  batchDraw*: proc(region: Patch, x, y, width, height, originX = 0'f32, originY = 0'f32, rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF)
-  #Reference to a proc that draws custom vertices
-  batchDrawVert*: proc(texture: Texture, vertices: array[24, Glfloat])
-  #The currently-used batch shader
+  #The batch that does all the drawing
+  batch: GenericBatch
+  #The currently-used batch shader - nil to use standard shader
   batchShader*: Shader
   #The current blending type used by the batch
   batchBlending*: Blending
   #The matrix being used by the batch
   batchMat*: Mat
+  #The Z-layer used for drawing - requires sorted batch
+  batchZ*: float
+  #Whether sorting is enabled for the batch - requires sorted batch
+  batchSort*: bool
   #A white 1x1 patch
   white*: Patch
   #The global camera.
@@ -689,8 +700,11 @@ proc screen*(): Vec2 = vec2(fuse.width.float32, fuse.height.float32)
 
 converter findPatch*(name: string): Patch {.inline.} = fuse.atlas[name]
 
+#Activate a batch.
+proc use*(batch: GenericBatch) = fuse.batch = batch
+
 #Flush the batched items.
-proc drawFlush*() {.inline.} = fuse.batchFlush()
+proc drawFlush*() {.inline.} = fuse.batch.flushProc()
 
 #Set a shader to be used for rendering. This flushes the batch.
 proc drawShader*(shader: Shader) {.inline.} = 
@@ -702,6 +716,12 @@ proc drawMat*(mat: Mat) {.inline.} =
   drawFlush()
   fuse.batchMat = mat
 
+proc draw*(value: proc()) =
+  if fuse.batch.drawBlock.isNil:
+    value()
+  else:
+    fuse.batch.drawBlock(value)
+
 proc draw*(region: Patch, x, y: float32, widthScl = 1'f32, heightScl = 1'f32, originXScl = 0.5'f32, originYScl = 0.5'f32, 
   rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
   let 
@@ -710,14 +730,14 @@ proc draw*(region: Patch, x, y: float32, widthScl = 1'f32, heightScl = 1'f32, or
     originX = width * originXScl
     originY = height * originYScl
 
-  fuse.batchDraw(region, x - width / 2.0, y - height / 2.0, width, height, originX, originY, rotation, color, mixColor)
+  fuse.batch.drawProc(region, x - width / 2.0, y - height / 2.0, width, height, originX, originY, rotation, color, mixColor)
 
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, 
   rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
-  fuse.batchDraw(region, x, y, width, height, originX, originY, rotation, color, mixColor)
+  fuse.batch.drawProc(region, x, y, width, height, originX, originY, rotation, color, mixColor)
 
 proc drawVert*(texture: Texture, vertices: array[24, Glfloat]) {.inline.} = 
-  fuse.batchDrawVert(texture, vertices)
+  fuse.batch.drawVertProc(texture, vertices)
 
 #Activates a camera.
 proc use*(cam: Cam) =

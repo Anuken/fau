@@ -3,69 +3,14 @@ import common, math
 const vertexSize = 6
 const spriteSize = 4 * vertexSize
 
-type Batch* = ref object
+type Batch* = ref object of GenericBatch
   mesh: Mesh
   shader: Shader
   lastTexture: Texture
   index: int
   size: int
-  
-proc newBatch*(size: int = 4092): Batch = 
-  result = Batch(
-    mesh: newMesh(
-      @[attribPos, attribTexCoords, attribColor, attribMixColor],
-      vertices = newSeq[Glfloat](size * spriteSize),
-      indices = newSeq[Glushort](size * 6)
-    ),
-    size: size * spriteSize
-  )
 
-  #set up default indices
-  let len = size * 6
-  var j = 0
-  var i = 0
-  
-  while i < len:
-    result.mesh.indices[i] = j.GLushort
-    result.mesh.indices[i + 1] = (j+1).GLushort
-    result.mesh.indices[i + 2] = (j+2).GLushort
-    result.mesh.indices[i + 3] = (j+2).GLushort
-    result.mesh.indices[i + 4] = (j+3).GLushort
-    result.mesh.indices[i + 5] = (j).GLushort
-    i += 6
-    j += 4
-  
-  #create default shader
-  result.shader = newShader(
-  """
-  attribute vec4 a_position;
-  attribute vec4 a_color;
-  attribute vec2 a_texc;
-  attribute vec4 a_mixcolor;
-  uniform mat4 u_proj;
-  varying vec4 v_color;
-  varying vec4 v_mixcolor;
-  varying vec2 v_texc;
-  void main(){
-    v_color = a_color;
-    v_mixcolor = a_mixcolor;
-    v_texc = a_texc;
-    gl_Position = u_proj * a_position;
-  }
-  """,
-
-  """
-  varying lowp vec4 v_color;
-  varying lowp vec4 v_mixcolor;
-  varying vec2 v_texc;
-  uniform sampler2D u_texture;
-  void main(){
-    vec4 c = texture2D(u_texture, v_texc);
-    gl_FragColor = v_color * mix(c, vec4(v_mixcolor.rgb, c.a), v_mixcolor.a);
-  }
-  """)
-
-proc flush*(batch: Batch) =
+proc flush(batch: Batch) =
   if batch.index == 0: return
 
   batch.lastTexture.use()
@@ -162,9 +107,65 @@ proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, h
 
   batch.index += spriteSize
 
-proc use*(batch: Batch) =
-  fuse.batchFlush = proc() = batch.flush()
-  fuse.batchDraw = proc(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) = 
-    batch.draw(region, x, y, width, height, originX, originY, rotation)
-  fuse.batchDrawVert = proc(texture: Texture, vertices: array[spriteSize, Glfloat]) {.nosinks.} = 
-    batch.draw(texture, vertices)
+proc newBatch*(size: int = 4092): Batch = 
+  result = Batch(
+    mesh: newMesh(
+      @[attribPos, attribTexCoords, attribColor, attribMixColor],
+      vertices = newSeq[Glfloat](size * spriteSize),
+      indices = newSeq[Glushort](size * 6)
+    ),
+    size: size * spriteSize
+  )
+
+  #assign procs
+  result.flushProc = proc() = 
+    result.flush()
+  result.drawProc = proc(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) = 
+    result.draw(region, x, y, width, height, originX, originY, rotation)
+  result.drawVertProc = proc(texture: Texture, vertices: array[spriteSize, Glfloat]) {.nosinks.} = 
+    result.draw(texture, vertices)
+
+  #set up default indices
+  let len = size * 6
+  var j = 0
+  var i = 0
+  
+  while i < len:
+    result.mesh.indices[i] = j.GLushort
+    result.mesh.indices[i + 1] = (j+1).GLushort
+    result.mesh.indices[i + 2] = (j+2).GLushort
+    result.mesh.indices[i + 3] = (j+2).GLushort
+    result.mesh.indices[i + 4] = (j+3).GLushort
+    result.mesh.indices[i + 5] = (j).GLushort
+    i += 6
+    j += 4
+  
+  #create default shader
+  result.shader = newShader(
+  """
+  attribute vec4 a_position;
+  attribute vec4 a_color;
+  attribute vec2 a_texc;
+  attribute vec4 a_mixcolor;
+  uniform mat4 u_proj;
+  varying vec4 v_color;
+  varying vec4 v_mixcolor;
+  varying vec2 v_texc;
+  void main(){
+    v_color = a_color;
+    v_mixcolor = a_mixcolor;
+    v_texc = a_texc;
+    gl_Position = u_proj * a_position;
+  }
+  """,
+
+  """
+  varying lowp vec4 v_color;
+  varying lowp vec4 v_mixcolor;
+  varying vec2 v_texc;
+  uniform sampler2D u_texture;
+  void main(){
+    vec4 c = texture2D(u_texture, v_texc);
+    gl_FragColor = v_color * mix(c, vec4(v_mixcolor.rgb, c.a), v_mixcolor.a);
+  }
+  """)

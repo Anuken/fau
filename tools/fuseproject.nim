@@ -181,9 +181,11 @@ proc fuseproject(name: string, directory = getHomeDir() / "Projects", preset = "
 
   createDir dir/".vscode"
 
+  let lowerName = name.toLowerAscii()
+
   #write a nakefile with basic setup
-  writeFile("nakefile.nim", nakeTemplate.replace("{{APP_NAME}}", name))
-  writeFile(&"{name.toLowerAscii()}.nim", presetText.replace("{{APP_NAME}}", name))
+  writeFile("nakefile.nim", nakeTemplate.replace("{{APP_NAME}}", lowerName))
+  writeFile(&"{lowerName}.nim", presetText.replace("{{APP_NAME}}", name))
   writeFile("config.nims", cfgTemplate)
   writeFile(".gitignore", ignoreTemplate)
   writeFile(dir/".vscode/tasks.json", vsTemplate)

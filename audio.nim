@@ -13,7 +13,7 @@ type Sound* = ref object
   handle: ptr AudioSource
 
 proc getFft*(): array[256, float32] =
-  let data = so.Soloud_calcFFT()
+  let data = so.SoloudCalcFFT()
   let dataArr = cast[ptr UncheckedArray[cfloat]](data)
   for i in 0..<256:
     result[i] = dataArr[i].float32
@@ -41,5 +41,5 @@ proc loadSoundStatic*(path: static[string]): Sound =
   return Sound(handle: handle)
 
 proc play*(sound: Sound, pitch = 1.0) =
-  let id = so.Soloud_play(sound.handle)
+  let id = so.SoloudPlay(sound.handle)
   discard so.SoloudSetRelativePlaySpeed(id, pitch)
