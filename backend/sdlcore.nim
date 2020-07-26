@@ -181,60 +181,6 @@ proc down*(key: KeyCode): bool {.inline.} = keysPressed[key]
 proc tapped*(key: KeyCode): bool {.inline.} = keysJustDown[key]
 proc released*(key: KeyCode): bool {.inline.} = keysJustUp[key]
 
-proc preUpdate() =
-
-  var w, h: cint
-  coreWindow.getSize(w, h)
-  (fuse.width, fuse.height) = (w.int, h.int)
-
-  var mx, my: cint
-  getMouseState(mx, my)
-  (fuse.mouseX, fuse.mouseY) = (mx.float32, fuse.heightf - 1 - my.float32)
-
-  #poll input
-  var event = defaultEvent
-  while pollEvent(event):
-    case event.kind
-    of QuitEvent:
-      coreRunning = false
-    of KeyDown:
-      let code = toKeyCode(event.key.keysym.scancode.int)
-      keysPressed[code] = true
-      keysJustDown[code] = true
-    of KeyUp:
-      let code = toKeyCode(event.key.keysym.scancode.int)
-      keysPressed[code] = false
-      keysJustUp[code] = true
-    of MouseButtonDown:
-      let code = mapMouseCode(event.button.button)
-      keysPressed[code] = true
-      keysJustDown[code] = true
-    of MouseButtonUp:
-      let code = mapMouseCode(event.button.button)
-      keysPressed[code] = false
-      keysJustUp[code] = true
-    of MouseWheel:
-      lastScrollX = if event.wheel.x < 0: -1 else: 1
-      lastScrollY = if event.wheel.y < 0: -1 else: 1
-    of WindowEvent:
-      case event.window.event
-      of WindowEvent_Resized:
-        let width = event.window.data1.cint
-        let height = event.window.data2.cint
-        glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
-      else:
-        discard
-    else:
-      discard
-
-proc postUpdate() =
-  sdl2.glSwapWindow(coreWindow) 
-  #clean up input
-  for x in keysJustDown.mitems: x = false
-  for x in keysJustUp.mitems: x = false
-  lastScrollX = 0
-  lastScrollY = 0
-
 var theLoop: proc()
 
 #wraps the main loop for emscripten compatibility
@@ -297,9 +243,58 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   initProc()
 
   mainLoop(proc() =
-    preUpdate()
+    var w, h: cint
+    coreWindow.getSize(w, h)
+    (fuse.width, fuse.height) = (w.int, h.int)
+
+    var mx, my: cint
+    getMouseState(mx, my)
+    (fuse.mouseX, fuse.mouseY) = (mx.float32, fuse.heightf - 1 - my.float32)
+
+    #poll input
+    var event = defaultEvent
+    while pollEvent(event):
+      case event.kind
+      of QuitEvent:
+        coreRunning = false
+      of KeyDown:
+        let code = toKeyCode(event.key.keysym.scancode.int)
+        keysPressed[code] = true
+        keysJustDown[code] = true
+      of KeyUp:
+        let code = toKeyCode(event.key.keysym.scancode.int)
+        keysPressed[code] = false
+        keysJustUp[code] = true
+      of MouseButtonDown:
+        let code = mapMouseCode(event.button.button)
+        keysPressed[code] = true
+        keysJustDown[code] = true
+      of MouseButtonUp:
+        let code = mapMouseCode(event.button.button)
+        keysPressed[code] = false
+        keysJustUp[code] = true
+      of MouseWheel:
+        lastScrollX = if event.wheel.x < 0: -1 else: 1
+        lastScrollY = if event.wheel.y < 0: -1 else: 1
+      of WindowEvent:
+        case event.window.event
+        of WindowEvent_Resized:
+          let width = event.window.data1.cint
+          let height = event.window.data2.cint
+          glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
+        else:
+          discard
+      else:
+        discard
+    
     loopProc()
-    postUpdate()
+
+    sdl2.glSwapWindow(coreWindow) 
+    #clean up input
+    for x in keysJustDown.mitems: x = false
+    for x in keysJustUp.mitems: x = false
+    lastScrollX = 0
+    lastScrollY = 0
   )
 
 #set window title

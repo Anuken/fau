@@ -1,4 +1,8 @@
-include backend/glfwcore
+
+when defined(Android):
+  include backend/glfmcore
+else:
+  include backend/glfwcore
 
 import common, batch, times, audio, shapes, font
 export common, audio, shapes, font

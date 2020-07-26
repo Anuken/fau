@@ -27,6 +27,10 @@ elif defined(osx):
   cDefine("WITH_COREAUDIO")
   {.passL: "-framework CoreAudio -framework AudioToolbox".}
   cCompile(src/"backend/coreaudio/*.cpp")
+elif defined(Android):
+  {.passL: "-lOpenSLES".}
+  cDefine("WITH_OPENSLES")
+  cCompile(src/"backend/opensles/*.cpp")
 elif defined(Linux):
   {.passL: "-lpthread".}
   cDefine("WITH_MINIAUDIO")

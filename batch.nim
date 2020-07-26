@@ -108,7 +108,7 @@ proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, h
   batch.index += spriteSize
 
 proc newBatch*(size: int = 4092): Batch = 
-  result = Batch(
+  let batch = Batch(
     mesh: newMesh(
       @[attribPos, attribTexCoords, attribColor, attribMixColor],
       vertices = newSeq[Glfloat](size * spriteSize),
@@ -118,12 +118,12 @@ proc newBatch*(size: int = 4092): Batch =
   )
 
   #assign procs
-  result.flushProc = proc() = 
-    result.flush()
-  result.drawProc = proc(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) = 
-    result.draw(region, x, y, width, height, originX, originY, rotation)
-  result.drawVertProc = proc(texture: Texture, vertices: array[spriteSize, Glfloat]) {.nosinks.} = 
-    result.draw(texture, vertices)
+  batch.flushProc = proc() = 
+    batch.flush()
+  batch.drawProc = proc(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) = 
+    batch.draw(region, x, y, width, height, originX, originY, rotation)
+  batch.drawVertProc = proc(texture: Texture, vertices: array[spriteSize, Glfloat]) {.nosinks.} = 
+    batch.draw(texture, vertices)
 
   #set up default indices
   let len = size * 6
@@ -131,17 +131,17 @@ proc newBatch*(size: int = 4092): Batch =
   var i = 0
   
   while i < len:
-    result.mesh.indices[i] = j.GLushort
-    result.mesh.indices[i + 1] = (j+1).GLushort
-    result.mesh.indices[i + 2] = (j+2).GLushort
-    result.mesh.indices[i + 3] = (j+2).GLushort
-    result.mesh.indices[i + 4] = (j+3).GLushort
-    result.mesh.indices[i + 5] = (j).GLushort
+    batch.mesh.indices[i] = j.GLushort
+    batch.mesh.indices[i + 1] = (j+1).GLushort
+    batch.mesh.indices[i + 2] = (j+2).GLushort
+    batch.mesh.indices[i + 3] = (j+2).GLushort
+    batch.mesh.indices[i + 4] = (j+3).GLushort
+    batch.mesh.indices[i + 5] = (j).GLushort
     i += 6
     j += 4
   
   #create default shader
-  result.shader = newShader(
+  batch.shader = newShader(
   """
   attribute vec4 a_position;
   attribute vec4 a_color;
@@ -169,3 +169,5 @@ proc newBatch*(size: int = 4092): Batch =
     gl_FragColor = v_color * mix(c, vec4(v_mixcolor.rgb, c.a), v_mixcolor.a);
   }
   """)
+
+  result = batch

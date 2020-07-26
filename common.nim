@@ -54,7 +54,7 @@ proc resize*(cam: Cam, w, h: float32) =
 
 #defines a color
 type Color* = object
-  r*, g*, b*, a*: float32 #TODO should be floats
+  r*, g*, b*, a*: float32
 
 proc rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color =
   result = Color(r: r, g: g, b: b, a: a)
@@ -73,7 +73,7 @@ let colorClearF* = rgba(0, 0, 0, 0).toFloat()
 
 #converts a hex string to a color at compile-time; no overhead
 export parseHexInt
-template `%`*(str: string): Color =
+template `%`*(str: static[string]): Color =
   const ret = Color(r: str[0..1].parseHexInt().float32 / 255.0, g: str[2..3].parseHexInt().float32 / 255.0, b: str[4..5].parseHexInt().float32 / 255.0, a: if str.len > 6: str[6..7].parseHexInt().float32 / 255.0 else: 1.0)
   ret
 
@@ -637,7 +637,7 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
 proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.patches["error"])
 
 #Batch "interface"
-type GenericBatch* = object of RootObj
+type GenericBatch* = ref object of RootObj
   #Reference to proc that flushes the batch
   flushProc*: proc()
   #Reference to a proc that draws a patch at specified coordinates
