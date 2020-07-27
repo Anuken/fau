@@ -197,9 +197,12 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
 
     cinitProc()
+
+    log(4, "WHY", "Called the init proc!")
   )
 
   display.glfmSetMainLoopFunc(proc(display: ptr GLFMDisplay; frameTime: cdouble) {.cdecl.} =
+    log(4, "WHY", "Begin main loop!")
     clearScreen(cclearColor)
 
     cloopProc()
@@ -209,6 +212,8 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     for x in keysJustUp.mitems: x = false
     lastScrollX = 0
     lastScrollY = 0
+
+    log(4, "WHY", "End loop")
   )
   
 
