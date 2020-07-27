@@ -133,9 +133,7 @@ proc mapMouseCode(code: cint): KeyCode =
     else: keyUnknown
 ]#
 
-proc NimMain() {.importc.} # use --noMain:on which generates NimMain() instead of C main()
-
-proc log(level: cint, tag: cstring, fmt: cstring) {.importc: "__android_log_print", cdecl, varargs.}
+proc NimMain() {.importc.}
 
 var
   cloopProc: proc()
@@ -154,8 +152,6 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
   echo "Initialized GLFM v" & $GLFM_VERSION_MAJOR & "." & $GLFM_VERSION_MINOR
 
-  #listen to window size changes and relevant events.
-
   display.glfmSetSurfaceResizedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
     (fuse.width, fuse.height) = (width.int, height.int)
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
@@ -171,25 +167,26 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     let code = toKeyCode(key)
     
     case action:
-      of PRESS: 
+      of GLFMKeyActionPressed: 
         keysJustDown[code] = true
         keysPressed[code] = true
-      of RELEASE: 
+
+        return true
+      of GLFMKeyActionReleased: 
         keysJustUp[code] = true
         keysPressed[code] = false
+
+        return true
       else: discard
 
-      return true
+      return false
   )]#
-
-  #grab the state
 
   display.glfmSetSurfaceCreatedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
     if not loadGl(glfmGetProcAddress):
       raise Exception.newException("Failed to load OpenGL.")
 
     echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
-    log(4, "WHY", "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor)
 
     fuse.width = width.int
     fuse.height = height.int
@@ -197,12 +194,9 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
 
     cinitProc()
-
-    log(4, "WHY", "Called the init proc!")
   )
 
   display.glfmSetMainLoopFunc(proc(display: ptr GLFMDisplay; frameTime: cdouble) {.cdecl.} =
-    log(4, "WHY", "Begin main loop!")
     clearScreen(cclearColor)
 
     cloopProc()
@@ -212,8 +206,6 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     for x in keysJustUp.mitems: x = false
     lastScrollX = 0
     lastScrollY = 0
-
-    log(4, "WHY", "End loop")
   )
   
 

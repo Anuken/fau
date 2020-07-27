@@ -12,6 +12,8 @@ var frameCounterStart: int64
 var frames: int
 var startTime: Time
 
+proc log(level: cint, tag: cstring, fmt: cstring) {.importc: "__android_log_print", cdecl, varargs.}
+
 proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
   depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas", visualizer = false) =
 
@@ -40,6 +42,7 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     inc fuse.frameId
   ), 
   (proc() =
+  
     #initialize audio
     initAudio(visualizer)
 
