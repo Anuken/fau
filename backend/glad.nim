@@ -764,8 +764,8 @@ proc findCoreGLES2(glVersion: string) =
       version = version.replace(p)
       break
 
-  var major = ord(glVersion[0]) - ord('0')
-  var minor = ord(glVersion[2]) - ord('0')
+  var major = ord(version[0]) - ord('0')
+  var minor = ord(version[2]) - ord('0')
 
   glVersionMajor = major
   glVersionMinor = minor
@@ -789,6 +789,7 @@ proc gladLoadGLES2(load: proc): bool =
 #loads the correct platform-specific version of openGL (ES 2.0 on Android / iOS, standard GL 2.0+ on desktop)
 proc loadGl*(load: proc): bool = 
   when defined(Android) or defined(iOS):
+    echo "glLoadGLES2"
     return gladLoadGLES2(load)
   else:
     return gladLoadGL(load)

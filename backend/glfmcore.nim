@@ -135,27 +135,24 @@ proc mapMouseCode(code: cint): KeyCode =
 
 proc NimMain() {.importc.} # use --noMain:on which generates NimMain() instead of C main()
 
+proc log(level: cint, tag: cstring, fmt: cstring) {.importc: "__android_log_print", cdecl, varargs.}
+
 var
   cloopProc: proc()
   cinitProc: proc()
   cclearColor: Color
 
-proc glfmMain*(display: ptr GLFMDisplay) {.exportc.} =
+proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   NimMain()
+
+  #TODO should probably respect config options for this
+  display.glfmSetDisplayConfig(GLFMRenderingAPIOpenGLES2, GLFMColorFormatRGBA8888, GLFMDepthFormatNone, GLFMStencilFormatNone, GLFMMultisampleNone)
 
   display.glfmSetSurfaceErrorFunc(proc(display: ptr GLFMDisplay; message: cstring) {.cdecl.} =
     raise Exception.newException("GLFM error: " & $message)
   )
 
   echo "Initialized GLFM v" & $GLFM_VERSION_MAJOR & "." & $GLFM_VERSION_MINOR
-
-  #TODO should probably respect config options for this
-  display.glfmSetDisplayConfig(GLFMRenderingAPIOpenGLES2, GLFMColorFormatRGBA8888, GLFMDepthFormatNone, GLFMStencilFormatNone, GLFMMultisampleNone)
-
-  if not loadGl(glfmGetProcAddress):
-    raise Exception.newException("Failed to load OpenGL.")
-
-  echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
 
   #listen to window size changes and relevant events.
 
@@ -186,17 +183,21 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc.} =
   )]#
 
   #grab the state
-  var 
-    inWidth: cint = 0
-    inHeight: cint = 0
 
-  display.glfmGetDisplaySize(addr inWidth, addr inHeight)
-  fuse.width = inWidth.int
-  fuse.height = inHeight.int
-  
-  glViewport(0.GLint, 0.GLint, inWidth.GLsizei, inHeight.GLsizei)
+  display.glfmSetSurfaceCreatedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
+    if not loadGl(glfmGetProcAddress):
+      raise Exception.newException("Failed to load OpenGL.")
 
-  cinitProc()
+    echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
+    log(4, "WHY", "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor)
+
+    fuse.width = width.int
+    fuse.height = height.int
+
+    glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
+
+    cinitProc()
+  )
 
   display.glfmSetMainLoopFunc(proc(display: ptr GLFMDisplay; frameTime: cdouble) {.cdecl.} =
     clearScreen(cclearColor)
@@ -209,6 +210,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc.} =
     lastScrollX = 0
     lastScrollY = 0
   )
+  
 
 #most parameters are ignored here
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0)) =
