@@ -43,31 +43,31 @@ proc fillTri*(x1, y1, x2, y2, x3, y3, color: float32) =
 proc fillPoly*(x, y: float32, sides: int, radius: float32, rotation = 0'f32, color: float32 = colorWhiteF) =
   let space = PI*2 / sides.float32
 
-  for i in countup(0, sides-3, 3):
+  for i in countup(0, sides-1, 2):
     fillQuad(
-      x + cos(space * i.float32 + rotation) * radius,
-      y + sin(space * i.float32 + rotation) * radius,
+      x,
+      y,
+      x + cos(space * (i).float32 + rotation) * radius,
+      y + sin(space * (i).float32 + rotation) * radius,
       x + cos(space * (i + 1).float32 + rotation) * radius,
       y + sin(space * (i + 1).float32 + rotation) * radius,
       x + cos(space * (i + 2).float32 + rotation) * radius,
       y + sin(space * (i + 2).float32 + rotation) * radius,
-      x + cos(space * (i + 3).float32 + rotation) * radius,
-      y + sin(space * (i + 3).float32 + rotation) * radius,
       color
     )
   
-  let md = sides mod 3
+  let md = sides mod 2
 
-  if md != 0:
-    for i in (sides - md - 1)..<sides:
-      fillTri(
-        x, y,
-        x + cos(space * i.float32 + rotation) * radius,
-        y + sin(space * i.float32 + rotation) * radius,
-        x + cos(space * (i + 1).float32 + rotation) * radius,
-        y + sin(space * (i + 1).float32 + rotation) * radius,
-        color
-      )
+  if md != 0 and sides >= 4:
+    let i = sides - 2
+    fillTri(
+      x, y,
+      x + cos(space * i.float32 + rotation) * radius,
+      y + sin(space * i.float32 + rotation) * radius,
+      x + cos(space * (i + 1).float32 + rotation) * radius,
+      y + sin(space * (i + 1).float32 + rotation) * radius,
+      color
+    )
 
 proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0'f32, color: float32 = colorWhiteF) =
   fillPoly(pos.x, pos.y, sides, radius, rotation, color)

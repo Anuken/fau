@@ -56,15 +56,21 @@ proc resize*(cam: Cam, w, h: float32) =
 type Color* = object
   r*, g*, b*, a*: float32
 
-proc rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color =
-  result = Color(r: r, g: g, b: b, a: a)
+proc rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color = Color(r: r, g: g, b: b, a: a)
 
-proc rgb*(r: float32, g: float32, b: float32): Color =
-  result = Color(r: r, g: g, b: b, a: 1.0)
+proc rgb*(r: float32, g: float32, b: float32): Color = Color(r: r, g: g, b: b, a: 1.0)
+
+proc mix*(color: Color, other: Color, alpha: float32): Color =
+  let inv = 1.0 - alpha
+  return rgba(color.r*inv + other.r*alpha, color.g*inv + other.g*alpha, color.b*inv + other.b*alpha, color.a*inv + other.a*alpha)
 
 #convert a color to a ABGR float representation; result may be NaN
-proc toFloat*(color: Color): float32 = 
+proc toFloat*(color: Color): float32 {.inline.} = 
   cast[float32](((255 * color.a).int shl 24) or ((255 * color.b).int shl 16) or ((255 * color.g).int shl 8) or ((255 * color.r).int))
+
+proc fromFloat*(fv: float32): Color {.inline.} = 
+  let val = cast[uint32](fv)
+  return rgba(((val and 0x00ff0000.uint32) shr 16).float32 / 255.0, ((val and 0x0000ff00.uint32) shr 8).float32 / 255.0, (val and 0x000000ff.uint32).float32 / 255.0, ((val and 0xff000000.uint32) shr 24).float32 / 255.0)
 
 converter floatColor*(color: Color): float32 = color.toFloat
 
@@ -594,7 +600,7 @@ proc newTexturePacker*(width, height: int): TexturePacker =
     image: newImage(width, height, 4)
   )
 
-proc pack*(packer: TexturePacker, name: string, image: Image): Patch =
+proc pack*(packer: TexturePacker, image: Image): Patch =
   let (x, y) = packer.packer.pack(image.width, image.height)
 
   packer.image.blit(image, vmath.vec2(x.float32, y.float32))

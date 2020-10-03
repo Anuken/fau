@@ -40,7 +40,7 @@ proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128):
 
     let offset = font.getGlyphImageOffset(font.glyphs[code])
     let image = font.getGlyphImage(code)
-    let patch = packer.pack(code, image)
+    let patch = packer.pack(image)
     result.patches[code] = patch
     result.offsets[code] = vec2(offset.x, offset.y)
 
