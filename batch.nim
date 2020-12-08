@@ -121,7 +121,7 @@ proc newBatch*(size: int = 4092): Batch =
   batch.flushProc = proc() = 
     batch.flush()
   batch.drawProc = proc(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) = 
-    batch.draw(region, x, y, width, height, originX, originY, rotation)
+    batch.draw(region, x, y, width, height, originX, originY, rotation, color, mixColor)
   batch.drawVertProc = proc(texture: Texture, vertices: array[spriteSize, Glfloat]) {.nosinks.} = 
     batch.draw(texture, vertices)
 
@@ -153,7 +153,9 @@ proc newBatch*(size: int = 4092): Batch =
   varying vec2 v_texc;
   void main(){
     v_color = a_color;
+    v_color.a = v_color.a * (255.0/254.0);
     v_mixcolor = a_mixcolor;
+    v_mixcolor.a = v_mixcolor.a * (255.0/254.0);
     v_texc = a_texc;
     gl_Position = u_proj * a_position;
   }

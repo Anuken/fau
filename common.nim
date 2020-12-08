@@ -66,11 +66,11 @@ proc mix*(color: Color, other: Color, alpha: float32): Color =
 
 #convert a color to a ABGR float representation; result may be NaN
 proc toFloat*(color: Color): float32 {.inline.} = 
-  cast[float32](((255 * color.a).int shl 24) or ((255 * color.b).int shl 16) or ((255 * color.g).int shl 8) or ((255 * color.r).int))
+  cast[float32]((((255 * color.a).int shl 24) or ((255 * color.b).int shl 16) or ((255 * color.g).int shl 8) or ((255 * color.r).int)) and 0xfeffffff)
 
 proc fromFloat*(fv: float32): Color {.inline.} = 
   let val = cast[uint32](fv)
-  return rgba(((val and 0x00ff0000.uint32) shr 16).float32 / 255.0, ((val and 0x0000ff00.uint32) shr 8).float32 / 255.0, (val and 0x000000ff.uint32).float32 / 255.0, ((val and 0xff000000.uint32) shr 24).float32 / 255.0)
+  return rgba(((val and 0x00ff0000.uint32) shr 16).float32 / 255.0, ((val and 0x0000ff00.uint32) shr 8).float32 / 255.0, (val and 0x000000ff.uint32).float32 / 255.0, ((val and 0xff000000.uint32) shr 24).float32 / 255.0 * 255.0/254.0)
 
 converter floatColor*(color: Color): float32 = color.toFloat
 
@@ -162,7 +162,7 @@ proc `wrapV=`*(texture: Texture, wrap: Glenum) =
   texture.use()
   glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
 
-#loads texture data; the texture must be bound for this to work.
+#completely reloads texture data
 proc load*(texture: Texture, width: int, height: int, pixels: pointer) =
   #bind texture
   texture.use()
@@ -170,6 +170,12 @@ proc load*(texture: Texture, width: int, height: int, pixels: pointer) =
   glTexImage2D(texture.target, 0, GlRGBA.Glint, width.GLsizei, height.GLsizei, 0, GlRGBA, GlUnsignedByte, pixels)
   texture.width = width
   texture.height = height
+
+#updates a portion of a texture with some pixels.
+proc update*(texture: Texture, x, y, width, height: int, pixels: pointer) =
+  #bind texture
+  texture.use()
+  glTexSubImage2D(texture.target, 0, x.GLint, y.GLint, width.GLsizei, height.GLsizei, GlRGBA, GlUnsignedByte, pixels)
 
 #creates a base texture with no data uploaded
 proc newTexture*(width, height: int = 1): Texture = 
@@ -588,8 +594,8 @@ proc newDefaultFramebuffer*(): Framebuffer = Framebuffer(handle: glGetIntegerv(G
 
 #Dynamic packer that writes its results to a GL texture.
 type TexturePacker* = ref object
-  texture: Texture
-  packer: Packer
+  texture*: Texture
+  packer*: Packer
   image*: Image
 
 # Creates a new texture packer limited by the specified width/height

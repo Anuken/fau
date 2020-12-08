@@ -4,6 +4,19 @@ import math
 
 func lerp*(a, b, progress: float32): float32 = a + (b - a) * progress
 
+func dst*(x1, y1, z1, x2, y2, z2: float32): float32 {.inline.}  =
+  let 
+    a = x1 - x2
+    b = y1 - y2
+    c = z1 - z2
+  return sqrt(a*a + b*b + c*c)
+
+func dst*(x1, y1, x2, y2: float32): float32 {.inline.}  =
+  let 
+    a = x1 - x2
+    b = y1 - y2
+  return sqrt(a*a + b*b)
+
 #these are probably not great style but I'm sick of casting everything manually
 
 #converter convertf32*(i: int): float32 {.inline.} = i.float32
@@ -57,7 +70,7 @@ func nor*(vec: Vec2): Vec2 {.inline.} = vec / vec.len
 func lim*(vec: Vec2, limit: float32): Vec2 = 
   let l2 = vec.len2
   let limit2 = limit*limit
-  return if l2 > limit2: vec / sqrt(limit2 / l2) else: vec
+  return if l2 > limit2: vec * sqrt(limit2 / l2) else: vec
 
 func dst2*(vec: Vec2, other: Vec2): float32 {.inline.} = 
   let dx = vec.x - other.x
