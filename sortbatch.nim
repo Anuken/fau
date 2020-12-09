@@ -26,8 +26,6 @@ type SortBatch* = ref object of GenericBatch
 proc newSortBatch*(batch: GenericBatch): SortBatch = 
   result = SortBatch(base: batch)
 
-  #procs are assigned directly here for simplicity
-
   result.flushProc = proc() = 
     if fuse.batchSort:
       #sort requests by their Z value

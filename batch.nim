@@ -35,8 +35,9 @@ proc prepare(batch: Batch, texture: Texture) =
 proc draw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat]) =
   batch.prepare(texture)
 
-  let verts = addr batch.mesh.vertices
-  let idx = batch.index
+  let
+    verts = addr batch.mesh.vertices
+    idx = batch.index
 
   #copy over the vertices
   for i in 0..<spriteSize:
@@ -47,35 +48,33 @@ proc draw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat]) 
 proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: float32 = colorWhiteF, mixColor: float32 = colorClearF) =
   batch.prepare(region.texture)
 
-  #bottom left and top right corner points relative to origin
-  let worldOriginX = x + originX
-  let worldOriginY = y + originY
-  let fx = -originX
-  let fy = -originY
-  let fx2 = width - originX
-  let fy2 = height - originY
+  let
+    #bottom left and top right corner points relative to origin
+    worldOriginX = x + originX
+    worldOriginY = y + originY
+    fx = -originX
+    fy = -originY
+    fx2 = width - originX
+    fy2 = height - originY
+    #rotate
+    cos = cos(rotation.degToRad)
+    sin = sin(rotation.degToRad)
+    x1 = cos * fx - sin * fy + worldOriginX
+    y1 = sin * fx + cos * fy + worldOriginY
+    x2 = cos * fx - sin * fy2 + worldOriginX
+    y2 = sin * fx + cos * fy2 + worldOriginY
+    x3 = cos * fx2 - sin * fy2 + worldOriginX
+    y3 = sin * fx2 + cos * fy2 + worldOriginY
+    x4 = x1 + (x3 - x2)
+    y4 = y3 - (y2 - y1)
+    u = region.u
+    v = region.v2
+    u2 = region.u2
+    v2 = region.v
+    idx = batch.index
+    #using pointers seems to be faster.
+    verts = addr batch.mesh.vertices
 
-  #rotate
-  let cos = cos(rotation.degToRad)
-  let sin = sin(rotation.degToRad)
-
-  let x1 = cos * fx - sin * fy + worldOriginX
-  let y1 = sin * fx + cos * fy + worldOriginY
-  let x2 = cos * fx - sin * fy2 + worldOriginX
-  let y2 = sin * fx + cos * fy2 + worldOriginY
-  let x3 = cos * fx2 - sin * fy2 + worldOriginX
-  let y3 = sin * fx2 + cos * fy2 + worldOriginY
-  let x4 = x1 + (x3 - x2)
-  let y4 = y3 - (y2 - y1)
-
-  let u = region.u
-  let v = region.v2
-  let u2 = region.u2
-  let v2 = region.v
-  let idx = batch.index
-  
-  #using pointers seems to be faster.
-  let verts = addr batch.mesh.vertices
 
   verts[idx] = x1
   verts[idx + 1] = y1

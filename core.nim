@@ -4,7 +4,7 @@ when defined(Android):
 else:
   include backend/glfwcore
 
-import common, batch, times, audio, shapes, font
+import common, batch, sortbatch, times, audio, shapes, font
 export common, audio, shapes, font
 
 var lastFrameTime: int64 = -1
@@ -13,7 +13,7 @@ var frames: int
 var startTime: Time
 
 proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
-  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas", visualizer = false) =
+  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas", visualizer = false, sortSprites = false) =
 
   initCore(
   (proc() =
@@ -48,7 +48,11 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     fuse.bufferStack.add newDefaultFramebuffer()
     
     #create and use batch
-    newBatch().use()
+    if sortSprites:
+      newSortBatch(fuse.batch).use()
+    else:
+      newBatch().use()
+      
 
     #enable sorting by default
     fuse.batchSort = true
