@@ -7,6 +7,7 @@ const
   incl = baseDir/"include"
   src = baseDir/"src"
 
+#TODO switch to own fork, it's not (as) bugged
 static:
   gitPull("https://github.com/jarikomppa/soloud", baseDir, "include/*\nsrc/*\n", checkout = "RELEASE_20200207")
 

@@ -13,7 +13,7 @@ var frames: int
 var startTime: Time
 
 proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
-  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas", visualizer = false, sortSprites = false) =
+  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas", visualizer = false) =
 
   initCore(
   (proc() =
@@ -48,12 +48,8 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     fuse.bufferStack.add newDefaultFramebuffer()
     
     #create and use batch
-    if sortSprites:
-      newSortBatch(fuse.batch).use()
-    else:
-      newBatch().use()
+    fuse.batch = newBatch()
       
-
     #enable sorting by default
     fuse.batchSort = true
     

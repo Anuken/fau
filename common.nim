@@ -1,4 +1,4 @@
-import gl, strutils, gltypes, nimPNG, tables, fmath, streams, flippy, packer, macros, math
+import gl, strutils, gltypes, nimPNG, tables, fmath, streams, flippy, packer, macros, math, algorithm, sugar
 from vmath import nil
 
 export gltypes, fmath
@@ -648,10 +648,27 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
 # accesses a region from an atlas
 proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.patches["error"])
 
-
-const 
+const
   vertexSize = 6
   spriteSize = 4 * vertexSize
+
+type 
+  ReqKind = enum
+    reqVert,
+    reqRect,
+    reqProc
+  Req = object
+    blend: Blending
+    z: float32
+    case kind: ReqKind:
+    of reqVert:
+      verts: array[24, Glfloat]
+      tex: Texture
+    of reqRect:
+      patch: Patch
+      x, y, originX, originY, width, height, rotation, color, mixColor: float32
+    of reqProc:
+      draw: proc()
 
 type Batch* = ref object
   mesh: Mesh
@@ -659,6 +676,7 @@ type Batch* = ref object
   lastTexture: Texture
   index: int
   size: int
+  reqs: seq[Req]
 
 #STATE
 
@@ -736,78 +754,84 @@ proc prepare(batch: Batch, texture: Texture) =
     batch.flush()
     batch.lastTexture = texture
 
-proc draw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat]) =
-  batch.prepare(texture)
+proc drawRaw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat]) =
+  if fuse.batchSort:
+    batch.reqs.add(Req(kind: reqVert, tex: texture, verts: vertices, blend: fuse.batchBlending, z: fuse.batchZ))
+  else:
+    batch.prepare(texture)
 
-  let
-    verts = addr batch.mesh.vertices
-    idx = batch.index
+    let
+      verts = addr batch.mesh.vertices
+      idx = batch.index
 
-  #copy over the vertices
-  for i in 0..<spriteSize:
-    verts[i + idx] = vertices[i]
+    #copy over the vertices
+    for i in 0..<spriteSize:
+      verts[i + idx] = vertices[i]
 
-  batch.index += spriteSize
+    batch.index += spriteSize
 
-proc draw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: float32 = colorWhiteF, mixColor: float32 = colorClearF) =
-  batch.prepare(region.texture)
+proc drawRaw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: float32 = colorWhiteF, mixColor: float32 = colorClearF) =
+  if fuse.batchSort:
+    batch.reqs.add(Req(kind: reqRect, patch: region, x: x, y: y, width: width, height: height, originX: originX, originY: originY, rotation: rotation, color: color, mixColor: mixColor, blend: fuse.batchBlending, z: fuse.batchZ))
+  else:
+    batch.prepare(region.texture)
 
-  let
-    #bottom left and top right corner points relative to origin
-    worldOriginX = x + originX
-    worldOriginY = y + originY
-    fx = -originX
-    fy = -originY
-    fx2 = width - originX
-    fy2 = height - originY
-    #rotate
-    cos = cos(rotation.degToRad)
-    sin = sin(rotation.degToRad)
-    x1 = cos * fx - sin * fy + worldOriginX
-    y1 = sin * fx + cos * fy + worldOriginY
-    x2 = cos * fx - sin * fy2 + worldOriginX
-    y2 = sin * fx + cos * fy2 + worldOriginY
-    x3 = cos * fx2 - sin * fy2 + worldOriginX
-    y3 = sin * fx2 + cos * fy2 + worldOriginY
-    x4 = x1 + (x3 - x2)
-    y4 = y3 - (y2 - y1)
-    u = region.u
-    v = region.v2
-    u2 = region.u2
-    v2 = region.v
-    idx = batch.index
-    #using pointers seems to be faster.
-    verts = addr batch.mesh.vertices
+    let
+      #bottom left and top right corner points relative to origin
+      worldOriginX = x + originX
+      worldOriginY = y + originY
+      fx = -originX
+      fy = -originY
+      fx2 = width - originX
+      fy2 = height - originY
+      #rotate
+      cos = cos(rotation.degToRad)
+      sin = sin(rotation.degToRad)
+      x1 = cos * fx - sin * fy + worldOriginX
+      y1 = sin * fx + cos * fy + worldOriginY
+      x2 = cos * fx - sin * fy2 + worldOriginX
+      y2 = sin * fx + cos * fy2 + worldOriginY
+      x3 = cos * fx2 - sin * fy2 + worldOriginX
+      y3 = sin * fx2 + cos * fy2 + worldOriginY
+      x4 = x1 + (x3 - x2)
+      y4 = y3 - (y2 - y1)
+      u = region.u
+      v = region.v2
+      u2 = region.u2
+      v2 = region.v
+      idx = batch.index
+      #using pointers seems to be faster.
+      verts = addr batch.mesh.vertices
 
-  verts[idx] = x1
-  verts[idx + 1] = y1
-  verts[idx + 2] = u
-  verts[idx + 3] = v
-  verts[idx + 4] = color
-  verts[idx + 5] = mixColor
+    verts[idx] = x1
+    verts[idx + 1] = y1
+    verts[idx + 2] = u
+    verts[idx + 3] = v
+    verts[idx + 4] = color
+    verts[idx + 5] = mixColor
 
-  verts[idx + 6] = x2
-  verts[idx + 7] = y2
-  verts[idx + 8] = u
-  verts[idx + 9] = v2
-  verts[idx + 10] = color
-  verts[idx + 11] = mixColor
+    verts[idx + 6] = x2
+    verts[idx + 7] = y2
+    verts[idx + 8] = u
+    verts[idx + 9] = v2
+    verts[idx + 10] = color
+    verts[idx + 11] = mixColor
 
-  verts[idx + 12] = x3
-  verts[idx + 13] = y3
-  verts[idx + 14] = u2
-  verts[idx + 15] = v2
-  verts[idx + 16] = color
-  verts[idx + 17] = mixColor
+    verts[idx + 12] = x3
+    verts[idx + 13] = y3
+    verts[idx + 14] = u2
+    verts[idx + 15] = v2
+    verts[idx + 16] = color
+    verts[idx + 17] = mixColor
 
-  verts[idx + 18] = x4
-  verts[idx + 19] = y4
-  verts[idx + 20] = u2
-  verts[idx + 21] = v
-  verts[idx + 22] = color
-  verts[idx + 23] = mixColor
+    verts[idx + 18] = x4
+    verts[idx + 19] = y4
+    verts[idx + 20] = u2
+    verts[idx + 21] = v
+    verts[idx + 22] = color
+    verts[idx + 23] = mixColor
 
-  batch.index += spriteSize
+    batch.index += spriteSize
 
 proc newBatch*(size: int = 4092): Batch = 
   let batch = Batch(
@@ -869,24 +893,46 @@ proc newBatch*(size: int = 4092): Batch =
   result = batch
 
 #Flush the batched items.
-proc drawFlush*() {.inline.} = fuse.batch.flushProc()
+proc drawFlush*() =
+  if fuse.batchSort:
+    #sort requests by their Z value
+    fuse.batch.reqs.sort((a, b) => a.z.cmp b.z)
+    #disable it so following reqs are not sorted again
+    fuse.batchSort = false
+    
+    for req in fuse.batch.reqs:
+      fuse.batchBlending = req.blend
+      case req.kind:
+      of reqVert:
+        fuse.batch.drawRaw(req.tex, req.verts)
+      of reqRect:
+        fuse.batch.drawRaw(req.patch, req.x, req.y, req.width, req.height, req.originX, req.originY, req.rotation, req.color, req.mixColor)
+      of reqProc:
+        req.draw()
+    
+    fuse.batch.reqs.setLen(0)
+    fuse.batchSort = true
+
+  #flush the base batch
+  fuse.batch.flush()
 
 #Set a shader to be used for rendering. This flushes the batch.
-proc drawShader*(shader: Shader) {.inline.} = 
+proc drawShader*(shader: Shader) = 
   drawFlush()
   fuse.batchShader = shader
 
 #Sets the matrix used for rendering. This flushes the batch.
-proc drawMat*(mat: Mat) {.inline.} = 
+proc drawMat*(mat: Mat) = 
   drawFlush()
   fuse.batchMat = mat
 
 proc draw*(value: proc()) =
-  if fuse.batch.drawBlock.isNil:
-    value()
+  if fuse.batchSort:
+    fuse.batch.reqs.add(Req(kind: reqProc, draw: value))
   else:
-    fuse.batch.drawBlock(value)
+    value()
 
+#TODO inline
 proc draw*(region: Patch, x, y: float32, widthScl = 1'f32, heightScl = 1'f32, originXScl = 0.5'f32, originYScl = 0.5'f32, 
   rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
   let 
@@ -895,14 +941,16 @@ proc draw*(region: Patch, x, y: float32, widthScl = 1'f32, heightScl = 1'f32, or
     originX = width * originXScl
     originY = height * originYScl
 
-  fuse.batch.drawProc(region, x - width / 2.0, y - height / 2.0, width, height, originX, originY, rotation, color, mixColor)
+  fuse.batch.drawRaw(region, x - width / 2.0, y - height / 2.0, width, height, originX, originY, rotation, color, mixColor)
 
+#TODO inline
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, 
   rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
-  fuse.batch.drawProc(region, x, y, width, height, originX, originY, rotation, color, mixColor)
+  fuse.batch.drawRaw(region, x, y, width, height, originX, originY, rotation, color, mixColor)
 
+#TODO inline
 proc drawVert*(texture: Texture, vertices: array[24, Glfloat]) {.inline.} = 
-  fuse.batch.drawVertProc(texture, vertices)
+  fuse.batch.drawRaw(texture, vertices)
 
 #Activates a camera.
 proc use*(cam: Cam) =
