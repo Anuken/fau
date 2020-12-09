@@ -4,7 +4,7 @@ when defined(Android):
 else:
   include backend/glfwcore
 
-import common, batch, sortbatch, times, audio, shapes, font
+import common, times, audio, shapes, font
 export common, audio, shapes, font
 
 var lastFrameTime: int64 = -1

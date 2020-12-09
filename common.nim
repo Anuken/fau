@@ -683,7 +683,7 @@ type Batch* = ref object
 #Hold all the graphics state.
 type FuseState = object
   #The batch that does all the drawing
-  batch: Batch
+  batch*: Batch
   #The currently-used batch shader - nil to use standard shader
   batchShader*: Shader
   #The current blending type used by the batch
@@ -933,6 +933,7 @@ proc draw*(value: proc()) =
     value()
 
 #TODO inline
+#TODO do not use pixels
 proc draw*(region: Patch, x, y: float32, widthScl = 1'f32, heightScl = 1'f32, originXScl = 0.5'f32, originYScl = 0.5'f32, 
   rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
   let 
