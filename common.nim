@@ -83,14 +83,23 @@ template `%`*(str: static[string]): Color =
   const ret = Color(r: str[0..1].parseHexInt().float32 / 255.0, g: str[2..3].parseHexInt().float32 / 255.0, b: str[4..5].parseHexInt().float32 / 255.0, a: if str.len > 6: str[6..7].parseHexInt().float32 / 255.0 else: 1.0)
   ret
 
+#types of draw alignment
+const
+  daLeft* = 1
+  daRight* = 2
+  daTop* = 4
+  daBot* = 8
+  daCenter = daLeft or daRight or daTop or daBot
+
 #types of blending
 type Blending* = object
   src*: GLenum
   dst*: Glenum
 
-const blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
-const blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
-const blendDisabled* = Blending(src: GlZero, dst: GlZero)
+const 
+  blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
+  blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
+  blendDisabled* = Blending(src: GlZero, dst: GlZero)
 
 #activate a blending function
 proc use*(blend: Blending) = 
@@ -583,9 +592,11 @@ proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
     
     raise GlError.newException(message)
 
+#If not size arguments are provided, this buffer cannot be used until it is resized.
 proc newFramebuffer*(width: int = 2, height: int = 2): Framebuffer = 
   result = Framebuffer()
-  result.resize(width, height)
+  
+  if width != 2 or height != 2: result.resize(width, height)
 
 #Returns a new default framebuffer object.
 proc newDefaultFramebuffer*(): Framebuffer = Framebuffer(handle: glGetIntegerv(GlFramebufferBinding).GLuint, isDefault: true)
@@ -690,10 +701,10 @@ type FuseState = object
   batchBlending*: Blending
   #The matrix being used by the batch
   batchMat*: Mat
-  #The Z-layer used for drawing - requires sorted batch
-  batchZ*: float
   #Whether sorting is enabled for the batch - requires sorted batch
   batchSort*: bool
+  #Scaling of each pixel when drawn with a batch
+  pixelScl*: float32
   #A white 1x1 patch
   white*: Patch
   #The global camera.
@@ -754,9 +765,9 @@ proc prepare(batch: Batch, texture: Texture) =
     batch.flush()
     batch.lastTexture = texture
 
-proc drawRaw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat]) =
+proc drawRaw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat], z: float32) =
   if fuse.batchSort:
-    batch.reqs.add(Req(kind: reqVert, tex: texture, verts: vertices, blend: fuse.batchBlending, z: fuse.batchZ))
+    batch.reqs.add(Req(kind: reqVert, tex: texture, verts: vertices, blend: fuse.batchBlending, z: z))
   else:
     batch.prepare(texture)
 
@@ -770,9 +781,9 @@ proc drawRaw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat
 
     batch.index += spriteSize
 
-proc drawRaw(batch: Batch, region: Patch, x: float32, y: float32, width: float32, height: float32, originX: float32 = 0, originY: float32 = 0, rotation: float32 = 0, color: float32 = colorWhiteF, mixColor: float32 = colorClearF) =
+proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, originY, rotation, color, mixColor: float32) =
   if fuse.batchSort:
-    batch.reqs.add(Req(kind: reqRect, patch: region, x: x, y: y, width: width, height: height, originX: originX, originY: originY, rotation: rotation, color: color, mixColor: mixColor, blend: fuse.batchBlending, z: fuse.batchZ))
+    batch.reqs.add(Req(kind: reqRect, patch: region, x: x, y: y, z: z, width: width, height: height, originX: originX, originY: originY, rotation: rotation, color: color, mixColor: mixColor, blend: fuse.batchBlending))
   else:
     batch.prepare(region.texture)
 
@@ -904,9 +915,9 @@ proc drawFlush*() =
       fuse.batchBlending = req.blend
       case req.kind:
       of reqVert:
-        fuse.batch.drawRaw(req.tex, req.verts)
+        fuse.batch.drawRaw(req.tex, req.verts, 0)
       of reqRect:
-        fuse.batch.drawRaw(req.patch, req.x, req.y, req.width, req.height, req.originX, req.originY, req.rotation, req.color, req.mixColor)
+        fuse.batch.drawRaw(req.patch, req.x, req.y, 0.0, req.width, req.height, req.originX, req.originY, req.rotation, req.color, req.mixColor)
       of reqProc:
         req.draw()
     
@@ -933,25 +944,24 @@ proc draw*(value: proc()) =
     value()
 
 #TODO inline
-#TODO do not use pixels
-proc draw*(region: Patch, x, y: float32, widthScl = 1'f32, heightScl = 1'f32, originXScl = 0.5'f32, originYScl = 0.5'f32, 
-  rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
-  let 
-    width = region.widthf * widthScl
-    height = region.heightf * heightScl
-    originX = width * originXScl
-    originY = height * originYScl
+proc draw*(region: Patch, x, y: float32, z = 0'f32, width = region.widthf * fuse.pixelScl, height = region.heightf * fuse.pixelScl, 
+  originX = width * 0.5, originY = height * 0.5, rotation = 0'f32, align = daCenter,
+  color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
 
-  fuse.batch.drawRaw(region, x - width / 2.0, y - height / 2.0, width, height, originX, originY, rotation, color, mixColor)
+  let 
+    alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
+    alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
+
+  fuse.batch.drawRaw(region, x - width * alignH, y - height * alignV, z, width, height, originX, originY, rotation, color, mixColor)
 
 #TODO inline
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, 
   rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
-  fuse.batch.drawRaw(region, x, y, width, height, originX, originY, rotation, color, mixColor)
+  fuse.batch.drawRaw(region, x, y, 0, width, height, originX, originY, rotation, color, mixColor)
 
 #TODO inline
-proc drawVert*(texture: Texture, vertices: array[24, Glfloat]) {.inline.} = 
-  fuse.batch.drawRaw(texture, vertices)
+proc drawVert*(texture: Texture, vertices: array[24, Glfloat], z: float32 = 0) {.inline.} = 
+  fuse.batch.drawRaw(texture, vertices, z)
 
 #Activates a camera.
 proc use*(cam: Cam) =
@@ -989,5 +999,18 @@ proc start*(buffer: Framebuffer, clearColor: Color) =
 proc stop*(buffer: Framebuffer) =
   #pop current buffer from the stack, make sure it's correct
   if buffer != fuse.bufferStack.pop(): raise GLerror.newException("Framebuffer was not begun, can't end")
+
+  #flush anything drawn
+  drawFlush()
   #use previous buffer
   currentBuffer().use()
+
+#Draw something inside a framebuffer
+template inside*(buffer: Framebuffer, body: untyped) =
+  buffer.start(rgba(0, 0, 0, 0))
+  body
+  buffer.stop()
+
+#Blits a framebuffer to the screen.
+proc blit*(buffer: Framebuffer, z: float32 = 0, color: float32 = colorWhiteF) =
+  draw(buffer.texture, fuse.cam.pos.x, fuse.cam.pos.y, z = z, color = color, width = fuse.cam.w, height = -fuse.cam.h)

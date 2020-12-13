@@ -20,7 +20,7 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     let time = (times.getTime() - startTime).inNanoseconds
     if lastFrameTime == -1: lastFrameTime = time
 
-    fuse.delta = float(time - lastFrameTime) / 1000000000.0 * 60.0
+    fuse.delta = float(time - lastFrameTime) / 1000000000.0
     lastFrameTime = time
 
     if time - frameCounterStart >= 1000000000:
@@ -49,6 +49,8 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     
     #create and use batch
     fuse.batch = newBatch()
+
+    fuse.pixelScl = 1.0'f32
       
     #enable sorting by default
     fuse.batchSort = true
