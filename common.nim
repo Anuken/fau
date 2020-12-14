@@ -74,8 +74,12 @@ proc fromFloat*(fv: float32): Color {.inline.} =
 
 converter floatColor*(color: Color): float32 = color.toFloat
 
-let colorWhiteF* = rgb(1, 1, 1).toFloat()
-let colorClearF* = rgba(0, 0, 0, 0).toFloat()
+let
+  colorClear* = rgba(0, 0, 0, 0)
+  colorWhite* = rgb(1, 1, 1)
+  colorBlack* = rgba(0, 0, 0)
+  colorWhiteF* = colorWhite.toFloat()
+  colorClearF* = colorClear.toFloat()
 
 #converts a hex string to a color at compile-time; no overhead
 export parseHexInt
@@ -937,13 +941,18 @@ proc drawMat*(mat: Mat) =
   drawFlush()
   fuse.batchMat = mat
 
-proc draw*(value: proc()) =
+#Draws something custom at a specific Z layer
+proc draw*(z: float32, value: proc()) =
   if fuse.batchSort:
-    fuse.batch.reqs.add(Req(kind: reqProc, draw: value))
+    fuse.batch.reqs.add(Req(kind: reqProc, draw: value, z: z))
   else:
     value()
 
-#TODO inline
+#Custom handling of begin/end for a specific Z layer
+proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
+  draw(z - spread, layerBegin)
+  draw(z + spread, layerEnd)
+
 proc draw*(region: Patch, x, y: float32, z = 0'f32, width = region.widthf * fuse.pixelScl, height = region.heightf * fuse.pixelScl, 
   originX = width * 0.5, originY = height * 0.5, rotation = 0'f32, align = daCenter,
   color = colorWhiteF, mixColor = colorClearF) {.inline.} = 

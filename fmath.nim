@@ -83,6 +83,56 @@ func within*(vec: Vec2, other: Vec2, distance: float32): bool {.inline.} = vec.d
 
 proc `$`*(vec: Vec2): string = $vec.x & ", " & $vec.y
 
+#rectangle utility class
+
+type Rect* = object
+  x*, y*, w*, h*: float32
+
+proc rect*(x, y, w, h: float32): Rect = Rect(x: x, y: y, w: w, h: h)
+#collision stuff
+
+proc overlaps*(a, b: Rect): bool = a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
+
+proc overlapDelta*(a, b: Rect): Vec2 =
+  var penetration = 0f
+  let 
+    ax = a.x + a.w / 2
+    bx = b.x + b.w / 2
+    ay = a.y + a.h / 2
+    by = b.y + b.h / 2
+    nx = ax - bx
+    ny = ay - by
+    aex = a.w / 2
+    bex = b.w / 2
+    xoverlap = aex + bex - abs(nx)
+
+  if abs(xoverlap) > 0:
+    let 
+      aey = a.h / 2
+      bey = b.h / 2
+      yoverlap = aey + bey - abs(ny)
+
+    if abs(yoverlap) > 0:
+      if abs(xoverlap) < abs(yoverlap):
+        result.x = if nx < 0: 1 else: -1
+        result.y = 0
+        penetration = xoverlap
+      else:
+        result.x = 0
+        result.y = if ny < 0: 1 else: -1
+        penetration = yoverlap
+      
+  let 
+    percent = 1.0
+    slop = 0.0
+    m = max(penetration - slop, 0.0)
+    cx = m * result.x * percent
+    cy = m * result.y * percent
+
+  result.x = -cx
+  result.y = -cy
+
+
 #3x3 matrix for 2D transformations
 const 
   M00 = 0

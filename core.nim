@@ -4,7 +4,7 @@ when defined(Android):
 else:
   include backend/glfwcore
 
-import common, times, audio, shapes, font
+import common, times, audio, shapes, font, random
 export common, audio, shapes, font
 
 var lastFrameTime: int64 = -1
@@ -40,6 +40,9 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     inc fuse.frameId
   ), 
   (proc() =
+
+    #randomize so it doesn't have to be done somewhere else
+    randomize()
 
     #initialize audio
     initAudio(visualizer)
