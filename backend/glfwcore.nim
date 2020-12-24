@@ -1,4 +1,4 @@
-import staticglfw, glad, ../common
+import staticglfw, glad
 
 var running: bool = true
 var window: Window
@@ -50,7 +50,7 @@ proc toKeyCode(scancode: cint): KeyCode =
     of KEY_P: keyP
     of KEY_Q: keyQ
     of KEY_R: keyR
-    of KEY_S: keyS
+    of KEY_S: KeyCode.keyS
     of KEY_T: keyT
     of KEY_U: keyU
     of KEY_V: keyV
@@ -148,7 +148,7 @@ proc mainLoop(target: proc()) =
     while window.windowShouldClose() == 0 and running:
       target()
 
-proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0)) =
+proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0, stencilBits = 0) =
   
   discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
     raise Exception.newException("Error initializing GLFW: " & $desc & " (error code: " & $code & ")")
@@ -236,7 +236,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
   mainLoop(proc() =
     pollEvents()
-    clearScreen(clearColor)
+    clearScreen(fuse.clearColor)
 
     loopProc()
 

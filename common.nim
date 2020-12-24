@@ -217,7 +217,7 @@ proc loadTextureBytes*(bytes: string): Texture =
   let data = decodePNG32(bytes)
 
   result.load(data.width, data.height, addr data.data[0])
-
+  
 #load texture from path
 proc loadTexture*(path: string): Texture = loadTextureBytes(readFile(path))
 
@@ -645,6 +645,7 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
   const pngPath = path & ".png"
   
   result.texture = loadTextureStatic(pngPath)
+
   let stream = staticReadStream(dataPath)
 
   let amount = stream.readInt32()
@@ -659,7 +660,7 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
       patch = newPatch(result.texture, x, y, width, height)
 
     result.patches[name] = patch
-
+  stream.close()
 # accesses a region from an atlas
 proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.patches["error"])
 
@@ -697,6 +698,8 @@ type Batch* = ref object
 
 #Hold all the graphics state.
 type FuseState = object
+  #Screen clear color
+  clearColor*: Color
   #The batch that does all the drawing
   batch*: Batch
   #The currently-used batch shader - nil to use standard shader
@@ -1023,3 +1026,94 @@ template inside*(buffer: Framebuffer, body: untyped) =
 #Blits a framebuffer to the screen.
 proc blit*(buffer: Framebuffer, z: float32 = 0, color: float32 = colorWhiteF) =
   draw(buffer.texture, fuse.cam.pos.x, fuse.cam.pos.y, z = z, color = color, width = fuse.cam.w, height = -fuse.cam.h)
+
+#BACKEND & INITIALIZATION
+
+when defined(Android):
+  include backend/glfmcore
+else:
+  include backend/glfwcore
+
+import times, audio, shapes, font, random
+export audio, shapes, font
+
+#TODO move this somewhere else
+proc axis*(left, right: KeyCode): int = 
+  if left.down() and right.down(): return 0
+  if left.down(): return -1
+  if right.down(): return 1
+  return 0
+
+var 
+  lastFrameTime: int64 = -1
+  frameCounterStart: int64
+  frames: int
+  startTime: Time
+
+proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
+  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas", visualizer = false) =
+
+  initCore(
+  (proc() =
+    let time = (times.getTime() - startTime).inNanoseconds
+    if lastFrameTime == -1: lastFrameTime = time
+
+    fuse.delta = float(time - lastFrameTime) / 1000000000.0
+    lastFrameTime = time
+
+    if time - frameCounterStart >= 1000000000:
+      fuse.fps = frames
+      frames = 0
+      frameCounterStart = time
+
+    inc frames
+
+    (fuse.widthf, fuse.heightf) = (fuse.width.float32, fuse.height.float32)
+
+    loopProc()
+
+    #flush any pending draw operations
+    drawFlush()
+
+    inc fuse.frameId
+  ), 
+  (proc() =
+
+    #randomize so it doesn't have to be done somewhere else
+    randomize()
+
+    #initialize audio
+    initAudio(visualizer)
+
+    #add default framebuffer to state
+    fuse.bufferStack.add newDefaultFramebuffer()
+    
+    #create and use batch
+    fuse.batch = newBatch()
+
+    fuse.pixelScl = 1.0'f32
+      
+    #enable sorting by default
+    fuse.batchSort = true
+    
+    #use standard blending
+    fuse.batchBlending = blendNormal
+
+    #set matrix to ortho
+    fuse.batchMat = ortho(0, 0, fuse.width.float32, fuse.height.float32)
+
+    #create default camera
+    fuse.cam = newCam(fuse.width.float32, fuse.height.float32)
+
+    #load sprites
+    fuse.atlas = loadAtlasStatic(atlasFile)
+
+    #load white region
+    fuse.white = fuse.atlas["white"]
+
+    #center the UVs to prevent artifacts
+    let avg = ((fuse.white.u + fuse.white.u2) / 2.0, (fuse.white.v + fuse.white.v2) / 2.0)
+    (fuse.white.u, fuse.white.v, fuse.white.u2, fuse.white.v2) = (avg[0], avg[1], avg[0], avg[1])
+    
+    initProc()
+  ), windowWidth = windowWidth, windowHeight = windowHeight, windowTitle = windowTitle, maximize = maximize)

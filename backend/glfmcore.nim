@@ -1,4 +1,4 @@
-import glfm, glad, ../common
+import glfm, glad
 
 var keysPressed: array[KeyCode, bool]
 var keysJustDown: array[KeyCode, bool]
@@ -138,7 +138,6 @@ proc NimMain() {.importc.}
 var
   cloopProc: proc()
   cinitProc: proc()
-  cclearColor: Color
 
 proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   NimMain()
@@ -197,7 +196,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   )
 
   display.glfmSetMainLoopFunc(proc(display: ptr GLFMDisplay; frameTime: cdouble) {.cdecl.} =
-    clearScreen(cclearColor)
+    clearScreen(fuse.clearColor)
 
     cloopProc()
 
@@ -210,10 +209,9 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   
 
 #most parameters are ignored here
-proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0)) =
+proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0, stencilBits = 0) =
   cloopProc = loopProc
   cinitProc = initProc
-  cclearColor = clearColor
 
 #implemented as a stub method for feature parity
 proc `windowTitle=`*(title: string) = discard
