@@ -415,6 +415,8 @@ proc setf*(shader: Shader, name: string, value1, value2, value3, value4: float) 
   let loc = shader.findUniform(name)
   if loc != -1: glUniform4f(loc.GLint, value1.GLfloat, value2.GLfloat, value3.GLfloat, value4.GLfloat)
 
+proc setf*(shader: Shader, name: string, col: Color) = shader.setf(name, col.r, col.g, col.b, col.a)
+
 #MESH
 
 type VertexAttribute* = object
@@ -716,6 +718,10 @@ type FuseState = object
   white*: Patch
   #The global camera.
   cam*: Cam
+  #Fullscreen quad mesh.
+  quad*: Mesh
+  #Screenspace shader
+  screenspace*: Shader
   #Currently bound framebuffers
   bufferStack*: seq[Framebuffer]
   #Global texture atlas.
@@ -730,11 +736,16 @@ type FuseState = object
   fps*: int
   #Delta time between frames in 60th of a second
   delta*: float
+  #Time passed since game launch, in seconds
+  time*: float
   #Mouse position
   mouseX*, mouseY*: float32
 
 #Global instance of fuse state.
 var fuse* = FuseState()
+
+#Turns pixel units into world units
+proc px*(val: float32): float32 {.inline.} = val * fuse.pixelScl
 
 proc unproject*(cam: Cam, vec: Vec2): Vec2 = 
   vec2((2 * vec.x) / fuse.widthf - 1, (2 * vec.y) / fuse.heightf - 1) * cam.inv
@@ -917,9 +928,15 @@ proc drawFlush*() =
     fuse.batch.reqs.sort((a, b) => a.z.cmp b.z)
     #disable it so following reqs are not sorted again
     fuse.batchSort = false
+
+    let last = fuse.batchBlending
     
     for req in fuse.batch.reqs:
-      fuse.batchBlending = req.blend
+      if fuse.batchBlending != req.blend:
+        fuse.batch.flush()
+        req.blend.use()
+        fuse.batchBlending = req.blend
+      
       case req.kind:
       of reqVert:
         fuse.batch.drawRaw(req.tex, req.verts, 0)
@@ -930,6 +947,7 @@ proc drawFlush*() =
     
     fuse.batch.reqs.setLen(0)
     fuse.batchSort = true
+    fuse.batchBlending = last
 
   #flush the base batch
   fuse.batch.flush()
@@ -947,7 +965,7 @@ proc drawMat*(mat: Mat) =
 #Draws something custom at a specific Z layer
 proc draw*(z: float32, value: proc()) =
   if fuse.batchSort:
-    fuse.batch.reqs.add(Req(kind: reqProc, draw: value, z: z))
+    fuse.batch.reqs.add(Req(kind: reqProc, draw: value, z: z, blend: fuse.batchBlending))
   else:
     value()
 
@@ -965,6 +983,41 @@ proc draw*(region: Patch, x, y: float32, z = 0'f32, width = region.widthf * fuse
     alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
 
   fuse.batch.drawRaw(region, x - width * alignH, y - height * alignV, z, width, height, originX, originY, rotation, color, mixColor)
+
+#draws a region with rotated bits
+proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int): Vec2, z = 0'f32, width = region.widthf * fuse.pixelScl, height = region.heightf * fuse.pixelScl, 
+  originX = width * 0.5, originY = height * 0.5, rotation = 0'f32, align = daCenter,
+  color = colorWhiteF, mixColor = colorClearF) =
+  
+  let
+    alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
+    alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
+    worldOriginX: float32 = x + originX - width * alignH
+    worldOriginY: float32 = y + originY - height * alignV
+    fx: float32 = -originX
+    fy: float32 = -originY
+    fx2: float32 = width - originX
+    fy2: float32 = height - originY
+    cos: float32 = cos(rotation.degToRad)
+    sin: float32 = sin(rotation.degToRad)
+    x1 = cos * fx - sin * fy + worldOriginX
+    y1 = sin * fx + cos * fy + worldOriginY
+    x2 = cos * fx - sin * fy2 + worldOriginX
+    y2 = sin * fx + cos * fy2 + worldOriginY
+    x3 = cos * fx2 - sin * fy2 + worldOriginX
+    y3 = sin * fx2 + cos * fy2 + worldOriginY
+    x4 = x1 + (x3 - x2)
+    y4 = y3 - (y2 - y1)
+    u = region.u
+    v = region.v2
+    u2 = region.u2
+    v2 = region.v
+    cor1 = mutator(x1, y1, 0)
+    cor2 = mutator(x2, y2, 1)
+    cor3 = mutator(x3, y3, 2)
+    cor4 = mutator(x4, y4, 3)
+
+  fuse.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, color, mixColor, cor2.x, cor2.y, u, v2, color, mixColor, cor3.x, cor3.y, u2, v2, color, mixColor, cor4.x, cor4.y, u2, v, color, mixColor], z)
 
 #TODO inline
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, 
@@ -1023,9 +1076,15 @@ template inside*(buffer: Framebuffer, body: untyped) =
   body
   buffer.stop()
 
-#Blits a framebuffer to the screen.
+#Blits a framebuffer as a sorted rect.
 proc blit*(buffer: Framebuffer, z: float32 = 0, color: float32 = colorWhiteF) =
   draw(buffer.texture, fuse.cam.pos.x, fuse.cam.pos.y, z = z, color = color, width = fuse.cam.w, height = -fuse.cam.h)
+
+#Blits a framebuffer immediately as a fullscreen quad. Does not use batch.
+proc blitQuad*(buffer: Framebuffer, shader = fuse.screenspace) =
+  drawFlush()
+  buffer.texture.use()
+  fuse.quad.render(shader)
 
 #BACKEND & INITIALIZATION
 
@@ -1059,6 +1118,7 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     if lastFrameTime == -1: lastFrameTime = time
 
     fuse.delta = float(time - lastFrameTime) / 1000000000.0
+    fuse.time += fuse.delta
     lastFrameTime = time
 
     if time - frameCounterStart >= 1000000000:
@@ -1107,6 +1167,27 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
     #load sprites
     fuse.atlas = loadAtlasStatic(atlasFile)
+
+    fuse.quad = newScreenMesh()
+    fuse.screenspace = newShader("""
+    attribute vec4 a_position;
+    attribute vec2 a_texc;
+    varying vec2 v_texc;
+
+    void main(){
+        v_texc = a_texc;
+        gl_Position = a_position;
+    }
+    """,
+
+    """
+    uniform sampler2D u_texture;
+    varying vec2 v_texc;
+
+    void main(){
+      gl_FragColor = texture2D(u_texture, v_texc);
+    }
+    """)
 
     #load white region
     fuse.white = fuse.atlas["white"]

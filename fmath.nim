@@ -17,6 +17,17 @@ func dst*(x1, y1, x2, y2: float32): float32 {.inline.}  =
     b = y1 - y2
   return sqrt(a*a + b*b)
 
+func len*(x, y: float32): float32 {.inline.} = sqrt(x*x + y*y)
+func len2*(x, y: float32): float32 {.inline.} = x*x + y*y
+
+func sign*(x: float32): float32 {.inline.} = 
+  if x < 0: -1 else: 1
+func sign*(x: bool): float32 {.inline.} = 
+  if x: 1 else: -1
+
+func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
+func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
+
 #these are probably not great style but I'm sick of casting everything manually
 
 #converter convertf32*(i: int): float32 {.inline.} = i.float32
@@ -51,6 +62,14 @@ func `*`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x * other, vec.
 func `/`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x / other, vec.y / other)
 
 #utility methods
+
+func `lerp`*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} = 
+  let invAlpha = 1.0f - alpha
+  vec = vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
+
+func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} = 
+  let invAlpha = 1.0f - alpha
+  return vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
 
 #all angles are in radians
 func angle*(vec: Vec2): float32 {.inline.} = arctan2(vec.y, vec.x)
