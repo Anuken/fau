@@ -1,7 +1,7 @@
 version       = "0.0.1"
 author        = "Anuken"
 description   = "Basic Nim game framework"
-license       = "GPL-3.0"
+license       = "MIT"
 srcDir        = ""
 bin           = @["tools/fusepack", "tools/antialias", "tools/fuseproject"]
 binDir        = "build"
@@ -12,4 +12,3 @@ requires "nimPNG >= 0.3.1"
 requires "nimterop >= 0.6.13"
 requires "chroma >= 0.2.1"
 requires "https://github.com/treeform/flippy#badc4e3772ce93790d5b69e330c7f1fc2d354069"
-
