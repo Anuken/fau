@@ -9,7 +9,7 @@ const
 
 #TODO switch to own fork, it's not (as) bugged
 static:
-  gitPull("https://github.com/jarikomppa/soloud", baseDir, "include/*\nsrc/*\n", checkout = "RELEASE_20200207")
+  gitPull("https://github.com/Anuken/soloud", baseDir, "include/*\nsrc/*\n", checkout = "master")
 
 cOverride:
   type

@@ -1,4 +1,4 @@
-import audio/soloud_gen, common
+import audio/soloud, common
 
 var so: ptr Soloud
 
