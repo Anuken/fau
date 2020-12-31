@@ -1,6 +1,37 @@
-import streams, flippy, common, tables, unicode
+import streams, flippy, common, tables, unicode, packer
+
+#NOTE: 
+#this module is currently broken, as it needs access to the flippy/typography/vmath libraries, which don't interact well
+#with existing fuse libraries or their own depenedencies
 
 from typography import getGlyphImageOffset, getGlyphImage, typeset
+from vmath import nil
+
+#PACKER STUFF
+
+#Dynamic packer that writes its results to a GL texture.
+type TexturePacker* = ref object
+  texture*: Texture
+  packer*: Packer
+  image*: Image
+
+# Creates a new texture packer limited by the specified width/height
+proc newTexturePacker*(width, height: int): TexturePacker =
+  TexturePacker(
+    packer: newPacker(width, height), 
+    texture: newTexture(width, height),
+    image: newImage(width, height, 4)
+  )
+
+proc pack*(packer: TexturePacker, image: Image): Patch =
+  let (x, y) = packer.packer.pack(image.width, image.height)
+
+  packer.image.blit(image, vmath.vec2(x.float32, y.float32))
+  return newPatch(packer.texture, x, y, image.width, image.height)
+
+# Updates the texture of a texture packer. Call this when you're done packing.
+proc update*(packer: TexturePacker) =
+  packer.texture.load(packer.image.width, packer.image.height, addr packer.image.data[0])
 
 type 
   Font* = ref object
