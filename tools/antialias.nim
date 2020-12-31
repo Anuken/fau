@@ -54,7 +54,7 @@ proc antialias*(file: string) =
       var suma = Color()
 
       for val in p:
-        let color = val.RGBAtoRGB()
+        let color = val.color
         suma.r += color.r * color.a
         suma.g += color.g * color.a
         suma.b += color.b * color.a
@@ -67,7 +67,7 @@ proc antialias*(file: string) =
       var sum = Color()
 
       for val in p:
-        var color = val.RGBAtoRGB()
+        var color = val.color
         let a = color.a
 
         color.lerp(suma, 1f - a)
@@ -81,7 +81,7 @@ proc antialias*(file: string) =
       fm = 1f / total
       sum *= fm
 
-      output.putRGBA(x, y, sum.RGBtoRGBA())
+      output.putRGBA(x, y, sum.rgba)
     
   output.save(file)
 

@@ -56,6 +56,8 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
     let img = newImage(1, 1, 4)
     img.putRgba(0, 0, ColorRGBA(r: 255, g: 0, b: 255, a: 255))
     packFile("error.png", img)
+    
+  output.parentDir.createDir()
 
   var stream = openFileStream(&"{output}.dat", fmWrite)
   var image = newImage(packer.w, packer.h, 4)
