@@ -52,7 +52,8 @@ proc resize*(cam: Cam, w, h: float32) =
   cam.h = h
   cam.update()
 
-#defines a color
+#defines a RGBA color
+#TODO switch to uint8 for better mem usage?
 type Color* = object
   r*, g*, b*, a*: float32
 
