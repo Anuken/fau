@@ -214,9 +214,11 @@ proc loadTexturePtr*(width, height: int, data: pointer): Texture =
 proc loadTextureBytes*(bytes: string): Texture =
   result = newTexture()
 
-  let data = decodePNG32(bytes)
+  var data = decodePNG32(bytes)
 
   result.load(data.width, data.height, addr data.data[0])
+
+  data = nil
   
 #load texture from path
 proc loadTexture*(path: string): Texture = loadTextureBytes(readFile(path))

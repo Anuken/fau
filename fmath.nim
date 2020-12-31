@@ -2,16 +2,41 @@ import math
 
 #utility functions
 
-func lerp*(a, b, progress: float32): float32 = a + (b - a) * progress
+func lerp*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * progress
 
-func dst*(x1, y1, z1, x2, y2, z2: float32): float32 {.inline.}  =
+proc emod*(a, b: float32): float32 {.inline.} =
+  result = a mod b
+  if result >= 0: discard
+  elif b > 0: result += b
+  else: result -= b
+
+#angle/degree functions
+
+#angle lerp
+func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + 360 + 180) mod 360) - 180)) * progress + 360.0) mod 360
+
+#angle dist
+func adist*(a, b: float32): float32 {.inline.} = min(if a - b < 0: a - b + 360.0 else: a - b, if b - a < 0: b - a + 360.0 else: b - a)
+
+#angle approach
+func aapproach*(a, b, amount: float32): float32 =
+  let 
+    forw = abs(a - b)
+    back = 360.0 - forw
+    diff = adist(a, b)
+  
+  return if diff <= amount: b
+  elif (a > b) == (back > forw): (a - amount).emod 360
+  else: (a + amount).emod 360
+
+func dst*(x1, y1, z1, x2, y2, z2: float32): float32 {.inline.} =
   let 
     a = x1 - x2
     b = y1 - y2
     c = z1 - z2
   return sqrt(a*a + b*b + c*c)
 
-func dst*(x1, y1, x2, y2: float32): float32 {.inline.}  =
+func dst*(x1, y1, x2, y2: float32): float32 {.inline.} =
   let 
     a = x1 - x2
     b = y1 - y2
@@ -72,8 +97,13 @@ func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} =
   return vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
 
 #all angles are in radians
-func angle*(vec: Vec2): float32 {.inline.} = arctan2(vec.y, vec.x)
-func angle*(vec: Vec2, other: Vec2): float32 {.inline.} = arctan2(other.y - vec.y, other.x - vec.x)
+func angle*(vec: Vec2): float32 {.inline.} = 
+  let res = arctan2(vec.y, vec.x)
+  return if res < 0: res + PI*2.0 else: res
+
+func angle*(vec: Vec2, other: Vec2): float32 {.inline.} = 
+  let res = arctan2(other.y - vec.y, other.x - vec.x)
+  return if res < 0: res + PI*2.0 else: res
 
 func rotate*(vec: Vec2, rads: float32): Vec2 = 
   let co = cos(rads)
@@ -151,6 +181,26 @@ proc overlapDelta*(a, b: Rect): Vec2 =
   result.x = -cx
   result.y = -cy
 
+#moves a hitbox; may be removed later
+proc moveDelta*(x, y, hitW, hitH, dx, dy: float32, isx: bool, hitScan: static[int], solidity: proc(x, y: int): bool): Vec2 = 
+  let
+    hx = x - hitW/2
+    hy = y - hitH/2
+    tx = (x + 0.5).int
+    ty = (y + 0.5).int
+  
+  var hitbox = rect(hx + dx, hy + dy, hitW, hitH)
+  
+  for dx in -hitScan..hitScan:
+    for dy in -hitScan..hitScan:
+      if solidity(dx + tx, dy + ty):
+        let tilehit = rect((dx + tx).float32 - 0.5'f32, (dy + ty).float32 - 0.5'f32, 1, 1)
+        if hitbox.overlaps(tilehit):
+          let vec = hitbox.overlapDelta(tilehit)
+          hitbox.x += vec.x
+          hitbox.y += vec.y
+  
+  vec2(hitbox.x - hx, hitbox.y - hy)
 
 #3x3 matrix for 2D transformations
 const 
