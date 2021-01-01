@@ -5,6 +5,7 @@
 {.push hint[ConvFromXtoItselfNotNeeded]: off.}
 import os, nimterop/[cimport, build], macros
 
+#TODO gitPull properly and cache the results
 const
   baseDir = "/home/anuke/.cache/nim/nimterop/fuse/soloud"
   incl = baseDir/"include"

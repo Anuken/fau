@@ -7,16 +7,8 @@ const
   incl = baseDir/"include"
   src = baseDir/"src"
 
-#TODO switch to own fork, it's not (as) bugged
 static:
   gitPull("https://github.com/Anuken/soloud", baseDir, "include/*\nsrc/*\n", checkout = "master")
-
-cOverride:
-  type
-    Soloud* = pointer
-    AlignedFloatBuffer* = pointer
-
-  proc Soloud_destroy*(aSoloud: ptr Soloud) {.importc: "Soloud_destroy", header: cSearchPath(incl/"soloud_c.h").}
 
 cIncludeDir(incl)
 
