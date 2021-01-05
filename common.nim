@@ -1,6 +1,6 @@
-import gl, strutils, gltypes, nimPNG, tables, fmath, streams, macros, math, algorithm, sugar
+import gl, strutils, gltypes, nimPNG, tables, fmath, streams, macros, math, algorithm, sugar, futils
 
-export gltypes, fmath
+export gltypes, fmath, futils
 
 #KEYS
 
@@ -453,6 +453,8 @@ type Mesh* = ref object
   isStatic: bool
   modifiedVert: bool
   modifiedInd: bool
+  vertSlice: Slice[int]
+  indSlice: Slice[int]
   primitiveType*: GLenum
   vertexSize: Glsizei
 
@@ -466,6 +468,20 @@ proc updateIndices*(mesh: Mesh) = mesh.modifiedInd = true
 
 #schedules a vertex buffer update
 proc updateVertices*(mesh: Mesh) = mesh.modifiedVert = true
+
+#schedule a vertex buffer update in a slice; grows slice if one is already queued
+proc updateVertices*(mesh: Mesh, slice: Slice[int]) =
+  mesh.vertSlice.a = min(mesh.vertSlice.a, slice.a)
+  mesh.vertSlice.b = max(mesh.vertSlice.b, slice.b)
+
+#schedule an index buffer update in a slice; grows slice if one is already queued
+proc updateIndices*(mesh: Mesh, slice: Slice[int]) =
+  mesh.indSlice.a = min(mesh.indSlice.a, slice.a)
+  mesh.indSlice.b = max(mesh.indSlice.b, slice.b)
+
+proc dispose*(mesh: var Mesh) =
+  if mesh.vertexBuffer != 0: glDeleteBuffer(mesh.vertexBuffer)
+  if mesh.indexBuffer != 0: glDeleteBuffer(mesh.indexBuffer)
 
 #creates a mesh with a set of attributes
 proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[GLfloat] = @[], indices: seq[GLushort] = @[]): Mesh = 
@@ -501,12 +517,19 @@ proc beginBind(mesh: Mesh, shader: Shader) =
   #update vertices if modified
   if mesh.modifiedVert:
     glBufferData(GlArrayBuffer, mesh.vertices.len * 4, mesh.vertices[0].addr, usage)
-    mesh.modifiedVert = false
+  elif mesh.vertSlice.b != 0:
+    glBufferSubData(GlArrayBuffer, mesh.vertSlice.a * 4, mesh.vertSlice.len * 4, mesh.vertices[mesh.vertSlice.a].addr)
   
   #update indices if relevant and modified
   if mesh.modifiedInd and mesh.indices.len > 0:
     glBufferData(GlElementArrayBuffer, mesh.indices.len * 2, mesh.indices[0].addr, usage)
-    mesh.modifiedInd = false
+  elif mesh.indSlice.b != 0 and mesh.indices.len > 0:
+    glBufferSubData(GlElementArrayBuffer, mesh.indSlice.a * 2, mesh.indSlice.len * 2, mesh.indices[mesh.indSlice.a].addr)
+  
+  mesh.vertSlice = 0..0
+  mesh.indSlice = 0..0
+  mesh.modifiedVert = false
+  mesh.modifiedInd = false
 
   for attrib in mesh.attributes:
     let loc = shader.getAttributeLoc(attrib.alias)
@@ -520,17 +543,15 @@ proc endBind(mesh: Mesh, shader: Shader) =
     if shader.attributes.hasKey(attrib.alias):
       glDisableVertexAttribArray(shader.attributes[attrib.alias].location.GLuint)
 
-proc render*(mesh: Mesh, shader: Shader, count: int = -1) =
+proc render*(mesh: Mesh, shader: Shader, offset = 0, count = mesh.vertices.len) =
   shader.use() #binds the shader if it isn't already bound
-  
-  let amount = if count < 0: mesh.vertices.len else: count
 
   beginBind(mesh, shader)
 
   if mesh.indices.len == 0:
-    glDrawArrays(mesh.primitiveType, 0.GLint, (amount.Glint * 4) div mesh.vertexSize)
+    glDrawArrays(mesh.primitiveType, (offset.GLint * 4) div mesh.vertexSize, (count.Glint * 4) div mesh.vertexSize)
   else:
-    glDrawElements(mesh.primitiveType, amount.Glint, GlUnsignedShort, nil)
+    glDrawElements(mesh.primitiveType, count.Glint, GlUnsignedShort, cast[pointer](offset * Glushort.sizeof))
   
   endBind(mesh, shader)
 
@@ -643,7 +664,7 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
 proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.patches["error"])
 
 const
-  vertexSize = 6
+  vertexSize = 2 + 2 + 1 + 1
   spriteSize = 4 * vertexSize
 
 type 
@@ -750,7 +771,7 @@ proc flush(batch: Batch) =
   shader.setmat4("u_proj", fuse.batchMat)
 
   batch.mesh.updateVertices()
-  batch.mesh.render(batch.shader, batch.index div spriteSize * 6)
+  batch.mesh.render(batch.shader, 0, batch.index div spriteSize * 6)
   
   batch.index = 0
 
@@ -781,60 +802,46 @@ proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, origi
   else:
     batch.prepare(region.texture)
 
-    let
-      #bottom left and top right corner points relative to origin
-      worldOriginX = x + originX
-      worldOriginY = y + originY
-      fx = -originX
-      fy = -originY
-      fx2 = width - originX
-      fy2 = height - originY
-      #rotate
-      cos = cos(rotation.degToRad)
-      sin = sin(rotation.degToRad)
-      x1 = cos * fx - sin * fy + worldOriginX
-      y1 = sin * fx + cos * fy + worldOriginY
-      x2 = cos * fx - sin * fy2 + worldOriginX
-      y2 = sin * fx + cos * fy2 + worldOriginY
-      x3 = cos * fx2 - sin * fy2 + worldOriginX
-      y3 = sin * fx2 + cos * fy2 + worldOriginY
-      x4 = x1 + (x3 - x2)
-      y4 = y3 - (y2 - y1)
-      u = region.u
-      v = region.v2
-      u2 = region.u2
-      v2 = region.v
-      idx = batch.index
-      #using pointers seems to be faster.
-      verts = addr batch.mesh.vertices
+    if rotation == 0.0'f32:
+      let
+        x2 = width + x
+        y2 = height + y
+        u = region.u
+        v = region.v2
+        u2 = region.u2
+        v2 = region.v
+        idx = batch.index
+        verts = addr batch.mesh.vertices
 
-    verts[idx] = x1
-    verts[idx + 1] = y1
-    verts[idx + 2] = u
-    verts[idx + 3] = v
-    verts[idx + 4] = color
-    verts[idx + 5] = mixColor
+      verts.minsert(idx, [x, y, u, v, color, mixColor, x, y2, u, v2, color, mixColor, x2, y2, u2, v2, color, mixColor, x2, y, u2, v, color, mixColor])
+    else:
+      let
+        #bottom left and top right corner points relative to origin
+        worldOriginX = x + originX
+        worldOriginY = y + originY
+        fx = -originX
+        fy = -originY
+        fx2 = width - originX
+        fy2 = height - originY
+        #rotate
+        cos = cos(rotation.degToRad)
+        sin = sin(rotation.degToRad)
+        x1 = cos * fx - sin * fy + worldOriginX
+        y1 = sin * fx + cos * fy + worldOriginY
+        x2 = cos * fx - sin * fy2 + worldOriginX
+        y2 = sin * fx + cos * fy2 + worldOriginY
+        x3 = cos * fx2 - sin * fy2 + worldOriginX
+        y3 = sin * fx2 + cos * fy2 + worldOriginY
+        x4 = x1 + (x3 - x2)
+        y4 = y3 - (y2 - y1)
+        u = region.u
+        v = region.v2
+        u2 = region.u2
+        v2 = region.v
+        idx = batch.index
+        verts = addr batch.mesh.vertices
 
-    verts[idx + 6] = x2
-    verts[idx + 7] = y2
-    verts[idx + 8] = u
-    verts[idx + 9] = v2
-    verts[idx + 10] = color
-    verts[idx + 11] = mixColor
-
-    verts[idx + 12] = x3
-    verts[idx + 13] = y3
-    verts[idx + 14] = u2
-    verts[idx + 15] = v2
-    verts[idx + 16] = color
-    verts[idx + 17] = mixColor
-
-    verts[idx + 18] = x4
-    verts[idx + 19] = y4
-    verts[idx + 20] = u2
-    verts[idx + 21] = v
-    verts[idx + 22] = color
-    verts[idx + 23] = mixColor
+      verts.minsert(idx, [x1, y1, u, v, color, mixColor, x2, y2, u, v2, color, mixColor, x3, y3, u2, v2, color, mixColor, x4, y4, u2, v, color, mixColor])
 
     batch.index += spriteSize
 
@@ -850,16 +857,12 @@ proc newBatch*(size: int = 4092): Batch =
 
   #set up default indices
   let len = size * 6
+  let indices = addr batch.mesh.indices
   var j = 0
   var i = 0
   
   while i < len:
-    batch.mesh.indices[i] = j.GLushort
-    batch.mesh.indices[i + 1] = (j+1).GLushort
-    batch.mesh.indices[i + 2] = (j+2).GLushort
-    batch.mesh.indices[i + 3] = (j+2).GLushort
-    batch.mesh.indices[i + 4] = (j+3).GLushort
-    batch.mesh.indices[i + 5] = (j).GLushort
+    indices.minsert(i, [j.GLushort, (j+1).GLushort, (j+2).GLushort, (j+2).GLushort, (j+3).GLushort, (j).GLushort])
     i += 6
     j += 4
   

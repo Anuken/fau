@@ -772,7 +772,6 @@ proc findCoreGLES2(glVersion: string) =
 
   GLAD_GL_ES_VERSION_2_0 = (major == 2 and minor >= 0) or major > 2
 
-
 proc gladLoadGLES2(load: proc): bool =
   glGetStringBASE = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
   if glGetStringBASE == nil: return false
@@ -789,7 +788,6 @@ proc gladLoadGLES2(load: proc): bool =
 #loads the correct platform-specific version of openGL (ES 2.0 on Android / iOS, standard GL 2.0+ on desktop)
 proc loadGl*(load: proc): bool = 
   when defined(Android) or defined(iOS):
-    echo "glLoadGLES2"
     return gladLoadGLES2(load)
   else:
     return gladLoadGL(load)
