@@ -437,12 +437,13 @@ proc size(attr: VertexAttribute): int =
     else: 0
 
 #standard attributes
-const attribPos* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_position")
-const attribPos3* = VertexAttribute(componentType: cGlFloat, components: 3, alias: "a_position")
-const attribNormal* = VertexAttribute(componentType: cGlFloat, components: 3, alias: "a_normal")
-const attribTexCoords* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_texc")
-const attribColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_color", normalized: true)
-const attribMixColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_mixcolor", normalized: true)
+const 
+  attribPos* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_position")
+  attribPos3* = VertexAttribute(componentType: cGlFloat, components: 3, alias: "a_position")
+  attribNormal* = VertexAttribute(componentType: cGlFloat, components: 3, alias: "a_normal")
+  attribTexCoords* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_texc")
+  attribColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_color", normalized: true)
+  attribMixColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_mixcolor", normalized: true)
 
 type Mesh* = ref object
   vertices*: seq[GLfloat]
@@ -539,6 +540,7 @@ proc beginBind(mesh: Mesh, shader: Shader) =
         cast[pointer](attrib.offset));
 
 proc endBind(mesh: Mesh, shader: Shader) =
+  #TODO may not be necessary
   for attrib in mesh.attributes:
     if shader.attributes.hasKey(attrib.alias):
       glDisableVertexAttribArray(shader.attributes[attrib.alias].location.GLuint)
@@ -755,7 +757,7 @@ proc mouse*(): Vec2 = vec2(fuse.mouseX, fuse.mouseY)
 proc mouseWorld*(): Vec2 = fuse.cam.unproject(vec2(fuse.mouseX, fuse.mouseY))
 proc screen*(): Vec2 = vec2(fuse.width.float32, fuse.height.float32)
 
-converter findPatch*(name: string): Patch {.inline.} = fuse.atlas[name]
+proc patch*(name: string): Patch {.inline.} = fuse.atlas[name]
 
 #Batch methods
 proc flush(batch: Batch) =
