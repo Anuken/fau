@@ -1,4 +1,4 @@
-import gl, strutils, gltypes, nimPNG, tables, fmath, streams, macros, math, algorithm, sugar, futils
+import gl, strutils, gltypes, tables, fmath, streams, macros, math, algorithm, sugar, futils
 
 export gltypes, fmath, futils
 
@@ -210,15 +210,27 @@ proc loadTexturePtr*(width, height: int, data: pointer): Texture =
 
   result.load(width, height, data)
 
+#stb is faster
+when not defined(useStb):
+  import nimPNG
+else:
+  import stb_image/read as stbi
+
 #load texture from bytes
 proc loadTextureBytes*(bytes: string): Texture =
   result = newTexture()
 
-  var data = decodePNG32(bytes)
+  when not defined(useStb):
+    var data = decodePNG32(bytes)
+    result.load(data.width, data.height, addr data.data[0])
+  else:
+    var
+      width, height, channels: int
+      data: seq[uint8]
 
-  result.load(data.width, data.height, addr data.data[0])
+    data = stbi.loadFromMemory(cast[seq[byte]](bytes), width, height, channels, 4)
+    result.load(width, height, addr data[0])
 
-  data = nil
   
 #load texture from path
 proc loadTexture*(path: string): Texture = loadTextureBytes(readFile(path))
@@ -1026,7 +1038,7 @@ proc use(buffer: Framebuffer) =
 proc currentBuffer*(): Framebuffer {.inline.} = fuse.bufferStack[^1]
 
 #Begin rendering to the buffer
-proc start*(buffer: Framebuffer) = 
+proc push*(buffer: Framebuffer) = 
   if buffer == currentBuffer(): raise GLerror.newException("Can't begin framebuffer twice")
 
   drawFlush()
@@ -1037,12 +1049,12 @@ proc start*(buffer: Framebuffer) =
   buffer.use()
 
 #Begin rendering to the buffer, but clear it as well
-proc start*(buffer: Framebuffer, clearColor: Color) =
-  buffer.start()
+proc push*(buffer: Framebuffer, clearColor: Color) =
+  buffer.push()
   clearScreen(clearColor)
 
 #End rendering to the buffer
-proc stop*(buffer: Framebuffer) =
+proc pop*(buffer: Framebuffer) =
   #pop current buffer from the stack, make sure it's correct
   if buffer != fuse.bufferStack.pop(): raise GLerror.newException("Framebuffer was not begun, can't end")
 
@@ -1053,9 +1065,9 @@ proc stop*(buffer: Framebuffer) =
 
 #Draw something inside a framebuffer
 template inside*(buffer: Framebuffer, body: untyped) =
-  buffer.start(rgba(0, 0, 0, 0))
+  buffer.push(rgba(0, 0, 0, 0))
   body
-  buffer.stop()
+  buffer.pop()
 
 #Blits a framebuffer as a sorted rect.
 proc blit*(buffer: Framebuffer, z: float32 = 0, color: float32 = colorWhiteF) =

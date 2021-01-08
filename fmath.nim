@@ -10,6 +10,20 @@ proc emod*(a, b: float32): float32 {.inline.} =
   elif b > 0: result += b
   else: result -= b
 
+{.push checks: off.}
+
+#hashes an integer to a random positive integer
+proc hashInt*(value: int): int {.inline.} =
+  var x = value.uint64
+  x = x xor (x shr 33)
+  x *= 0xff51afd7ed558ccd'u64
+  x = x xor (x shr 33)
+  x *= 0xc4ceb9fe1a85ec53'u64
+  x = x xor (x shr 33)
+  return x.int.abs
+
+{.pop.}
+
 #angle/degree functions
 
 #angle lerp
