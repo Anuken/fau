@@ -8,10 +8,18 @@ template fireEvent*[T](val: T) = discard newEntityWith(Event(), val)
 
 #define system
 macro sys*(name: static[string], componentTypes: openarray[typedesc], body: untyped): untyped =
+  var varBody = newEmptyNode()
+  for (index, st) in body.pairs:
+    if st.kind == nnkCall and st[0].strVal == "vars":
+      body.del(index)
+      varBody = st[1]
+      break
+
   definitions.add (name, body)
 
   result = quote do:
-    defineSystem(`name`, `componentTypes`, defaultSystemOptions)
+    defineSystem(`name`, `componentTypes`, defaultSystemOptions, `varBody`)
+
 
 #create system that listens to an event
 macro onEvent*(T: typedesc, body: untyped) =
