@@ -1114,7 +1114,7 @@ proc initFuse*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     let time = (times.getTime() - startTime).inNanoseconds
     if lastFrameTime == -1: lastFrameTime = time
 
-    fuse.delta = float(time - lastFrameTime) / 1000000000.0
+    fuse.delta = float(time - lastFrameTime) / 1000000000.0#[  ]#
     fuse.time += fuse.delta
     lastFrameTime = time
 

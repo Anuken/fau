@@ -1,4 +1,4 @@
-import common, math
+import fusecore, math
 
 var quadv: array[24, GLfloat]
 

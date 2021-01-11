@@ -1,4 +1,4 @@
-import streams, flippy, common, tables, unicode, packer
+import streams, flippy, fusecore, tables, unicode, packer
 
 #NOTE: 
 #this module is currently broken, as it needs access to the flippy/typography/vmath libraries, which don't interact well

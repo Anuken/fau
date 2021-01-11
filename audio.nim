@@ -1,4 +1,4 @@
-import audio/soloud, common
+import audio/soloud, fusecore
 
 var so: ptr Soloud
 

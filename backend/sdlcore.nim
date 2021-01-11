@@ -1,4 +1,4 @@
-import sdl2, times, glad, ../gltypes, ../common
+import sdl2, times, glad, ../gltypes, ../fusecore
 
 #SDL error check template
 template sdlFailIf(cond: typed, reason: string) =
