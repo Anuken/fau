@@ -200,6 +200,10 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   discard window.setScrollCallback(proc(window: Window, xoffset: cdouble, yoffset: cdouble) {.cdecl.} = 
     fuse.scrollX = xoffset.float32
     fuse.scrollY = yoffset.float32
+
+    #emscripten flips the scrollwheel for some reason: https://github.com/emscripten-core/emscripten/issues/8281
+    when defined(emscripten):
+      fuse.scrollY *= -1'f32
   )
 
   discard window.setMouseButtonCallback(proc(window: Window, button: cint, action: cint, modifiers: cint) {.cdecl.} = 
