@@ -10,6 +10,12 @@ proc emod*(a, b: float32): float32 {.inline.} =
   elif b > 0: result += b
   else: result -= b
 
+proc emod*(a, b: int): int {.inline.} =
+  result = a mod b
+  if result >= 0: discard
+  elif b > 0: result += b
+  else: result -= b
+
 {.push checks: off.}
 
 #hashes an integer to a random positive integer

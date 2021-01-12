@@ -7,6 +7,7 @@ bin           = @["tools/fusepack", "tools/antialias", "tools/fuseproject"]
 binDir        = "build"
 
 requires "nim >= 1.4.2"
+requires "https://github.com/Anuken/polymorph#551eafab0738f61701b09384159d174e88a1a0e7"
 requires "https://github.com/treeform/staticglfw#d299a0d1727054749100a901d3b4f4fa92ed72f5"
 requires "nimPNG >= 0.3.1"
 requires "nimterop >= 0.6.13"

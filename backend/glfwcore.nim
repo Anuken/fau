@@ -6,7 +6,6 @@ var window: Window
 var keysPressed: array[KeyCode, bool]
 var keysJustDown: array[KeyCode, bool]
 var keysJustUp: array[KeyCode, bool]
-var lastScrollX, lastScrollY: float
 
 proc down*(key: KeyCode): bool {.inline.} = keysPressed[key]
 proc tapped*(key: KeyCode): bool {.inline.} = keysJustDown[key]
@@ -199,8 +198,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   )
 
   discard window.setScrollCallback(proc(window: Window, xoffset: cdouble, yoffset: cdouble) {.cdecl.} = 
-    lastScrollX = xoffset.float32
-    lastScrollY = yoffset.float32
+    fuse.scrollX = xoffset.float32
+    fuse.scrollY = yoffset.float32
   )
 
   discard window.setMouseButtonCallback(proc(window: Window, button: cint, action: cint, modifiers: cint) {.cdecl.} = 
@@ -245,8 +244,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     #clean up input
     for x in keysJustDown.mitems: x = false
     for x in keysJustUp.mitems: x = false
-    lastScrollX = 0
-    lastScrollY = 0
+    fuse.scrollX = 0
+    fuse.scrollY = 0
   )
 
   window.destroyWindow()

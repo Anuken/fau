@@ -1,4 +1,6 @@
-import macros
+import macros, tables
+
+var eventHandlers* {.compileTime} = newTable[string, seq[NimNode]]()
 
 ## copies an array into a seq, element by element.
 macro minsert*(dest: untyped, index: int, data: untyped): untyped =
@@ -45,3 +47,48 @@ template importAll*(): untyped =
         if split.ext == ".nim" and split.name != filename[0..^5]: result.add ident(split.name)
   
   importAllDef(instantiationInfo().filename)
+
+## registers an event to be handled with `onEventName:`
+macro event*(tname: untyped, args: varargs[untyped]): untyped =
+  result = newStmtList()
+
+  let td = quote do:
+    type `tname`* = object
+
+  let rec = newNimNode(nnkRecList)
+  td[0][2][2] = rec
+
+  for arg in args:
+    rec.add(newIdentDefs(postfix(arg[0], "*"), arg[1], newEmptyNode()))
+  
+  result.add td
+
+  let
+    namestr = newLit(tname.repr)
+    listenName = ident($tname.repr & "Proc")
+    handleName = ident("on" & $tname.repr)
+    fireName = ident("fire" & $tname.repr)
+
+  result.add quote do:
+    type `listenName`* = proc(event: `tname`)
+    var `fireName`*: `listenName` = proc(event: `tname`) = discard
+    proc fire*(event: `tname`) = `fireName`(event)
+    macro `handleName`*(body: untyped) =
+      eventHandlers.mgetOrPut(`namestr`, newSeq[NimNode]()).add(body)
+  
+## finishes building events - this must be called before any events are used!
+macro buildEvents*() =
+  result = newStmtList()
+  for key, val in eventHandlers.pairs:
+    let 
+      fireName = ident("fire" & key)
+      tname = ident(key)
+    var sts = newStmtList()
+    for node in val:
+      sts.add quote do:
+        block:
+          `node`
+
+    result.add quote do:
+      `fireName` = proc(event {.inject.}: `tname`) =
+        `sts`

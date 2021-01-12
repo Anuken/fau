@@ -751,6 +751,8 @@ type FuseState = object
   time*: float
   #Mouse position
   mouseX*, mouseY*: float32
+  #Last scroll values
+  scrollX*, scrollY*: float32
 
 #Global instance of fuse state.
 var fuse* = FuseState()
