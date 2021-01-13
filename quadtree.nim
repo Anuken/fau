@@ -3,35 +3,38 @@ import fmath, sequtils
 const maxInQuadrant = 5
 
 type
+  ## The position and dimensions of a bounding box (usually, a Rect)
   Bounds* = concept b
-    ## The position and dimensions of a bounding box
     b.x is float32
     b.y is float32
     b.w is float32
     b.h is float32
 
+  ## An element that can provide a bounding box
   BoundsProvider* = concept q
-    ## An element that can provide a bounding box
     boundingBox(q) is Bounds
 
+  ## An element that can be stored in a quadtree.
   Quadable* = concept q
-    ## An element that can be stored in a quadtree. It can take multiple
-    ## forms, depending on the level of control desired
     `==`(q, q) is bool
     q is Bounds | BoundsProvider
 
+  ## You should know what a quadtree is.
   Quadtree*[E] = ref object
     bounds*: Rect
     leaf: bool
     elems*: seq[E]
     topLeft, botLeft, topRight, botRight: Quadtree[E]
 
+## Constructs a new quadtree with the specified bounds.
 proc newQuadtree*[E: Quadable](bounds: Rect): Quadtree[E] = Quadtree[E](bounds: bounds, leaf: true)
 
+## Yields every object in this node. Not recursive.
 iterator items*[E: Quadable](tree: Quadtree[E]): E =
   for item in tree.elems:
     yield item
 
+## Yields every child node of this non-leaf node.
 iterator children*[E: Quadable](tree: Quadtree[E]): Quadtree[E] =
   if not tree.leaf:
     yield tree.topLeft
@@ -39,14 +42,15 @@ iterator children*[E: Quadable](tree: Quadtree[E]): Quadtree[E] =
     yield tree.topRight
     yield tree.botRight
 
+## Removes all objects from the tree.
 proc clear*[E: Quadable](tree: Quadtree[E]) =
   tree.elems.setLen(0)
   if not tree.leaf:
     for c in tree.children: c.clear()
   tree.leaf = true
 
+## Returns bounding box of an element
 template bounds(elem: Quadable): Rect =
-  ## Returns the bounding box for an element
   when type(elem) is Bounds: rect(elem.x, elem.y, elem.w, elem.h)
   else: rect(elem.boundingBox.x, elem.boundingBox.y, elem.boundingBox.w, elem.boundingBox.h)
 
@@ -57,15 +61,13 @@ proc fittingChild[E: Quadable](tree: Quadtree[E], rect: Rect): Quadtree[E] =
     topQuadrant = rect.y > horMid
     bottomQuadrant = rect.y < horMid and (rect.y + rect.h) < horMid
   
-  #Object can completely fit within the left quadrants
   if rect.x < vertMid and rect.x + rect.w < vertMid:
     if topQuadrant: return tree.topLeft
     elif bottomQuadrant: return tree.botLeft
-  elif rect.x > vertMid: #Object can completely fit within the right quadrants
+  elif rect.x > vertMid:
     if(topQuadrant): return tree.topRight
     elif bottomQuadrant: return tree.botRight
 
-  #Else, object needs to be in parent cause it can't fit completely in a quadrant
   return nil
 
 proc split[E: Quadable](tree: Quadtree[E]) =
@@ -90,6 +92,7 @@ proc split[E: Quadable](tree: Quadtree[E]) =
       child.insert obj
       tree.elems.del(tree.elems.find(obj))
 
+## Inserts an object into the tree. Should only be done once.
 proc insert*[E: Quadable](tree: Quadtree[E], obj: E) =
   let obounds = obj.bounds
   if not tree.bounds.overlaps(obounds):
@@ -106,11 +109,13 @@ proc insert*[E: Quadable](tree: Quadtree[E], obj: E) =
     else:
       tree.elems.add obj
 
+## Returns a list of all objects that intersect this rectangle. Allocates a new sequence.
 proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect): seq[E] =
   var result = newSeq[E]
   intersect(result)
   return result
 
+## Returns a list of all objects that intersect this rectangle. Uses the provided sequence for output.
 proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect, dest: var seq[E]) =
   if not tree.leaf:
     for child in tree.children:
@@ -119,4 +124,3 @@ proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect, dest: var seq[E]) =
   for elem in tree.elems:
     if elem.bounds.overlaps(rect):
       dest.add elem
-    

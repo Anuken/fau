@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Cat</title>
+    <title>$title$</title>
     <style>
       body {
         margin: 0px;
@@ -12,7 +12,7 @@
       }
       canvas.emscripten {
         border: none;
-        background-color: rgba(0, 0, 0, 1);
+        background-color: rgba(0, 0, 0, 0);
         position: absolute;
         left: 0px;
         right: 0px;
@@ -103,6 +103,7 @@
         },
         onRuntimeInitialized: function() {
           console.log('Module loaded.');
+          Module.canvas.style.backgroundColor = "rgba(0, 0, 0, 1)";
           setTimeout(function() {
             Module.setCanvasSize(window.innerWidth, window.innerHeight);
           }, 0);
