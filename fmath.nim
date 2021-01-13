@@ -4,6 +4,7 @@ import math
 
 func lerp*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * progress
 
+#euclid mod functions (equivalent versions are coming in a future Nim release)
 proc emod*(a, b: float32): float32 {.inline.} =
   result = a mod b
   if result >= 0: discard

@@ -1,9 +1,10 @@
 import glfm, glad
 
+#NOTE: this backend is unfinished! keyboard & touch input doesn't work yet
+
 var keysPressed: array[KeyCode, bool]
 var keysJustDown: array[KeyCode, bool]
 var keysJustUp: array[KeyCode, bool]
-var lastScrollX, lastScrollY: float
 
 proc down*(key: KeyCode): bool {.inline.} = keysPressed[key]
 proc tapped*(key: KeyCode): bool {.inline.} = keysJustDown[key]
