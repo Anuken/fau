@@ -1,4 +1,4 @@
-import audio/soloud, fusecore
+import audio/soloud_gen, fusecore
 
 var so: ptr Soloud
 

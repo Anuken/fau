@@ -3,95 +3,98 @@
 #   /home/anuke/.nimble/pkgs/nimterop-0.6.4/nimterop/toast --preprocess -m:c --defines+=WITH_OPENAL --includeDirs+=/home/anuke/.cache/nim/nimterop/fuse/soloud/include --includeDirs+=/usr/include --pnim --symOverride=Soloud,AlignedFloatBuffer,Soloud_destroy --nim:/home/anuke/.choosenim/toolchains/nim-1.2.4/bin/nim --pluginSourcePath=/home/anuke/.cache/nim/nimterop/cPlugins/nimterop_3841321983.nim /home/anuke/.cache/nim/nimterop/fuse/soloud/include/soloud_c.h -o /home/anuke/.cache/nim/nimterop/toastCache/nimterop_3521393388.nim
 
 {.push hint[ConvFromXtoItselfNotNeeded]: off.}
-import os, nimterop/[cimport, build], macros
+import os, macros
 
-#TODO gitPull properly and cache the results
 const
-  baseDir = "/home/anuke/.cache/nim/nimterop/fuse/soloud"
+  baseDir = getHomeDir() / ".cache/fuse/soloud"
   incl = baseDir/"include"
   src = baseDir/"src"
 
-cIncludeDir(incl)
+static:
+  if not dirExists(baseDir) or defined(clearCache):
+    echo "Fetching SoLoud repo..."
+    removeDir(baseDir)
+    echo staticExec("rm -rf " & baseDir)
+    echo staticExec("git clone --depth 1 https://github.com/Anuken/soloud " & baseDir)
+
+template cDefine(sym: string) =
+  {.passC: "-D" & sym.}
+
+{.passC: "-I" & incl.}
 
 when defined(emscripten):
   {.passL: "-lpthread".}
   cDefine("WITH_SDL2_STATIC")
-  cCompile(src/"backend/sdl2_static/*.cpp")
+  {.compile: src/"backend/sdl2_static/soloud_sdl2_static.cpp".}
 elif defined(osx):
   cDefine("WITH_COREAUDIO")
   {.passL: "-framework CoreAudio -framework AudioToolbox".}
-  cCompile(src/"backend/coreaudio/*.cpp")
+  {.compile: src/"backend/coreaudio/soloud_coreaudio.cpp".}
 elif defined(Android):
   {.passL: "-lOpenSLES".}
   cDefine("WITH_OPENSLES")
-  cCompile(src/"backend/opensles/*.cpp")
+  {.compile: src/"backend/opensles/soloud_opensles.cpp".}
 elif defined(Linux):
   {.passL: "-lpthread".}
   cDefine("WITH_MINIAUDIO")
-  cCompile(src/"backend/miniaudio/*.cpp")
+  {.compile: src/"backend/miniaudio/soloud_miniaudio.cpp".}
 elif defined(Windows):
   {.passC: "-msse".}
   {.passL: "-lwinmm".}
-  {.passC: "-DWITH_WINMM".}
-  {.compile: baseDir & "/src/backend/winmm/soloud_winmm.cpp".}
-  {.compile: baseDir & "/src/c_api/soloud_c.cpp".}
-  {.compile: baseDir & "/src/core/soloud.cpp".}
-  {.compile: baseDir & "/src/core/soloud_audiosource.cpp".}
-  {.compile: baseDir & "/src/core/soloud_bus.cpp".}
-  {.compile: baseDir & "/src/core/soloud_core_3d.cpp".}
-  {.compile: baseDir & "/src/core/soloud_core_basicops.cpp".}
-  {.compile: baseDir & "/src/core/soloud_core_faderops.cpp".}
-  {.compile: baseDir & "/src/core/soloud_core_filterops.cpp".}
-  {.compile: baseDir & "/src/core/soloud_core_getters.cpp".}
-  {.compile: baseDir & "/src/core/soloud_core_setters.cpp".}
-  {.compile: baseDir & "/src/core/soloud_core_voicegroup.cpp".}
-  {.compile: baseDir & "/src/core/soloud_core_voiceops.cpp".}
-  {.compile: baseDir & "/src/core/soloud_fader.cpp".}
-  {.compile: baseDir & "/src/core/soloud_fft.cpp".}
-  {.compile: baseDir & "/src/core/soloud_fft_lut.cpp".}
-  {.compile: baseDir & "/src/core/soloud_file.cpp".}
-  {.compile: baseDir & "/src/core/soloud_filter.cpp".}
-  {.compile: baseDir & "/src/core/soloud_misc.cpp".}
-  {.compile: baseDir & "/src/core/soloud_queue.cpp".}
-  {.compile: baseDir & "/src/core/soloud_thread.cpp".}
-  {.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt.cpp".}
-  {.compile: baseDir & "/src/audiosource/vizsn/soloud_vizsn.cpp".}
-  {.compile: baseDir & "/src/audiosource/tedsid/ted.cpp".}
-  {.compile: baseDir & "/src/audiosource/tedsid/sid.cpp".}
-  {.compile: baseDir & "/src/audiosource/tedsid/soloud_tedsid.cpp".}
-  {.compile: baseDir & "/src/audiosource/monotone/soloud_monotone.cpp".}
-  {.compile: baseDir & "/src/audiosource/wav/dr_impl.cpp".}
-  {.compile: baseDir & "/src/audiosource/wav/soloud_wav.cpp".}
-  {.compile: baseDir & "/src/audiosource/wav/soloud_wavstream.cpp".}
-  {.compile: baseDir & "/src/audiosource/vic/soloud_vic.cpp".}
-  {.compile: baseDir & "/src/audiosource/sfxr/soloud_sfxr.cpp".}
-  {.compile: baseDir & "/src/audiosource/speech/soloud_speech.cpp".}
-  {.compile: baseDir & "/src/audiosource/speech/klatt.cpp".}
-  {.compile: baseDir & "/src/audiosource/speech/darray.cpp".}
-  {.compile: baseDir & "/src/audiosource/speech/tts.cpp".}
-  {.compile: baseDir & "/src/audiosource/speech/resonator.cpp".}
-  {.compile: baseDir & "/src/audiosource/noise/soloud_noise.cpp".}
-  {.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt_dll.c".}
-  {.compile: baseDir & "/src/audiosource/wav/stb_vorbis.c".}
-  {.compile: baseDir & "/src/filter/soloud_bassboostfilter.cpp".}
-  {.compile: baseDir & "/src/filter/soloud_biquadresonantfilter.cpp".}
-  {.compile: baseDir & "/src/filter/soloud_dcremovalfilter.cpp".}
-  {.compile: baseDir & "/src/filter/soloud_echofilter.cpp".}
-  {.compile: baseDir & "/src/filter/soloud_fftfilter.cpp".}
-  {.compile: baseDir & "/src/filter/soloud_flangerfilter.cpp".}
-  {.compile: baseDir & "/src/filter/soloud_freeverbfilter.cpp".}
-  {.compile: baseDir & "/src/filter/soloud_lofifilter.cpp".}
-  {.compile: baseDir & "/src/filter/soloud_robotizefilter.cpp".}
-  {.compile: baseDir & "/src/filter/soloud_waveshaperfilter.cpp".}
+  cDefine("WITH_WINMM")
+  {.compile: src/"backend/winmm/soloud_winmm.cpp".}
 else:
   static: doAssert false
 
-when not defined(Windows):
-  cCompile(src/"c_api/soloud_c.cpp")
-  cCompile(src/"core/*.cpp")
-  cCompile(src/"audiosource", "cpp", exclude="ay/")
-  cCompile(src/"audiosource", "c")
-  cCompile(src/"filter/*.cpp")
+{.compile: baseDir & "/src/c_api/soloud_c.cpp".}
+{.compile: baseDir & "/src/core/soloud.cpp".}
+{.compile: baseDir & "/src/core/soloud_audiosource.cpp".}
+{.compile: baseDir & "/src/core/soloud_bus.cpp".}
+{.compile: baseDir & "/src/core/soloud_core_3d.cpp".}
+{.compile: baseDir & "/src/core/soloud_core_basicops.cpp".}
+{.compile: baseDir & "/src/core/soloud_core_faderops.cpp".}
+{.compile: baseDir & "/src/core/soloud_core_filterops.cpp".}
+{.compile: baseDir & "/src/core/soloud_core_getters.cpp".}
+{.compile: baseDir & "/src/core/soloud_core_setters.cpp".}
+{.compile: baseDir & "/src/core/soloud_core_voicegroup.cpp".}
+{.compile: baseDir & "/src/core/soloud_core_voiceops.cpp".}
+{.compile: baseDir & "/src/core/soloud_fader.cpp".}
+{.compile: baseDir & "/src/core/soloud_fft.cpp".}
+{.compile: baseDir & "/src/core/soloud_fft_lut.cpp".}
+{.compile: baseDir & "/src/core/soloud_file.cpp".}
+{.compile: baseDir & "/src/core/soloud_filter.cpp".}
+{.compile: baseDir & "/src/core/soloud_misc.cpp".}
+{.compile: baseDir & "/src/core/soloud_queue.cpp".}
+{.compile: baseDir & "/src/core/soloud_thread.cpp".}
+{.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt.cpp".}
+{.compile: baseDir & "/src/audiosource/vizsn/soloud_vizsn.cpp".}
+{.compile: baseDir & "/src/audiosource/tedsid/ted.cpp".}
+{.compile: baseDir & "/src/audiosource/tedsid/sid.cpp".}
+{.compile: baseDir & "/src/audiosource/tedsid/soloud_tedsid.cpp".}
+{.compile: baseDir & "/src/audiosource/monotone/soloud_monotone.cpp".}
+{.compile: baseDir & "/src/audiosource/wav/dr_impl.cpp".}
+{.compile: baseDir & "/src/audiosource/wav/soloud_wav.cpp".}
+{.compile: baseDir & "/src/audiosource/wav/soloud_wavstream.cpp".}
+{.compile: baseDir & "/src/audiosource/vic/soloud_vic.cpp".}
+{.compile: baseDir & "/src/audiosource/sfxr/soloud_sfxr.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/soloud_speech.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/klatt.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/darray.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/tts.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/resonator.cpp".}
+{.compile: baseDir & "/src/audiosource/noise/soloud_noise.cpp".}
+{.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt_dll.c".}
+{.compile: baseDir & "/src/audiosource/wav/stb_vorbis.c".}
+{.compile: baseDir & "/src/filter/soloud_bassboostfilter.cpp".}
+{.compile: baseDir & "/src/filter/soloud_biquadresonantfilter.cpp".}
+{.compile: baseDir & "/src/filter/soloud_dcremovalfilter.cpp".}
+{.compile: baseDir & "/src/filter/soloud_echofilter.cpp".}
+{.compile: baseDir & "/src/filter/soloud_fftfilter.cpp".}
+{.compile: baseDir & "/src/filter/soloud_flangerfilter.cpp".}
+{.compile: baseDir & "/src/filter/soloud_freeverbfilter.cpp".}
+{.compile: baseDir & "/src/filter/soloud_lofifilter.cpp".}
+{.compile: baseDir & "/src/filter/soloud_robotizefilter.cpp".}
+{.compile: baseDir & "/src/filter/soloud_waveshaperfilter.cpp".}
 
 macro defineEnum(typ: untyped): untyped =
   result = newNimNode(nnkStmtList)
@@ -136,7 +139,7 @@ macro defineEnum(typ: untyped): untyped =
 
 
 {.pragma: impsoloud_cHdr,
-  header: "/home/anuke/.cache/nim/nimterop/fuse/soloud/include/soloud_c.h".}
+  header: baseDir & "/include/soloud_c.h".}
 {.experimental: "codeReordering".}
 defineEnum(SOLOUD_ENUMS)      ## ```
                         ##   Collected enumerations
