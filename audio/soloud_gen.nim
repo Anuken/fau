@@ -5,10 +5,11 @@
 {.push hint[ConvFromXtoItselfNotNeeded]: off.}
 import os, macros
 
+#TODO broken for windows
 const
-  baseDir = getHomeDir() / ".cache/fuse/soloud"
-  incl = baseDir/"include"
-  src = baseDir/"src"
+  baseDir = "/tmp/fuse/soloud"
+  incl = baseDir & "/include"
+  src = baseDir & "/src"
 
 static:
   if not dirExists(baseDir) or defined(clearCache):
@@ -24,24 +25,24 @@ template cDefine(sym: string) =
 when defined(emscripten):
   {.passL: "-lpthread".}
   cDefine("WITH_SDL2_STATIC")
-  {.compile: src/"backend/sdl2_static/soloud_sdl2_static.cpp".}
+  {.compile: src & "/backend/sdl2_static/soloud_sdl2_static.cpp".}
 elif defined(osx):
   cDefine("WITH_COREAUDIO")
   {.passL: "-framework CoreAudio -framework AudioToolbox".}
-  {.compile: src/"backend/coreaudio/soloud_coreaudio.cpp".}
+  {.compile: src & "/backend/coreaudio/soloud_coreaudio.cpp".}
 elif defined(Android):
   {.passL: "-lOpenSLES".}
   cDefine("WITH_OPENSLES")
-  {.compile: src/"backend/opensles/soloud_opensles.cpp".}
+  {.compile: src & "/backend/opensles/soloud_opensles.cpp".}
 elif defined(Linux):
   {.passL: "-lpthread".}
   cDefine("WITH_MINIAUDIO")
-  {.compile: src/"backend/miniaudio/soloud_miniaudio.cpp".}
+  {.compile: src & "/backend/miniaudio/soloud_miniaudio.cpp".}
 elif defined(Windows):
   {.passC: "-msse".}
   {.passL: "-lwinmm".}
   cDefine("WITH_WINMM")
-  {.compile: src/"backend/winmm/soloud_winmm.cpp".}
+  {.compile: src & "/backend/winmm/soloud_winmm.cpp".}
 else:
   static: doAssert false
 
