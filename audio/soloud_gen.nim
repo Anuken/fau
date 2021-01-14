@@ -13,7 +13,6 @@ const
 static:
   if not dirExists(baseDir) or defined(clearCache):
     echo "Fetching SoLoud repo..."
-    removeDir(baseDir)
     echo staticExec("rm -rf " & baseDir)
     echo staticExec("git clone --depth 1 https://github.com/Anuken/soloud " & baseDir)
 
