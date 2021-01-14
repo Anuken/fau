@@ -158,70 +158,61 @@ proc `$`*(vec: Vec2): string = $vec.x & ", " & $vec.y
 type Rect* = object
   x*, y*, w*, h*: float32
 
-proc rect*(x, y, w, h: float32): Rect = Rect(x: x, y: y, w: w, h: h)
+proc rect*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x, y: y, w: w, h: h)
+proc rectCenter*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x - w/2.0, y: y - h/2.0, w: w, h: h)
+proc rectCenter*(x, y, s: float32): Rect {.inline.} = Rect(x: x - s/2.0, y: y - s/2.0, w: s, h: s)
+
+proc top*(r: Rect): float32 {.inline} = r.y + r.h
+proc right*(r: Rect): float32 {.inline} = r.x + r.w
+
+proc centerX*(r: Rect): float32 {.inline} = r.x + r.w/2.0
+proc centerY*(r: Rect): float32 {.inline} = r.y + r.h/2.0
+
 #collision stuff
 
 proc overlaps*(a, b: Rect): bool = a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
 
-proc overlapDelta*(a, b: Rect): Vec2 =
-  var penetration = 0f
-  let 
-    ax = a.x + a.w / 2
-    bx = b.x + b.w / 2
-    ay = a.y + a.h / 2
-    by = b.y + b.h / 2
-    nx = ax - bx
-    ny = ay - by
-    aex = a.w / 2
-    bex = b.w / 2
-    xoverlap = aex + bex - abs(nx)
+proc penetrationX*(a, b: Rect): float32 {.inline.} =
+  let nx = a.centerX - b.centerX
+  result = a.w / 2 + b.w / 2 - abs(nx)
+  if nx < 0: result = -result
 
-  if abs(xoverlap) > 0:
-    let 
-      aey = a.h / 2
-      bey = b.h / 2
-      yoverlap = aey + bey - abs(ny)
+proc penetrationY*(a, b: Rect): float32 {.inline.} =
+  let ny = a.centerY - b.centerY
+  result = a.h / 2 + b.h / 2 - abs(ny)
+  if ny < 0: result = -result
 
-    if abs(yoverlap) > 0:
-      if abs(xoverlap) < abs(yoverlap):
-        result.x = if nx < 0: 1 else: -1
-        result.y = 0
-        penetration = xoverlap
-      else:
-        result.x = 0
-        result.y = if ny < 0: 1 else: -1
-        penetration = yoverlap
-      
-  let 
-    percent = 1.0
-    slop = 0.0
-    m = max(penetration - slop, 0.0)
-    cx = m * result.x * percent
-    cy = m * result.y * percent
-
-  result.x = -cx
-  result.y = -cy
+proc penetration*(a, b: Rect): Vec2 = vec2(penetrationX(a, b), penetrationY(a, b))
 
 #moves a hitbox; may be removed later
-proc moveDelta*(x, y, hitW, hitH, dx, dy: float32, isx: bool, hitScan: static[int], solidity: proc(x, y: int): bool): Vec2 = 
+proc moveDelta*(box: Rect, vx, vy: float32, solidity: proc(x, y: int): bool): Vec2 = 
   let
-    hx = x - hitW/2
-    hy = y - hitH/2
-    tx = (x + 0.5).int
-    ty = (y + 0.5).int
+    left = (box.x + 0.5).int - 1
+    bottom = (box.y + 0.5).int - 1
+    right = (box.x + 0.5 + box.w).int + 1
+    top = (box.y + 0.5 + box.h).int + 1
   
-  var hitbox = rect(hx + dx, hy + dy, hitW, hitH)
+  var hitbox = box
   
-  for dx in -hitScan..hitScan:
-    for dy in -hitScan..hitScan:
-      if solidity(dx + tx, dy + ty):
-        let tilehit = rect((dx + tx).float32 - 0.5'f32, (dy + ty).float32 - 0.5'f32, 1, 1)
-        if hitbox.overlaps(tilehit):
-          let vec = hitbox.overlapDelta(tilehit)
-          hitbox.x += vec.x
-          hitbox.y += vec.y
+  hitbox.x += vx
+
+  for dx in left..right:
+    for dy in bottom..top:
+      if solidity(dx, dy):
+        let tile = rect((dx).float32 - 0.5'f32, (dy).float32 - 0.5'f32, 1, 1)
+        if hitbox.overlaps(tile):
+          hitbox.x -= tile.penetrationX(hitbox)
   
-  vec2(hitbox.x - hx, hitbox.y - hy)
+  hitbox.y += vy
+
+  for dx in left..right:
+    for dy in bottom..top:
+      if solidity(dx, dy):
+        let tile = rect((dx).float32 - 0.5'f32, (dy).float32 - 0.5'f32, 1, 1)
+        if hitbox.overlaps(tile):
+          hitbox.y -= tile.penetrationY(hitbox)
+  
+  return vec2(hitbox.x - box.x, hitbox.y - box.y)
 
 #3x3 matrix for 2D transformations
 const 
