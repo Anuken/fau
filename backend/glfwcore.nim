@@ -176,12 +176,12 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   #listen to window size changes and relevant events.
 
   discard window.setFramebufferSizeCallback(proc(window: Window, width: cint, height: cint) {.cdecl.} = 
-    (fuse.width, fuse.height) = (width.int, height.int)
+    (fau.width, fau.height) = (width.int, height.int)
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
   )
 
   discard window.setCursorPosCallback(proc(window: Window, x: cdouble, y: cdouble) {.cdecl.} = 
-    (fuse.mouseX, fuse.mouseY) = (x.float32, fuse.height.float32 - 1 - y.float32)
+    (fau.mouseX, fau.mouseY) = (x.float32, fau.height.float32 - 1 - y.float32)
   )
 
   discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} = 
@@ -198,12 +198,12 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   )
 
   discard window.setScrollCallback(proc(window: Window, xoffset: cdouble, yoffset: cdouble) {.cdecl.} = 
-    fuse.scrollX = xoffset.float32
-    fuse.scrollY = yoffset.float32
+    fau.scrollX = xoffset.float32
+    fau.scrollY = yoffset.float32
 
     #emscripten flips the scrollwheel for some reason: https://github.com/emscripten-core/emscripten/issues/8281
     when defined(emscripten):
-      fuse.scrollY *= -1'f32
+      fau.scrollY *= -1'f32
   )
 
   discard window.setMouseButtonCallback(proc(window: Window, button: cint, action: cint, modifiers: cint) {.cdecl.} = 
@@ -228,10 +228,10 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
   window.getCursorPos(addr inMouseX, addr inMouseY)
   window.getFramebufferSize(addr inWidth, addr inHeight)
-  fuse.mouseX = inHeight.float32 - 1 - inMouseX.float32
-  fuse.mouseY = inMouseY.float32
-  fuse.width = inWidth.int
-  fuse.height = inHeight.int
+  fau.mouseX = inHeight.float32 - 1 - inMouseX.float32
+  fau.mouseY = inMouseY.float32
+  fau.width = inWidth.int
+  fau.height = inHeight.int
   
   glViewport(0.GLint, 0.GLint, inWidth.GLsizei, inHeight.GLsizei)
 
@@ -239,7 +239,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
   mainLoop(proc() =
     pollEvents()
-    clearScreen(fuse.clearColor)
+    clearScreen(fau.clearColor)
 
     loopProc()
 
@@ -248,8 +248,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     #clean up input
     for x in keysJustDown.mitems: x = false
     for x in keysJustUp.mitems: x = false
-    fuse.scrollX = 0
-    fuse.scrollY = 0
+    fau.scrollX = 0
+    fau.scrollY = 0
   )
 
   window.destroyWindow()

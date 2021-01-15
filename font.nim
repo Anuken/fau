@@ -1,8 +1,8 @@
-import streams, flippy, fusecore, tables, unicode, packer
+import streams, flippy, fcore, tables, unicode, packer
 
 #NOTE: 
 #this module is currently broken, as it needs access to the flippy/typography/vmath libraries, which don't interact well
-#with existing fuse libraries or their own depenedencies
+#with existing fau libraries or their own depenedencies
 
 from typography import getGlyphImageOffset, getGlyphImage, typeset
 from vmath import nil

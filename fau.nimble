@@ -1,9 +1,9 @@
 version       = "0.0.1"
 author        = "Anuken"
-description   = "Basic Nim game framework"
+description   = "WIP Nim game framework"
 license       = "MIT"
 srcDir        = ""
-bin           = @["tools/fusepack", "tools/antialias", "tools/fuseproject"]
+bin           = @["tools/faupack", "tools/antialias", "tools/fauproject"]
 binDir        = "build"
 
 requires "nim >= 1.4.2"

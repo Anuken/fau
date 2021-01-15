@@ -1,5 +1,5 @@
-import polymorph, fusecore, strutils
-export polymorph, fusecore
+import polymorph, fcore, strutils
+export polymorph, fcore
 
 var definitions {.compileTime.}: seq[tuple[name: string, body: NimNode]]
 
@@ -17,7 +17,7 @@ macro sys*(name: static[string], componentTypes: openarray[typedesc], body: unty
   result = quote do:
     defineSystem(`name`, `componentTypes`, defaultSystemOptions, `varBody`)
 
-macro launchFuse*(title: string) =
+macro launchFau*(title: string) =
 
   result = newStmtList().add quote do:
     makeEcs()
@@ -32,5 +32,5 @@ macro launchFuse*(title: string) =
   result.add quote do:
     commitSystems("run")
     buildEvents()
-    initFuse(run, windowTitle = `title`)
+    initFau(run, windowTitle = `title`)
   

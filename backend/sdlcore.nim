@@ -1,4 +1,4 @@
-import sdl2, times, glad, ../gltypes, ../fusecore
+import sdl2, times, glad, ../gltypes, ../fcore
 
 #SDL error check template
 template sdlFailIf(cond: typed, reason: string) =
@@ -236,20 +236,20 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
   var w, h: cint
   coreWindow.getSize(w, h)
-  (fuse.width, fuse.height) = (w.int, h.int)
+  (fau.width, fau.height) = (w.int, h.int)
 
-  glViewport(0.GLint, 0.GLint, fuse.width.GLsizei, fuse.height.GLsizei)
+  glViewport(0.GLint, 0.GLint, fau.width.GLsizei, fau.height.GLsizei)
 
   initProc()
 
   mainLoop(proc() =
     var w, h: cint
     coreWindow.getSize(w, h)
-    (fuse.width, fuse.height) = (w.int, h.int)
+    (fau.width, fau.height) = (w.int, h.int)
 
     var mx, my: cint
     getMouseState(mx, my)
-    (fuse.mouseX, fuse.mouseY) = (mx.float32, fuse.heightf - 1 - my.float32)
+    (fau.mouseX, fau.mouseY) = (mx.float32, fau.heightf - 1 - my.float32)
 
     #poll input
     var event = defaultEvent

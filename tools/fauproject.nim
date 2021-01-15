@@ -12,7 +12,7 @@ const
   ]
 
 task "pack", "Pack textures":
-  direshell &"fusepack -p:{getCurrentDir()}/assets-raw/sprites -o:{getCurrentDir()}/assets/atlas"
+  direshell &"faupack -p:{getCurrentDir()}/assets-raw/sprites -o:{getCurrentDir()}/assets/atlas"
 
 task "debug", "Debug build":
   runTask("pack")
@@ -70,8 +70,8 @@ makeSystem("logic", [Pos]):
   start:
     if keyEscape.tapped: quitApp()
     
-    fuse.cam.resize(fuse.widthf / scl, fuse.heightf / scl)
-    fuse.cam.use()
+    fau.cam.resize(fau.widthf / scl, fau.heightf / scl)
+    fau.cam.use()
 
     fillPoly(0, 0, 6, 30)
   
@@ -80,7 +80,7 @@ makeSystem("logic", [Pos]):
 
 makeEcs()
 commitSystems("run")
-initFuse(run, windowTitle = "{{APP_NAME}}")
+initFau(run, windowTitle = "{{APP_NAME}}")
 """,
 
   "simple": """
@@ -94,17 +94,17 @@ proc init() =
 proc run() =
   if keyEscape.tapped: quitApp()
 
-  fuse.cam.resize(fuse.widthf / scl, fuse.heightf / scl)
-  fuse.cam.use()
+  fau.cam.resize(fau.widthf / scl, fau.heightf / scl)
+  fau.cam.use()
 
   fillPoly(0, 0, 6, 30)
 
-initFuse(run, init, windowTitle = "{{APP_NAME}}")
+initFau(run, init, windowTitle = "{{APP_NAME}}")
 """
 }.toTable
 
 const cfgTemplate = """
---path:"../fuse"
+--path:"../fau"
 --gc:arc
 --passC:"-flto"
 --passL:"-flto"
@@ -122,7 +122,7 @@ if defined(emscripten):
 
   --d:danger
 
-  switch("passL", "-o build/web/index.html --shell-file ../fuse/res/shell_minimal.html -O3 -s LLD_REPORT_UNDEFINED -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1")
+  switch("passL", "-o build/web/index.html --shell-file ../fau/res/shell_minimal.html -O3 -s LLD_REPORT_UNDEFINED -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1")
 else:
 
   when defined(Windows):
@@ -157,7 +157,7 @@ const vsTemplate = """
 }
 """
 
-proc fuseproject(name: string, directory = getHomeDir() / "Projects", preset = "ecs") =
+proc fauproject(name: string, directory = getHomeDir() / "Projects", preset = "ecs") =
   echo &"Generating project '{name}'..."
 
   let dir = directory / name
@@ -192,7 +192,7 @@ proc fuseproject(name: string, directory = getHomeDir() / "Projects", preset = "
 
   echo &"Project generated in {dir}"
 
-dispatch(fuseproject, help = {
+dispatch(fauproject, help = {
   "name": "name of project",
   "directory": "directory to place project in"
 })

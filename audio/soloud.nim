@@ -3,7 +3,7 @@ import os, nimterop/[cimport, build], macros
 const
   FLAGS {.strdefine.} = ""
 
-  baseDir = getProjectCacheDir("fuse" / "soloud")
+  baseDir = getProjectCacheDir("fau" / "soloud")
   incl = baseDir/"include"
   src = baseDir/"src"
 

@@ -153,12 +153,12 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   echo "Initialized GLFM v" & $GLFM_VERSION_MAJOR & "." & $GLFM_VERSION_MINOR
 
   display.glfmSetSurfaceResizedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
-    (fuse.width, fuse.height) = (width.int, height.int)
+    (fau.width, fau.height) = (width.int, height.int)
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
   )
 
   display.glfmSetTouchFunc(proc(display: ptr GLFMDisplay, touch: cint, phase: GLFMTouchPhase, x, y: cdouble): bool {.cdecl.} = 
-    (fuse.mouseX, fuse.mouseY) = (x.float32, fuse.height.float32 - 1 - y.float32)
+    (fau.mouseX, fau.mouseY) = (x.float32, fau.height.float32 - 1 - y.float32)
     return true
   )
 
@@ -188,8 +188,8 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
     echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
 
-    fuse.width = width.int
-    fuse.height = height.int
+    fau.width = width.int
+    fau.height = height.int
 
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
 
@@ -197,7 +197,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   )
 
   display.glfmSetMainLoopFunc(proc(display: ptr GLFMDisplay; frameTime: cdouble) {.cdecl.} =
-    clearScreen(fuse.clearColor)
+    clearScreen(fau.clearColor)
 
     cloopProc()
 

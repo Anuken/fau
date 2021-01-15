@@ -1,13 +1,13 @@
 # Generated @ 2020-07-14T18:23:11-04:00
 # Command line:
-#   /home/anuke/.nimble/pkgs/nimterop-0.6.4/nimterop/toast --preprocess -m:c --defines+=WITH_OPENAL --includeDirs+=/home/anuke/.cache/nim/nimterop/fuse/soloud/include --includeDirs+=/usr/include --pnim --symOverride=Soloud,AlignedFloatBuffer,Soloud_destroy --nim:/home/anuke/.choosenim/toolchains/nim-1.2.4/bin/nim --pluginSourcePath=/home/anuke/.cache/nim/nimterop/cPlugins/nimterop_3841321983.nim /home/anuke/.cache/nim/nimterop/fuse/soloud/include/soloud_c.h -o /home/anuke/.cache/nim/nimterop/toastCache/nimterop_3521393388.nim
+#   /home/anuke/.nimble/pkgs/nimterop-0.6.4/nimterop/toast --preprocess -m:c --defines+=WITH_OPENAL --includeDirs+=/home/anuke/.cache/nim/nimterop/fau/soloud/include --includeDirs+=/usr/include --pnim --symOverride=Soloud,AlignedFloatBuffer,Soloud_destroy --nim:/home/anuke/.choosenim/toolchains/nim-1.2.4/bin/nim --pluginSourcePath=/home/anuke/.cache/nim/nimterop/cPlugins/nimterop_3841321983.nim /home/anuke/.cache/nim/nimterop/fau/soloud/include/soloud_c.h -o /home/anuke/.cache/nim/nimterop/toastCache/nimterop_3521393388.nim
 
 {.push hint[ConvFromXtoItselfNotNeeded]: off.}
 import os, macros
 
 #TODO broken for windows
 const
-  baseDir = "/tmp/fuse/soloud"
+  baseDir = "/tmp/fau/soloud"
   incl = baseDir & "/include"
   src = baseDir & "/src"
 
