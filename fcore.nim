@@ -20,7 +20,9 @@ type KeyCode* = enum
 
 #IO
 
-const rootDir = getProjectPath()[0..^5]
+const rootDir = if getProjectPath().endsWith("src"): getProjectPath()[0..^5] else: getProjectPath()
+
+static: echo rootDir
 
 template staticReadString*(filename: string): string = 
   const realDir = rootDir & "/" & filename
