@@ -1,9 +1,9 @@
-import polymorph, fcore, strutils
+import polymorph, fcore
 export polymorph, fcore
 
 var definitions {.compileTime.}: seq[tuple[name: string, body: NimNode]]
 
-#define system
+#defines a system, with an extra vars block for variables. body is built in launchFau
 macro sys*(name: static[string], componentTypes: openarray[typedesc], body: untyped): untyped =
   var varBody = newEmptyNode()
   for (index, st) in body.pairs:

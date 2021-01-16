@@ -127,22 +127,23 @@ proc clearScreen*(col: Color) =
 #TEXTURE
 
 #an openGL image
-type Texture* = ref object
+type TextureObj = object
   handle: Gluint
   uwrap, vwrap: Glenum
   minfilter, magfilter: Glenum
   target: Glenum
   width*, height*: int
+type Texture* = ref TextureObj
+
+proc `=destroy`*(texture: var TextureObj) =
+  if texture.handle != 0 and glInitialized:
+    glDeleteTexture(texture.handle)
+    texture.handle = 0
 
 #binds the texture
 proc use*(texture: Texture, unit: GLenum = GlTexture0) =
   glActiveTexture(unit)
   glBindTexture(texture.target, texture.handle)
-  
-proc dispose*(texture: Texture) = 
-  if texture.handle != 0:
-    glDeleteTexture(texture.handle)
-    texture.handle = 0
 
 #assigns min and mag filters
 proc `filter=`*(texture: Texture, filter: Glenum) =
@@ -270,12 +271,23 @@ type ShaderAttr* = object
   length*: Glsizei
   location*: GLint
 
-type Shader* = ref object
+type ShaderObj = object
   handle, vertHandle, fragHandle: GLuint
   compileLog: string
   compiled: bool
   uniforms: Table[string, int]
   attributes: Table[string, ShaderAttr]
+type Shader* = ref ShaderObj
+
+proc `=destroy`*(shader: var ShaderObj) =
+  if shader.handle != 0 and glInitialized:
+    glDeleteProgram(shader.handle)
+    if shader.vertHandle != 0: glDeleteShader(shader.vertHandle)
+    if shader.fragHandle != 0: glDeleteShader(shader.fragHandle)
+    
+    shader.handle = 0
+    shader.vertHandle = 0
+    shader.fragHandle = 0
 
 proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
   result = glCreateShader(shaderType)
@@ -462,7 +474,7 @@ const
   attribColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_color", normalized: true)
   attribMixColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_mixcolor", normalized: true)
 
-type Mesh* = ref object
+type MeshObj = object
   vertices*: seq[GLfloat]
   indices*: seq[Glushort]
   vertexBuffer: GLuint
@@ -475,6 +487,15 @@ type Mesh* = ref object
   indSlice: Slice[int]
   primitiveType*: GLenum
   vertexSize: Glsizei
+type Mesh* = ref MeshObj
+
+proc `=destroy`*(mesh: var MeshObj) =
+  if mesh.vertexBuffer != 0 and glInitialized:
+    glDeleteBuffer(mesh.vertexBuffer)
+    mesh.vertexBuffer = 0
+  if mesh.indexBuffer != 0 and glInitialized:
+    glDeleteBuffer(mesh.indexBuffer)
+    mesh.indexBuffer = 0
 
 #marks a mesh as modified, so its vertices get reuploaded
 proc update*(mesh: Mesh) = 
@@ -496,10 +517,6 @@ proc updateVertices*(mesh: Mesh, slice: Slice[int]) =
 proc updateIndices*(mesh: Mesh, slice: Slice[int]) =
   mesh.indSlice.a = min(mesh.indSlice.a, slice.a)
   mesh.indSlice.b = max(mesh.indSlice.b, slice.b)
-
-proc dispose*(mesh: var Mesh) =
-  if mesh.vertexBuffer != 0: glDeleteBuffer(mesh.vertexBuffer)
-  if mesh.indexBuffer != 0: glDeleteBuffer(mesh.indexBuffer)
 
 #creates a mesh with a set of attributes
 proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[GLfloat] = @[], indices: seq[GLushort] = @[]): Mesh = 
@@ -579,12 +596,18 @@ proc newScreenMesh*(): Mesh = newMesh(@[attribPos, attribTexCoords], isStatic = 
 
 #FRAMEBUFFER
 
-type Framebuffer* = ref object
+type FramebufferObj = object
   handle: Gluint
   width: int
   height: int
   texture: Texture
   isDefault: bool
+type Framebuffer* = ref FramebufferObj
+
+proc `=destroy`*(buffer: var FramebufferObj) =
+  if buffer.handle != 0 and glInitialized:
+    glDeleteFramebuffer(buffer.handle)
+    buffer.handle = 0
 
 #accessors; read-only
 proc width*(buffer: Framebuffer): int {.inline.} = buffer.width

@@ -193,6 +193,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
 
+    glInitialized = true
     cinitProc()
   )
 
@@ -206,6 +207,10 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     for x in keysJustUp.mitems: x = false
     lastScrollX = 0
     lastScrollY = 0
+  )
+
+  display.glfmSetSurfaceDestroyedFunc(proc(display: ptr GLFMDisplay) {.cdecl.} =
+    glInitialized = false
   )
   
 

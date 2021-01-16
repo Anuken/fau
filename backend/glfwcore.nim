@@ -235,6 +235,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   
   glViewport(0.GLint, 0.GLint, inWidth.GLsizei, inHeight.GLsizei)
 
+  glInitialized = true
   initProc()
 
   mainLoop(proc() =
@@ -252,6 +253,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     fau.scrollY = 0
   )
 
+  glInitialized = false
   window.destroyWindow()
   terminate()
 

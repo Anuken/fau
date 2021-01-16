@@ -29,6 +29,10 @@ template glCheck(body: untyped) =
   else:
     body
 
+#global variable for storing openGL initialization state
+#this is far from a clean solution but I'm not sure where else to put this
+var glInitialized* = false
+
 #openGL wrapper functions. these are optimized
 
 #last active texture unit - 0 is default
