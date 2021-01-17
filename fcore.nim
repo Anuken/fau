@@ -25,8 +25,6 @@ type KeyCode* = enum
 
 const rootDir = if getProjectPath().endsWith("src"): getProjectPath()[0..^5] else: getProjectPath()
 
-static: echo rootDir
-
 template staticReadString*(filename: string): string = 
   const realDir = rootDir & "/" & filename
   const str = staticRead(realDir)
@@ -279,15 +277,15 @@ type ShaderObj = object
   attributes: Table[string, ShaderAttr]
 type Shader* = ref ShaderObj
 
-proc `=destroy`*(shader: var ShaderObj) =
-  if shader.handle != 0 and glInitialized:
-    glDeleteProgram(shader.handle)
-    if shader.vertHandle != 0: glDeleteShader(shader.vertHandle)
-    if shader.fragHandle != 0: glDeleteShader(shader.fragHandle)
-    
-    shader.handle = 0
-    shader.vertHandle = 0
-    shader.fragHandle = 0
+#proc `=destroy`*(shader: var ShaderObj) =
+#  if shader.handle != 0 and glInitialized:
+#    glDeleteProgram(shader.handle)
+#    if shader.vertHandle != 0: glDeleteShader(shader.vertHandle)
+#    if shader.fragHandle != 0: glDeleteShader(shader.fragHandle)
+#    
+#    shader.handle = 0
+#    shader.vertHandle = 0
+#    shader.fragHandle = 0
 
 proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
   result = glCreateShader(shaderType)
@@ -308,12 +306,6 @@ proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
       let infoLog = glGetShaderInfoLog(result)
       shader.compileLog &= infoLog #append reason to log
     glDeleteShader(result)
-
-proc dispose*(shader: Shader) = 
-  glUseProgram(0)
-  glDeleteShader(shader.vertHandle)
-  glDeleteShader(shader.fragHandle)
-  glDeleteProgram(shader.handle)
 
 proc use*(shader: Shader) =
   glUseProgram(shader.handle)
@@ -489,13 +481,13 @@ type MeshObj = object
   vertexSize: Glsizei
 type Mesh* = ref MeshObj
 
-proc `=destroy`*(mesh: var MeshObj) =
-  if mesh.vertexBuffer != 0 and glInitialized:
-    glDeleteBuffer(mesh.vertexBuffer)
-    mesh.vertexBuffer = 0
-  if mesh.indexBuffer != 0 and glInitialized:
-    glDeleteBuffer(mesh.indexBuffer)
-    mesh.indexBuffer = 0
+#proc `=destroy`*(mesh: var MeshObj) =
+#  if mesh.vertexBuffer != 0 and glInitialized:
+#    glDeleteBuffer(mesh.vertexBuffer)
+#    mesh.vertexBuffer = 0
+#  if mesh.indexBuffer != 0 and glInitialized:
+#    glDeleteBuffer(mesh.indexBuffer)
+#    mesh.indexBuffer = 0
 
 #marks a mesh as modified, so its vertices get reuploaded
 proc update*(mesh: Mesh) = 
@@ -614,12 +606,6 @@ proc width*(buffer: Framebuffer): int {.inline.} = buffer.width
 proc height*(buffer: Framebuffer): int {.inline.} = buffer.height
 proc texture*(buffer: Framebuffer): Texture {.inline.} = buffer.texture
 
-proc dispose*(buffer: Framebuffer) = 
-  if buffer.handle == 0: return #don't double dispose
-
-  buffer.texture.dispose()
-  glDeleteFramebuffer(buffer.handle)
-
 proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
   let 
     width = max(fwidth, 2)
@@ -628,15 +614,18 @@ proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
   #don't resize unnecessarily
   if width == buffer.width and height == buffer.height: return
   
-  #dispose old buffer handle.
-  buffer.dispose()
+  #delete old buffer handle.
+  if buffer.handle != 0: 
+    glDeleteFramebuffer(buffer.handle)
+    buffer.handle = 0
+  
   buffer.width = width
   buffer.height = height
 
   buffer.handle = glGenFramebuffer()
   buffer.texture = Texture(handle: glGenTexture(), target: GlTexture2D, width: width, height: height)
 
-  #get prrevious buffer handle - this does incur a slight overhead, but resizing happens rarely anyway
+  #get previous buffer handle - this does incur a slight overhead, but resizing happens rarely anyway
   let previous = glGetIntegerv(GlFramebufferBinding)
 
   glBindFramebuffer(GlFramebuffer, buffer.handle)
@@ -755,6 +744,8 @@ type FauState = object
   pixelScl*: float32
   #A white 1x1 patch
   white*: Patch
+  #A white circle patch
+  circle*: Patch
   #The global camera.
   cam*: Cam
   #Fullscreen quad mesh.
@@ -1216,8 +1207,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     }
     """)
 
-    #load white region
+    #load specialregions
     fau.white = fau.atlas["white"]
+    fau.circle = fau.atlas["circle"]
 
     #center the UVs to prevent artifacts
     let avg = ((fau.white.u + fau.white.u2) / 2.0, (fau.white.v + fau.white.v2) / 2.0)

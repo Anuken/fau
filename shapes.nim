@@ -40,6 +40,9 @@ proc fillRect*(x, y, w, h: float32, color = colorWhiteF, z: float32 = 0) =
 proc fillTri*(x1, y1, x2, y2, x3, y3, color: float32, z: float32 = 0) = 
   fillQuad(x1, y1, color, x2, y2, color, x3, y3, color, x3, y3, color, z)
 
+proc fillCircle*(x, y, rad: float32, color: float32 = colorWhiteF, z: float32 = 0) =
+  draw(fau.circle, x, y, width = rad*2.0, height = rad*2.0, color = color, z = z)
+
 proc fillPoly*(x, y: float32, sides: int, radius: float32, rotation = 0'f32, color: float32 = colorWhiteF, z: float32 = 0) =
   let space = PI*2 / sides.float32
 

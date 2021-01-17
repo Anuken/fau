@@ -1,17 +1,38 @@
 import math
 
+## any type that has a time and lifetime
+type Timeable* = concept t
+  t.time is float32
+  t.lifetime is float32
+
+## fade in from 0 to 1
+func fin*(t: Timeable): float32 {.inline.} = t.time / t.lifetime
+
+## any type that can fade in linearly
+type Scaleable* = concept s
+  s.fin() is float32
+
+## fade in from 1 to 0
+func fout*(t: Scaleable): float32 {.inline.} = 1.0'f32 - t.fin
+
+## fade in from 0 to 1 to 0
+func fouts*(t: Scaleable): float32 {.inline.} = 2.0 * abs(t.fin - 0.5)
+
+## fade in from 1 to 0 to 1
+func fins*(t: Scaleable): float32 {.inline.} = 1.0 - t.fouts
+
 #utility functions
 
 func lerp*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * progress
 
-#euclid mod functions (equivalent versions are coming in a future Nim release)
-proc emod*(a, b: float32): float32 {.inline.} =
+## euclid mod functions (equivalent versions are coming in a future Nim release)
+func emod*(a, b: float32): float32 {.inline.} =
   result = a mod b
   if result >= 0: discard
   elif b > 0: result += b
   else: result -= b
 
-proc emod*(a, b: int): int {.inline.} =
+func emod*(a, b: int): int {.inline.} =
   result = a mod b
   if result >= 0: discard
   elif b > 0: result += b
@@ -19,8 +40,8 @@ proc emod*(a, b: int): int {.inline.} =
 
 {.push checks: off.}
 
-#hashes an integer to a random positive integer
-proc hashInt*(value: int): int {.inline.} =
+## hashes an integer to a random positive integer
+func hashInt*(value: int): int {.inline.} =
   var x = value.uint64
   x = x xor (x shr 33)
   x *= 0xff51afd7ed558ccd'u64
@@ -33,13 +54,13 @@ proc hashInt*(value: int): int {.inline.} =
 
 #angle/degree functions
 
-#angle lerp
+## angle lerp
 func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + 360 + 180) mod 360) - 180)) * progress + 360.0) mod 360
 
-#angle dist
+## angle dist
 func adist*(a, b: float32): float32 {.inline.} = min(if a - b < 0: a - b + 360.0 else: a - b, if b - a < 0: b - a + 360.0 else: b - a)
 
-#angle approach
+## angle approach
 func aapproach*(a, b, amount: float32): float32 =
   let 
     forw = abs(a - b)
