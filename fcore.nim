@@ -277,15 +277,15 @@ type ShaderObj = object
   attributes: Table[string, ShaderAttr]
 type Shader* = ref ShaderObj
 
-#proc `=destroy`*(shader: var ShaderObj) =
-#  if shader.handle != 0 and glInitialized:
-#    glDeleteProgram(shader.handle)
-#    if shader.vertHandle != 0: glDeleteShader(shader.vertHandle)
-#    if shader.fragHandle != 0: glDeleteShader(shader.fragHandle)
-#    
-#    shader.handle = 0
-#    shader.vertHandle = 0
-#    shader.fragHandle = 0
+proc `=destroy`*(shader: var ShaderObj) =
+  if shader.handle != 0 and glInitialized:
+    glDeleteProgram(shader.handle)
+    if shader.vertHandle != 0: glDeleteShader(shader.vertHandle)
+    if shader.fragHandle != 0: glDeleteShader(shader.fragHandle)
+    
+    shader.handle = 0
+    shader.vertHandle = 0
+    shader.fragHandle = 0
 
 proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
   result = glCreateShader(shaderType)
@@ -481,13 +481,13 @@ type MeshObj = object
   vertexSize: Glsizei
 type Mesh* = ref MeshObj
 
-#proc `=destroy`*(mesh: var MeshObj) =
-#  if mesh.vertexBuffer != 0 and glInitialized:
-#    glDeleteBuffer(mesh.vertexBuffer)
-#    mesh.vertexBuffer = 0
-#  if mesh.indexBuffer != 0 and glInitialized:
-#    glDeleteBuffer(mesh.indexBuffer)
-#    mesh.indexBuffer = 0
+proc `=destroy`*(mesh: var MeshObj) =
+  if mesh.vertexBuffer != 0 and glInitialized:
+    glDeleteBuffer(mesh.vertexBuffer)
+    mesh.vertexBuffer = 0
+  if mesh.indexBuffer != 0 and glInitialized:
+    glDeleteBuffer(mesh.indexBuffer)
+    mesh.indexBuffer = 0
 
 #marks a mesh as modified, so its vertices get reuploaded
 proc update*(mesh: Mesh) = 
