@@ -1,5 +1,8 @@
 import math
 
+#this should be avoided in most cases, but manually turning ints into float32s can be very annoying
+converter toFloat32*(i: int): float32 {.inline.} = i.float32 
+
 ## any type that has a time and lifetime
 type Timeable* = concept t
   t.time is float32
@@ -94,10 +97,6 @@ func sign*(x: bool): float32 {.inline.} =
 
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
-
-#these are probably not great style but I'm sick of casting everything manually
-
-#converter convertf32*(i: int): float32 {.inline.} = i.float32
 
 type Vec2* = object
   x*, y*: float32

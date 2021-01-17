@@ -2,9 +2,6 @@ import gl, strutils, gltypes, tables, fmath, streams, macros, math, algorithm, s
 
 export gltypes, fmath, futils
 
-#this should be avoided in most cases, but manually turning ints into float32s can be very annoying
-converter toFloat32*(i: int): float32 {.inline.} = i.float32 
-
 #KEYS
 
 type KeyCode* = enum
