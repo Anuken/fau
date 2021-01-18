@@ -40,15 +40,21 @@
       // https://github.com/emscripten-core/emscripten/issues/6511
       function resumeAudio(e) {
 		  if (typeof Module === 'undefined'
-			  || typeof Module.SDL2 == 'undefined'
-			  || typeof Module.SDL2.audioContext == 'undefined')
+			  || typeof Module.SDL2 == 'undefined')
 			  return;
-		  if (Module.SDL2.audioContext.state == 'suspended') {
-			  Module.SDL2.audioContext.resume();
-		  }
-		  if (Module.SDL2.audioContext.state == 'running') {
-			  document.getElementById('canvas').removeEventListener('click', resumeAudio);
-			  document.removeEventListener('keydown', resumeAudio);
+		  for (prop in Module.SDL2) {
+		  	  //find the audioContext property, which was obfuscated by the closure compiler
+		  	  if (prop != "audio"){
+		  	      var actx = Module.SDL2[prop];
+		  	      if (actx.state == 'suspended') {
+					  actx.resume();
+				  }
+				  if (actx.state == 'running') {
+					  document.getElementById('canvas').removeEventListener('click', resumeAudio);
+					  document.removeEventListener('keydown', resumeAudio);
+				  }
+		  	      break;
+		  	  }
 		  }
       }
       document.getElementById('canvas').addEventListener('click', resumeAudio);

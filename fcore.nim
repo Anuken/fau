@@ -23,7 +23,7 @@ type KeyCode* = enum
 const rootDir = if getProjectPath().endsWith("src"): getProjectPath()[0..^5] else: getProjectPath()
 
 template staticReadString*(filename: string): string = 
-  const realDir = rootDir & "/" & filename
+  const realDir = rootDir & "/assets/" & filename
   const str = staticRead(realDir)
   str
 
@@ -211,8 +211,9 @@ proc loadTexturePtr*(width, height: int, data: pointer): Texture =
 
   result.load(width, height, data)
 
-#stb is faster
-when not defined(useStb):
+#stb is faster and uses less memory; however, it cannot be used with fonts due to the pixie lib and duplicate linking issues
+#TODO use pixie directly or add a workaround
+when defined(useFont):
   import nimPNG
 else:
   import stb_image/read as stbi
@@ -221,7 +222,7 @@ else:
 proc loadTextureBytes*(bytes: string): Texture =
   result = newTexture()
 
-  when not defined(useStb):
+  when defined(useFont):
     var data = decodePNG32(bytes)
     result.load(data.width, data.height, addr data.data[0])
   else:
@@ -1125,7 +1126,7 @@ var
   startTime: Time
 
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
-  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "assets/atlas", visualizer = false) =
+  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "atlas", visualizer = false) =
 
   initCore(
   (proc() =
@@ -1159,6 +1160,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
     #initialize audio
     initAudio(visualizer)
+    #load the necessary audio files (macro generated)
+    loadAudio()
 
     #add default framebuffer to state
     fau.bufferStack.add newDefaultFramebuffer()

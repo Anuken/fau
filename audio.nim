@@ -1,4 +1,4 @@
-import audio/soloud_gen, fcore
+import audio/soloud_gen, fcore, os, macros, strutils
 
 var so: ptr Soloud
 
@@ -8,12 +8,13 @@ type
     protect: bool
   Voice* = distinct cuint
 
+template checkErr(details: string, body: untyped) =
+  let err = body
+  if err != 0: echo "[Audio] ", details, ": ", so.SoloudGetErrorString(err)
+
 proc initAudio*(visualize = false) =
   so = SoloudCreate()
-  if visualize:
-    discard so.SoloudInitEx(SOLOUD_ENABLE_VISUALIZATION.cuint, SOLOUD_AUTO.cuint, SOLOUD_AUTO.cuint, SOLOUD_AUTO.cuint, SOLOUD_AUTO.cuint)
-  else:
-    discard so.SoloudInit()
+  checkErr("Failed to initialize"): so.SoloudInit()
 
 proc getFft*(): array[256, float32] =
   let data = so.SoloudCalcFFT()
@@ -28,20 +29,37 @@ proc filterEcho*(sound: Sound, delay = 0.4, decay = 0.9, filtering = 0.5) =
   sound.handle.WavStreamSetFilter(0, filter)
 
 proc loadMusicStatic*(path: static[string]): Sound =
-  const musData = staticReadString(path)
-
+  const data = staticReadString(path)
   let handle = WavStreamCreate()
-  discard handle.WavStreamLoadMem(cast[ptr cuchar](musData.cstring), musData.len.cuint)
+  checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   return Sound(handle: handle, protect: true)
 
-proc loadSoundStatic*(path: static[string]): Sound =
-  const musData = staticReadString(path)
+proc loadMusic*(path: static[string]): Sound =
+  when not defined(emscripten):
+    return loadMusicStatic(path)
+  else: #load from filesystem on emscripten
+    let handle = WavStreamCreate()
+    checkErr(path): handle.WavStreamLoad("assets/" & path)
+    return Sound(handle: handle)
 
+proc loadSoundStatic*(path: static[string]): Sound =
+  const data = staticReadString(path)
   let handle = WavCreate()
-  discard handle.WavLoadMem(cast[ptr cuchar](musData.cstring), musData.len.cuint)
+  checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   return Sound(handle: handle)
 
+proc loadSound*(path: static[string]): Sound =
+  when not defined(emscripten):
+    return loadSoundStatic(path)
+  else: #load from filesystem on emscripten
+    let handle = WavCreate()
+    checkErr(path): handle.WavLoad("assets/" & path)
+    return Sound(handle: handle)
+
 proc play*(sound: Sound, pitch = 1.0'f32, volume = 1.0'f32, pan = 1.0'f32, loop = false): Voice {.discardable.} =
+  #handle may not exist due to failed loading
+  if sound.handle.isNil: return
+
   let id = so.SoloudPlay(sound.handle)
   if volume != 1.0: so.SoloudSetVolume(id, volume)
   if pan != 1.0: so.SoloudSetPan(id, pan)
@@ -63,3 +81,33 @@ proc `paused=`*(v: Voice, value: bool) {.inline.} = so.SoloudSetPause(v.cuint, v
 proc `volume=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetVolume(v.cuint, value)
 proc `pitch=`*(v: Voice, value: float32) {.inline.} = discard so.SoloudSetRelativePlaySpeed(v.cuint, value)
 proc `pan=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetPan(v.cuint, value)
+
+## defines all audio files as global variables and generates a loadAudio proc for loading them
+## all files in music/ are loaded with the "music" prefix; likewise for sounds/
+macro defineAudio*() =
+  result = newStmtList()
+
+  let loadProc = quote do:
+    proc loadAudio*() =
+      discard
+  let loadBody = loadProc.last
+
+  for file in walkDirRec("assets", relative = true):
+    if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext in [".ogg", ".mp3", ".wav"]:
+      let
+        mus = file.startsWith("music")
+        name = file.splitFile.name
+        nameid = ident(if mus: "music" & name.capitalizeAscii() else: "sound" & name.capitalizeAscii())
+      result.add quote do:
+        var `nameid`*: Sound
+      
+      if mus:
+        loadBody.add quote do:
+          `nameid` = loadMusic(`file`)
+      else:
+        loadBody.add quote do:
+          `nameid` = loadSound(`file`)
+  
+  result.add loadProc
+
+defineAudio()
