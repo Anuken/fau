@@ -3,7 +3,7 @@ export polymorph, fcore
 
 var definitions {.compileTime.}: seq[tuple[name: string, body: NimNode]]
 
-#defines a system, with an extra vars block for variables. body is built in launchFau
+## Defines a system, with an extra vars block for variables. Body is built in launchFau.
 macro sys*(name: static[string], componentTypes: openarray[typedesc], body: untyped): untyped =
   var varBody = newEmptyNode()
   for (index, st) in body.pairs:

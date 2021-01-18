@@ -293,12 +293,12 @@ proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
   glCompileShader(result)
 
   #check compiled status
-  let compiled = glGetShaderiv(result, GL_COMPILE_STATUS)
+  let compiled = glGetShaderiv(result, GlCompileStatus)
 
   if compiled == 0:
     shader.compiled = false
-    shader.compileLog &= ("[" & (if shaderType == GL_FRAGMENT_SHADER: "fragment shader" else: "vertex shader") & "]\n")
-    let infoLen = glGetShaderiv(result, GL_INFO_LOG_LENGTH)
+    shader.compileLog &= ("[" & (if shaderType == GlFragmentShader: "fragment shader" else: "vertex shader") & "]\n")
+    let infoLen = glGetShaderiv(result, GlInfoLogLength)
     if infoLen > 1:
       let infoLog = glGetShaderInfoLog(result)
       shader.compileLog &= infoLog #append reason to log
@@ -347,8 +347,8 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
   result.uniforms = initTable[string, int]()
   result.compiled = true
   
-  result.vertHandle = loadSource(result, GL_VERTEX_SHADER, preprocess(vertexSource, false))
-  result.fragHandle = loadSource(result, GL_FRAGMENT_SHADER, preprocess(fragmentSource, true))
+  result.vertHandle = loadSource(result, GlVertexShader, preprocess(vertexSource, false))
+  result.fragHandle = loadSource(result, GlFragmentShader, preprocess(fragmentSource, true))
 
   if not result.compiled:
     raise newException(GLerror, "Failed to compile shader: \n" & result.compileLog)
@@ -358,10 +358,10 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
   glAttachShader(program, result.fragHandle)
   glLinkProgram(program)
 
-  let status = glGetProgramiv(program, GL_LINK_STATUS)
+  let status = glGetProgramiv(program, GlLinkStatus)
 
   if status == 0:
-    let infoLen = glGetProgramiv(program, GL_INFO_LOG_LENGTH)
+    let infoLen = glGetProgramiv(program, GlInfoLogLength)
     if infoLen > 1:
       let infoLog = glGetProgramInfoLog(program)
       result.compileLog &= infoLog #append reason to log
@@ -371,7 +371,7 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
   result.handle = program
 
   #fetch attributes for shader
-  let numAttrs = glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES)
+  let numAttrs = glGetProgramiv(program, GlActiveAttributes)
   for i in 0..<numAttrs:
     var alen: GLsizei
     var asize: GLint
