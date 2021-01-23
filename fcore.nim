@@ -211,33 +211,36 @@ proc loadTexturePtr*(width, height: int, data: pointer): Texture =
 
   result.load(width, height, data)
 
-#stb is faster and uses less memory; however, it cannot be used with fonts due to the pixie lib and duplicate linking issues
-#TODO use pixie directly or add a workaround
-when defined(useFont):
-  import nimPNG
-else:
-  import stb_image/read as stbi
+import stb_image/read as stbi
 
 #load texture from bytes
 proc loadTextureBytes*(bytes: string): Texture =
   result = newTexture()
 
-  when defined(useFont):
-    var data = decodePNG32(bytes)
-    result.load(data.width, data.height, addr data.data[0])
-  else:
-    var
-      width, height, channels: int
-      data: seq[uint8]
+  var
+    width, height, channels: int
+    data: seq[uint8]
 
-    data = stbi.loadFromMemory(cast[seq[byte]](bytes), width, height, channels, 4)
-    result.load(width, height, addr data[0])
+  data = stbi.loadFromMemory(cast[seq[byte]](bytes), width, height, channels, 4)
+  result.load(width, height, addr data[0])
 
   
 #load texture from path
-proc loadTexture*(path: string): Texture = loadTextureBytes(readFile(path))
+proc loadTexture*(path: string): Texture = 
+  result = newTexture()
 
-proc loadTextureStatic*(path: static[string]): Texture = loadTextureBytes(staticReadString(path))
+  var
+    width, height, channels: int
+    data: seq[uint8]
+
+  data = stbi.load(path, width, height, channels, 4)
+  result.load(width, height, addr data[0])
+
+proc loadTextureStatic*(path: static[string]): Texture =
+  when not defined(emscripten):
+    loadTextureBytes(staticReadString(path))
+  else: #load from filesystem on emscripten
+    loadTexture("assets/" & path)
 
 #region of a texture
 type Patch* = object
@@ -1105,12 +1108,8 @@ when defined(Android):
 else:
   include backend/glfwcore
 
-import times, audio, shapes, random
-export audio, shapes
-
-when defined(useFont):
-  import font
-  export font
+import times, audio, shapes, random, font
+export audio, shapes, font
 
 #TODO move this somewhere else
 proc axis*(left, right: KeyCode): int = 

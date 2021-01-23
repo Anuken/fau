@@ -1,13 +1,7 @@
-import streams, flippy, fcore, tables, unicode, packer
-
-#NOTE: 
-#this module is currently broken, as it needs access to the flippy/typography/vmath libraries, which don't interact well
-#with existing fau libraries or their own depenedencies
+import pixie, fcore, tables, unicode, packer
 
 from typography import getGlyphImageOffset, getGlyphImage, typeset
 from vmath import nil
-
-#PACKER STUFF
 
 #Dynamic packer that writes its results to a GL texture.
 type TexturePacker* = ref object
@@ -20,13 +14,12 @@ proc newTexturePacker*(width, height: int): TexturePacker =
   TexturePacker(
     packer: newPacker(width, height), 
     texture: newTexture(width, height),
-    image: newImage(width, height, 4)
+    image: newImage(width, height)
   )
 
 proc pack*(packer: TexturePacker, image: Image): Patch =
   let (x, y) = packer.packer.pack(image.width, image.height)
-
-  packer.image.blit(image, vmath.vec2(x.float32, y.float32))
+  packer.image.draw(image, vmath.vec2(x.float32, y.float32))
   return newPatch(packer.texture, x, y, image.width, image.height)
 
 # Updates the texture of a texture packer. Call this when you're done packing.
@@ -43,22 +36,24 @@ type
     v: typography.VAlignMode
 
 const 
-  alignCenter* = Align(h: typography.Center, v: typography.Middle)
-  alignTop* = Align(h: typography.Center, v: typography.Top)
-  alignBot* = Align(h: typography.Center, v: typography.Bottom)
-  alignLeft* = Align(h: typography.Left, v: typography.Middle)
-  alignRight* = Align(h: typography.Right, v: typography.Middle)
+  faCenter* = Align(h: typography.Center, v: typography.Middle)
+  faTop* = Align(h: typography.Center, v: typography.Top)
+  faBot* = Align(h: typography.Center, v: typography.Bottom)
+  faLeft* = Align(h: typography.Left, v: typography.Middle)
+  faRight* = Align(h: typography.Right, v: typography.Middle)
 
-  alignTopLeft* = Align(h: typography.Left, v: typography.Top)
-  alignTopRight* = Align(h: typography.Right, v: typography.Top)
-  alignBotLeft* = Align(h: typography.Left, v: typography.Bottom)
-  alignBotRight* = Align(h: typography.Right, v: typography.Bottom)
+  faTopLeft* = Align(h: typography.Left, v: typography.Top)
+  faTopRight* = Align(h: typography.Right, v: typography.Top)
+  faBotLeft* = Align(h: typography.Left, v: typography.Bottom)
+  faBotRight* = Align(h: typography.Right, v: typography.Bottom)
 
 proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128): Font =
-  const data = staticRead(path)
-  let str = newStringStream(data)
-
-  let font = typography.readFontTtf(str)
+  when not defined(emscripten):
+    const str = staticReadString(path)
+    let font = typography.parseOtf(str)
+  else:
+    let font = typography.readFontTtf("assets/" & path)
+  
   font.size = size
 
   result = Font(font: font, patches: initTable[string, Patch]())
@@ -67,9 +62,9 @@ proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128):
 
   for ch in 0x0020'u16..0x00FF'u16:
     let code = $char(ch)
-    if not font.glyphs.hasKey(code): continue
+    if not font.typeface.glyphs.hasKey(code): continue
 
-    let offset = font.getGlyphImageOffset(font.glyphs[code])
+    let offset = font.getGlyphImageOffset(font.typeface.glyphs[code])
     let image = font.getGlyphImage(code)
     let patch = packer.pack(image)
     result.patches[code] = patch
@@ -77,11 +72,11 @@ proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128):
 
   packer.update()
 
-proc draw*(font: Font, pos: Vec2, text: string, color: Color = rgba(1, 1, 1, 1), align: Align = alignCenter) =
+proc draw*(font: Font, text: string, pos: Vec2, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = faCenter) =
   let layout = font.font.typeset(text, hAlign = align.h, vAlign = align.v)
   let col = color.toFloat()
 
   for ch in layout:
     if font.patches.hasKey(ch.character):
       let offset = font.offsets[ch.character]
-      drawRect(font.patches[ch.character], ch.rect.x + pos.x + offset.x, ch.rect.y + pos.y - ch.rect.h - offset.y, ch.rect.w, ch.rect.h, color = col)
+      drawRect(font.patches[ch.character], (ch.rect.x + offset.x) * scale + pos.x, (ch.rect.y - ch.rect.h - offset.y) * scale + pos.y, ch.rect.w*scale, ch.rect.h*scale, color = col)

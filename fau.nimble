@@ -3,7 +3,7 @@ author        = "Anuken"
 description   = "WIP Nim game framework"
 license       = "MIT"
 srcDir        = ""
-bin           = @["tools/faupack", "tools/antialias", "tools/fauproject"]
+bin           = @["tools/faupack", "tools/antialias"]
 binDir        = "build"
 
 requires "nim >= 1.4.2"
@@ -12,4 +12,5 @@ requires "https://github.com/treeform/staticglfw#d299a0d1727054749100a901d3b4f4f
 requires "nimPNG >= 0.3.1"
 requires "cligen >= 1.3.2"
 requires "chroma >= 0.2.1"
-requires "https://github.com/treeform/flippy#badc4e3772ce93790d5b69e330c7f1fc2d354069"
+requires "typography >= 0.7.3"
+requires "pixie >= 0.0.14"

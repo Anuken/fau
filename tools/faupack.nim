@@ -1,4 +1,4 @@
-import ../packer, os, flippy, strformat, tables, math, streams, times, chroma, strutils
+import ../packer, os, pixie, strformat, tables, math, streams, times, chroma, strutils
 
 from vmath import nil
 
@@ -43,24 +43,24 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
   #pack every file in directory
   for file in walkDirRec(path):
     if file.splitFile.ext == ".png":
-      packFile(file, loadImage(file))
+      packFile(file, readImage(file))
   
   #save a white image
   if not positions.hasKey("white"):
-    let img = newImage(1, 1, 4)
-    img.putRgba(0, 0, ColorRGBA(r: 255, g: 255, b: 255, a: 255))
+    let img = newImage(1, 1)
+    img[0, 0] = ColorRGBA(r: 255, g: 255, b: 255, a: 255)
     packFile("white.png", img)
   
   #save an error image if it's not present
   if not positions.hasKey("error"):
-    let img = newImage(1, 1, 4)
-    img.putRgba(0, 0, ColorRGBA(r: 255, g: 0, b: 255, a: 255))
+    let img = newImage(1, 1)
+    img[0, 0] = ColorRGBA(r: 255, g: 0, b: 255, a: 255)
     packFile("error.png", img)
     
   output.parentDir.createDir()
 
   var stream = openFileStream(&"{output}.dat", fmWrite)
-  var image = newImage(packer.w, packer.h, 4)
+  var image = newImage(packer.w, packer.h)
 
   stream.write positions.len.int32
 
@@ -68,7 +68,7 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
 
   #blit packed images and write them to the stream
   for region in positions.values:
-    image.blit(region.image, vmath.vec2(region.pos.x.float32, region.pos.y.float32))
+    image.draw(region.image, vmath.vec2(region.pos.x.float32, region.pos.y.float32))
 
     #apply bleeding/gutters
     if bleeding > 0:
@@ -81,16 +81,16 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
       for i in 0..<region.image.height:
         for s in 1..bleeding:
           #left
-          image.putRgba(ix - s, iy + i, region.image.getRgba(0, i))
+          image[ix - s, iy + i] = region.image[0, i]
           #right
-          image.putRgba(ix + s + iw - 1, iy + i, region.image.getRgba(iw - 1, i))
+          image[ix + s + iw - 1, iy + i] = region.image[iw - 1, i]
       
       for i in 0..<region.image.width:
         for s in 1..bleeding:
           #bottom
-          image.putRgba(ix + i, iy - s, region.image.getRgba(i, 0))
+          image[ix + i, iy - s] = region.image[i, 0]
           #top
-          image.putRgba(ix + i, iy + s + ih - 1, region.image.getRgba(i, ih - 1))
+          image[ix + i, iy + s + ih - 1] = region.image[i, ih - 1]
 
     stream.write region.file.splitFile.name.len.int16
     stream.write region.file.splitFile.name
@@ -100,7 +100,7 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
     stream.write region.image.height.int16
   
   stream.close()
-  image.save(&"{output}.png")
+  image.writeFile(&"{output}.png")
 
   echo &"Done in {(cpuTime() - time).formatFloat(ffDecimal, 2)}s."
   

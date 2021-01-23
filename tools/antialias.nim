@@ -1,4 +1,4 @@
-import flippy, math, chroma, chroma/transformations, os, algorithm
+import pixie, math, chroma, os, algorithm
 
 # This file contains an implementation of an antialiasing algorithm.
 # It's not very fast, but definitely faster than my previous Groovy version.
@@ -17,10 +17,10 @@ proc `*=`(color: var Color, val: float32) {.inline.} =
 
 proc antialias*(file: string) =
   let 
-    image = loadImage(file)
-    output = loadImage(file)
+    image = readImage(file)
+    output = readImage(file)
 
-  proc getRGB(ix, iy: int): ColorRGBA = image.getRgba(max(min(ix, image.width - 1), 0), max(min(iy, image.height - 1), 0))
+  proc getRGB(ix, iy: int): ColorRGBA = image[max(min(ix, image.width - 1), 0), max(min(iy, image.height - 1), 0)]
 
   var p: array[9, ColorRGBA]
 
@@ -81,9 +81,9 @@ proc antialias*(file: string) =
       fm = 1f / total
       sum *= fm
 
-      output.putRGBA(x, y, sum.rgba)
+      output[x, y] = sum.rgba
     
-  output.save(file)
+  output.writeFile(file)
 
 let params = commandLineParams()
 if params.len == 1:
