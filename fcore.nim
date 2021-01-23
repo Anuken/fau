@@ -1,4 +1,5 @@
 import gl, strutils, gltypes, tables, fmath, streams, macros, math, algorithm, sugar, futils
+import stb_image/read as stbi
 
 export gltypes, fmath, futils
 
@@ -210,8 +211,6 @@ proc loadTexturePtr*(width, height: int, data: pointer): Texture =
   result.height = height
 
   result.load(width, height, data)
-
-import stb_image/read as stbi
 
 #load texture from bytes
 proc loadTextureBytes*(bytes: string): Texture =
