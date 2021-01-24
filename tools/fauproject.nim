@@ -6,9 +6,6 @@ const
   app = "{{APP_NAME}}"
 
   builds = [
-    #linux builds don't work due to glibc issues. musl doesn't work because of x11 headers, and the glibc hack doesn't work due to depedencies on other C(++) libs
-    #workaround: wrap all functions and use asm symver magic to make it work
-    #(name: "linux64", os: "linux", cpu: "amd64", args: ""),
     (name: "win32", os: "windows", cpu: "i386", args: "--gcc.exe:i686-w64-mingw32-gcc --gcc.linkerexe:i686-w64-mingw32-g++"),
     (name: "win64", os: "windows", cpu: "amd64", args: "--gcc.exe:x86_64-w64-mingw32-gcc --gcc.linkerexe:x86_64-w64-mingw32-g++"),
   ]
@@ -87,7 +84,7 @@ launchFau("{{APP_NAME}}")
   "simple": """
 import fcore
 
-static: echo staticExec("faupack -p:../assets-raw/sprites -o:../assets/atlas")
+static: echo staticExec("faupack -p:assets-raw/sprites -o:assets/atlas")
 
 const scl = 4.0
 
