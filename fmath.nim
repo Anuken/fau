@@ -194,12 +194,12 @@ proc overlaps*(a, b: Rect): bool = a.x < b.x + b.w and a.x + a.w > b.x and a.y <
 
 proc penetrationX*(a, b: Rect): float32 {.inline.} =
   let nx = a.centerX - b.centerX
-  result = a.w / 2 + b.w / 2 - abs(nx)
+  result = a.w / 2 + b.w / 2 - abs(nx) + 0.000001
   if nx < 0: result = -result
 
 proc penetrationY*(a, b: Rect): float32 {.inline.} =
   let ny = a.centerY - b.centerY
-  result = a.h / 2 + b.h / 2 - abs(ny)
+  result = a.h / 2 + b.h / 2 - abs(ny) + 0.000001
   if ny < 0: result = -result
 
 proc penetration*(a, b: Rect): Vec2 = vec2(penetrationX(a, b), penetrationY(a, b))
