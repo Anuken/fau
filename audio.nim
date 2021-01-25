@@ -92,21 +92,24 @@ macro defineAudio*() =
       discard
   let loadBody = loadProc.last
 
-  for file in walkDirRec("assets", relative = true):
-    if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext in [".ogg", ".mp3", ".wav"]:
-      let
-        mus = file.startsWith("music")
-        name = file.splitFile.name
-        nameid = ident(if mus: "music" & name.capitalizeAscii() else: "sound" & name.capitalizeAscii())
-      result.add quote do:
-        var `nameid`*: Sound
-      
-      if mus:
-        loadBody.add quote do:
-          `nameid` = loadMusic(`file`)
-      else:
-        loadBody.add quote do:
-          `nameid` = loadSound(`file`)
+  for folder in walkDir("assets"):
+    if folder.kind == pcDir:
+      for f in walkDir(folder.path):
+        let file = f.path.substr("assets/".len)
+        if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext in [".ogg", ".mp3", ".wav"]:
+          let
+            mus = file.startsWith("music")
+            name = file.splitFile.name
+            nameid = ident(if mus: "music" & name.capitalizeAscii() else: "sound" & name.capitalizeAscii())
+          result.add quote do:
+            var `nameid`*: Sound
+          
+          if mus:
+            loadBody.add quote do:
+              `nameid` = loadMusic(`file`)
+          else:
+            loadBody.add quote do:
+              `nameid` = loadSound(`file`)
   
   result.add loadProc
 
