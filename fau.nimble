@@ -12,5 +12,5 @@ requires "https://github.com/treeform/staticglfw#d299a0d1727054749100a901d3b4f4f
 requires "cligen >= 1.3.2"
 requires "chroma >= 0.2.1"
 requires "pixie >= 0.0.16"
-requires "typography >= 0.7.3"
+requires "typography >= 0.7.4"
 requires "stbimage >= 2.5"

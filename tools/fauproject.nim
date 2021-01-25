@@ -144,6 +144,8 @@ const ignoreTemplate = """
 build
 nakefile
 repl.nim
+assets/atlas.png
+assets/atlas.dat
 """
 
 const vsTemplate = """
@@ -212,6 +214,21 @@ jobs:
           
 """
 
+const nimbleTemplate = """
+version       = "0.0.1"
+author        = "Anuken"
+description   = "none"
+srcDir        = ""
+bin           = @["{{APP_NAME}}"]
+binDir        = "build"
+
+requires "nim >= 1.4.2"
+requires "https://github.com/rlipsc/polymorph#0241b43d60ae37aea881f4a0a550705741b28dc0"
+requires "https://github.com/Anuken/nake#master"
+requires "https://github.com/Anuken/fau#" & staticExec("git -C fau rev-parse HEAD")
+
+"""
+
 template staticReadString*(filename: string): string = 
   const str = staticRead(filename)
   str
@@ -251,6 +268,7 @@ proc fauproject(name: string, directory = getHomeDir() / "Projects", preset = "e
   writeFile("nakefile.nim", nakeTemplate.replace("{{APP_NAME}}", lowerName))
   writeFile(&"{lowerName}.nim", presetText.replace("{{APP_NAME}}", name))
   writeFile(dir/".github/workflows/build.yml", ciTemplate.replace("{{APP_NAME}}", name))
+  writeFile(&"{lowerName}.nimble", nimbleTemplate.replace("{{APP_NAME}}", name))
   writeFile("config.nims", cfgTemplate)
   writeFile(".gitignore", ignoreTemplate)
   writeFile(dir/".vscode/tasks.json", vsTemplate)
