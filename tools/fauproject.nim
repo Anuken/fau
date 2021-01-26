@@ -1,54 +1,5 @@
 import os, strformat, cligen, strutils, tables, sequtils
 
-const nakeTemplate = """
-import nake, os, strformat, strutils, sequtils, tables
-const
-  app = "{{APP_NAME}}"
-
-  builds = [
-    (name: "win32", os: "windows", cpu: "i386", args: "--gcc.exe:i686-w64-mingw32-gcc --gcc.linkerexe:i686-w64-mingw32-g++"),
-    (name: "win64", os: "windows", cpu: "amd64", args: "--gcc.exe:x86_64-w64-mingw32-gcc --gcc.linkerexe:x86_64-w64-mingw32-g++"),
-  ]
-
-task "pack", "Pack textures":
-  direshell &"faupack -p:{getCurrentDir()}/assets-raw/sprites -o:{getCurrentDir()}/assets/atlas"
-
-task "debug", "Debug build":
-  shell &"nim r -f -d:debug {app}"
-
-task "release", "Release build":
-  direshell &"nim r -d:release -d:danger -o:build/{app} {app}"
-
-task "web", "Deploy web build":
-  createDir "build/web"
-  direshell &"nim c -f -d:emscripten -d:danger {app}.nim"
-  writeFile("build/web/index.html", readFile("build/web/index.html").replace("$title$", capitalizeAscii(app)))
-
-task "profile", "Run with a profiler":
-  shell nimExe, "c", "-r", "-d:release", "-d:danger", "--profiler:on", "--stacktrace:on", "-o:build/" & app, app
-
-task "deploy", "Build for all platforms":
-  runTask("web")
-
-  for name, os, cpu, args in builds.items:
-    let
-      exeName = &"{app}-{name}"
-      dir = "build"
-      exeExt = if os == "windows": ".exe" else: ""
-      bin = dir / exeName & exeExt
-      #win32 crashes when the release/danger/optSize flag is specified
-      dangerous = if name == "win32": "" else: "-d:danger"
-
-    createDir dir
-    direShell &"nim --cpu:{cpu} --os:{os} --app:gui -f {args} {dangerous} -o:{bin} c {app}"
-    direShell &"strip -s {bin}"
-    direShell &"upx-ucl --best {bin}"
-
-  cd "build"
-
-  direShell(&"zip -9r {app}-web.zip web/*")
-"""
-
 const projectPresets = {
   "ecs": """
 import ecs, presets/[basic, effects]
@@ -142,7 +93,6 @@ else:
 
 const ignoreTemplate = """
 build
-nakefile
 repl.nim
 assets/atlas.png
 assets/atlas.dat
@@ -155,7 +105,7 @@ const vsTemplate = """
     {
       "label": "debug",
       "type": "shell",
-      "command": "nake debug",
+      "command": "nimble debug",
       "problemMatcher": [],
       "group": {
         "kind": "build",
@@ -202,7 +152,7 @@ jobs:
           git config --global user.name "Github Actions"
           git clone --recursive https://github.com/Anuken/{{APP_NAME}}.git
           cd {{APP_NAME}}
-          nake web
+          nimble web
           git checkout gh-pages
           git pull
           rm -rf index*
@@ -223,9 +173,52 @@ bin           = @["{{APP_NAME}}"]
 binDir        = "build"
 
 requires "nim >= 1.4.2"
-requires "https://github.com/rlipsc/polymorph#0241b43d60ae37aea881f4a0a550705741b28dc0"
-requires "https://github.com/Anuken/nake#master"
 requires "https://github.com/Anuken/fau#" & staticExec("git -C fau rev-parse HEAD")
+
+import strformat, os
+
+const
+  app = "{{APP_NAME}}"
+
+  builds = [
+    #(name: "linux64", os: "linux", cpu: "amd64", args: ""),
+    (name: "win32", os: "windows", cpu: "i386", args: "--gcc.exe:i686-w64-mingw32-gcc --gcc.linkerexe:i686-w64-mingw32-g++"),
+    (name: "win64", os: "windows", cpu: "amd64", args: "--gcc.exe:x86_64-w64-mingw32-gcc --gcc.linkerexe:x86_64-w64-mingw32-g++"),
+  ]
+
+task pack, "Pack textures":
+  exec &"faupack -p:{getCurrentDir()}/assets-raw/sprites -o:{getCurrentDir()}/assets/atlas"
+
+task debug, "Debug build":
+  exec &"nim r -d:debug {app}"
+
+task release, "Release build":
+  exec &"nim r -d:release -d:danger -d:noFont -o:build/{app} {app}"
+
+task web, "Deploy web build":
+  mkDir "build/web"
+  exec &"nim c -f -d:emscripten -d:danger {app}.nim"
+  writeFile("build/web/index.html", readFile("build/web/index.html").replace("$title$", capitalizeAscii(app)))
+
+task deploy, "Build for all platforms":
+  `web Task`()
+
+  for name, os, cpu, args in builds.items:
+    let
+      exeName = &"{app}-{name}"
+      dir = "build"
+      exeExt = if os == "windows": ".exe" else: ""
+      bin = dir / exeName & exeExt
+      #win32 crashes when the release/danger/optSize flag is specified
+      dangerous = if name == "win32": "" else: "-d:danger"
+
+    mkDir dir
+    exec &"nim --cpu:{cpu} --os:{os} --app:gui -f {args} {dangerous} -o:{bin} c {app}"
+    exec &"strip -s {bin}"
+    exec &"upx-ucl --best {bin}"
+
+  cd "build"
+  exec &"zip -9r {app}-web.zip web/*"
 
 """
 
@@ -264,8 +257,6 @@ proc fauproject(name: string, directory = getHomeDir() / "Projects", preset = "e
 
   let lowerName = name.toLowerAscii()
 
-  #write a nakefile with basic setup
-  writeFile("nakefile.nim", nakeTemplate.replace("{{APP_NAME}}", lowerName))
   writeFile(&"{lowerName}.nim", presetText.replace("{{APP_NAME}}", name))
   writeFile(dir/".github/workflows/build.yml", ciTemplate.replace("{{APP_NAME}}", name))
   writeFile(&"{lowerName}.nimble", nimbleTemplate.replace("{{APP_NAME}}", name))
