@@ -205,7 +205,7 @@ task web, "Deploy web build":
   writeFile("build/web/index.html", readFile("build/web/index.html").replace("$title$", capitalizeAscii(app)))
 
 task deploy, "Build for all platforms":
-  `web Task`()
+  webTask()
 
   for name, os, cpu, args in builds.items:
     let
