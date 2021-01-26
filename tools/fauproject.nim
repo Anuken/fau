@@ -177,7 +177,9 @@ requires "https://github.com/Anuken/fau#" & staticExec("git -C fau rev-parse HEA
 
 import strformat, os
 
-template shell(args: string) = echo staticExec(args)
+template shell(args: string) =
+  try: exec(args)
+  except OSError: quit(1)
 
 const
   app = "{{APP_NAME}}"
