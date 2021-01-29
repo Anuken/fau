@@ -279,6 +279,24 @@ proc moveDelta*(box: Rect, vx, vy: float32, solidity: proc(x, y: int): bool): Ve
   
   return vec2(hitbox.x - box.x, hitbox.y - box.y)
 
+#returns true if the hitbox hits any tiles
+proc collidesTiles*(box: Rect, solidity: proc(x, y: int): bool): bool = 
+  let
+    left = (box.x + 0.5).int - 1
+    bottom = (box.y + 0.5).int - 1
+    right = (box.x + 0.5 + box.w).int + 1
+    top = (box.y + 0.5 + box.h).int + 1
+
+  for dx in left..right:
+    for dy in bottom..top:
+      if solidity(dx, dy):
+        let tile = rect((dx).float32 - 0.5'f32, (dy).float32 - 0.5'f32, 1, 1)
+        if box.overlaps(tile):
+          return true
+  
+  return false
+
+
 #3x3 matrix for 2D transformations
 const 
   M00 = 0
