@@ -51,6 +51,7 @@ macro defineEffects*(body: untyped) =
       effectBody = child.last
       procName = ident "renderer" & capped
       templName = ident "effect" & capped
+      idName = ident "effectId" & capped
       id = newLit curid
     
     var
@@ -65,6 +66,8 @@ macro defineEffects*(body: untyped) =
           lifeVal = node[1]
     
     result.add quote do:
+      const `idName`* {.inject.}: EffectId = `id`.EffectId
+
       proc `procName`(e {.inject.}: EffectState) =
         `effectBody`
       

@@ -8,6 +8,10 @@ type Timeable* = concept t
   t.time is float32
   t.lifetime is float32
 
+type AnyVec2* = concept t
+  t.x is float32
+  t.y is float32
+
 ## fade in from 0 to 1
 func fin*(t: Timeable): float32 {.inline.} = t.time / t.lifetime
 
@@ -102,6 +106,8 @@ type Vec2* = object
   x*, y*: float32
 
 func vec2*(x, y: float32): Vec2 {.inline.} = Vec2(x: x, y: y)
+proc vec2*(pos: AnyVec2): Vec2 {.inline.} = Vec2(x: pos.x, y: pos.y)
+func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag * sin(angle))
 
 #vector-vector operations
 
