@@ -1107,8 +1107,12 @@ when defined(Android):
 else:
   include backend/glfwcore
 
-import times, audio, shapes, random, font
-export audio, shapes, font
+import times, audio, shapes, random
+export audio, shapes
+
+when defined(useFont):
+  import font
+  export font
 
 #TODO move this somewhere else
 proc axis*(left, right: KeyCode): int = 
