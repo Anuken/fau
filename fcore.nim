@@ -137,8 +137,8 @@ proc `=destroy`*(texture: var TextureObj) =
     texture.handle = 0
 
 #binds the texture
-proc use*(texture: Texture, unit: GLenum = GlTexture0) =
-  glActiveTexture(unit)
+proc use*(texture: Texture, unit: int = 0) =
+  glActiveTexture((GlTexture0.int + unit).GLenum)
   glBindTexture(texture.target, texture.handle)
 
 #assigns min and mag filters
