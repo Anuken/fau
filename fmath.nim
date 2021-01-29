@@ -182,15 +182,54 @@ proc rect*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x, y: y, w: w, h: h)
 proc rectCenter*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x - w/2.0, y: y - h/2.0, w: w, h: h)
 proc rectCenter*(x, y, s: float32): Rect {.inline.} = Rect(x: x - s/2.0, y: y - s/2.0, w: s, h: s)
 
-proc top*(r: Rect): float32 {.inline} = r.y + r.h
-proc right*(r: Rect): float32 {.inline} = r.x + r.w
+proc top*(r: Rect): float32 {.inline.} = r.y + r.h
+proc right*(r: Rect): float32 {.inline.} = r.x + r.w
 
-proc centerX*(r: Rect): float32 {.inline} = r.x + r.w/2.0
-proc centerY*(r: Rect): float32 {.inline} = r.y + r.h/2.0
+proc centerX*(r: Rect): float32 {.inline.} = r.x + r.w/2.0
+proc centerY*(r: Rect): float32 {.inline.} = r.y + r.h/2.0
+proc center*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w/2.0, r.y + r.h/2.0)
+
+proc merge*(r: Rect, other: Rect): Rect =
+  result.x = min(r.x, other.x)
+  result.y = min(r.y, other.y)
+  result.w = max(r.right, other.right) - result.x
+  result.h = max(r.top, other.top) - result.h
 
 #collision stuff
 
 proc overlaps*(a, b: Rect): bool = a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
+
+proc overlaps(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
+  let vel = v1 - v2
+
+  var invEntry, invExit: Vec2
+
+  if vel.x > 0.0:
+    invEntry.x = r2.x - (r1.x + r1.w)
+    invExit.x = (r2.x + r2.w) - r1.x
+  else:
+    invEntry.x = (r2.x + r2.w) - r1.x
+    invExit.x = r2.x - (r1.x + r1.w)
+
+  if vel.y > 0.0:
+    invEntry.y = r2.y - (r1.y + r1.h)
+    invExit.y = (r2.y + r2.h) - r1.y
+  else:
+    invEntry.y = (r2.y + r2.h) - r1.y
+    invExit.y = r2.y - (r1.y + r1.h)
+
+  let 
+    entry = invEntry / vel
+    exit = invExit / vel
+    entryTime = max(entry.x, entry.y)
+    exitTime = min(exit.x, exit.y)
+
+  if entryTime > exitTime or exit.x < 0.0 or exit.y < 0.0 or entry.x > 1.0 or entry.y > 1.0:
+    return false
+  else:
+    hitPos = vec2(r1.x + r1.w / 2f + v1.x * entryTime, r1.y + r1.h / 2f + v1.y * entryTime)
+    return true
+
 
 proc penetrationX*(a, b: Rect): float32 {.inline.} =
   let nx = a.centerX - b.centerX
