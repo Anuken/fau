@@ -149,6 +149,9 @@ proc `filter=`*(texture: Texture, filter: Glenum) =
   glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.GLint)
   glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.GLint)
 
+proc filterLinear*(texture: Texture) = texture.filter = GlLinear
+proc filterNearest*(texture: Texture) = texture.filter = GlNearest
+
 #assigns wrap modes for each axis
 proc `wrap=`*(texture: Texture, wrap: Glenum) =
   texture.uwrap = wrap
