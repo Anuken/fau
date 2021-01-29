@@ -1,7 +1,4 @@
 build
-nakefile
 *.wasm
 tmp/
-testing.html
-testing.js
 .idea/
