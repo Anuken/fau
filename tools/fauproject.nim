@@ -168,6 +168,7 @@ const nimbleTemplate = """
 version       = "0.0.1"
 author        = "Anuken"
 description   = "none"
+license       = "GPL-3.0"
 srcDir        = ""
 bin           = @["{{APP_NAME}}"]
 binDir        = "build"
