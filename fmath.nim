@@ -1,4 +1,4 @@
-import math
+import math, random
 
 #this should be avoided in most cases, but manually turning ints into float32s can be very annoying
 converter toFloat32*(i: int): float32 {.inline.} = i.float32 
@@ -377,3 +377,20 @@ proc inv*(self: Mat): Mat =
   ]
 
 proc `*`*(self: Vec2, mat: Mat): Vec2 = vec2(self.x * mat.val[0] + self.y * mat.val[3] + mat.val[6], self.x * mat.val[1] + self.y * mat.val[4] + mat.val[7])
+
+#PARTICLES
+
+## Stateless particles based on RNG. x/y are injected into template body.
+template particles*(seed: int, amount: int, cx, cy, rad: float32, body: untyped) =
+  var r = initRand(seed)
+  for i in 0..amount:
+    let 
+      v = vec2l(r.rand(360.0).float32, r.rand(1.0).float32 * rad)
+      x {.inject.} = cx + v.x
+      y {.inject.} = cy + v.y
+    body
+
+template circle*(amount: int, body: untyped) =
+  for i in 0..<amount:
+    let angle {.inject.} = (i.float32 / amount.float32 * 360'f32).degToRad
+    body

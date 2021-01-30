@@ -809,7 +809,7 @@ proc flush(batch: Batch) =
   shader.setmat4("u_proj", fau.batchMat)
 
   batch.mesh.updateVertices(0..<batch.index)
-  batch.mesh.render(batch.shader, 0, batch.index div spriteSize * 6)
+  batch.mesh.render(shader, 0, batch.index div spriteSize * 6)
   
   batch.index = 0
 
@@ -883,6 +883,25 @@ proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, origi
 
     batch.index += spriteSize
 
+const defaultBatchVert* = """
+attribute vec4 a_position;
+attribute vec4 a_color;
+attribute vec2 a_texc;
+attribute vec4 a_mixcolor;
+uniform mat4 u_proj;
+varying vec4 v_color;
+varying vec4 v_mixcolor;
+varying vec2 v_texc;
+void main(){
+  v_color = a_color;
+  v_color.a = v_color.a * (255.0/254.0);
+  v_mixcolor = a_mixcolor;
+  v_mixcolor.a = v_mixcolor.a * (255.0/254.0);
+  v_texc = a_texc;
+  gl_Position = u_proj * a_position;
+}
+"""
+
 proc newBatch*(size: int = 4092): Batch = 
   let batch = Batch(
     mesh: newMesh(
@@ -905,25 +924,7 @@ proc newBatch*(size: int = 4092): Batch =
     j += 4
   
   #create default shader
-  batch.shader = newShader(
-  """
-  attribute vec4 a_position;
-  attribute vec4 a_color;
-  attribute vec2 a_texc;
-  attribute vec4 a_mixcolor;
-  uniform mat4 u_proj;
-  varying vec4 v_color;
-  varying vec4 v_mixcolor;
-  varying vec2 v_texc;
-  void main(){
-    v_color = a_color;
-    v_color.a = v_color.a * (255.0/254.0);
-    v_mixcolor = a_mixcolor;
-    v_mixcolor.a = v_mixcolor.a * (255.0/254.0);
-    v_texc = a_texc;
-    gl_Position = u_proj * a_position;
-  }
-  """,
+  batch.shader = newShader(defaultBatchVert,
 
   """
   varying lowp vec4 v_color;
@@ -973,6 +974,11 @@ proc drawFlush*() =
 proc drawShader*(shader: Shader) = 
   drawFlush()
   fau.batchShader = shader
+
+template withShader*(shader: Shader, body: untyped) =
+  shader.drawShader()
+  body
+  drawShader(nil)
 
 #Sets the matrix used for rendering. This flushes the batch.
 proc drawMat*(mat: Mat) = 
