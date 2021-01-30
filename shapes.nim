@@ -35,7 +35,7 @@ proc fillQuad*(x1, y1, x2, y2, x3, y3, x4, y4, color: float32, z: float32 = 0) =
   fillQuad(x1, y1, color, x2, y2, color, x3, y3, color, x4, y4, color, z)
 
 proc fillRect*(x, y, w, h: float32, color = colorWhiteF, z: float32 = 0) =
-  drawRect(fau.white, x, y, w, h, color = color)
+  drawRect(fau.white, x, y, w, h, color = color, z = z)
 
 proc fillTri*(x1, y1, x2, y2, x3, y3, color: float32, z: float32 = 0) = 
   fillQuad(x1, y1, color, x2, y2, color, x3, y3, color, x3, y3, color, z)
