@@ -864,8 +864,8 @@ proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, origi
         fx2 = width - originX
         fy2 = height - originY
         #rotate
-        cos = cos(rotation.degToRad)
-        sin = sin(rotation.degToRad)
+        cos = cos(rotation)
+        sin = sin(rotation)
         x1 = cos * fx - sin * fy + worldOriginX
         y1 = sin * fx + cos * fy + worldOriginY
         x2 = cos * fx - sin * fy2 + worldOriginX

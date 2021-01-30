@@ -28,6 +28,8 @@ func fouts*(t: Scaleable): float32 {.inline.} = 2.0 * abs(t.fin - 0.5)
 ## fade in from 1 to 0 to 1
 func fins*(t: Scaleable): float32 {.inline.} = 1.0 - t.fouts
 
+func powout*(a, power: float32): float32 {.inline.} = pow(a - 1, power) * (if power mod 2 == 0: -1 else: 1) + 1
+
 #utility functions
 
 func lerp*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * progress
