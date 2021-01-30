@@ -57,9 +57,11 @@ proc resize*(cam: Cam, w, h: float32) =
 type Color* = object
   r*, g*, b*, a*: float32
 
-proc rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color = Color(r: r, g: g, b: b, a: a)
+func rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color {.inline.} = Color(r: r, g: g, b: b, a: a)
 
-proc rgb*(r: float32, g: float32, b: float32): Color = Color(r: r, g: g, b: b, a: 1.0)
+func rgb*(r: float32, g: float32, b: float32): Color {.inline.} = Color(r: r, g: g, b: b, a: 1.0)
+
+func alpha*(a: float32): Color {.inline.} = rgba(1.0, 1.0, 1.0, a)
 
 proc mix*(color: Color, other: Color, alpha: float32): Color =
   let inv = 1.0 - alpha
@@ -1044,8 +1046,8 @@ proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int)
 
 #TODO inline
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, 
-  rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
-  fau.batch.drawRaw(region, x, y, 0, width, height, originX, originY, rotation, color, mixColor)
+  rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF, z: float32 = 0.0) {.inline.} = 
+  fau.batch.drawRaw(region, x, y, z, width, height, originX, originY, rotation, color, mixColor)
 
 #TODO inline
 proc drawVert*(texture: Texture, vertices: array[24, Glfloat], z: float32 = 0) {.inline.} = 
