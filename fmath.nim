@@ -102,6 +102,9 @@ func sign*(x: bool): float32 {.inline.} =
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
 
+func rad*(val: float32): float32 {.inline.} = val.degToRad
+func deg*(val: float32): float32 {.inline.} = val.radToDeg
+
 type Vec2* = object
   x*, y*: float32
 
