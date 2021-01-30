@@ -57,6 +57,8 @@ func hashInt*(value: int): int {.inline.} =
   x = x xor (x shr 33)
   return x.int.abs
 
+proc chance*(c: float): bool = rand(0.0..1.0) < c
+
 {.pop.}
 
 #angle/degree functions
