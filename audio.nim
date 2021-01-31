@@ -15,6 +15,7 @@ template checkErr(details: string, body: untyped) =
 proc initAudio*(visualize = false) =
   so = SoloudCreate()
   checkErr("Failed to initialize"): so.SoloudInit()
+  echo "Initialized SoLoud v" & $so.SoloudGetVersion() & " w/ " & $so.SoloudGetBackendString()
 
 proc getFft*(): array[256, float32] =
   let data = so.SoloudCalcFFT()

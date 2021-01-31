@@ -37,6 +37,7 @@ elif defined(Android):
 elif defined(Linux):
   {.passL: "-lpthread".}
   cDefine("WITH_MINIAUDIO")
+  cDefine("MA_NO_PULSEAUDIO")
   {.compile: src & "/backend/miniaudio/soloud_miniaudio.cpp".}
 elif defined(Windows):
   {.passC: "-msse".}
