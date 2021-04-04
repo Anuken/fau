@@ -1,5 +1,6 @@
-import pixie, fcore, tables, unicode, packer
+import fcore, tables, unicode, packer
 
+from pixie import Image, draw, newImage
 from typography import getGlyphImageOffset, getGlyphImage, typeset
 from vmath import nil
 
