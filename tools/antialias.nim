@@ -2,6 +2,7 @@ import pixie, math, chroma, os, algorithm
 
 # This file contains an implementation of an antialiasing algorithm.
 # It's not very fast, but definitely faster than my previous Groovy version.
+# Possible optimizations include SIMD and multithreading pixel processing
 
 proc lerp*(color: var Color, target: Color, t: float32) {.inline.} =
   color.r += t * (target.r - color.r)
@@ -86,7 +87,8 @@ proc antialias*(file: string) =
   output.writeFile(file)
 
 let params = commandLineParams()
-if params.len == 1:
-  antialias(params[0])
-else:
+if params.len == 0:
   echo "Incorrect usage. First parameter must be a path to a file."
+else:
+  for img in params:
+    antialias(img)
