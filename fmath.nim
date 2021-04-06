@@ -63,24 +63,31 @@ proc chance*(c: float): bool = rand(0.0..1.0) < c
 
 {.pop.}
 
-#angle/degree functions
+#angle/degree functions; all are in radians
+
+const pi2* = PI * 2.0
+
+#TODO angle type, distinct float32
+
+func rad*(val: float32): float32 {.inline.} = val * PI / 180.0
+func deg*(val: float32): float32 {.inline.} = val / (PI / 180.0)
 
 ## angle lerp
-func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + 360 + 180) mod 360) - 180)) * progress + 360.0) mod 360
+func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + 360.rad + 180.rad) mod 360.rad) - 180.rad)) * progress + 360.0.rad) mod 360.rad
 
 ## angle dist
-func adist*(a, b: float32): float32 {.inline.} = min(if a - b < 0: a - b + 360.0 else: a - b, if b - a < 0: b - a + 360.0 else: b - a)
+func adist*(a, b: float32): float32 {.inline.} = min(if a - b < 0: a - b + 360.0.rad else: a - b, if b - a < 0: b - a + 360.0.rad else: b - a)
 
 ## angle approach
 func aapproach*(a, b, amount: float32): float32 =
   let 
     forw = abs(a - b)
-    back = 360.0 - forw
+    back = 360.0.rad - forw
     diff = adist(a, b)
   
   return if diff <= amount: b
-  elif (a > b) == (back > forw): (a - amount).emod 360
-  else: (a + amount).emod 360
+  elif (a > b) == (back > forw): (a - amount).emod 360.rad
+  else: (a + amount).emod 360.rad
 
 func dst*(x1, y1, z1, x2, y2, z2: float32): float32 {.inline.} =
   let 
@@ -105,9 +112,6 @@ func sign*(x: bool): float32 {.inline.} =
 
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
-
-func rad*(val: float32): float32 {.inline.} = val.degToRad
-func deg*(val: float32): float32 {.inline.} = val.radToDeg
 
 type Vec2* = object
   x*, y*: float32
