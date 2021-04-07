@@ -1,2 +1,4 @@
 --gc:arc
 --d:danger
+--passC:"-flto"
+--passL:"-flto"
