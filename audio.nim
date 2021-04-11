@@ -57,7 +57,7 @@ proc loadSound*(path: static[string]): Sound =
     checkErr(path): handle.WavLoad("assets/" & path)
     return Sound(handle: handle)
 
-proc play*(sound: Sound, pitch = 1.0'f32, volume = 1.0'f32, pan = 1.0'f32, loop = false): Voice {.discardable.} =
+proc play*(sound: Sound, pitch = 1.0f, volume = 1.0f, pan = 1.0f, loop = false): Voice {.discardable.} =
   #handle may not exist due to failed loading
   if sound.handle.isNil: return
 

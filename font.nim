@@ -48,7 +48,7 @@ const
   faBotLeft* = Align(h: typography.Left, v: typography.Bottom)
   faBotRight* = Align(h: typography.Right, v: typography.Bottom)
 
-proc loadFont*(path: static[string], size: float32 = 16'f32, textureSize = 128): Font =
+proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128): Font =
   when not defined(emscripten):
     const str = staticReadString(path)
     let font = typography.parseOtf(str)

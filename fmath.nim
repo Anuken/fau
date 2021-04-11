@@ -20,7 +20,7 @@ type Scaleable* = concept s
   s.fin() is float32
 
 ## fade in from 1 to 0
-func fout*(t: Scaleable): float32 {.inline.} = 1.0'f32 - t.fin
+func fout*(t: Scaleable): float32 {.inline.} = 1.0f - t.fin
 
 ## fade in from 0 to 1 to 0
 func fouts*(t: Scaleable): float32 {.inline.} = 2.0 * abs(t.fin - 0.5)
@@ -275,7 +275,7 @@ proc moveDelta*(box: Rect, vx, vy: float32, solidity: proc(x, y: int): bool): Ve
   for dx in left..right:
     for dy in bottom..top:
       if solidity(dx, dy):
-        let tile = rect((dx).float32 - 0.5'f32, (dy).float32 - 0.5'f32, 1, 1)
+        let tile = rect((dx).float32 - 0.5f, (dy).float32 - 0.5f, 1, 1)
         if hitbox.overlaps(tile):
           hitbox.x -= tile.penetrationX(hitbox)
   
@@ -284,7 +284,7 @@ proc moveDelta*(box: Rect, vx, vy: float32, solidity: proc(x, y: int): bool): Ve
   for dx in left..right:
     for dy in bottom..top:
       if solidity(dx, dy):
-        let tile = rect((dx).float32 - 0.5'f32, (dy).float32 - 0.5'f32, 1, 1)
+        let tile = rect((dx).float32 - 0.5f, (dy).float32 - 0.5f, 1, 1)
         if hitbox.overlaps(tile):
           hitbox.y -= tile.penetrationY(hitbox)
   
@@ -301,7 +301,7 @@ proc collidesTiles*(box: Rect, solidity: proc(x, y: int): bool): bool =
   for dx in left..right:
     for dy in bottom..top:
       if solidity(dx, dy):
-        let tile = rect((dx).float32 - 0.5'f32, (dy).float32 - 0.5'f32, 1, 1)
+        let tile = rect((dx).float32 - 0.5f, (dy).float32 - 0.5f, 1, 1)
         if box.overlaps(tile):
           return true
   
@@ -338,7 +338,7 @@ proc toMat4*(matrix: Mat): array[16, float32] =
   result[15] = 1
 
 #creates an identity matrix
-proc idt*(): Mat = newMat [1'f32, 0, 0, 0, 1, 0, 0, 0, 1]
+proc idt*(): Mat = newMat [1f, 0, 0, 0, 1, 0, 0, 0, 1]
 
 #orthographic projection matrix
 proc ortho*(x, y, width, height: float32): Mat =
@@ -403,5 +403,5 @@ template particles*(seed: int, amount: int, cx, cy, rad: float32, body: untyped)
 
 template circle*(amount: int, body: untyped) =
   for i in 0..<amount:
-    let angle {.inject.} = (i.float32 / amount.float32 * 360'f32).degToRad
+    let angle {.inject.} = (i.float32 / amount.float32 * 360f).degToRad
     body

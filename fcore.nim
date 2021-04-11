@@ -589,7 +589,7 @@ proc render*(mesh: Mesh, shader: Shader, offset = 0, count = mesh.vertices.len) 
   endBind(mesh, shader)
 
 #creates a mesh with position and tex coordinate attributes that covers the screen.
-proc newScreenMesh*(): Mesh = newMesh(@[attribPos, attribTexCoords], isStatic = true, primitiveType = GlTriangleFan, vertices = @[-1'f32, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1])
+proc newScreenMesh*(): Mesh = newMesh(@[attribPos, attribTexCoords], isStatic = true, primitiveType = GlTriangleFan, vertices = @[-1f, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1])
 
 #FRAMEBUFFER
 
@@ -842,7 +842,7 @@ proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, origi
   else:
     batch.prepare(region.texture)
 
-    if rotation == 0.0'f32:
+    if rotation == 0.0f:
       let
         x2 = width + x
         y2 = height + y
@@ -999,8 +999,8 @@ proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
   draw(z - spread, layerBegin)
   draw(z + spread, layerEnd)
 
-proc draw*(region: Patch, x, y: float32, z = 0'f32, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl, 
-  originX = width * 0.5, originY = height * 0.5, rotation = 0'f32, align = daCenter,
+proc draw*(region: Patch, x, y: float32, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+  originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
   color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
 
   let 
@@ -1010,8 +1010,8 @@ proc draw*(region: Patch, x, y: float32, z = 0'f32, width = region.widthf * fau.
   fau.batch.drawRaw(region, x - width * alignH, y - height * alignV, z, width, height, originX, originY, rotation, color, mixColor)
 
 #draws a region with rotated bits
-proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int): Vec2, z = 0'f32, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl, 
-  originX = width * 0.5, originY = height * 0.5, rotation = 0'f32, align = daCenter,
+proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int): Vec2, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+  originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
   color = colorWhiteF, mixColor = colorClearF) =
   
   let
@@ -1045,8 +1045,8 @@ proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int)
   fau.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, color, mixColor, cor2.x, cor2.y, u, v2, color, mixColor, cor3.x, cor3.y, u2, v2, color, mixColor, cor4.x, cor4.y, u2, v, color, mixColor], z)
 
 #TODO inline
-proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0'f32, originY = 0'f32, 
-  rotation = 0'f32, color = colorWhiteF, mixColor = colorClearF, z: float32 = 0.0) {.inline.} = 
+proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, originY = 0f,
+  rotation = 0f, color = colorWhiteF, mixColor = colorClearF, z: float32 = 0.0) {.inline.} =
   fau.batch.drawRaw(region, x, y, z, width, height, originX, originY, rotation, color, mixColor)
 
 #TODO inline
@@ -1178,7 +1178,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     #create and use batch
     fau.batch = newBatch()
 
-    fau.pixelScl = 1.0'f32
+    fau.pixelScl = 1.0f
       
     #enable sorting by default
     fau.batchSort = true

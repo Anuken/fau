@@ -108,7 +108,7 @@ proc newBloom*(scaling: int = 4, passes: int = 6): Bloom =
   """
   )
 
-  let thresh = 0.8'f32
+  let thresh = 0.8f
   result.bloom.seti("u_texture0", 0)
   result.bloom.seti("u_texture1", 1)
   result.bloom.setf("u_bloomIntensity", 2.5)

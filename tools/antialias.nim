@@ -64,7 +64,7 @@ proc antialias*(file: string) =
       var fm = if suma.a <= 0.001f: 0f else: (1f / suma.a)
       suma *= fm
 
-      var total = 0'f32
+      var total = 0f
       var sum = Color()
 
       for val in p:

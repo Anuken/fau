@@ -43,7 +43,7 @@ proc fillTri*(x1, y1, x2, y2, x3, y3, color: float32, z: float32 = 0) =
 proc fillCircle*(x, y, rad: float32, color: float32 = colorWhiteF, z: float32 = 0) =
   draw(fau.circle, x, y, width = rad*2.0, height = rad*2.0, color = color, z = z)
 
-proc fillPoly*(x, y: float32, sides: int, radius: float32, rotation = 0'f32, color: float32 = colorWhiteF, z: float32 = 0) =
+proc fillPoly*(x, y: float32, sides: int, radius: float32, rotation = 0f, color: float32 = colorWhiteF, z: float32 = 0) =
   let space = PI*2 / sides.float32
 
   for i in countup(0, sides-1, 2):
@@ -72,7 +72,7 @@ proc fillPoly*(x, y: float32, sides: int, radius: float32, rotation = 0'f32, col
       color, z
     )
 
-proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0'f32, color: float32 = colorWhiteF, z: float32 = 0) =
+proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color: float32 = colorWhiteF, z: float32 = 0) =
   fillPoly(pos.x, pos.y, sides, radius, rotation, color, z)
 
 proc fillLight*(x, y, radius: float32, sides = 20, centerColor = colorWhiteF, edgeColor = colorClearF, z: float32 = 0) = 
@@ -131,7 +131,7 @@ proc lineRect*(x, y, w, h: float32, stroke: float32 = 1.0, color = colorWhiteF, 
   line(x + w, y + h, x, y + h, stroke, color, z = z)
   line(x, y + h, x, y, stroke, color, z = z)
 
-proc poly*(x, y: float32, sides: int, radius: float32, rotation = 0'f32, stroke = 1'f32, color: float32 = colorWhiteF, z: float32 = 0) = 
+proc poly*(x, y: float32, sides: int, radius: float32, rotation = 0f, stroke = 1f, color: float32 = colorWhiteF, z: float32 = 0) =
   let 
     space = PI*2 / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)
@@ -154,5 +154,5 @@ proc poly*(x, y: float32, sides: int, radius: float32, rotation = 0'f32, stroke 
       color, z
     )
 
-proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0'f32, stroke = 1'f32, color: float32 = colorWhiteF, z: float32 = 0) = 
+proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f, color: float32 = colorWhiteF, z: float32 = 0) =
   poly(pos.x, pos.y, sides, radius, rotation, stroke, color, z = z)
