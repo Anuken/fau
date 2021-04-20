@@ -13,7 +13,7 @@ registerComponents(defaultComponentOptions):
     Vel = object
       x, y: float32
 
-makeSystem("init", [Main]):
+sys("init", [Main]):
 
   init:
     discard
@@ -96,6 +96,7 @@ build
 repl.nim
 assets/atlas.png
 assets/atlas.dat
+.idea
 """
 
 const vsTemplate = """
