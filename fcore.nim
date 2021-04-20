@@ -145,11 +145,12 @@ proc use*(texture: Texture, unit: int = 0) =
 
 #assigns min and mag filters
 proc `filter=`*(texture: Texture, filter: Glenum) =
-  texture.minfilter = filter
-  texture.magfilter = filter
-  texture.use()
-  glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.GLint)
-  glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.GLint)
+  if texture.minfilter != filter or texture.magfilter != filter:
+    texture.minfilter = filter
+    texture.magfilter = filter
+    texture.use()
+    glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.GLint)
+    glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.GLint)
 
 proc filterLinear*(texture: Texture) = texture.filter = GlLinear
 proc filterNearest*(texture: Texture) = texture.filter = GlNearest
@@ -770,9 +771,9 @@ type FauState = object
   #Smoothed frames per second
   fps*: int
   #Delta time between frames in 60th of a second
-  delta*: float
+  delta*: float32
   #Time passed since game launch, in seconds
-  time*: float
+  time*: float32
   #Mouse position
   mouseX*, mouseY*: float32
   #Last scroll values
@@ -1106,9 +1107,9 @@ proc blit*(buffer: Framebuffer, z: float32 = 0, color: float32 = colorWhiteF) =
   draw(buffer.texture, fau.cam.pos.x, fau.cam.pos.y, z = z, color = color, width = fau.cam.w, height = -fau.cam.h)
 
 #Blits a framebuffer immediately as a fullscreen quad. Does not use batch.
-proc blitQuad*(buffer: Framebuffer, shader = fau.screenspace) =
+proc blitQuad*(buffer: Framebuffer, shader = fau.screenspace, unit = 0) =
   drawFlush()
-  buffer.texture.use()
+  buffer.texture.use(unit)
   fau.quad.render(shader)
 
 #BACKEND & INITIALIZATION
