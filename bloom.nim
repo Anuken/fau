@@ -16,18 +16,19 @@ type Bloom* = object
   thresh, bloom, blur: Shader
   blurPasses*: int
   scaling: int
+  blend: bool
 
-proc newBloom*(scaling: int = 4, passes: int = 1, threshold = 0.8f): Bloom =
+proc newBloom*(scaling: int = 4, passes: int = 1, blend = false): Bloom =
   result.buffer = newFramebuffer()
   result.p1 = newFramebuffer()
   result.p2 = newFramebuffer()
   result.scaling = scaling
   result.blurPasses = passes
+  result.blend = blend
 
   result.thresh = newShader(screenspace,
   """ 
   uniform lowp sampler2D u_texture0;
-  uniform lowp vec2 u_threshold;
   varying vec2 v_texc;
 
   void main(){
@@ -112,7 +113,6 @@ proc newBloom*(scaling: int = 4, passes: int = 1, threshold = 0.8f): Bloom =
   result.bloom.seti("u_texture1", 1)
   result.bloom.setf("u_bloomIntensity", 2.5)
   result.bloom.setf("u_originalIntensity", 1.0)
-  result.thresh.setf("u_threshold", threshold, 1.0 / (1.0 - threshold))
 
 proc capture*(bloom: Bloom) =
   let
@@ -152,7 +152,7 @@ proc render*(bloom: Bloom) =
     bloom.p2.blitQuad(bloom.blur)
     bloom.p1.pop()
 
-  blendNormal.use()
+  (if bloom.blend: blendNormal else: blendDisabled).use()
   bloom.buffer.texture.use(0)
   bloom.p1.blitQuad(bloom.bloom, unit = 1)
   
