@@ -88,7 +88,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = false): Bloom =
     gl_Position = a_position;
   }
   """,
-  """ 
+  """
   uniform lowp sampler2D u_texture;
   varying vec2 v_texCoords0;
   varying vec2 v_texCoords1;
