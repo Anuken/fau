@@ -21,8 +21,8 @@ macro whenComp*(entity: EntityRef, t: typedesc, body: untyped) =
   ## Runs the body with the specified lowerCase type when this entity has this component
   let varName = t.repr.toLowerAscii.ident
   result = quote do:
-    if `entity`.alive and `entity`.hasComponent `t`:
-      let `varName` {.inject.} = `entity`.fetchComponent `t`
+    if `entity`.alive and `entity`.has `t`:
+      let `varName` {.inject.} = `entity`.fetch `t`
       `body`
 
 template clearAll*(group: untyped) =
