@@ -1,4 +1,4 @@
-import math
+import math, random
 
 const perm = [151, 160, 137, 91, 90, 15,
 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23,
@@ -14,9 +14,13 @@ const perm = [151, 160, 137, 91, 90, 15,
 49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254,
 138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180]
 
+var seed = 0
+
+proc simplexSeed*(value: int) = seed = value
+
 proc hash(i: int32): int32 {.inline.} =
   #TODO this is broken, why do I have to mod it
-  perm[i mod 256].int32
+  perm[(i + seed) mod 256].int32
 
 proc grad(hash: int32, x: float): float =
   let h: int32 = hash and 0x0F
@@ -240,47 +244,47 @@ proc noise*(x: float, y: float, z: float): float =
 
   return 32.0 * (n0 + n1 + n2 + n3)
 
-proc fractal*(octaves: int, x: float, mFrequency = 1.0, mAmplitude = 1.0, mPresistence = 0.5, mLacunarity = 2.0): float =
+proc fractal*(x: float, octaves: int, freq = 1.0, amp = 1.0, persistence = 0.5, lac = 2.0): float =
   var output = 0.0
   var denom = 0.0
-  var frequency = mFrequency
-  var amplitude = mAmplitude
+  var frequency = freq
+  var amplitude = amp
 
   for i in 0..<octaves:
     output += amplitude * noise(x * frequency)
     denom += amplitude
 
-    frequency *= mLacunarity
-    amplitude *= mPresistence
+    frequency *= lac
+    amplitude *= persistence
   
   return output / denom
 
-proc fractal*(octaves: int, x: float, y: float, mFrequency = 1.0, mAmplitude = 1.0, mPresistence = 0.5, mLacunarity = 2.0): float =
+proc fractal*(x: float, y: float, octaves: int, freq = 1.0, amp = 1.0, persistence = 0.5, lac = 2.0): float =
   var output = 0.0
   var denom = 0.0
-  var frequency = mFrequency
-  var amplitude = mAmplitude
+  var frequency = freq
+  var amplitude = amp
 
   for i in 0..<octaves:
     output += amplitude * noise(x * frequency, y * frequency)
     denom += amplitude
 
-    frequency *= mLacunarity
-    amplitude *= mPresistence
+    frequency *= lac
+    amplitude *= persistence
   
   return output / denom
 
-proc fractal*(octaves: int, x: float, y: float, z: float, mFrequency = 1.0, mAmplitude = 1.0, mPresistence = 0.5, mLacunarity = 2.0): float =
+proc fractal*(x: float, y: float, z: float, octaves: int, freq = 1.0, amp = 1.0, persistence = 0.5, lac = 2.0): float =
   var output = 0.0
   var denom = 0.0
-  var frequency = mFrequency
-  var amplitude = mAmplitude
+  var frequency = freq
+  var amplitude = amp
 
   for i in 0..<octaves:
     output += amplitude * noise(x * frequency, y * frequency, z * frequency)
     denom += amplitude
 
-    frequency *= mLacunarity
-    amplitude *= mPresistence
+    frequency *= lac
+    amplitude *= persistence
   
   return output / denom

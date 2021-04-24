@@ -269,6 +269,7 @@ proc width*(patch: Patch): int = ((patch.u2 - patch.u) * patch.texture.width.flo
 proc height*(patch: Patch): int = ((patch.v2 - patch.v) * patch.texture.height.float32).int
 proc widthf*(patch: Patch): float32 = ((patch.u2 - patch.u) * patch.texture.width.float32)
 proc heightf*(patch: Patch): float32 = ((patch.v2 - patch.v) * patch.texture.height.float32)
+template exists*(patch: Patch): bool = patch != fau.atlas.error
 
 converter toPatch*(texture: Texture): Patch {.inline.} = Patch(texture: texture, u: 0.0, v: 0.0, u2: 1.0, v2: 1.0)
 
@@ -678,6 +679,7 @@ proc newDefaultFramebuffer*(): Framebuffer = Framebuffer(handle: glGetIntegerv(G
 type Atlas* = ref object
   patches*: Table[string, Patch]
   texture*: Texture
+  error*: Patch
 
 #Loads an atlas from static resources.
 proc loadAtlasStatic*(path: static[string]): Atlas =
@@ -703,8 +705,9 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
 
     result.patches[name] = patch
   stream.close()
+  result.error = result.patches["error"]
 # accesses a region from an atlas
-proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.patches["error"])
+proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.error)
 
 const
   vertexSize = 2 + 2 + 1 + 1
