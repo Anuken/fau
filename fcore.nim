@@ -1054,6 +1054,41 @@ proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int)
 
   fau.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, color, mixColor, cor2.x, cor2.y, u, v2, color, mixColor, cor3.x, cor3.y, u2, v2, color, mixColor, cor4.x, cor4.y, u2, v, color, mixColor], z)
 
+#draws a region with rotated bits
+proc drawv*(region: Patch, x, y: float32, c1 = vec2(0, 0), c2 = vec2(0, 0), c3 = vec2(0, 0), c4 = vec2(0, 0), z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+  originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
+  color = colorWhiteF, mixColor = colorClearF) =
+
+  let
+    alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
+    alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
+    worldOriginX: float32 = x + originX - width * alignH
+    worldOriginY: float32 = y + originY - height * alignV
+    fx: float32 = -originX
+    fy: float32 = -originY
+    fx2: float32 = width - originX
+    fy2: float32 = height - originY
+    cos: float32 = cos(rotation.degToRad)
+    sin: float32 = sin(rotation.degToRad)
+    x1 = cos * fx - sin * fy + worldOriginX
+    y1 = sin * fx + cos * fy + worldOriginY
+    x2 = cos * fx - sin * fy2 + worldOriginX
+    y2 = sin * fx + cos * fy2 + worldOriginY
+    x3 = cos * fx2 - sin * fy2 + worldOriginX
+    y3 = sin * fx2 + cos * fy2 + worldOriginY
+    x4 = x1 + (x3 - x2)
+    y4 = y3 - (y2 - y1)
+    u = region.u
+    v = region.v2
+    u2 = region.u2
+    v2 = region.v
+    cor1 = c1 + vec2(x1, y1)
+    cor2 = c2 + vec2(x2, y2)
+    cor3 = c3 + vec2(x3, y3)
+    cor4 = c4 + vec2(x4, y4)
+
+  fau.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, color, mixColor, cor2.x, cor2.y, u, v2, color, mixColor, cor3.x, cor3.y, u2, v2, color, mixColor, cor4.x, cor4.y, u2, v, color, mixColor], z)
+
 #TODO inline
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, originY = 0f,
   rotation = 0f, color = colorWhiteF, mixColor = colorClearF, z: float32 = 0.0) {.inline.} =
