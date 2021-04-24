@@ -1,5 +1,5 @@
-import polymorph, fcore
-export polymorph, fcore
+import polymorph, fcore, strutils
+export polymorph, fcore, strutils
 
 var definitions {.compileTime.}: seq[tuple[name: string, body: NimNode]]
 
@@ -16,6 +16,14 @@ macro sys*(name: static[string], componentTypes: openarray[typedesc], body: unty
 
   result = quote do:
     defineSystem(`name`, `componentTypes`, defaultSystemOptions, `varBody`)
+
+## Runs the body with the specified lowerCase type when this entity has this component
+macro whenComp*(entity: EntityRef, t: typedesc, body: untyped) =
+  let varName = t.repr.toLowerAscii.ident
+  result = quote do:
+    if `entity`.alive and `entity`.hasComponent `t`:
+      let `varName` {.inject.} = `entity`.fetchComponent `t`
+      `body`
 
 macro launchFau*(title: string) =
 
