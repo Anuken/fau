@@ -18,7 +18,7 @@ type Bloom* = object
   scaling: int
   blend: bool
 
-proc newBloom*(scaling: int = 4, passes: int = 1, blend = false): Bloom =
+proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
   result.buffer = newFramebuffer()
   result.p1 = newFramebuffer()
   result.p2 = newFramebuffer()
@@ -114,6 +114,9 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = false): Bloom =
   result.bloom.setf("u_bloomIntensity", 2.5)
   result.bloom.setf("u_originalIntensity", 1.0)
 
+proc pause*(bloom: Bloom) =
+  bloom.buffer.pop()
+
 proc capture*(bloom: Bloom) =
   let
     w = fau.width
@@ -131,7 +134,8 @@ proc capture*(bloom: Bloom) =
   bloom.buffer.push(colorClear)
 
 proc render*(bloom: Bloom) =
-  bloom.buffer.pop()
+  if bloom.buffer.isCurrent:
+    bloom.buffer.pop()
 
   blendDisabled.use()
 

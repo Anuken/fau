@@ -1010,14 +1010,15 @@ proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
   draw(z + spread, layerEnd)
 
 proc draw*(region: Patch, x, y: float32, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
-  originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
-  color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
+  scl: float32 = 1.0,
+  originX = width * 0.5 * scl, originY = height * 0.5 * scl, rotation = 0f, align = daCenter,
+  color = colorWhiteF, mixColor = colorClearF) {.inline.} =
 
   let 
     alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
     alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
 
-  fau.batch.drawRaw(region, x - width * alignH, y - height * alignV, z, width, height, originX, originY, rotation, color, mixColor)
+  fau.batch.drawRaw(region, x - width * alignH * scl, y - height * alignV * scl, z, width * scl, height * scl, originX, originY, rotation, color, mixColor)
 
 #draws a region with rotated bits
 proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int): Vec2, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
@@ -1139,6 +1140,9 @@ proc pop*(buffer: Framebuffer) =
   drawFlush()
   #use previous buffer
   currentBuffer().use()
+
+#Returns whether this buffer is currently being used
+proc isCurrent*(buffer: Framebuffer): bool = buffer == fau.bufferStack[^1]
 
 #Draw something inside a framebuffer
 template inside*(buffer: Framebuffer, body: untyped) =
