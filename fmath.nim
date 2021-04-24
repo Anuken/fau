@@ -32,6 +32,8 @@ func powout*(a, power: float32): float32 {.inline.} = pow(a - 1, power) * (if po
 
 #utility functions
 
+func zero*(val: float32, margin: float32 = 0.0001f): bool {.inline.} = abs(val) <= margin
+
 func lerp*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * progress
 
 ## euclid mod functions (equivalent versions are coming in a future Nim release)
