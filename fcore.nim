@@ -61,7 +61,11 @@ func rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color {.inline
 
 func rgb*(r: float32, g: float32, b: float32): Color {.inline.} = Color(r: r, g: g, b: b, a: 1.0)
 
+func rgb*(rgba: float32): Color {.inline.} = rgb(rgba, rgba, rgba)
+
 func alpha*(a: float32): Color {.inline.} = rgba(1.0, 1.0, 1.0, a)
+
+func `*`*(a, b: Color): Color {.inline.} = rgba(a.r * b.r, a.g * b.g, a.b * b.b, a.a* b.a)
 
 proc mix*(color: Color, other: Color, alpha: float32): Color =
   let inv = 1.0 - alpha

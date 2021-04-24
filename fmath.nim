@@ -12,6 +12,18 @@ type AnyVec2* = concept t
   t.x is float32
   t.y is float32
 
+iterator d4*(): tuple[x, y: int] =
+  yield (1, 0)
+  yield (0, 1)
+  yield (-1, 0)
+  yield (0, -1)
+
+iterator d4i*(): tuple[x, y, i: int] =
+  yield (1, 0, 0)
+  yield (0, 1, 1)
+  yield (-1, 0, 2)
+  yield (0, -1, 3)
+
 ## fade in from 0 to 1
 func fin*(t: Timeable): float32 {.inline.} = t.time / t.lifetime
 
@@ -119,6 +131,7 @@ type Vec2* = object
   x*, y*: float32
 
 func vec2*(x, y: float32): Vec2 {.inline.} = Vec2(x: x, y: y)
+func vec2*(xy: float32): Vec2 {.inline} = Vec2(x: xy, y: xy)
 proc vec2*(pos: AnyVec2): Vec2 {.inline.} = Vec2(x: pos.x, y: pos.y)
 func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag * sin(angle))
 
