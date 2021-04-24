@@ -3,8 +3,8 @@ export polymorph, fcore, strutils
 
 var definitions {.compileTime.}: seq[tuple[name: string, body: NimNode]]
 
-## Defines a system, with an extra vars block for variables. Body is built in launchFau.
 macro sys*(name: static[string], componentTypes: openarray[typedesc], body: untyped): untyped =
+  ## Defines a system, with an extra vars block for variables. Body is built in launchFau.
   var varBody = newEmptyNode()
   for (index, st) in body.pairs:
     if st.kind == nnkCall and st[0].strVal == "vars":
@@ -17,13 +17,19 @@ macro sys*(name: static[string], componentTypes: openarray[typedesc], body: unty
   result = quote do:
     defineSystem(`name`, `componentTypes`, defaultSystemOptions, `varBody`)
 
-## Runs the body with the specified lowerCase type when this entity has this component
 macro whenComp*(entity: EntityRef, t: typedesc, body: untyped) =
+  ## Runs the body with the specified lowerCase type when this entity has this component
   let varName = t.repr.toLowerAscii.ident
   result = quote do:
     if `entity`.alive and `entity`.hasComponent `t`:
       let `varName` {.inject.} = `entity`.fetchComponent `t`
       `body`
+
+template clearAll*(group: untyped) =
+  ## Clears all entities in a system
+  while group.groups.len > 0:
+    let item = group.groups[0]
+    if item.entity.alive: item.entity.delete()
 
 macro launchFau*(title: string) =
 
