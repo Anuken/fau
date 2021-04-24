@@ -1010,15 +1010,15 @@ proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
   draw(z + spread, layerEnd)
 
 proc draw*(region: Patch, x, y: float32, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
-  scl: float32 = 1.0,
-  originX = width * 0.5 * scl, originY = height * 0.5 * scl, rotation = 0f, align = daCenter,
+  xscl: float32 = 1.0, yscl: float32 = 1.0,
+  originX = width * 0.5 * xscl, originY = height * 0.5 * yscl, rotation = 0f, align = daCenter,
   color = colorWhiteF, mixColor = colorClearF) {.inline.} =
 
   let 
     alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
     alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
 
-  fau.batch.drawRaw(region, x - width * alignH * scl, y - height * alignV * scl, z, width * scl, height * scl, originX, originY, rotation, color, mixColor)
+  fau.batch.drawRaw(region, x - width * alignH * xscl, y - height * alignV * yscl, z, width * xscl, height * yscl, originX, originY, rotation, color, mixColor)
 
 #draws a region with rotated bits
 proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int): Vec2, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
