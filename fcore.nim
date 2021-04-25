@@ -102,7 +102,11 @@ const
   daRight* = 2
   daTop* = 4
   daBot* = 8
-  daCenter = daLeft or daRight or daTop or daBot
+  daTopLeft* = daTop or daLeft
+  daTopRight* = daTop or daRight
+  daBotLeft* = daBot or daLeft
+  daBotRight* = daBot or daRight
+  daCenter* = daLeft or daRight or daTop or daBot
 
 #types of blending
 type Blending* = object
@@ -189,6 +193,9 @@ proc `wrapV=`*(texture: Texture, wrap: Glenum) =
   texture.use()
   glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
 
+proc wrapRepeat*(texture: Texture) =
+  texture.wrap = GlRepeat
+
 #completely reloads texture data
 proc load*(texture: Texture, width: int, height: int, pixels: pointer) =
   #bind texture
@@ -270,6 +277,12 @@ proc height*(patch: Patch): int = ((patch.v2 - patch.v) * patch.texture.height.f
 proc widthf*(patch: Patch): float32 = ((patch.u2 - patch.u) * patch.texture.width.float32)
 proc heightf*(patch: Patch): float32 = ((patch.v2 - patch.v) * patch.texture.height.float32)
 template exists*(patch: Patch): bool = patch != fau.atlas.error
+
+proc scroll*(patch: var Patch, u, v: float32) =
+  patch.u += u
+  patch.v += v
+  patch.u2 += u
+  patch.v2 += v
 
 converter toPatch*(texture: Texture): Patch {.inline.} = Patch(texture: texture, u: 0.0, v: 0.0, u2: 1.0, v2: 1.0)
 
@@ -998,6 +1011,9 @@ template withShader*(shader: Shader, body: untyped) =
 proc drawMat*(mat: Mat) = 
   drawFlush()
   fau.batchMat = mat
+
+proc screenMat*() =
+  drawMat(ortho(0f, 0f, fau.widthf, fau.heightf))
 
 #Draws something custom at a specific Z layer
 proc draw*(z: float32, value: proc()) =

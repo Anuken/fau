@@ -98,7 +98,7 @@ proc fillLight*(x, y, radius: float32, sides = 20, centerColor = colorWhiteF, ed
 proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhiteF, edgeColor = colorClearF, z: float32 = 0) = 
   fillLight(pos.x, pos.y, radius, sides, centerColor, edgeColor, z)
 
-proc line*(p1, p2: Vec2, stroke: float32 = 1.0, color: float32 = colorWhiteF, square = true, z: float32 = 0) = 
+proc line*(p1, p2: Vec2, stroke: float32 = 1.px, color: float32 = colorWhiteF, square = true, z: float32 = 0) =
   let hstroke = stroke / 2.0
   let diff = (p2 - p1).nor * hstroke
   let side = vec2(-diff.y, diff.x)
@@ -121,7 +121,7 @@ proc line*(p1, p2: Vec2, stroke: float32 = 1.0, color: float32 = colorWhiteF, sq
     color, z
   )
 
-proc line*(p1x, p1y, p2x, p2y, stroke: float32 = 1.0, color = colorWhiteF, square = true, z: float32 = 0) {.inline.} = 
+proc line*(p1x, p1y, p2x, p2y, stroke: float32 = 1.px, color = colorWhiteF, square = true, z: float32 = 0) {.inline.} =
   line(vec2(p1x, p1y), vec2(p2x, p2y), stroke, color, square, z)
 
 #TODO bad

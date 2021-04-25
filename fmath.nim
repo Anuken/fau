@@ -50,6 +50,8 @@ func clamp*(val: float32): float32 {.inline.} = clamp(val, 0f, 1f)
 func lerp*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * progress
 func lerpc*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * clamp(progress)
 
+func inv*(f: float32): float32 {.inline.} = 1f / f
+
 ## euclid mod functions (equivalent versions are coming in a future Nim release)
 func emod*(a, b: float32): float32 {.inline.} =
   result = a mod b
