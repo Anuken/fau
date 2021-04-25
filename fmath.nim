@@ -24,6 +24,10 @@ iterator d4i*(): tuple[x, y, i: int] =
   yield (-1, 0, 2)
   yield (0, -1, 3)
 
+iterator signs*(): float32 =
+  yield 1f
+  yield -1f
+
 ## fade in from 0 to 1
 func fin*(t: Timeable): float32 {.inline.} = t.time / t.lifetime
 
@@ -131,6 +135,9 @@ func sign*(x: bool): float32 {.inline.} =
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
 
+func absin*(x, scl, mag: float32): float32 {.inline} = (sin(x / scl) * mag).abs
+func abcos*(x, scl, mag: float32): float32 {.inline} = (cos(x / scl) * mag).abs
+
 type Vec2* = object
   x*, y*: float32
 
@@ -174,8 +181,13 @@ func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} =
   return vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
 
 #all angles are in radians
+
 func angle*(vec: Vec2): float32 {.inline.} = 
   let res = arctan2(vec.y, vec.x)
+  return if res < 0: res + PI*2.0 else: res
+
+func angle*(x, y: float32): float32 {.inline.} =
+  let res = arctan2(y, x)
   return if res < 0: res + PI*2.0 else: res
 
 func angle*(vec: Vec2, other: Vec2): float32 {.inline.} = 
@@ -423,4 +435,9 @@ template particles*(seed: int, amount: int, cx, cy, rad: float32, body: untyped)
 template circle*(amount: int, body: untyped) =
   for i in 0..<amount:
     let angle {.inject.} = (i.float32 / amount.float32 * 360f).degToRad
+    body
+
+template shotgun*(amount: int, spacing: float32, body: untyped) =
+  for i in 0..<amount:
+    let angle {.inject.} = ((i - (amount div 2).float32) * spacing).degToRad
     body
