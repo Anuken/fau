@@ -781,6 +781,8 @@ type FauState = object
   fps*: int
   #Delta time between frames in 60th of a second
   delta*: float32
+  #Maximum value that the delta can be - prevents erratic behavior at low FPS values. Default: 1/60
+  maxDelta*: float32
   #Time passed since game launch, in seconds
   time*: float32
   #Mouse position
@@ -1191,7 +1193,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     let time = (times.getTime() - startTime).inNanoseconds
     if lastFrameTime == -1: lastFrameTime = time
 
-    fau.delta = float(time - lastFrameTime) / 1000000000.0#[  ]#
+    fau.delta = min(float(time - lastFrameTime) / 1000000000.0, fau.maxDelta)
     fau.time += fau.delta
     lastFrameTime = time
 
@@ -1228,6 +1230,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     fau.batch = newBatch()
 
     fau.pixelScl = 1.0f
+
+    fau.maxDelta = 1f / 60f
       
     #enable sorting by default
     fau.batchSort = true
