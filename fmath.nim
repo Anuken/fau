@@ -100,6 +100,9 @@ func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees 
 ## angle dist
 func adist*(a, b: float32): float32 {.inline.} = min(if a - b < 0: a - b + 360.0.rad else: a - b, if b - a < 0: b - a + 360.0.rad else: b - a)
 
+## angle within other angle
+func awithin*(a, b: float32, tolerance = 0.01f): bool {.inline.} = adist(a, b) <= tolerance
+
 ## angle approach
 func aapproach*(a, b, amount: float32): float32 =
   let 
@@ -435,6 +438,15 @@ template particles*(seed: int, amount: int, cx, cy, rad: float32, body: untyped)
 template circle*(amount: int, body: untyped) =
   for i in 0..<amount:
     let angle {.inject.} = (i.float32 / amount.float32 * 360f).degToRad
+    body
+
+template circlev*(amount: int, len: float32, body: untyped) =
+  for i in 0..<amount:
+    let
+      angle {.inject.} = (i.float32 / amount.float32 * 360f).degToRad
+      v = vec2l(angle, len)
+      x {.inject.} = v.x
+      y {.inject.} = v.y
     body
 
 template shotgun*(amount: int, spacing: float32, body: untyped) =
