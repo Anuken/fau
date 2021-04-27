@@ -37,24 +37,34 @@ proc record*() =
       gifTempDir.removeDir()
       gifTempDir.createDir()
 
+      #
       for i, img in frames:
         pixie.writeFile(img, gifTempDir / &"{i:05}.png", pixie.ffPng)
 
       gifOutDir.createDir()
       let dateStr = now().format("yyyy-MM-dd-hh-mm-ss")
-      echo execProcess(&"convert -delay {100f / recordFps} {gifTempDir}/*.png -loop 0 {gifOutDir}/{dateStr}.gif")
+      echo execProcess(&"ffmpeg -framerate {recordFps*2} -pattern_type glob -i '{gifTempDir}/*.png' -filter:v \"vflip,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" {gifOutDir}/{dateStr}.gif")
       gifTempDir.removeDir()
       frames = @[]
+      ftime = 0f
 
   if recording and open:
     ftime += fau.delta * 60.1f * speedMultiplier
     if ftime >= 60f / recordFps:
-      let pixels = readPixels(
+      var pixels = readPixels(
         (recordOffset.x + fau.widthf/2f - recordSize.x/2f).int,
         (recordOffset.y + fau.height/2f - recordSize.y/2f).int,
         recordSize.x.int,
         recordSize.y.int
       )
+
+      let len = recordSize.x.int * recordSize.y.int * 4
+      var casted = cast[cstring](pixels)
+
+      #set all alpha values to 1 after pixels are grabbed
+      for i in countup(3, len, 4):
+        casted[i] = 255.char
+
       var img = pixie.newImage(recordSize.x.int, recordSize.y.int)
       copyMem(addr img.data[0], pixels, img.data.len * 4)
       dealloc pixels
