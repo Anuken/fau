@@ -99,7 +99,7 @@ let
 #converts a hex string to a color at compile-time; no overhead
 export parseHexInt
 template `%`*(str: static[string]): Color =
-  const ret = Color(rv: str[0..1].parseHexInt.uint8, gv: str[2..3].parseHexInt.uint8, b: str[4..5].parseHexInt.uint8, a: if str.len > 6: str[6..7].parseHexInt.uint8 else: 255'u8)
+  const ret = Color(rv: str[0..1].parseHexInt.uint8, gv: str[2..3].parseHexInt.uint8, bv: str[4..5].parseHexInt.uint8, av: if str.len > 6: str[6..7].parseHexInt.uint8 else: 255'u8)
   ret
 
 #types of draw alignment
