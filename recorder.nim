@@ -6,25 +6,21 @@ const
   recordKey = keyT
   shiftKey = keyLshift
 
-type GifFrame = object
-  data: pointer
-  len: int
-
 var
   gifOutDir = "gifs"
   speedMultiplier* = 1f
-  recordFps* = 40
+  recordFps* = 30
   recordSize* = vec2(300f)
   recordOffset* = vec2(0f)
   saving = false
   recording = false
   open = false
   ftime = 0f
-  frames: seq[GifFrame]
+  frames: seq[pointer]
 
 proc clearFrames() =
   for f in frames:
-    f.data.dealloc
+    f.dealloc
   frames = @[]
 
 proc record*() =
@@ -46,6 +42,7 @@ proc record*() =
         dateStr = now().format("yyyy-MM-dd-hh-mm-ss")
         w = recordSize.x.int
         h = recordSize.y.int
+        len = w * h * 4
 
       var
         p = startProcess(
@@ -55,7 +52,7 @@ proc record*() =
 
       var stream = p.inputStream
       for frame in frames:
-        stream.writeData(frame.data, frame.len)
+        stream.writeData(frame, len)
         stream.flush()
 
       p.close()
@@ -81,7 +78,7 @@ proc record*() =
       for i in countup(3, len, 4):
         casted[i] = 255.char
 
-      frames.add GifFrame(data: pixels, len: len)
+      frames.add pixels
 
   if open:
     var color = %"2890eb"
