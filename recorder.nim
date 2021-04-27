@@ -1,5 +1,4 @@
-import fcore, shapes, os, strformat, times, osproc, math
-from pixie import nil
+import fcore, shapes, os, strformat, times, osproc, math, streams, strutils
 
 const
   resizeKey = keyLctrl
@@ -7,45 +6,61 @@ const
   recordKey = keyT
   shiftKey = keyLshift
 
+type GifFrame = object
+  data: pointer
+  len: int
+
 var
-  gifTempDir = "build/images"
   gifOutDir = "gifs"
   speedMultiplier* = 1f
-  recordFps* = 30
+  recordFps* = 40
   recordSize* = vec2(300f)
   recordOffset* = vec2(0f)
   saving = false
   recording = false
   open = false
   ftime = 0f
-  frames: seq[pixie.Image]
+  frames: seq[GifFrame]
+
+proc clearFrames() =
+  for f in frames:
+    f.data.dealloc
+  frames = @[]
 
 proc record*() =
   if openKey.tapped and not saving:
     if recording:
-      frames = @[]
+      clearFrames()
       recording = false
     open = not open
 
   if open and recordKey.tapped and not saving:
     if not recording:
-      frames = @[]
+      clearFrames()
       recording = true
     else:
       recording = false
-
-      gifTempDir.removeDir()
-      gifTempDir.createDir()
-
-      #TODO this is the bottleneck, add multithreading?
-      for i, img in frames:
-        pixie.writeFile(img, gifTempDir / &"{i:05}.png", pixie.ffPng)
-
       gifOutDir.createDir()
-      let dateStr = now().format("yyyy-MM-dd-hh-mm-ss")
-      echo execProcess(&"ffmpeg -r {recordFps} -pattern_type glob -i '{gifTempDir}/*.png' -filter:v \"vflip,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" {gifOutDir}/{dateStr}.gif")
-      gifTempDir.removeDir()
-      frames = @[]
+
+      let
+        dateStr = now().format("yyyy-MM-dd-hh-mm-ss")
+        w = recordSize.x.int
+        h = recordSize.y.int
+
+      var
+        p = startProcess(
+          &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" {gifOutDir}/{dateStr}.gif",
+          options = {poEvalCommand, poStdErrToStdOut}
+        )
+
+      var stream = p.inputStream
+      for frame in frames:
+        stream.writeData(frame.data, frame.len)
+        stream.flush()
+
+      p.close()
+
+      clearFrames()
       ftime = 0f
 
   if recording and open:
@@ -66,10 +81,7 @@ proc record*() =
       for i in countup(3, len, 4):
         casted[i] = 255.char
 
-      var img = pixie.newImage(recordSize.x.int, recordSize.y.int)
-      copyMem(addr img.data[0], pixels, img.data.len * 4)
-      dealloc pixels
-      frames.add img
+      frames.add GifFrame(data: pixels, len: len)
 
   if open:
     var color = %"2890eb"
@@ -79,7 +91,7 @@ proc record*() =
 
     drawMat(ortho(0, 0, fau.widthf, fau.heightf))
 
-    if resizeKey.down:
+    if resizeKey.down and not recording:
       color = %"f59827"
       let
         xs = abs(fau.widthf/2f + recordOffset.x - mouse().x)
