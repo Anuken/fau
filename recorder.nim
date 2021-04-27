@@ -12,7 +12,6 @@ var
   recordFps* = 25
   recordSize* = vec2(300f)
   recordOffset* = vec2(0f)
-  saving = false
   recording = false
   open = false
   ftime = 0f
@@ -24,13 +23,14 @@ proc clearFrames() =
   frames = @[]
 
 proc record*() =
-  if openKey.tapped and not saving:
+  if openKey.tapped:
     if recording:
       clearFrames()
       recording = false
     open = not open
 
-  if open and recordKey.tapped and not saving:
+  #start/stop recording
+  if open and recordKey.tapped:
     if not recording:
       clearFrames()
       recording = true
@@ -49,8 +49,8 @@ proc record*() =
           &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" {gifOutDir}/{dateStr}.gif",
           options = {poEvalCommand, poStdErrToStdOut}
         )
+        stream = p.inputStream
 
-      var stream = p.inputStream
       for frame in frames:
         stream.writeData(frame, len)
         stream.flush()
@@ -60,10 +60,12 @@ proc record*() =
       clearFrames()
       ftime = 0f
 
+  #grab pixels
   if recording and open:
     ftime += fau.delta * 60.1f * speedMultiplier
     if ftime >= 60f / recordFps:
       ftime = ftime.mod 60f / recordFps
+
       var pixels = readPixels(
         (recordOffset.x + fau.widthf/2f - recordSize.x/2f).int,
         (recordOffset.y + fau.height/2f - recordSize.y/2f).int,
@@ -80,6 +82,7 @@ proc record*() =
 
       frames.add pixels
 
+  #draw selection UI
   if open:
     var color = %"2890eb"
 
