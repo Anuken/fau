@@ -97,6 +97,7 @@ repl.nim
 assets/atlas.png
 assets/atlas.dat
 .idea
+gifs/
 """
 
 const vsTemplate = """

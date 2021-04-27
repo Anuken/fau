@@ -56,7 +56,8 @@ proc resize*(cam: Cam, w, h: float32) =
 type Color* = object
   rv*, gv*, bv*, av*: uint8
 
-static: assert sizeof(Color) == 4, "Size of Color must be 4 bytes, but is: " & $sizeof(Color)
+#just incase something gets messed up somewhere
+static: assert sizeof(Color) == 4, "Size of Color must be 4 bytes, but is " & $sizeof(Color)
 
 #float accessors for colors
 func r*(col: Color): float32 {.inline.} = col.rv.float32 / 255f
@@ -1132,6 +1133,14 @@ proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, origin
 proc drawVert*(texture: Texture, vertices: array[24, Glfloat], z: float32 = 0) {.inline.} = 
   fau.batch.drawRaw(texture, vertices, z)
 
+proc readPixels*(x, y, w, h: int): pointer =
+  ## Reads pixels from the screen and returns a pointer to RGBA data.
+  ## The result MUST be deallocated after use!
+  var pixels = alloc(w * h * 4)
+  glPixelStorei(GlPackAlignment, 1.Glint)
+  glReadPixels(x.GLint, y.GLint, w.GLint, h.GLint, GlRgba, GlUnsignedByte, pixels)
+  return pixels
+
 #Activates a camera.
 proc use*(cam: Cam) =
   cam.update()
@@ -1203,6 +1212,9 @@ else:
 import times, audio, shapes, random, font
 export audio, shapes, font
 
+when defined(debug):
+  import recorder
+
 #TODO move this somewhere else
 proc axis*(left, right: KeyCode): int = 
   if left.down() and right.down(): return 0
@@ -1241,6 +1253,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
     #flush any pending draw operations
     drawFlush()
+
+    when defined(debug):
+      record()
 
     inc fau.frameId
   ), 
