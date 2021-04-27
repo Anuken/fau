@@ -64,6 +64,12 @@ func g*(col: Color): float32 {.inline.} = col.gv.float32 / 255f
 func b*(col: Color): float32 {.inline.} = col.bv.float32 / 255f
 func a*(col: Color): float32 {.inline.} = col.av.float32 / 255f
 
+#float setters for colors
+func `r=`*(col: var Color, val: float32) {.inline.} = col.rv = clamp(val * 255f, 0, 255f).uint8
+func `g=`*(col: var Color, val: float32) {.inline.} = col.gv = clamp(val * 255f, 0, 255f).uint8
+func `b=`*(col: var Color, val: float32) {.inline.} = col.bv = clamp(val * 255f, 0, 255f).uint8
+func `a=`*(col: var Color, val: float32) {.inline.} = col.av = clamp(val * 255f, 0, 255f).uint8
+
 func rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color {.inline.} = Color(rv: (clamp(r.float32) * 255f).uint8, gv: (clamp(g) * 255f).uint8, bv: (clamp(b) * 255f).uint8, av: (clamp(a) * 255f).uint8)
 
 func rgb*(r: float32, g: float32, b: float32): Color {.inline.} = rgba(r, g, b, 1f)
@@ -72,8 +78,7 @@ func rgb*(rgba: float32): Color {.inline.} = rgb(rgba, rgba, rgba)
 
 func alpha*(a: float32): Color {.inline.} = rgba(1.0, 1.0, 1.0, a)
 
-func `*`*(a, b: Color): Color {.inline.} = rgba(a.r * b.r, a.g * b.g, a.b * b.b, a.a* b.a)
-
+func `*`*(a, b: Color): Color {.inline.} = rgba(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a)
 func `*`*(a: Color, b: float32): Color {.inline.} = rgba(a.r * b, a.g * b, a.b * b, a.a)
 
 proc mix*(color: Color, other: Color, alpha: float32): Color =
