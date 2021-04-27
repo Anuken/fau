@@ -4,18 +4,20 @@ export polymorph, fcore
 var definitions {.compileTime.}: seq[tuple[name: string, body: NimNode]]
 
 ## Defines a system, with an extra vars block for variables. Body is built in launchFau.
-macro sys*(name: static[string], componentTypes: openarray[typedesc], body: untyped): untyped =
+macro sys*(name: untyped, componentTypes: openarray[typedesc], body: untyped): untyped =
   var varBody = newEmptyNode()
   for (index, st) in body.pairs:
     if st.kind == nnkCall and st[0].strVal == "vars":
       body.del(index)
       varBody = st[1]
       break
+  
+  let nameStr = $name
 
-  definitions.add (name, body)
+  definitions.add (nameStr, body)
 
   result = quote do:
-    defineSystem(`name`, `componentTypes`, defaultSystemOptions, `varBody`)
+    defineSystem(`nameStr`, `componentTypes`, defaultSystemOptions, `varBody`)
 
 macro launchFau*(title: string) =
 
