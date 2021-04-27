@@ -1,7 +1,14 @@
 import math, random
 
 #this should be avoided in most cases, but manually turning ints into float32s can be very annoying
-converter toFloat32*(i: int): float32 {.inline.} = i.float32 
+converter toFloat32*(i: int): float32 {.inline.} = i.float32
+
+#TODO angle type, distinct float32
+#TODO make all angle functions use this
+#type Radians = distinct float32
+#template deg*(v: float32) = (v * PI / 180.0).Radians
+#template rad*(v: float32) = v.Radians
+#converter toFloat(r: Radians): float32 {.inline.} = r.float32
 
 ## any type that has a time and lifetime
 type Timeable* = concept t
@@ -88,8 +95,6 @@ proc chance*(c: float): bool = rand(0.0..1.0) < c
 #angle/degree functions; all are in radians
 
 const pi2* = PI * 2.0
-
-#TODO angle type, distinct float32
 
 func rad*(val: float32): float32 {.inline.} = val * PI / 180.0
 func deg*(val: float32): float32 {.inline.} = val / (PI / 180.0)

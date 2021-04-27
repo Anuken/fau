@@ -75,9 +75,8 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128): Fo
 
 proc draw*(font: Font, text: string, pos: Vec2, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = faCenter, z: float32 = 0.0) =
   let layout = font.font.typeset(text, hAlign = align.h, vAlign = align.v)
-  let col = color.toFloat()
 
   for ch in layout:
     if font.patches.hasKey(ch.character):
       let offset = font.offsets[ch.character]
-      drawRect(font.patches[ch.character], (ch.rect.x + offset.x) * scale + pos.x, (ch.rect.y - ch.rect.h - offset.y) * scale + pos.y, ch.rect.w*scale, ch.rect.h*scale, color = col, z = z)
+      drawRect(font.patches[ch.character], (ch.rect.x + offset.x) * scale + pos.x, (ch.rect.y - ch.rect.h - offset.y) * scale + pos.y, ch.rect.w*scale, ch.rect.h*scale, color = color, z = z)
