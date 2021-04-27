@@ -53,41 +53,54 @@ proc resize*(cam: Cam, w, h: float32) =
   cam.update()
 
 #defines a RGBA color
-#TODO switch to uint8 for better mem usage
 type Color* = object
-  r*, g*, b*, a*: float32
+  rv*, gv*, bv*, av*: uint8
 
-func rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color {.inline.} = Color(r: r, g: g, b: b, a: a)
+#just incase something gets messed up somewhere
+static: assert sizeof(Color) == 4, "Size of Color must be 4 bytes, but is " & $sizeof(Color)
 
-func rgb*(r: float32, g: float32, b: float32): Color {.inline.} = Color(r: r, g: g, b: b, a: 1.0)
+#float accessors for colors
+func r*(col: Color): float32 {.inline.} = col.rv.float32 / 255f
+func g*(col: Color): float32 {.inline.} = col.gv.float32 / 255f
+func b*(col: Color): float32 {.inline.} = col.bv.float32 / 255f
+func a*(col: Color): float32 {.inline.} = col.av.float32 / 255f
+
+#float setters for colors
+func `r=`*(col: var Color, val: float32) {.inline.} = col.rv = clamp(val * 255f, 0, 255f).uint8
+func `g=`*(col: var Color, val: float32) {.inline.} = col.gv = clamp(val * 255f, 0, 255f).uint8
+func `b=`*(col: var Color, val: float32) {.inline.} = col.bv = clamp(val * 255f, 0, 255f).uint8
+func `a=`*(col: var Color, val: float32) {.inline.} = col.av = clamp(val * 255f, 0, 255f).uint8
+
+func rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color {.inline.} = Color(rv: (clamp(r.float32) * 255f).uint8, gv: (clamp(g) * 255f).uint8, bv: (clamp(b) * 255f).uint8, av: (clamp(a) * 255f).uint8)
+
+func rgb*(r: float32, g: float32, b: float32): Color {.inline.} = rgba(r, g, b, 1f)
+
+func rgb*(rgba: float32): Color {.inline.} = rgb(rgba, rgba, rgba)
 
 func alpha*(a: float32): Color {.inline.} = rgba(1.0, 1.0, 1.0, a)
+
+func `*`*(a, b: Color): Color {.inline.} = rgba(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a)
+func `*`*(a: Color, b: float32): Color {.inline.} = rgba(a.r * b, a.g * b, a.b * b, a.a)
 
 proc mix*(color: Color, other: Color, alpha: float32): Color =
   let inv = 1.0 - alpha
   return rgba(color.r*inv + other.r*alpha, color.g*inv + other.g*alpha, color.b*inv + other.b*alpha, color.a*inv + other.a*alpha)
 
 #convert a color to a ABGR float representation; result may be NaN
-proc toFloat*(color: Color): float32 {.inline.} = 
-  cast[float32]((((255 * color.a).int shl 24) or ((255 * color.b).int shl 16) or ((255 * color.g).int shl 8) or ((255 * color.r).int)) and 0xfeffffff)
-
-proc fromFloat*(fv: float32): Color {.inline.} = 
-  let val = cast[uint32](fv)
-  return rgba(((val and 0x00ff0000.uint32) shr 16).float32 / 255.0, ((val and 0x0000ff00.uint32) shr 8).float32 / 255.0, (val and 0x000000ff.uint32).float32 / 255.0, ((val and 0xff000000.uint32) shr 24).float32 / 255.0 * 255.0/254.0)
-
-converter floatColor*(color: Color): float32 = color.toFloat
+proc f*(color: Color): float32 {.inline.} = cast[float32](color)
+proc col*(fv: float32): Color {.inline.} = cast[Color](fv)
 
 let
   colorClear* = rgba(0, 0, 0, 0)
   colorWhite* = rgb(1, 1, 1)
   colorBlack* = rgba(0, 0, 0)
-  colorWhiteF* = colorWhite.toFloat()
-  colorClearF* = colorClear.toFloat()
+  colorWhiteF* = colorWhite.f
+  colorClearF* = colorClear.f
 
 #converts a hex string to a color at compile-time; no overhead
 export parseHexInt
 template `%`*(str: static[string]): Color =
-  const ret = Color(r: str[0..1].parseHexInt().float32 / 255.0, g: str[2..3].parseHexInt().float32 / 255.0, b: str[4..5].parseHexInt().float32 / 255.0, a: if str.len > 6: str[6..7].parseHexInt().float32 / 255.0 else: 1.0)
+  const ret = Color(rv: str[0..1].parseHexInt.uint8, gv: str[2..3].parseHexInt.uint8, bv: str[4..5].parseHexInt.uint8, av: if str.len > 6: str[6..7].parseHexInt.uint8 else: 255'u8)
   ret
 
 #types of draw alignment
@@ -96,7 +109,11 @@ const
   daRight* = 2
   daTop* = 4
   daBot* = 8
-  daCenter = daLeft or daRight or daTop or daBot
+  daTopLeft* = daTop or daLeft
+  daTopRight* = daTop or daRight
+  daBotLeft* = daBot or daLeft
+  daBotRight* = daBot or daRight
+  daCenter* = daLeft or daRight or daTop or daBot
 
 #types of blending
 type Blending* = object
@@ -145,11 +162,12 @@ proc use*(texture: Texture, unit: int = 0) =
 
 #assigns min and mag filters
 proc `filter=`*(texture: Texture, filter: Glenum) =
-  texture.minfilter = filter
-  texture.magfilter = filter
-  texture.use()
-  glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.GLint)
-  glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.GLint)
+  if texture.minfilter != filter or texture.magfilter != filter:
+    texture.minfilter = filter
+    texture.magfilter = filter
+    texture.use()
+    glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.GLint)
+    glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.GLint)
 
 proc filterLinear*(texture: Texture) = texture.filter = GlLinear
 proc filterNearest*(texture: Texture) = texture.filter = GlNearest
@@ -181,6 +199,9 @@ proc `wrapV=`*(texture: Texture, wrap: Glenum) =
   texture.vwrap = wrap
   texture.use()
   glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
+
+proc wrapRepeat*(texture: Texture) =
+  texture.wrap = GlRepeat
 
 #completely reloads texture data
 proc load*(texture: Texture, width: int, height: int, pixels: pointer) =
@@ -262,6 +283,13 @@ proc width*(patch: Patch): int = ((patch.u2 - patch.u) * patch.texture.width.flo
 proc height*(patch: Patch): int = ((patch.v2 - patch.v) * patch.texture.height.float32).int
 proc widthf*(patch: Patch): float32 = ((patch.u2 - patch.u) * patch.texture.width.float32)
 proc heightf*(patch: Patch): float32 = ((patch.v2 - patch.v) * patch.texture.height.float32)
+template exists*(patch: Patch): bool = patch != fau.atlas.error
+
+proc scroll*(patch: var Patch, u, v: float32) =
+  patch.u += u
+  patch.v += v
+  patch.u2 += u
+  patch.v2 += v
 
 converter toPatch*(texture: Texture): Patch {.inline.} = Patch(texture: texture, u: 0.0, v: 0.0, u2: 1.0, v2: 1.0)
 
@@ -671,6 +699,7 @@ proc newDefaultFramebuffer*(): Framebuffer = Framebuffer(handle: glGetIntegerv(G
 type Atlas* = ref object
   patches*: Table[string, Patch]
   texture*: Texture
+  error*: Patch
 
 #Loads an atlas from static resources.
 proc loadAtlasStatic*(path: static[string]): Atlas =
@@ -696,8 +725,9 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
 
     result.patches[name] = patch
   stream.close()
+  result.error = result.patches["error"]
 # accesses a region from an atlas
-proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.patches["error"])
+proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.error)
 
 const
   vertexSize = 2 + 2 + 1 + 1
@@ -717,7 +747,8 @@ type
       tex: Texture
     of reqRect:
       patch: Patch
-      x, y, originX, originY, width, height, rotation, color, mixColor: float32
+      x, y, originX, originY, width, height, rotation: float32
+      color, mixColor: Color
     of reqProc:
       draw: proc()
 
@@ -770,9 +801,11 @@ type FauState = object
   #Smoothed frames per second
   fps*: int
   #Delta time between frames in 60th of a second
-  delta*: float
+  delta*: float32
+  #Maximum value that the delta can be - prevents erratic behavior at low FPS values. Default: 1/60
+  maxDelta*: float32
   #Time passed since game launch, in seconds
-  time*: float
+  time*: float32
   #Mouse position
   mouseX*, mouseY*: float32
   #Last scroll values
@@ -836,7 +869,7 @@ proc drawRaw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat
 
     batch.index += spriteSize
 
-proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, originY, rotation, color, mixColor: float32) =
+proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, originY, rotation: float32, color, mixColor: Color) =
   if fau.batchSort:
     batch.reqs.add(Req(kind: reqRect, patch: region, x: x, y: y, z: z, width: width, height: height, originX: originX, originY: originY, rotation: rotation, color: color, mixColor: mixColor, blend: fau.batchBlending))
   else:
@@ -852,8 +885,10 @@ proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, origi
         v2 = region.v
         idx = batch.index
         verts = addr batch.mesh.vertices
+        cf = color.f
+        mf = mixColor.f
 
-      verts.minsert(idx, [x, y, u, v, color, mixColor, x, y2, u, v2, color, mixColor, x2, y2, u2, v2, color, mixColor, x2, y, u2, v, color, mixColor])
+      verts.minsert(idx, [x, y, u, v, cf, mf, x, y2, u, v2, cf, mf, x2, y2, u2, v2, cf, mf, x2, y, u2, v, cf, mf])
     else:
       let
         #bottom left and top right corner points relative to origin
@@ -880,8 +915,10 @@ proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, origi
         v2 = region.v
         idx = batch.index
         verts = addr batch.mesh.vertices
+        cf = color.f
+        mf = mixColor.f
 
-      verts.minsert(idx, [x1, y1, u, v, color, mixColor, x2, y2, u, v2, color, mixColor, x3, y3, u2, v2, color, mixColor, x4, y4, u2, v, color, mixColor])
+      verts.minsert(idx, [x1, y1, u, v, cf, mf, x2, y2, u, v2, cf, mf, x3, y3, u2, v2, cf, mf, x4, y4, u2, v, cf, mf])
 
     batch.index += spriteSize
 
@@ -987,6 +1024,9 @@ proc drawMat*(mat: Mat) =
   drawFlush()
   fau.batchMat = mat
 
+proc screenMat*() =
+  drawMat(ortho(0f, 0f, fau.widthf, fau.heightf))
+
 #Draws something custom at a specific Z layer
 proc draw*(z: float32, value: proc()) =
   if fau.batchSort:
@@ -1000,19 +1040,20 @@ proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
   draw(z + spread, layerEnd)
 
 proc draw*(region: Patch, x, y: float32, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
-  originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
-  color = colorWhiteF, mixColor = colorClearF) {.inline.} = 
+  xscl: float32 = 1.0, yscl: float32 = 1.0,
+  originX = width * 0.5 * xscl, originY = height * 0.5 * yscl, rotation = 0f, align = daCenter,
+  color = colorWhite, mixColor = colorClear) {.inline.} =
 
   let 
     alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
     alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
 
-  fau.batch.drawRaw(region, x - width * alignH, y - height * alignV, z, width, height, originX, originY, rotation, color, mixColor)
+  fau.batch.drawRaw(region, x - width * alignH * xscl, y - height * alignV * yscl, z, width * xscl, height * yscl, originX, originY, rotation, color, mixColor)
 
 #draws a region with rotated bits
 proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int): Vec2, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
   originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
-  color = colorWhiteF, mixColor = colorClearF) =
+  color = colorWhite, mixColor = colorClear) =
   
   let
     alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
@@ -1041,17 +1082,64 @@ proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int)
     cor2 = mutator(x2, y2, 1)
     cor3 = mutator(x3, y3, 2)
     cor4 = mutator(x4, y4, 3)
+    cf = color.f
+    mf = mixColor.f
 
-  fau.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, color, mixColor, cor2.x, cor2.y, u, v2, color, mixColor, cor3.x, cor3.y, u2, v2, color, mixColor, cor4.x, cor4.y, u2, v, color, mixColor], z)
+  fau.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, cf, mf, cor2.x, cor2.y, u, v2, cf, mf, cor3.x, cor3.y, u2, v2, cf, mf, cor4.x, cor4.y, u2, v, cf, mf], z)
+
+#draws a region with rotated bits
+proc drawv*(region: Patch, x, y: float32, c1 = vec2(0, 0), c2 = vec2(0, 0), c3 = vec2(0, 0), c4 = vec2(0, 0), z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+  originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
+  color = colorWhite, mixColor = colorClear) =
+
+  let
+    alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
+    alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
+    worldOriginX: float32 = x + originX - width * alignH
+    worldOriginY: float32 = y + originY - height * alignV
+    fx: float32 = -originX
+    fy: float32 = -originY
+    fx2: float32 = width - originX
+    fy2: float32 = height - originY
+    cos: float32 = cos(rotation.degToRad)
+    sin: float32 = sin(rotation.degToRad)
+    x1 = cos * fx - sin * fy + worldOriginX
+    y1 = sin * fx + cos * fy + worldOriginY
+    x2 = cos * fx - sin * fy2 + worldOriginX
+    y2 = sin * fx + cos * fy2 + worldOriginY
+    x3 = cos * fx2 - sin * fy2 + worldOriginX
+    y3 = sin * fx2 + cos * fy2 + worldOriginY
+    x4 = x1 + (x3 - x2)
+    y4 = y3 - (y2 - y1)
+    u = region.u
+    v = region.v2
+    u2 = region.u2
+    v2 = region.v
+    cor1 = c1 + vec2(x1, y1)
+    cor2 = c2 + vec2(x2, y2)
+    cor3 = c3 + vec2(x3, y3)
+    cor4 = c4 + vec2(x4, y4)
+    cf = color.f
+    mf = mixColor.f
+
+  fau.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, cf, mf, cor2.x, cor2.y, u, v2, cf, mf, cor3.x, cor3.y, u2, v2, cf, mf, cor4.x, cor4.y, u2, v, cf, mf], z)
 
 #TODO inline
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, originY = 0f,
-  rotation = 0f, color = colorWhiteF, mixColor = colorClearF, z: float32 = 0.0) {.inline.} =
+  rotation = 0f, color = colorWhite, mixColor = colorClear, z: float32 = 0.0) {.inline.} =
   fau.batch.drawRaw(region, x, y, z, width, height, originX, originY, rotation, color, mixColor)
 
 #TODO inline
 proc drawVert*(texture: Texture, vertices: array[24, Glfloat], z: float32 = 0) {.inline.} = 
   fau.batch.drawRaw(texture, vertices, z)
+
+proc readPixels*(x, y, w, h: int): pointer =
+  ## Reads pixels from the screen and returns a pointer to RGBA data.
+  ## The result MUST be deallocated after use!
+  var pixels = alloc(w * h * 4)
+  glPixelStorei(GlPackAlignment, 1.Glint)
+  glReadPixels(x.GLint, y.GLint, w.GLint, h.GLint, GlRgba, GlUnsignedByte, pixels)
+  return pixels
 
 #Activates a camera.
 proc use*(cam: Cam) =
@@ -1095,6 +1183,9 @@ proc pop*(buffer: Framebuffer) =
   #use previous buffer
   currentBuffer().use()
 
+#Returns whether this buffer is currently being used
+proc isCurrent*(buffer: Framebuffer): bool = buffer == fau.bufferStack[^1]
+
 #Draw something inside a framebuffer
 template inside*(buffer: Framebuffer, body: untyped) =
   buffer.push(rgba(0, 0, 0, 0))
@@ -1102,13 +1193,13 @@ template inside*(buffer: Framebuffer, body: untyped) =
   buffer.pop()
 
 #Blits a framebuffer as a sorted rect.
-proc blit*(buffer: Framebuffer, z: float32 = 0, color: float32 = colorWhiteF) =
+proc blit*(buffer: Framebuffer, z: float32 = 0, color: Color = colorWhite) =
   draw(buffer.texture, fau.cam.pos.x, fau.cam.pos.y, z = z, color = color, width = fau.cam.w, height = -fau.cam.h)
 
 #Blits a framebuffer immediately as a fullscreen quad. Does not use batch.
-proc blitQuad*(buffer: Framebuffer, shader = fau.screenspace) =
+proc blitQuad*(buffer: Framebuffer, shader = fau.screenspace, unit = 0) =
   drawFlush()
-  buffer.texture.use()
+  buffer.texture.use(unit)
   fau.quad.render(shader)
 
 #BACKEND & INITIALIZATION
@@ -1120,6 +1211,9 @@ else:
 
 import times, audio, shapes, random, font
 export audio, shapes, font
+
+when defined(debug):
+  import recorder
 
 #TODO move this somewhere else
 proc axis*(left, right: KeyCode): int = 
@@ -1142,7 +1236,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     let time = (times.getTime() - startTime).inNanoseconds
     if lastFrameTime == -1: lastFrameTime = time
 
-    fau.delta = float(time - lastFrameTime) / 1000000000.0#[  ]#
+    fau.delta = min(float(time - lastFrameTime) / 1000000000.0, fau.maxDelta)
     fau.time += fau.delta
     lastFrameTime = time
 
@@ -1159,6 +1253,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
     #flush any pending draw operations
     drawFlush()
+
+    when defined(debug):
+      record()
 
     inc fau.frameId
   ), 
@@ -1179,6 +1276,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     fau.batch = newBatch()
 
     fau.pixelScl = 1.0f
+
+    fau.maxDelta = 1f / 60f
       
     #enable sorting by default
     fau.batchSort = true

@@ -4,46 +4,46 @@ var quadv: array[24, GLfloat]
 
 for v in quadv.mitems: v = 0.0
 
-proc fillQuad*(x1, y1, c1, x2, y2, c2, x3, y3, c3, x4, y4, c4: float32, z: float32 = 0) = 
+proc fillQuad*(x1, y1: float32, c1: Color, x2, y2: float32, c2: Color, x3, y3: float32, c3: Color, x4, y4: float32, c4: Color, z: float32 = 0) =
   quadv[0] = x1
   quadv[1] = y1
   quadv[2] = fau.white.u
   quadv[3] = fau.white.v
-  quadv[4] = c1
+  quadv[4] = c1.f
 
   quadv[6] = x2
   quadv[7] = y2
   quadv[8] = fau.white.u
   quadv[9] = fau.white.v
-  quadv[10] = c2
+  quadv[10] = c2.f
 
   quadv[12] = x3
   quadv[13] = y3
   quadv[14] = fau.white.u
   quadv[15] = fau.white.v
-  quadv[16] = c3
+  quadv[16] = c3.f
 
   quadv[18] = x4
   quadv[19] = y4
   quadv[20] = fau.white.u
   quadv[21] = fau.white.v
-  quadv[22] = c4
+  quadv[22] = c4.f
 
   drawVert(fau.white.texture, quadv, z)
 
-proc fillQuad*(x1, y1, x2, y2, x3, y3, x4, y4, color: float32, z: float32 = 0) = 
+proc fillQuad*(x1, y1, x2, y2, x3, y3, x4, y4: float32, color: Color, z: float32 = 0) =
   fillQuad(x1, y1, color, x2, y2, color, x3, y3, color, x4, y4, color, z)
 
-proc fillRect*(x, y, w, h: float32, color = colorWhiteF, z: float32 = 0) =
+proc fillRect*(x, y, w, h: float32, color = colorWhite, z: float32 = 0) =
   drawRect(fau.white, x, y, w, h, color = color, z = z)
 
-proc fillTri*(x1, y1, x2, y2, x3, y3, color: float32, z: float32 = 0) = 
+proc fillTri*(x1, y1, x2, y2, x3, y3: float32, color: Color, z: float32 = 0) =
   fillQuad(x1, y1, color, x2, y2, color, x3, y3, color, x3, y3, color, z)
 
-proc fillCircle*(x, y, rad: float32, color: float32 = colorWhiteF, z: float32 = 0) =
+proc fillCircle*(x, y, rad: float32, color: Color = colorWhite, z: float32 = 0) =
   draw(fau.circle, x, y, width = rad*2.0, height = rad*2.0, color = color, z = z)
 
-proc fillPoly*(x, y: float32, sides: int, radius: float32, rotation = 0f, color: float32 = colorWhiteF, z: float32 = 0) =
+proc fillPoly*(x, y: float32, sides: int, radius: float32, rotation = 0f, color = colorWhite, z: float32 = 0) =
   let space = PI*2 / sides.float32
 
   for i in countup(0, sides-1, 2):
@@ -72,10 +72,10 @@ proc fillPoly*(x, y: float32, sides: int, radius: float32, rotation = 0f, color:
       color, z
     )
 
-proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color: float32 = colorWhiteF, z: float32 = 0) =
+proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = colorWhite, z: float32 = 0) =
   fillPoly(pos.x, pos.y, sides, radius, rotation, color, z)
 
-proc fillLight*(x, y, radius: float32, sides = 20, centerColor = colorWhiteF, edgeColor = colorClearF, z: float32 = 0) = 
+proc fillLight*(x, y, radius: float32, sides = 20, centerColor = colorWhite, edgeColor = colorClear, z: float32 = 0) =
   let 
     sides = ceil(sides.float32 / 2.0).int * 2
     space = PI * 2.0 / sides.float32
@@ -95,10 +95,10 @@ proc fillLight*(x, y, radius: float32, sides = 20, centerColor = colorWhiteF, ed
       z
     )
 
-proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhiteF, edgeColor = colorClearF, z: float32 = 0) = 
+proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhite, edgeColor = colorClear, z: float32 = 0) =
   fillLight(pos.x, pos.y, radius, sides, centerColor, edgeColor, z)
 
-proc line*(p1, p2: Vec2, stroke: float32 = 1.0, color: float32 = colorWhiteF, square = true, z: float32 = 0) = 
+proc line*(p1, p2: Vec2, stroke: float32 = 1.px, color = colorWhite, square = true, z: float32 = 0) =
   let hstroke = stroke / 2.0
   let diff = (p2 - p1).nor * hstroke
   let side = vec2(-diff.y, diff.x)
@@ -121,17 +121,17 @@ proc line*(p1, p2: Vec2, stroke: float32 = 1.0, color: float32 = colorWhiteF, sq
     color, z
   )
 
-proc line*(p1x, p1y, p2x, p2y, stroke: float32 = 1.0, color = colorWhiteF, square = true, z: float32 = 0) {.inline.} = 
+proc line*(p1x, p1y, p2x, p2y, stroke: float32 = 1.px, color = colorWhite, square = true, z: float32 = 0) {.inline.} =
   line(vec2(p1x, p1y), vec2(p2x, p2y), stroke, color, square, z)
 
 #TODO bad
-proc lineRect*(x, y, w, h: float32, stroke: float32 = 1.0, color = colorWhiteF, z: float32 = 0) =
+proc lineRect*(x, y, w, h: float32, stroke: float32 = 1.0, color = colorWhite, z: float32 = 0) =
   line(x, y, x + w, y, stroke, color, z = z)
   line(x + w, y, x + w, y + h, stroke, color, z = z)
   line(x + w, y + h, x, y + h, stroke, color, z = z)
   line(x, y + h, x, y, stroke, color, z = z)
 
-proc poly*(x, y: float32, sides: int, radius: float32, rotation = 0f, stroke = 1f, color: float32 = colorWhiteF, z: float32 = 0) =
+proc poly*(x, y: float32, sides: int, radius: float32, rotation = 0f, stroke = 1f, color = colorWhite, z: float32 = 0) =
   let 
     space = PI*2 / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)
@@ -154,5 +154,5 @@ proc poly*(x, y: float32, sides: int, radius: float32, rotation = 0f, stroke = 1
       color, z
     )
 
-proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f, color: float32 = colorWhiteF, z: float32 = 0) =
+proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f, color = colorWhite, z: float32 = 0) =
   poly(pos.x, pos.y, sides, radius, rotation, stroke, color, z = z)

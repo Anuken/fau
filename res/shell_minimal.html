@@ -20,24 +20,40 @@
       }
 
       #loadtext{
-        position:absolute;
         z-index:0;
         text-align: center;
         width: 100%;
         font-size: 40px;
         font-family: "Courier New", Courier, monospace;
-        color: lightslategray;
+        color: black;
+        animation-duration: 1000ms;
+        animation-name: blink;
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        user-select: none;
+      }
+
+      @keyframes blink {
+        from{
+          opacity: 1;
+        }
+        to{
+          opacity: 0;
+        }
       }
     </style>
   </head>
   <body>
 
-    <div id="loadtext"><i>Loading...</i></div>
+    <div id="loadtext"><b>[ loading ]</b></div>
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
 
     <script type='text/javascript'>
-      // Work-around chromium autoplay policy
-      // https://github.com/emscripten-core/emscripten/issues/6511
+      // Work-around chromium autoplay policy: https://github.com/emscripten-core/emscripten/issues/6511
       function resumeAudio(e) {
 		  if (typeof Module === 'undefined'
 			  || typeof Module.SDL2 == 'undefined')

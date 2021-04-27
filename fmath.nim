@@ -1,7 +1,14 @@
 import math, random
 
 #this should be avoided in most cases, but manually turning ints into float32s can be very annoying
-converter toFloat32*(i: int): float32 {.inline.} = i.float32 
+converter toFloat32*(i: int): float32 {.inline.} = i.float32
+
+#TODO angle type, distinct float32
+#TODO make all angle functions use this
+#type Radians = distinct float32
+#template deg*(v: float32) = (v * PI / 180.0).Radians
+#template rad*(v: float32) = v.Radians
+#converter toFloat(r: Radians): float32 {.inline.} = r.float32
 
 ## any type that has a time and lifetime
 type Timeable* = concept t
@@ -11,6 +18,22 @@ type Timeable* = concept t
 type AnyVec2* = concept t
   t.x is float32
   t.y is float32
+
+iterator d4*(): tuple[x, y: int] =
+  yield (1, 0)
+  yield (0, 1)
+  yield (-1, 0)
+  yield (0, -1)
+
+iterator d4i*(): tuple[x, y, i: int] =
+  yield (1, 0, 0)
+  yield (0, 1, 1)
+  yield (-1, 0, 2)
+  yield (0, -1, 3)
+
+iterator signs*(): float32 =
+  yield 1f
+  yield -1f
 
 ## fade in from 0 to 1
 func fin*(t: Timeable): float32 {.inline.} = t.time / t.lifetime
@@ -32,7 +55,13 @@ func powout*(a, power: float32): float32 {.inline.} = pow(a - 1, power) * (if po
 
 #utility functions
 
+func zero*(val: float32, margin: float32 = 0.0001f): bool {.inline.} = abs(val) <= margin
+func clamp*(val: float32): float32 {.inline.} = clamp(val, 0f, 1f)
+
 func lerp*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * progress
+func lerpc*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * clamp(progress)
+
+func inv*(f: float32): float32 {.inline.} = 1f / f
 
 ## euclid mod functions (equivalent versions are coming in a future Nim release)
 func emod*(a, b: float32): float32 {.inline.} =
@@ -67,8 +96,6 @@ proc chance*(c: float): bool = rand(0.0..1.0) < c
 
 const pi2* = PI * 2.0
 
-#TODO angle type, distinct float32
-
 func rad*(val: float32): float32 {.inline.} = val * PI / 180.0
 func deg*(val: float32): float32 {.inline.} = val / (PI / 180.0)
 
@@ -77,6 +104,9 @@ func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees 
 
 ## angle dist
 func adist*(a, b: float32): float32 {.inline.} = min(if a - b < 0: a - b + 360.0.rad else: a - b, if b - a < 0: b - a + 360.0.rad else: b - a)
+
+## angle within other angle
+func awithin*(a, b: float32, tolerance = 0.01f): bool {.inline.} = adist(a, b) <= tolerance
 
 ## angle approach
 func aapproach*(a, b, amount: float32): float32 =
@@ -113,10 +143,14 @@ func sign*(x: bool): float32 {.inline.} =
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
 
+func absin*(x, scl, mag: float32): float32 {.inline} = (sin(x / scl) * mag).abs
+func abcos*(x, scl, mag: float32): float32 {.inline} = (cos(x / scl) * mag).abs
+
 type Vec2* = object
   x*, y*: float32
 
 func vec2*(x, y: float32): Vec2 {.inline.} = Vec2(x: x, y: y)
+func vec2*(xy: float32): Vec2 {.inline} = Vec2(x: xy, y: xy)
 proc vec2*(pos: AnyVec2): Vec2 {.inline.} = Vec2(x: pos.x, y: pos.y)
 func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag * sin(angle))
 
@@ -155,8 +189,13 @@ func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} =
   return vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
 
 #all angles are in radians
+
 func angle*(vec: Vec2): float32 {.inline.} = 
   let res = arctan2(vec.y, vec.x)
+  return if res < 0: res + PI*2.0 else: res
+
+func angle*(x, y: float32): float32 {.inline.} =
+  let res = arctan2(y, x)
   return if res < 0: res + PI*2.0 else: res
 
 func angle*(vec: Vec2, other: Vec2): float32 {.inline.} = 
@@ -404,4 +443,18 @@ template particles*(seed: int, amount: int, cx, cy, rad: float32, body: untyped)
 template circle*(amount: int, body: untyped) =
   for i in 0..<amount:
     let angle {.inject.} = (i.float32 / amount.float32 * 360f).degToRad
+    body
+
+template circlev*(amount: int, len: float32, body: untyped) =
+  for i in 0..<amount:
+    let
+      angle {.inject.} = (i.float32 / amount.float32 * 360f).degToRad
+      v = vec2l(angle, len)
+      x {.inject.} = v.x
+      y {.inject.} = v.y
+    body
+
+template shotgun*(amount: int, spacing: float32, body: untyped) =
+  for i in 0..<amount:
+    let angle {.inject.} = ((i - (amount div 2).float32) * spacing).degToRad
     body
