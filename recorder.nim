@@ -1,4 +1,4 @@
-import fcore, shapes, os, strformat, times, osproc
+import fcore, shapes, os, strformat, times, osproc, math
 from pixie import nil
 
 const
@@ -37,13 +37,13 @@ proc record*() =
       gifTempDir.removeDir()
       gifTempDir.createDir()
 
-      #
+      #TODO this is the bottleneck, add multithreading?
       for i, img in frames:
         pixie.writeFile(img, gifTempDir / &"{i:05}.png", pixie.ffPng)
 
       gifOutDir.createDir()
       let dateStr = now().format("yyyy-MM-dd-hh-mm-ss")
-      echo execProcess(&"ffmpeg -framerate {recordFps*2} -pattern_type glob -i '{gifTempDir}/*.png' -filter:v \"vflip,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" {gifOutDir}/{dateStr}.gif")
+      echo execProcess(&"ffmpeg -r {recordFps} -pattern_type glob -i '{gifTempDir}/*.png' -filter:v \"vflip,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" {gifOutDir}/{dateStr}.gif")
       gifTempDir.removeDir()
       frames = @[]
       ftime = 0f
@@ -51,6 +51,7 @@ proc record*() =
   if recording and open:
     ftime += fau.delta * 60.1f * speedMultiplier
     if ftime >= 60f / recordFps:
+      ftime = ftime.mod 60f / recordFps
       var pixels = readPixels(
         (recordOffset.x + fau.widthf/2f - recordSize.x/2f).int,
         (recordOffset.y + fau.height/2f - recordSize.y/2f).int,
