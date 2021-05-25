@@ -1,3 +1,4 @@
 --gc:arc
---passC:"-flto"
---passL:"-flto"
+--d:strip
+--d:danger
+--d:lto
