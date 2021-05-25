@@ -178,10 +178,12 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   discard window.setFramebufferSizeCallback(proc(window: Window, width: cint, height: cint) {.cdecl.} = 
     (fau.width, fau.height) = (width.int, height.int)
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
+    fireFauEvent(FauEvent(kind: feResize, w: width.float32, h: height.float32))
   )
 
   discard window.setCursorPosCallback(proc(window: Window, x: cdouble, y: cdouble) {.cdecl.} = 
     (fau.mouseX, fau.mouseY) = (x.float32, fau.height.float32 - 1 - y.float32)
+    fireFauEvent FauEvent(kind: feDrag, dragX: fau.mouseX, dragY: fau.mouseY)
   )
 
   discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} = 
@@ -213,9 +215,11 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
       of PRESS: 
         keysJustDown[code] = true
         keysPressed[code] = true
+        fireFauEvent FauEvent(kind: feTouch, touchX: fau.mouseX, touchY: fau.mouseY, touchDown: true)
       of RELEASE: 
         keysJustUp[code] = true
         keysPressed[code] = false
+        fireFauEvent FauEvent(kind: feTouch, touchX: fau.mouseX, touchY: fau.mouseY, touchDown: false)
       else: discard
   )
 

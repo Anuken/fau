@@ -3,7 +3,7 @@ import stb_image/read as stbi
 
 export gltypes, fmath, futils
 
-#KEYS
+#INPUT
 
 type KeyCode* = enum
   keyA, keyB, keyC, keyD, keyE, keyF, keyG, keyH, keyI, keyJ, keyK, keyL, keyM, keyN, keyO, keyP, keyQ, keyR, keyS, keyT, keyU, 
@@ -18,6 +18,39 @@ type KeyCode* = enum
   keyCrsel, keyExsel, keyDecimalseparator, keyLctrl, keyLshift, keyLalt, keyLgui, keyRctrl, 
   keyRshift, keyRalt, keyRgui, keyMode, keyUnknown,
   keyMouseLeft, keyMouseMiddle, keyMouseRight
+
+#discriminator for the various types of input events
+type FauEventKind* = enum
+  ## any key down/up, including mouse
+  feKey,
+  ## mouse/pointer moved across screen
+  feDrag,
+  ## finger up/down at location
+  feTouch,
+  ## mousewheel scroll up/down
+  feScroll,
+  ## window resized
+  feResize
+
+#a generic input event
+type FauEvent* = object
+  case kind*: FauEventKind
+  of feKey:
+    key*: KeyCode
+    keyDown*: bool
+  of feDrag:
+    dragId*: int
+    dragX*, dragY*: float32
+  of feTouch:
+    touchId*: int
+    touchX*, touchY*: float32
+    touchDown*: bool
+  of feScroll:
+    scrollX*, scrollY*: float32
+  of feResize:
+    w*, h*: float32
+
+type FauListener* = proc(e: FauEvent)
 
 #IO
 
@@ -810,9 +843,17 @@ type FauState = object
   mouseX*, mouseY*: float32
   #Last scroll values
   scrollX*, scrollY*: float32
+  #All input listeners
+  listeners: seq[FauListener]
 
 #Global instance of fau state.
 var fau* = FauState()
+
+proc fireFauEvent*(ev: FauEvent) =
+  for l in fau.listeners: l(ev)
+
+proc addFauListener*(ev: FauListener) =
+  fau.listeners.add ev
 
 #Turns pixel units into world units
 proc px*(val: float32): float32 {.inline.} = val * fau.pixelScl

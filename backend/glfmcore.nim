@@ -155,10 +155,17 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   display.glfmSetSurfaceResizedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
     (fau.width, fau.height) = (width.int, height.int)
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
+    fireFauEvent(FauEvent(kind: feResize, w: width.float32, h: height.float32))
   )
 
   display.glfmSetTouchFunc(proc(display: ptr GLFMDisplay, touch: cint, phase: GLFMTouchPhase, x, y: cdouble): bool {.cdecl.} = 
     (fau.mouseX, fau.mouseY) = (x.float32, fau.height.float32 - 1 - y.float32)
+
+    if phase == GLFMTouchPhaseBegan or phase == GLFMTouchPhaseEnded:
+      fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchX: x.float32, touchY: fau.height.float32 - 1 - y.float32, touchDown: phase == GLFMTouchPhaseBegan))
+    elif phase == GLFMTouchPhaseMoved:
+      fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, dragX: x.float32, dragY: fau.height.float32 - 1 - y.float32))
+
     return true
   )
 
@@ -211,6 +218,8 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
   display.glfmSetSurfaceDestroyedFunc(proc(display: ptr GLFMDisplay) {.cdecl.} =
     glInitialized = false
+    #force an exit to clean up resources, ditch the Android app lifecycle
+    quit(QuitSuccess)
   )
   
 
