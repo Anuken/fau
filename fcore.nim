@@ -1209,8 +1209,12 @@ when defined(Android):
 else:
   include backend/glfwcore
 
-import times, audio, shapes, random, font
-export audio, shapes, font
+when not defined(noAudio):
+  import audio
+  export audio
+
+import times, shapes, random, font
+export shapes, font
 
 when defined(debug):
   import recorder
@@ -1229,7 +1233,7 @@ var
   startTime: Time
 
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
-  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "atlas", visualizer = false) =
+  depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "atlas") =
 
   initCore(
   (proc() =
@@ -1265,9 +1269,10 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     randomize()
 
     #initialize audio
-    initAudio(visualizer)
-    #load the necessary audio files (macro generated)
-    loadAudio()
+    when not defined(noAudio):
+      initAudio()
+      #load the necessary audio files (macro generated)
+      loadAudio()
 
     #add default framebuffer to state
     fau.bufferStack.add newDefaultFramebuffer()

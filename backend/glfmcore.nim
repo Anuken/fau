@@ -205,8 +205,8 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     #clean up input
     for x in keysJustDown.mitems: x = false
     for x in keysJustUp.mitems: x = false
-    lastScrollX = 0
-    lastScrollY = 0
+    fau.scrollX = 0
+    fau.scrollY = 0
   )
 
   display.glfmSetSurfaceDestroyedFunc(proc(display: ptr GLFMDisplay) {.cdecl.} =
