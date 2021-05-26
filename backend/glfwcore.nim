@@ -11,6 +11,8 @@ proc down*(key: KeyCode): bool {.inline.} = keysPressed[key]
 proc tapped*(key: KeyCode): bool {.inline.} = keysJustDown[key]
 proc released*(key: KeyCode): bool {.inline.} = keysJustUp[key]
 
+proc getGlfwWindow*(): Window = window
+
 proc toKeyCode(scancode: cint): KeyCode = 
   result = case scancode:
     of KEY_SPACE: keySpace
