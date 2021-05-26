@@ -51,7 +51,7 @@ proc toKeyCode(scancode: cint): KeyCode =
     of KEY_P: keyP
     of KEY_Q: keyQ
     of KEY_R: keyR
-    of KEY_S: KeyCode.keyS
+    of KEY_S: key_s
     of KEY_T: keyT
     of KEY_U: keyU
     of KEY_V: keyV

@@ -253,6 +253,9 @@ proc merge*(r: Rect, other: Rect): Rect =
 
 #collision stuff
 
+proc contains*(r: Rect, x, y: float32): bool {.inline.} = r.x <= x and r.x + r.w >= x and r.y <= y and r.y + r.h >= y
+proc contains*(r: Rect, pos: Vec2): bool {.inline.} = r.contains(pos.x, pos.y)
+
 proc overlaps*(a, b: Rect): bool = a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
 
 proc overlaps(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =

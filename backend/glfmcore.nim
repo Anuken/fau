@@ -162,7 +162,14 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     (fau.mouseX, fau.mouseY) = (x.float32, fau.height.float32 - 1 - y.float32)
 
     if phase == GLFMTouchPhaseBegan or phase == GLFMTouchPhaseEnded:
-      fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchX: x.float32, touchY: fau.height.float32 - 1 - y.float32, touchDown: phase == GLFMTouchPhaseBegan))
+      let down = phase == GLFMTouchPhaseBegan
+      if down:
+        keysJustDown[keyMouseLeft] = true
+      else:
+        keysJustUp[keyMouseLeft] = true
+      keysPressed[keyMouseLeft] = down
+
+      fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchX: x.float32, touchY: fau.height.float32 - 1 - y.float32, touchDown: down))
     elif phase == GLFMTouchPhaseMoved:
       fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, dragX: x.float32, dragY: fau.height.float32 - 1 - y.float32))
 
