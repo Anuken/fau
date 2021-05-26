@@ -123,7 +123,7 @@ proc mix*(color: Color, other: Color, alpha: float32): Color =
 proc f*(color: Color): float32 {.inline.} = cast[float32](color)
 proc col*(fv: float32): Color {.inline.} = cast[Color](fv)
 
-let
+const
   colorClear* = rgba(0, 0, 0, 0)
   colorWhite* = rgb(1, 1, 1)
   colorBlack* = rgba(0, 0, 0)
