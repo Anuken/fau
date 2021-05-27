@@ -4,6 +4,7 @@ import fcore
 
 type ButtonStyle* = object
   downColor*, upColor*, overColor*: Color
+  #iconUpColor*, iconDownColor*
   up*, down*, over*: Patch9
   font*: Font
 
@@ -14,7 +15,7 @@ var
   defaultFont*: Font
   defaultButtonStyle* = ButtonStyle()
 
-proc button*(bounds: Rect, text = "", style = defaultButtonStyle): bool =
+proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f): bool =
   var col = style.upColor
   var patch = style.up
   var font = if style.font.isNil: defaultFont else: style.font
@@ -37,3 +38,6 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle): bool =
       bounds = vec2(bounds.w, bounds.h) - vec2(patch.left + patch.right, patch.bot - patch.top) * uiPatchScale,
       scale = uiFontScale, align = daCenter
     )
+
+  if icon.valid:
+    draw(icon, bounds.centerX, bounds.centerY, width = iconSize, height = iconSize)
