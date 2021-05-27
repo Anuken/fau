@@ -4,14 +4,14 @@ from vmath import nil
 
 proc fail(reason: string) = raise Exception.newException(reason)
 
-proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, padding = 0, bleeding = 2, verbose = false) =
+proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, padding = 0, bleeding = 2, verbose = false, silent = false) =
   let packer = newPacker(min, min)
-  var positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int]]]()
+  var positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int]]]()
 
   let time = cpuTime()
   let totalPad = padding + bleeding
 
-  proc packFile(file: string, image: Image) =
+  proc packFile(file: string, image: Image, splits = [-1, -1, -1, -1]) =
     let name = file.splitFile.name
 
     if verbose: echo &"Packing image {name}..."
@@ -38,12 +38,49 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
         else:
           packer.resize(packer.w, (packer.h + 1).nextPowerOfTwo)
     
-    positions[name] = (image, file, pos)
+    positions[name] = (image, file, pos, splits)
 
   #pack every file in directory
   for file in walkDirRec(path):
-    if file.splitFile.ext == ".png":
-      packFile(file, readImage(file))
+    let split = file.splitFile
+    if split.ext == ".png":
+      #check for 9patches!
+      if split.name.endsWith(".9"):
+        let
+          img = readImage(file)
+          cropped = img.subImage(1, 1, img.width - 2, img.height - 2)
+
+        #find all the split points for the patch
+        var
+          top = -1
+          left = -1
+          bot = -1
+          right = -1
+
+        for i in 1..<img.width:
+          if img[i, 0].a == 255:
+            left = i - 1
+            break
+
+        for i in left+1..<img.width:
+          if img[i, 0].a == 0:
+            right = img.width - 1 - i
+            break
+
+        for i in 1..<img.height:
+          if img[0, i].a == 255:
+            top = i - 1
+            break
+
+        for i in top+1..<img.height:
+          if img[0, i].a == 0:
+            bot = img.height - 1 - i
+            break
+
+        #only save the cropped variant.
+        packFile(split.name, cropped, [left, right, top, bot])
+      else:
+        packFile(file, readImage(file))
   
   #save a white image
   if not positions.hasKey("white"):
@@ -64,7 +101,8 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
 
   stream.write positions.len.int32
 
-  echo &"Saving {positions.len} images..."
+  if not silent:
+    echo &"Saving {positions.len} images..."
 
   #blit packed images and write them to the stream
   for region in positions.values:
@@ -98,11 +136,20 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
     stream.write region.pos.y.int16
     stream.write region.image.width.int16
     stream.write region.image.height.int16
+
+    #write splits if present (-1 considered invalid value)
+    if region.splits[0] != -1:
+      stream.write true
+      for val in region.splits:
+        stream.write val.int16
+    else:
+      stream.write false
   
   stream.close()
   image.writeFile(&"{output}.png")
 
-  echo &"Done in {(cpuTime() - time).formatFloat(ffDecimal, 2)}s."
+  if not silent:
+    echo &"Done in {(cpuTime() - time).formatFloat(ffDecimal, 2)}s."
   
   
 when isMainModule:

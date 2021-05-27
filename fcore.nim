@@ -261,13 +261,14 @@ proc newPatch*(texture: Texture, x, y, width, height: int): Patch =
   Patch(texture: texture, u: x / texture.width, v: y / texture.height, u2: (x + width) / texture.width, v2: (y + height) / texture.height)
 
 #properties that calculate size of a patch in pixels
-proc x*(patch: Patch): int = (patch.u * patch.texture.width.float32).int
-proc y*(patch: Patch): int = (patch.v * patch.texture.height.float32).int
-proc width*(patch: Patch): int = ((patch.u2 - patch.u) * patch.texture.width.float32).int
-proc height*(patch: Patch): int = ((patch.v2 - patch.v) * patch.texture.height.float32).int
-proc widthf*(patch: Patch): float32 = ((patch.u2 - patch.u) * patch.texture.width.float32)
-proc heightf*(patch: Patch): float32 = ((patch.v2 - patch.v) * patch.texture.height.float32)
+proc x*(patch: Patch): int {.inline.} = (patch.u * patch.texture.width.float32).int
+proc y*(patch: Patch): int {.inline.} = (patch.v * patch.texture.height.float32).int
+proc width*(patch: Patch): int {.inline.} = ((patch.u2 - patch.u) * patch.texture.width.float32).int
+proc height*(patch: Patch): int {.inline.} = ((patch.v2 - patch.v) * patch.texture.height.float32).int
+proc widthf*(patch: Patch): float32 {.inline.} = ((patch.u2 - patch.u) * patch.texture.width.float32)
+proc heightf*(patch: Patch): float32 {.inline.} = ((patch.v2 - patch.v) * patch.texture.height.float32)
 template exists*(patch: Patch): bool = patch != fau.atlas.error
+proc valid*(patch: Patch): bool {.inline.} = not patch.texture.isNil
 
 proc scroll*(patch: var Patch, u, v: float32) =
   patch.u += u
@@ -276,6 +277,43 @@ proc scroll*(patch: var Patch, u, v: float32) =
   patch.v2 += v
 
 converter toPatch*(texture: Texture): Patch {.inline.} = Patch(texture: texture, u: 0.0, v: 0.0, u2: 1.0, v2: 1.0)
+
+proc newPatch9*(patch: Patch, left, right, top, bot: int): Patch9 =
+  let
+    midx = patch.width - left - right
+    midy = patch.height - top - bot
+
+  return Patch9(
+    patches: [
+     #bot left
+     newPatch(patch.texture, patch.x, patch.y + midy + top, left, bot),
+     #bot
+     newPatch(patch.texture, patch.x + left, patch.y + midy + top, midx, bot),
+     #bot right
+     newPatch(patch.texture, patch.x + left + midx, patch.y + midy + top, right, bot),
+     #mid left
+     newPatch(patch.texture, patch.x, patch.y + top, left, midy),
+     #mid
+     newPatch(patch.texture, patch.x + left, patch.y + top, midx, midy),
+     #mid right
+     newPatch(patch.texture, patch.x + left + midx, patch.y + top, right, midy),
+     #top left
+     newPatch(patch.texture, patch.x, patch.y, left, top),
+     #top mid
+     newPatch(patch.texture, patch.x + left, patch.y, midx, top),
+     #top right
+     newPatch(patch.texture, patch.x + left + midx, patch.y, right, top),
+   ],
+   texture: patch.texture,
+   top: top,
+   bot: bot,
+   left: left,
+   right: right,
+   width: patch.width,
+   height: patch.height
+  )
+
+proc valid*(patch: Patch9): bool {.inline.} = not patch.patches[0].texture.isNil
 
 proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
   result = glCreateShader(shaderType)
@@ -620,6 +658,8 @@ proc use(buffer: Framebuffer) =
 
 #ATLAS
 
+import strformat
+
 #Loads an atlas from static resources.
 proc loadAtlasStatic*(path: static[string]): Atlas =
   result = Atlas()
@@ -640,13 +680,31 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
       y = stream.readInt16()
       width = stream.readInt16()
       height = stream.readInt16()
+      hasSplit = stream.readBool()
       patch = newPatch(result.texture, x, y, width, height)
 
+    if hasSplit:
+      let
+        left = stream.readInt16()
+        right = stream.readInt16()
+        top = stream.readInt16()
+        bot = stream.readInt16()
+
+      result.patches9[name] = newPatch9(patch, left, right, top, bot)
+
     result.patches[name] = patch
+
   stream.close()
+
   result.error = result.patches["error"]
+  result.error9 = newPatch9(result.patches["error"], 0, 0, 0, 0)
+
 # accesses a region from an atlas
 proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.error)
+
+proc patch*(name: string): Patch {.inline.} = fau.atlas[name]
+
+proc patch9*(name: string): Patch9 {.inline.} = fau.atlas.patches9.getOrDefault(name, fau.atlas.error9)
 
 const
   vertexSize = 2 + 2 + 1 + 1
@@ -671,8 +729,6 @@ proc project*(cam: Cam, vec: Vec2): Vec2 =
 proc mouse*(): Vec2 = vec2(fau.mouseX, fau.mouseY)
 proc mouseWorld*(): Vec2 = fau.cam.unproject(vec2(fau.mouseX, fau.mouseY))
 proc screen*(): Vec2 = vec2(fau.width.float32, fau.height.float32)
-
-proc patch*(name: string): Patch {.inline.} = fau.atlas[name]
 
 #Batch methods
 proc flush(batch: Batch) =
@@ -967,14 +1023,38 @@ proc drawv*(region: Patch, x, y: float32, c1 = vec2(0, 0), c2 = vec2(0, 0), c3 =
 
   fau.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, cf, mf, cor2.x, cor2.y, u, v2, cf, mf, cor3.x, cor3.y, u2, v2, cf, mf, cor4.x, cor4.y, u2, v, cf, mf], z)
 
-#TODO inline
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, originY = 0f,
   rotation = 0f, color = colorWhite, mixColor = colorClear, z: float32 = 0.0) {.inline.} =
   fau.batch.drawRaw(region, x, y, z, width, height, originX, originY, rotation, color, mixColor)
 
-#TODO inline
 proc drawVert*(texture: Texture, vertices: array[24, Glfloat], z: float32 = 0) {.inline.} = 
   fau.batch.drawRaw(texture, vertices, z)
+
+proc draw*(p: Patch9, x, y, width, height: float32, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
+  let
+    midx = p.width - p.left - p.right
+    midy = p.height - p.top - p.bot
+
+  #bot left
+  drawRect(p.patches[0], x, y, p.left * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
+  #bot
+  drawRect(p.patches[1], x + p.left * scale, y, width - (p.right + p.left) * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
+  #bot right
+  drawRect(p.patches[2], x + p.left * scale + width - (p.right + p.left) * scale, y, p.right * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
+
+  #mid left
+  drawRect(p.patches[3], x, y + p.bot * scale, p.left * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor)
+  #mid
+  drawRect(p.patches[4], x + p.left * scale, y + p.bot * scale, width - (p.right + p.left) * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor)
+  #mid right
+  drawRect(p.patches[5], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale, p.right * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor)
+
+  #top left
+  drawRect(p.patches[6], x, y + p.bot * scale + height - (p.top + p.bot) * scale, p.left * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
+  #top
+  drawRect(p.patches[7], x + p.left * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, width - (p.right + p.left) * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
+  #top right
+  drawRect(p.patches[8], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, p.right * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
 
 proc readPixels*(x, y, w, h: int): pointer =
   ## Reads pixels from the screen and returns a pointer to RGBA data.

@@ -58,12 +58,10 @@ type Cam* = ref object
 type Color* = object
   rv*, gv*, bv*, av*: uint8
 
-
 #types of blending
 type Blending* = object
   src*: GLenum
   dst*: Glenum
-
 
 #an openGL image
 type TextureObj = object
@@ -74,14 +72,17 @@ type TextureObj = object
   width*, height*: int
 type Texture* = ref TextureObj
 
-
 #region of a texture
 type Patch* = object
   texture*: Texture
   u*, v*, u2*, v2*: float32
 
-
-#SHADER
+#a grid of 9 patches of a texture, used for rendering UI elements
+type Patch9* = object
+  texture*: Texture
+  left*, right*, top*, bot*, width*, height*: int
+  #the 9 patches, arranged in left to right, then bottom to top order
+  patches*: array[9, Patch]
 
 #Internal shader attribute.
 type ShaderAttr* = object
@@ -108,6 +109,7 @@ type VertexAttribute* = object
   offset: int
   alias: string
 
+#Generic mesh, optionally indexed.
 type MeshObj = object
   vertices*: seq[GLfloat]
   indices*: seq[Glushort]
@@ -123,7 +125,7 @@ type MeshObj = object
   vertexSize: Glsizei
 type Mesh* = ref MeshObj
 
-
+#OpenGL Framebuffer wrapper.
 type FramebufferObj = object
   handle: Gluint
   width: int
@@ -132,10 +134,13 @@ type FramebufferObj = object
   isDefault: bool
 type Framebuffer* = ref FramebufferObj
 
+#A single-texture atlas.
 type Atlas* = ref object
   patches*: Table[string, Patch]
+  patches9*: Table[string, Patch9]
   texture*: Texture
   error*: Patch
+  error9*: Patch9
 
 type
   ReqKind = enum
