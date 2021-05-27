@@ -3,14 +3,6 @@ import staticglfw, glad
 var running: bool = true
 var window: Window
 
-var keysPressed: array[KeyCode, bool]
-var keysJustDown: array[KeyCode, bool]
-var keysJustUp: array[KeyCode, bool]
-
-proc down*(key: KeyCode): bool {.inline.} = keysPressed[key]
-proc tapped*(key: KeyCode): bool {.inline.} = keysJustDown[key]
-proc released*(key: KeyCode): bool {.inline.} = keysJustUp[key]
-
 proc getGlfwWindow*(): Window = window
 
 proc toKeyCode(scancode: cint): KeyCode = 
@@ -149,7 +141,7 @@ proc mainLoop(target: proc()) =
     while window.windowShouldClose() == 0 and running:
       target()
 
-proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0, stencilBits = 0) =
+proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true) =
   
   discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
     raise Exception.newException("Error initializing GLFW: " & $desc & " (error code: " & $code & ")")
@@ -160,8 +152,6 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   echo "Initialized GLFW v3.3.2" #the version constants given are currently incorrect
 
   defaultWindowHints()
-  windowHint(DEPTH_BITS, depthBits.cint)
-  windowHint(STENCIL_BITS, stencilBits.cint)
   windowHint(CONTEXT_VERSION_MINOR, 0)
   windowHint(CONTEXT_VERSION_MAJOR, 2)
   windowHint(DOUBLEBUFFER, 1)
@@ -189,54 +179,39 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   #listen to window size changes and relevant events.
 
   discard window.setFramebufferSizeCallback(proc(window: Window, width: cint, height: cint) {.cdecl.} = 
-    (fau.width, fau.height) = (width.int, height.int)
-    glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
-    fireFauEvent(FauEvent(kind: feResize, w: width.float32, h: height.float32))
+    fireFauEvent(FauEvent(kind: feResize, w: width.int, h: height.int))
   )
 
   discard window.setCursorPosCallback(proc(window: Window, x: cdouble, y: cdouble) {.cdecl.} = 
-    (fau.mouseX, fau.mouseY) = (x.float32, fau.height.float32 - 1 - y.float32)
-    fireFauEvent FauEvent(kind: feDrag, dragX: fau.mouseX, dragY: fau.mouseY)
+    fireFauEvent FauEvent(kind: feDrag, dragX: x.float32, dragY: fau.height.float32 - 1 - y.float32)
   )
 
   discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} = 
     let code = toKeyCode(key)
     
     case action:
-      of PRESS: 
-        keysJustDown[code] = true
-        keysPressed[code] = true
-      of RELEASE: 
-        keysJustUp[code] = true
-        keysPressed[code] = false
+      of PRESS: fireFauEvent FauEvent(kind: feKey, key: code, keyDown: true)
+      of RELEASE: fireFauEvent FauEvent(kind: feKey, key: code, keyDown: false)
       else: discard
   )
 
   discard window.setScrollCallback(proc(window: Window, xoffset: cdouble, yoffset: cdouble) {.cdecl.} = 
-    fau.scrollX = xoffset.float32
-    fau.scrollY = yoffset.float32
-
     #emscripten flips the scrollwheel for some reason: https://github.com/emscripten-core/emscripten/issues/8281
-    when defined(emscripten):
-      fau.scrollY *= -1f
+    fireFauEvent FauEvent(kind: feScroll, scrollX: xoffset.float32, scrollY: when defined(emscripten): -yoffset.float32 else: yoffset.float32)
   )
 
   discard window.setMouseButtonCallback(proc(window: Window, button: cint, action: cint, modifiers: cint) {.cdecl.} = 
     let code = mapMouseCode(button)
 
     case action:
-      of PRESS: 
-        keysJustDown[code] = true
-        keysPressed[code] = true
+      of PRESS:
         fireFauEvent FauEvent(kind: feTouch, touchX: fau.mouseX, touchY: fau.mouseY, touchDown: true)
-      of RELEASE: 
-        keysJustUp[code] = true
-        keysPressed[code] = false
+      of RELEASE:
         fireFauEvent FauEvent(kind: feTouch, touchX: fau.mouseX, touchY: fau.mouseY, touchDown: false)
       else: discard
   )
 
-  #grab the state
+  #grab the state at application start
   var 
     inMouseX: cdouble = 0
     inMouseY: cdouble = 0
@@ -257,17 +232,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
   mainLoop(proc() =
     pollEvents()
-    clearScreen(fau.clearColor)
-
     loopProc()
-
     window.swapBuffers()
-
-    #clean up input
-    for x in keysJustDown.mitems: x = false
-    for x in keysJustUp.mitems: x = false
-    fau.scrollX = 0
-    fau.scrollY = 0
   )
 
   glInitialized = false

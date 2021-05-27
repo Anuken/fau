@@ -43,7 +43,7 @@ type FauEvent* = object
   of feScroll:
     scrollX*, scrollY*: float32
   of feResize:
-    w*, h*: float32
+    w*, h*: int
 
 type FauListener* = proc(e: FauEvent)
 
@@ -168,6 +168,11 @@ type Batch* = ref object
   index: int
   size: int
   reqs: seq[Req]
+  
+#A touch position.
+type Touch = object
+  pos*: Vec2
+  down*: bool
 
 #Hold all the graphics state.
 type FauState = object
@@ -213,9 +218,12 @@ type FauState = object
   maxDelta*: float32
   #Time passed since game launch, in seconds
   time*: float32
+  #All input listeners
+  listeners: seq[FauListener]
+
   #Mouse position
   mouseX*, mouseY*: float32
   #Last scroll values
   scrollX*, scrollY*: float32
-  #All input listeners
-  listeners: seq[FauListener]
+  #All last known touch pointer states
+  touches*: array[10, Touch]

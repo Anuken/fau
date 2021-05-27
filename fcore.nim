@@ -1137,24 +1137,61 @@ when not defined(noAudio):
 import times, shapes, random, font
 export shapes, font
 
-when defined(debug):
-  import recorder
-
-#TODO move this somewhere else
-proc axis*(left, right: KeyCode): int = 
-  if left.down() and right.down(): return 0
-  if left.down(): return -1
-  if right.down(): return 1
-  return 0
-
 var 
   lastFrameTime: int64 = -1
   frameCounterStart: int64
   frames: int
   startTime: Time
 
+  keysPressed: array[KeyCode, bool]
+  keysJustDown: array[KeyCode, bool]
+  keysJustUp: array[KeyCode, bool]
+
+proc down*(key: KeyCode): bool {.inline.} = keysPressed[key]
+proc tapped*(key: KeyCode): bool {.inline.} = keysJustDown[key]
+proc released*(key: KeyCode): bool {.inline.} = keysJustUp[key]
+proc axis*(left, right: KeyCode): int = right.down.int - left.down.int
+
+when defined(debug):
+  import recorder
+
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
   depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "atlas") =
+
+  #handle & update input based on events
+  addFauListener(proc(e: FauEvent) =
+    case e.kind:
+    of feKey:
+      if e.keyDown:
+        keysJustDown[e.key] = true
+        keysPressed[e.key] = true
+      else:
+        keysJustUp[e.key] = true
+        keysPressed[e.key] = false
+    of feScroll:
+      fau.scrollX = e.scrollX.float32
+      fau.scrollY = e.scrollY.float32
+    of feResize:
+      (fau.width, fau.height) = (e.w.int, e.h.int)
+      glViewport(0.GLint, 0.GLint, e.w.GLsizei, e.h.GLsizei)
+    of feTouch:
+      if e.touchDown:
+        keysJustDown[keyMouseLeft] = true
+        keysPressed[keyMouseLeft] = true
+      else:
+        keysJustUp[keyMouseLeft] = true
+        keysPressed[keyMouseLeft] = false
+      
+      #update pointer data for mobile
+      if e.touchId < fau.touches.len:
+        fau.touches[e.touchId].pos = vec2(e.touchX, e.touchY)
+        fau.touches[e.touchId].down = e.touchDown
+    of feDrag:
+      #mouse position is always at the latest drag
+      (fau.mouseX, fau.mouseY) = (e.dragX, e.dragY)
+      if e.dragId < fau.touches.len:
+        fau.touches[e.dragId].pos = vec2(e.dragX, e.dragY)
+  )
 
   initCore(
   (proc() =
@@ -1174,6 +1211,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
     (fau.widthf, fau.heightf) = (fau.width.float32, fau.height.float32)
 
+    clearScreen(fau.clearColor)
     loopProc()
 
     #flush any pending draw operations
@@ -1183,6 +1221,12 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
       record()
 
     inc fau.frameId
+
+    #clean up input
+    for x in keysJustDown.mitems: x = false
+    for x in keysJustUp.mitems: x = false
+    fau.scrollX = 0
+    fau.scrollY = 0
   ), 
   (proc() =
 
