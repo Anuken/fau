@@ -131,6 +131,7 @@ const
   blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
   blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
   blendDisabled* = Blending(src: GlZero, dst: GlZero)
+  blendErase* = Blending(src: GlZero, dst: GlOneMinusSrcAlpha)
 
 #activate a blending function
 proc use*(blend: Blending) = 
@@ -594,6 +595,7 @@ proc newScreenMesh*(): Mesh = newMesh(@[attribPos, attribTexCoords], isStatic = 
 #accessors; read-only
 proc width*(buffer: Framebuffer): int {.inline.} = buffer.width
 proc height*(buffer: Framebuffer): int {.inline.} = buffer.height
+proc wh*(buffer: Framebuffer): Vec2 {.inline.} = vec2(buffer.width, buffer.height)
 proc texture*(buffer: Framebuffer): Texture {.inline.} = buffer.texture
 
 proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
@@ -930,6 +932,10 @@ proc drawMat*(mat: Mat) =
 proc screenMat*() =
   drawMat(ortho(0f, 0f, fau.widthf, fau.heightf))
 
+proc drawBlend*(blending: Blending) =
+  drawFlush()
+  fau.batchBlending = blending
+
 #Draws something custom at a specific Z layer
 proc draw*(z: float32, value: proc()) =
   if fau.batchSort:
@@ -1184,13 +1190,19 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
       
       #update pointer data for mobile
       if e.touchId < fau.touches.len:
-        fau.touches[e.touchId].pos = vec2(e.touchX, e.touchY)
-        fau.touches[e.touchId].down = e.touchDown
+        template t: Touch = fau.touches[e.touchId]
+        t.pos = vec2(e.touchX, e.touchY)
+        t.down = e.touchDown
+        if e.touchDown:
+          t.last = t.pos
+          t.delta = vec2(0f, 0f)
     of feDrag:
       #mouse position is always at the latest drag
       (fau.mouseX, fau.mouseY) = (e.dragX, e.dragY)
       if e.dragId < fau.touches.len:
-        fau.touches[e.dragId].pos = vec2(e.dragX, e.dragY)
+        template t: Touch = fau.touches[e.dragId]
+        t.pos = vec2(e.dragX, e.dragY)
+
   )
 
   initCore(
@@ -1206,6 +1218,11 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
       fau.fps = frames
       frames = 0
       frameCounterStart = time
+    
+    for t in fau.touches.mitems:
+      t.delta = t.pos - t.last
+      t.last = t.pos
+      
 
     inc frames
 

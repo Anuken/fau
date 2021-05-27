@@ -1,6 +1,6 @@
 import glfm, glad
 
-#NOTE: this backend is unfinished! keyboard doesn't work yet
+#NOTE: this backend is unfinished! keyboard doesn't work
 
 proc NimMain() {.importc.}
 

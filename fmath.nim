@@ -148,6 +148,9 @@ func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
 func absin*(x, scl, mag: float32): float32 {.inline} = (sin(x / scl) * mag).abs
 func abcos*(x, scl, mag: float32): float32 {.inline} = (cos(x / scl) * mag).abs
 
+type Vec2i* = object
+  x*, y*: int
+
 type Vec2* = object
   x*, y*: float32
 
@@ -179,6 +182,11 @@ func `-`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x - other, vec.
 func `+`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x + other, vec.y + other)
 func `*`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x * other, vec.y * other)
 func `/`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x / other, vec.y / other)
+
+#vec2i stuff
+
+func vec2i*(x, y: int): Vec2i {.inline.} = Vec2i(x: x, y: y)
+func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
 
 #utility methods
 
@@ -231,6 +239,36 @@ func within*(vec: Vec2, other: Vec2, distance: float32): bool {.inline.} = vec.d
 
 proc `$`*(vec: Vec2): string = $vec.x & ", " & $vec.y
 
+proc inside*(x, y, w, h: int): bool {.inline.} = x >= 0 and y >= 0 and x < w and y < h
+proc inside*(p: Vec2i, w, h: int): bool {.inline.} = p.x >= 0 and p.y >= 0 and p.x < w and p.y < h
+
+#Implementation of bresenham's line algorithm; iterates through a line connecting the two points.
+iterator line*(p1, p2: Vec2i): Vec2i =
+  let 
+    dx = abs(p2.x - p1.x)
+    dy = abs(p2.y - p1.y)
+    sx = if p1.x < p2.x: 1 else: -1
+    sy = if p1.y < p2.y: 1 else: -1
+
+  var
+    startX = p1.x
+    startY = p1.y
+
+    err = dx - dy
+    e2 = 0
+  
+  while true:
+    yield vec2i(startX, startY)
+    if startX == p2.x and startY == p2.y: break
+    e2 = 2 * err
+    if e2 > -dy:
+      err -= dy
+      startX += sx
+    
+    if e2 < dx:
+      err += dx
+      startY += sy
+      
 #rectangle utility class
 
 type Rect* = object
@@ -290,7 +328,6 @@ proc overlaps(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
   else:
     hitPos = vec2(r1.x + r1.w / 2f + v1.x * entryTime, r1.y + r1.h / 2f + v1.y * entryTime)
     return true
-
 
 proc penetrationX*(a, b: Rect): float32 {.inline.} =
   let nx = a.centerX - b.centerX

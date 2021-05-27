@@ -171,7 +171,7 @@ type Batch* = ref object
   
 #A touch position.
 type Touch = object
-  pos*: Vec2
+  pos*, delta*, last*: Vec2
   down*: bool
 
 #Hold all the graphics state.
