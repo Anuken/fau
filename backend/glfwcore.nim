@@ -170,6 +170,17 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   window = createWindow(windowWidth.cint, windowHeight.cint, windowTitle, nil, nil)
   window.makeContextCurrent()
 
+  #center window on primary monitor if it's not maximized
+  if not maximize:
+    let 
+      monitor = getPrimaryMonitor()
+      mode = monitor.getVideoMode()
+    
+    if mode != nil:
+      var mx, my: cint
+      getMonitorPos(monitor, mx.addr, my.addr)
+      window.setWindowPos(mx + (mode.width - windowWidth.cint) div 2, my + (mode.height - windowHeight.cint) div 2)
+
   if not loadGl(getProcAddress):
     raise Exception.newException("Failed to load OpenGL.")
 

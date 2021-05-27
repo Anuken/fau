@@ -15,8 +15,9 @@ var
   defaultFont*: Font
   defaultButtonStyle* = ButtonStyle()
 
-proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f): bool =
+proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f): bool =
   var col = style.upColor
+  var down = toggled
   var patch = style.up
   var font = if style.font.isNil: defaultFont else: style.font
 
@@ -25,9 +26,12 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
 
     col = style.overColor
     if keyMouseLeft.down:
-      col = style.downColor
+      down = true
       result = keyMouseLeft.tapped
-      if style.down.valid: patch = style.down
+
+  if down:
+    col = style.downColor
+    if style.down.valid: patch = style.down
 
   if patch.valid:
     draw(patch, bounds.x, bounds.y, bounds.w, bounds.h, mixColor = col, scale = uiPatchScale)

@@ -100,16 +100,20 @@ proc mix*(color: Color, other: Color, alpha: float32): Color =
 proc f*(color: Color): float32 {.inline.} = cast[float32](color)
 proc col*(fv: float32): Color {.inline.} = cast[Color](fv)
 
-const
-  colorClear* = rgba(0, 0, 0, 0)
-  colorWhite* = rgb(1, 1, 1)
-  colorBlack* = rgba(0, 0, 0)
-
 #converts a hex string to a color at compile-time; no overhead
 export parseHexInt
 template `%`*(str: static[string]): Color =
   const ret = Color(rv: str[0..1].parseHexInt.uint8, gv: str[2..3].parseHexInt.uint8, bv: str[4..5].parseHexInt.uint8, av: if str.len > 6: str[6..7].parseHexInt.uint8 else: 255'u8)
   ret
+
+const
+  colorClear* = rgba(0, 0, 0, 0)
+  colorWhite* = rgb(1, 1, 1)
+  colorBlack* = rgba(0, 0, 0)
+  colorRoyal* = %"4169e1"
+  colorRed* = rgb(1, 0, 0)
+  colorGreen* = rgb(0, 1, 0)
+  colorBlue* = rgb(0, 0, 1)
 
 #types of draw alignment
 const
@@ -938,7 +942,8 @@ proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
   draw(z - spread, layerBegin)
   draw(z + spread, layerEnd)
 
-proc draw*(region: Patch, x, y: float32, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+proc draw*(region: Patch, x, y: float32, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+  z = 0f,
   xscl: float32 = 1.0, yscl: float32 = 1.0,
   originX = width * 0.5 * xscl, originY = height * 0.5 * yscl, rotation = 0f, align = daCenter,
   color = colorWhite, mixColor = colorClear) {.inline.} =
@@ -950,7 +955,8 @@ proc draw*(region: Patch, x, y: float32, z = 0f, width = region.widthf * fau.pix
   fau.batch.drawRaw(region, x - width * alignH * xscl, y - height * alignV * yscl, z, width * xscl, height * yscl, originX, originY, rotation, color, mixColor)
 
 #draws a region with rotated bits
-proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int): Vec2, z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int): Vec2, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+  z = 0f,
   originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
   color = colorWhite, mixColor = colorClear) =
   

@@ -143,6 +143,8 @@ var
 proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   NimMain()
 
+  display.glfmSetDisplayChrome(GLFMUserInterfaceChromeFullscreen)
+
   #TODO should probably respect config options for this
   display.glfmSetDisplayConfig(GLFMRenderingAPIOpenGLES2, GLFMColorFormatRGBA8888, GLFMDepthFormatNone, GLFMStencilFormatNone, GLFMMultisampleNone)
 
@@ -197,6 +199,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   )]#
 
   display.glfmSetSurfaceCreatedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
+
     if not loadGl(glfmGetProcAddress):
       raise Exception.newException("Failed to load OpenGL.")
 
