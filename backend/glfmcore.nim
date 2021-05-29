@@ -14,6 +14,8 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   display.glfmSetDisplayChrome(GLFMUserInterfaceChromeFullscreen)
   display.glfmSetDisplayConfig(GLFMRenderingAPIOpenGLES2, GLFMColorFormatRGBA8888, GLFMDepthFormatNone, GLFMStencilFormatNone, GLFMMultisampleNone)
 
+  fau.screenDensity = display.glfmGetDisplayScale().float32
+
   display.glfmSetSurfaceErrorFunc(proc(display: ptr GLFMDisplay; message: cstring) {.cdecl.} =
     raise Exception.newException("GLFM error: " & $message)
   )

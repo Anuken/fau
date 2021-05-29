@@ -319,6 +319,14 @@ proc newPatch9*(patch: Patch, left, right, top, bot: int): Patch9 =
    height: patch.height
   )
 
+#Converts a patch into an empty patch9
+proc patch9*(patch: Patch): Patch9 = Patch9(
+  patches: [patch, patch, patch, patch, patch, patch, patch, patch, patch],
+  texture: patch.texture,
+  width: patch.width,
+  height: patch.height
+)
+
 proc valid*(patch: Patch9): bool {.inline.} = not patch.patches[0].texture.isNil
 
 proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
@@ -1114,10 +1122,20 @@ proc pop*(buffer: Framebuffer) =
 #Returns whether this buffer is currently being used
 proc isCurrent*(buffer: Framebuffer): bool = buffer == fau.bufferStack[^1]
 
-#Draw something inside a framebuffer
+#Draw something inside a framebuffer; does not clear!
 template inside*(buffer: Framebuffer, body: untyped) =
-  buffer.push(rgba(0, 0, 0, 0))
+  buffer.push()
   body
+  buffer.pop()
+
+#Draw something inside a framebuffer; clears automatically
+template inside*(buffer: Framebuffer, clearColor: Color, body: untyped) =
+  buffer.push(clearColor)
+  body
+  buffer.pop()
+
+proc clear*(buffer: Framebuffer, color = colorClear) =
+  buffer.push(color)
   buffer.pop()
 
 #Blits a framebuffer as a sorted rect.
@@ -1259,6 +1277,10 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
     #add default framebuffer to state
     fau.bufferStack.add newDefaultFramebuffer()
+    
+    #set up default density
+    if fau.screenDensity <= 0.0001f:
+      fau.screenDensity = 1f
     
     #create and use batch
     fau.batch = newBatch()

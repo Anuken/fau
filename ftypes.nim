@@ -208,6 +208,8 @@ type FauState = object
   width*, height*: int
   #Game window size in floats
   widthf*, heightf*: float32
+  #Screen density, for mobile devices
+  screenDensity*: float32
   #Frame number
   frameId*: int64
   #Smoothed frames per second
