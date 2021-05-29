@@ -125,11 +125,11 @@ proc line*(p1x, p1y, p2x, p2y, stroke: float32 = 1.px, color = colorWhite, squar
   line(vec2(p1x, p1y), vec2(p2x, p2y), stroke, color, square, z)
 
 #TODO bad
-proc lineRect*(x, y, w, h: float32, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0) =
-  line(x, y, x + w, y, stroke, color, z = z)
-  line(x + w, y, x + w, y + h, stroke, color, z = z)
-  line(x + w, y + h, x, y + h, stroke, color, z = z)
-  line(x, y + h, x, y, stroke, color, z = z)
+proc lineRect*(x, y, w, h: float32, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0, margin = 0f) =
+  line(x + margin, y + margin, x + w - margin, y + margin, stroke, color, z = z)
+  line(x + w - margin, y + margin, x + w - margin, y + h - margin, stroke, color, z = z)
+  line(x + w - margin, y + h - margin, x + margin, y + h - margin, stroke, color, z = z)
+  line(x + margin, y + h - margin, x + margin, y + margin, stroke, color, z = z)
 
 proc lineSquare*(x, y, rad: float32, stroke: float32 = 1f, color = colorWhite, z = 0f) =
   lineRect(x - rad, y - rad, rad * 2f, rad * 2f, stroke, color, z)
