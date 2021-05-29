@@ -4,7 +4,7 @@ import fcore
 
 type ButtonStyle* = object
   downColor*, upColor*, overColor*: Color
-  #iconUpColor*, iconDownColor*
+  iconUpColor*, iconDownColor*: Color
   up*, down*, over*: Patch9
   font*: Font
 
@@ -44,4 +44,4 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     )
 
   if icon.valid:
-    draw(icon, bounds.centerX, bounds.centerY, width = iconSize, height = iconSize)
+    draw(icon, bounds.centerX, bounds.centerY, width = iconSize, height = iconSize, mixColor = if down: style.iconDownColor else: style.iconUpColor)

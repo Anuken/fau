@@ -111,6 +111,7 @@ const
   colorWhite* = rgb(1, 1, 1)
   colorBlack* = rgba(0, 0, 0)
   colorRoyal* = %"4169e1"
+  colorCoral* = %"ff7f50"
   colorRed* = rgb(1, 0, 0)
   colorGreen* = rgb(0, 1, 0)
   colorBlue* = rgb(0, 0, 1)
@@ -198,7 +199,7 @@ proc wrapRepeat*(texture: Texture) =
   texture.wrap = GlRepeat
 
 #completely reloads texture data
-proc load*(texture: Texture, width: int, height: int, pixels: pointer) =
+proc load*(texture: Texture, width, height: int, pixels: pointer) =
   #bind texture
   texture.use()
   glPixelStorei(GlUnpackAlignment, 1)
