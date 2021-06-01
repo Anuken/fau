@@ -4,8 +4,8 @@ import math
 import fcore except vec2
 
 from fmath import nil
-from pixie import Image, draw, newImage, #[getGlyphImageOffset, getGlyphImage,]# typeset, getGlyphPath, commandsToShapes, scale, fillPath, lineHeight, ascent, descent
-from vmath import x, y, `*`, `-`
+from pixie import Image, draw, newImage, typeset, getGlyphPath, commandsToShapes, scale, fillPath, lineHeight, ascent, descent, transform, computePixelBounds, parseSomePaint
+from vmath import x, y, `*`, `-`, isNaN
 from bumpy import xy
 from chroma import nil
 
@@ -50,45 +50,15 @@ proc toHAlign(align: int): pixie.HAlignMode {.inline.} =
   elif (align and daRight) != 0: pixie.haRight
   else: pixie.haCenter
 
-#TODO use the pixie exposed methods when they become public
-proc computeBounds(shapes: seq[seq[vmath.Vec2]]): bumpy.Rect =
-  var
-    xMin = float32.high
-    xMax = float32.low
-    yMin = float32.high
-    yMax = float32.low
-  for shape in shapes:
-    for pos in shape:
-      xMin = min(xMin, pos.x)
-      xMax = max(xMax, pos.x)
-      yMin = min(yMin, pos.y)
-      yMax = max(yMax, pos.y)
-
-  xMin = floor(xMin)
-  xMax = ceil(xMax)
-  yMin = floor(yMin)
-  yMax = ceil(yMax)
-
-  result.x = xMin
-  result.y = yMin
-  result.w = xMax - xMin
-  result.h = yMax - yMin
-
-proc transform(shapes: var seq[seq[vmath.Vec2]], transform: vmath.Mat3) =
-  for shape in shapes.mitems:
-    for segment in shape.mitems:
-      segment = transform * segment
-
 proc getGlyphImage(font: pixie.Font, r: Rune): (Image, Vec2) =
-  let path = font.typeface.getGlyphPath(r)
-  var shapes = path.commandsToShapes()
-  if shapes.len == 0:
-    return
-  shapes.transform(vmath.scale(vmath.vec2(font.scale)))
-  let bounds = computeBounds(shapes)
+  var path = font.typeface.getGlyphPath(r)
+  path.transform(vmath.scale(vmath.vec2(font.scale)))
+  let bounds = path.computePixelBounds()
+  #no path found
+  if bounds.w < 1 or bounds.h < 1: return
   let bxy = -bounds.xy
   result[0] = newImage(bounds.w.int, bounds.h.int)
-  result[0].fillPath(shapes, chroma.rgba(255, 255, 255, 255), bxy)
+  result[0].fillPath(path, chroma.rgba(255, 255, 255, 255), bxy)
   result[1] = fmath.vec2(bounds.xy)
 
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
