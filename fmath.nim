@@ -154,9 +154,10 @@ type Vec2i* = object
 type Vec2* = object
   x*, y*: float32
 
-func vec2*(x, y: float32): Vec2 {.inline.} = Vec2(x: x, y: y)
-func vec2*(xy: float32): Vec2 {.inline} = Vec2(x: xy, y: xy)
-proc vec2*(pos: AnyVec2): Vec2 {.inline.} = Vec2(x: pos.x, y: pos.y)
+template vec2*(cx, cy: float32): Vec2 = Vec2(x: cx, y: cy)
+template vec2*(xy: float32): Vec2 = Vec2(x: xy, y: xy)
+template vec2*(pos: AnyVec2): Vec2 = Vec2(x: pos.x, y: pos.y)
+template vec2*(): Vec2 = Vec2()
 func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag * sin(angle))
 
 #vector-vector operations

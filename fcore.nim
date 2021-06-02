@@ -741,8 +741,8 @@ proc project*(cam: Cam, vec: Vec2): Vec2 =
   let pro = vec * cam.mat
   return vec2(fau.widthf * (1) / 2 + pro.x, fau.heightf * ( 1) / 2 + pro.y)
 
-proc mouse*(): Vec2 = vec2(fau.mouseX, fau.mouseY)
-proc mouseWorld*(): Vec2 = fau.cam.unproject(vec2(fau.mouseX, fau.mouseY))
+proc mouse*(): Vec2 = fau.mouse
+proc mouseWorld*(): Vec2 = fau.cam.unproject(fau.mouse)
 proc screen*(): Vec2 = vec2(fau.width.float32, fau.height.float32)
 
 #Batch methods
@@ -1196,8 +1196,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
         keysJustUp[e.key] = true
         keysPressed[e.key] = false
     of feScroll:
-      fau.scrollX = e.scrollX.float32
-      fau.scrollY = e.scrollY.float32
+      fau.scroll = e.scroll
     of feResize:
       (fau.width, fau.height) = (e.w.int, e.h.int)
       glViewport(0.GLint, 0.GLint, e.w.GLsizei, e.h.GLsizei)
@@ -1212,17 +1211,17 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
       #update pointer data for mobile
       if e.touchId < fau.touches.len:
         template t: Touch = fau.touches[e.touchId]
-        t.pos = vec2(e.touchX, e.touchY)
+        t.pos = e.touchPos
         t.down = e.touchDown
         if e.touchDown:
           t.last = t.pos
           t.delta = vec2(0f, 0f)
     of feDrag:
       #mouse position is always at the latest drag
-      (fau.mouseX, fau.mouseY) = (e.dragX, e.dragY)
+      fau.mouse = e.dragPos
       if e.dragId < fau.touches.len:
         template t: Touch = fau.touches[e.dragId]
-        t.pos = vec2(e.dragX, e.dragY)
+        t.pos = e.dragPos
 
   )
 
@@ -1263,8 +1262,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     #clean up input
     for x in keysJustDown.mitems: x = false
     for x in keysJustUp.mitems: x = false
-    fau.scrollX = 0
-    fau.scrollY = 0
+    fau.scroll = vec2()
   ), 
   (proc() =
 

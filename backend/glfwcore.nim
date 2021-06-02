@@ -183,7 +183,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   )
 
   discard window.setCursorPosCallback(proc(window: Window, x: cdouble, y: cdouble) {.cdecl.} = 
-    fireFauEvent FauEvent(kind: feDrag, dragX: x.float32, dragY: fau.height.float32 - 1 - y.float32)
+    fireFauEvent FauEvent(kind: feDrag, dragPos: vec2(x.float32, fau.height.float32 - 1 - y.float32))
   )
 
   discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} = 
@@ -197,7 +197,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
   discard window.setScrollCallback(proc(window: Window, xoffset: cdouble, yoffset: cdouble) {.cdecl.} = 
     #emscripten flips the scrollwheel for some reason: https://github.com/emscripten-core/emscripten/issues/8281
-    fireFauEvent FauEvent(kind: feScroll, scrollX: xoffset.float32, scrollY: when defined(emscripten): -yoffset.float32 else: yoffset.float32)
+    fireFauEvent FauEvent(kind: feScroll, scroll: vec2(xoffset.float32, when defined(emscripten): -yoffset.float32 else: yoffset.float32))
   )
 
   discard window.setMouseButtonCallback(proc(window: Window, button: cint, action: cint, modifiers: cint) {.cdecl.} = 
@@ -205,9 +205,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
     case action:
       of PRESS:
-        fireFauEvent FauEvent(kind: feTouch, touchX: fau.mouseX, touchY: fau.mouseY, touchDown: true)
+        fireFauEvent FauEvent(kind: feTouch, touchPos: fau.mouse, touchDown: true)
       of RELEASE:
-        fireFauEvent FauEvent(kind: feTouch, touchX: fau.mouseX, touchY: fau.mouseY, touchDown: false)
+        fireFauEvent FauEvent(kind: feTouch, touchPos: fau.mouse, touchDown: false)
       else: discard
   )
 
@@ -220,8 +220,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
   window.getCursorPos(addr inMouseX, addr inMouseY)
   window.getFramebufferSize(addr inWidth, addr inHeight)
-  fau.mouseX = inHeight.float32 - 1 - inMouseX.float32
-  fau.mouseY = inMouseY.float32
+  fau.mouse = vec2(inHeight.float32 - 1 - inMouseX.float32, inMouseY.float32)
   fau.width = inWidth.int
   fau.height = inHeight.int
   

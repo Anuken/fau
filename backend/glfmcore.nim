@@ -27,12 +27,12 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   )
 
   display.glfmSetTouchFunc(proc(display: ptr GLFMDisplay, touch: cint, phase: GLFMTouchPhase, x, y: cdouble): bool {.cdecl.} = 
-    (fau.mouseX, fau.mouseY) = (x.float32, fau.height.float32 - 1 - y.float32)
+    fau.mouse = vec2(x.float32, fau.heightf - 1 - y.float32)
 
     if phase == GLFMTouchPhaseBegan or phase == GLFMTouchPhaseEnded:
-      fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchX: x.float32, touchY: fau.height.float32 - 1 - y.float32, touchDown: phase == GLFMTouchPhaseBegan))
+      fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchPos: vec2(x.float32, fau.height.float32 - 1 - y.float32), touchDown: phase == GLFMTouchPhaseBegan))
     elif phase == GLFMTouchPhaseMoved:
-      fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, dragX: x.float32, dragY: fau.height.float32 - 1 - y.float32))
+      fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, touchPos: vec2(x.float32, fau.height.float32 - 1 - y.float32)))
 
     return true
   )

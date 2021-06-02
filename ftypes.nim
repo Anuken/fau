@@ -35,13 +35,13 @@ type FauEvent* = object
     keyDown*: bool
   of feDrag:
     dragId*: int
-    dragX*, dragY*: float32
+    dragPos*: Vec2
   of feTouch:
     touchId*: int
-    touchX*, touchY*: float32
+    touchPos*: Vec2
     touchDown*: bool
   of feScroll:
-    scrollX*, scrollY*: float32
+    scroll*: Vec2
   of feResize:
     w*, h*: int
 
@@ -224,8 +224,8 @@ type FauState = object
   listeners: seq[FauListener]
 
   #Mouse position
-  mouseX*, mouseY*: float32
+  mouse*: Vec2
   #Last scroll values
-  scrollX*, scrollY*: float32
+  scroll*: Vec2
   #All last known touch pointer states
   touches*: array[10, Touch]
