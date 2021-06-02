@@ -1183,6 +1183,8 @@ when defined(debug):
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
   depthBits = 0, stencilBits = 0, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "atlas") =
 
+  fau.clearColor = clearColor
+
   #handle & update input based on events
   addFauListener(proc(e: FauEvent) =
     case e.kind:
