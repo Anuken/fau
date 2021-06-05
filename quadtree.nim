@@ -109,11 +109,23 @@ proc insert*[E: Quadable](tree: Quadtree[E], obj: E) =
     else:
       tree.elems.add obj
 
-## Returns a list of all objects that intersect this rectangle. Allocates a new sequence.
-proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect): seq[E] =
-  var result = newSeq[E]
-  intersect(result)
-  return result
+## Removes an object from the tree.
+proc remove*[E: Quadable](tree: Quadtree[E], obj: E) =
+  if tree.leaf:
+    let idx = tree.elems.find(obj)
+    if idx != -1:
+      tree.elems.del idx
+  else:
+    let obounds = obj.bounds
+    let child = fittingChild(tree, obounds)
+
+    if child != nil:
+      child.remove(obj)
+    else:
+      let idx = tree.elems.find(obj)
+      if idx != -1:
+        #TODO unsplit here
+        tree.elems.del idx
 
 ## Returns a list of all objects that intersect this rectangle. Uses the provided sequence for output.
 proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect, dest: var seq[E]) =
@@ -124,3 +136,9 @@ proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect, dest: var seq[E]) =
   for elem in tree.elems:
     if elem.bounds.overlaps(rect):
       dest.add elem
+
+## Returns a list of all objects that intersect this rectangle. Allocates a new sequence.
+proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect): seq[E] =
+  var s = newSeq[E]()
+  tree.intersect(rect, s)
+  return s

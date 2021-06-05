@@ -3,7 +3,19 @@ export polymorph, fcore, strutils
 
 var definitions {.compileTime.}: seq[tuple[name: string, body: NimNode]]
 
-## Defines a system, with an extra vars block for variables. Body is built in launchFau.
+macro sysMake*(name: static[string], componentTypes: openarray[typedesc], body: untyped): untyped =
+  ## Makes a system, with an extra vars block for variables.
+  ## Unlike sys(), this allows for entity added events.
+  var varBody = newEmptyNode()
+  for (index, st) in body.pairs:
+    if st.kind == nnkCall and st[0].strVal == "vars":
+      body.del(index)
+      varBody = st[1]
+      break
+
+  result = quote do:
+    makeSystemOptFields(`name`, `componentTypes`, defaultSystemOptions, `varBody`, `body`)
+
 macro sys*(name: untyped, componentTypes: openarray[typedesc], body: untyped): untyped =
   ## Defines a system, with an extra vars block for variables. Body is built in launchFau.
   var varBody = newEmptyNode()

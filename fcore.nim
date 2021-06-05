@@ -66,6 +66,8 @@ proc resize*(cam: Cam, w, h: float32) =
   cam.h = h
   cam.update()
 
+proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos.x - cam.w/2f, cam.pos.y - cam.h/2f, cam.w, cam.h)
+
 #just incase something gets messed up somewhere
 static: assert sizeof(Color) == 4, "Size of Color must be 4 bytes, but is " & $sizeof(Color)
 
