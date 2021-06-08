@@ -40,6 +40,7 @@ type FauEvent* = object
     touchId*: int
     touchPos*: Vec2
     touchDown*: bool
+    touchButton*: KeyCode
   of feScroll:
     scroll*: Vec2
   of feResize:

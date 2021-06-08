@@ -1204,11 +1204,11 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
       glViewport(0.GLint, 0.GLint, e.w.GLsizei, e.h.GLsizei)
     of feTouch:
       if e.touchDown:
-        keysJustDown[keyMouseLeft] = true
-        keysPressed[keyMouseLeft] = true
+        keysJustDown[e.touchButton] = true
+        keysPressed[e.touchButton] = true
       else:
-        keysJustUp[keyMouseLeft] = true
-        keysPressed[keyMouseLeft] = false
+        keysJustUp[e.touchButton] = true
+        keysPressed[e.touchButton] = false
       
       #update pointer data for mobile
       if e.touchId < fau.touches.len:

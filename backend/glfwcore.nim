@@ -205,9 +205,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 
     case action:
       of PRESS:
-        fireFauEvent FauEvent(kind: feTouch, touchPos: fau.mouse, touchDown: true)
+        fireFauEvent FauEvent(kind: feTouch, touchPos: fau.mouse, touchDown: true, touchButton: code)
       of RELEASE:
-        fireFauEvent FauEvent(kind: feTouch, touchPos: fau.mouse, touchDown: false)
+        fireFauEvent FauEvent(kind: feTouch, touchPos: fau.mouse, touchDown: false, touchButton: code)
       else: discard
   )
 
