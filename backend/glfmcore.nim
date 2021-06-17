@@ -49,7 +49,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     fau.mouse = vec2(x.float32, fau.heightf - 1 - y.float32)
 
     if phase == GLFMTouchPhaseBegan or phase == GLFMTouchPhaseEnded:
-      fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchPos: vec2(x.float32, fau.height.float32 - 1 - y.float32), touchDown: phase == GLFMTouchPhaseBegan))
+      fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchPos: vec2(x.float32, fau.height.float32 - 1 - y.float32), touchDown: phase == GLFMTouchPhaseBegan, touchButton: keyMouseLeft))
     elif phase == GLFMTouchPhaseMoved:
       fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, dragPos: vec2(x.float32, fau.height.float32 - 1 - y.float32)))
 

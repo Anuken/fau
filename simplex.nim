@@ -14,11 +14,7 @@ const perm = [151, 160, 137, 91, 90, 15,
 49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254,
 138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180]
 
-var seed = 0
-
-proc simplexSeed*(value: int) = seed = value
-
-proc hash(i: int32): int32 {.inline.} =
+proc hash(seed, i: int32): int32 {.inline.} =
   #TODO this is broken, why do I have to mod it
   perm[(i + seed) mod 256].int32
 
@@ -41,7 +37,7 @@ proc grad(hash: int32, x: float, y: float, z: float): float =
   let v: float = if h < 4: x else: (if h == 12 or h == 14: x else: z)
   return (if (h and 1) != 0: -u else: u) + (if (h and 2) != 0: -v else: v)
 
-proc noise*(x: float): float =
+proc noise*(x: float, seed: int32 = 0): float =
   let i0: int32 = math.floor(x).int32
   let i1 = i0 + 1
 
@@ -52,17 +48,17 @@ proc noise*(x: float): float =
 
   t0 *= t0
 
-  var n0 = t0 * t0 * grad(hash(i0.int32), x0)
+  var n0 = t0 * t0 * grad(hash(seed, i0.int32), x0)
 
   var t1 = 1.0 - x1 * x1
 
   t1 *= t1
 
-  var n1 = t1 * t1 * grad(hash(i1.int32), x1)
+  var n1 = t1 * t1 * grad(hash(seed, i1.int32), x1)
 
   return 0.395 * (n0 + n1)
 
-proc noise*(x: float, y: float): float =
+proc noise*(x: float, y: float, seed: int32 = 0): float =
   let f2 = 0.366025403
   let g2 = 0.211324865
   var
@@ -98,9 +94,9 @@ proc noise*(x: float, y: float): float =
   let x2 = x0 - 1.0 + 2.0 * g2
   let y2 = y0 - 1.0 + 2.0 * g2
 
-  let gi0 = hash(i + hash(j))
-  let gi1 = hash(i + i1.int32 + hash(j + j1.int32))
-  let gi2 = hash(i + 1 + hash(j + 1))
+  let gi0 = hash(seed, i + hash(seed, j))
+  let gi1 = hash(seed, i + i1.int32 + hash(seed, j + j1.int32))
+  let gi2 = hash(seed, i + 1 + hash(seed, j + 1))
 
 
   var t0 = 0.5 - x0 * x0 - y0 * y0
@@ -126,7 +122,7 @@ proc noise*(x: float, y: float): float =
 
   return 45.23065 * (n0 + n1 + n2)
 
-proc noise*(x: float, y: float, z: float): float =
+proc noise*(x: float, y: float, z: float, seed: int32 = 0): float =
   var
     n0 = 0.0
     n1 = 0.0
@@ -208,10 +204,10 @@ proc noise*(x: float, y: float, z: float): float =
   var y3 = y0 - 1.0 + 3.0 * g3
   var z3 = z0 - 1.0 + 3.0 * g3
 
-  var gi0 = hash(i.int32 + hash(j.int32 + hash(k.int32)))
-  var gi1 = hash(i.int32 + i1.int32 + hash(j.int32 + j1.int32 + hash(k.int32 + k1.int32)))
-  var gi2 = hash(i.int32 + i2.int32 + hash(j.int32 + j2.int32 + hash(k.int32 + k2.int32)))
-  var gi3 = hash(i.int32 + 1 + hash(j.int32 + 1 + hash(k.int32 + 1)))
+  var gi0 = hash(seed, i.int32 + hash(seed, j.int32 + hash(seed, k.int32)))
+  var gi1 = hash(seed, i.int32 + i1.int32 + hash(seed, j.int32 + j1.int32 + hash(seed, k.int32 + k1.int32)))
+  var gi2 = hash(seed, i.int32 + i2.int32 + hash(seed, j.int32 + j2.int32 + hash(seed, k.int32 + k2.int32)))
+  var gi3 = hash(seed, i.int32 + 1 + hash(seed, j.int32 + 1 + hash(seed, k.int32 + 1)))
 
   var t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0
   if t0 < 0:
