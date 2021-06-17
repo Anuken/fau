@@ -28,12 +28,6 @@ macro whenComp*(entity: EntityRef, t: typedesc, body: untyped) =
       let `varName` {.inject.} = `entity`.fetch `t`
       `body`
 
-template clearAll*(group: untyped) =
-  ## Clears all entities in a system
-  while group.groups.len > 0:
-    let item = group.groups[0]
-    if item.entity.alive: item.entity.delete()
-
 macro launchFau*(title: string) =
 
   result = newStmtList().add quote do:

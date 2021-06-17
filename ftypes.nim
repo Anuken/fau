@@ -204,12 +204,6 @@ type FauState = object
   bufferStack*: seq[Framebuffer]
   #Global texture atlas.
   atlas*: Atlas
-  #Game window size
-  width*, height*: int
-  #Game window size in floats
-  widthf*, heightf*: float32
-  #Screen density, for mobile devices
-  screenDensity*: float32
   #Frame number
   frameId*: int64
   #Smoothed frames per second
@@ -222,6 +216,15 @@ type FauState = object
   time*: float32
   #All input listeners
   listeners: seq[FauListener]
+
+  #Game window size
+  width*, height*: int
+  #Game window size in floats
+  widthf*, heightf*: float32
+  #Screen density, for mobile devices
+  screenDensity*: float32
+  #Safe insets for mobile devices. Order: top, right, bot, left
+  insets*: array[4, float32]
 
   #Mouse position
   mouse*: Vec2

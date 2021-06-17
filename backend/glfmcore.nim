@@ -8,10 +8,28 @@ var
   cloopProc: proc()
   cinitProc: proc()
 
+proc updateInsets(display: ptr GLFMDisplay) =
+  var
+    top: cdouble
+    right: cdouble
+    bot: cdouble
+    left: cdouble
+
+  display.glfmGetDisplayChromeInsets(top.addr, right.addr, bot.addr, left.addr)
+  fau.insets[0] = top.float32
+  fau.insets[1] = right.float32
+  fau.insets[2] = bot.float32
+  fau.insets[3] = left.float32
+
 proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   NimMain()
 
-  display.glfmSetDisplayChrome(GLFMUserInterfaceChromeFullscreen)
+  when defined(androidFullscreen):
+    display.glfmSetDisplayChrome(GLFMUserInterfaceChromeFullscreen)
+  
+  when defined(androidStatusBar):
+    display.glfmSetDisplayChrome(GLFMUserInterfaceChromeNavigationAndStatusBar)
+
   display.glfmSetDisplayConfig(GLFMRenderingAPIOpenGLES2, GLFMColorFormatRGBA8888, GLFMDepthFormatNone, GLFMStencilFormatNone, GLFMMultisampleNone)
 
   fau.screenDensity = display.glfmGetDisplayScale().float32
@@ -23,6 +41,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   echo "Initialized GLFM v" & $GLFM_VERSION_MAJOR & "." & $GLFM_VERSION_MINOR
 
   display.glfmSetSurfaceResizedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
+    updateInsets(surf)
     fireFauEvent(FauEvent(kind: feResize, w: width.int, h: height.int))
   )
 
@@ -32,7 +51,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     if phase == GLFMTouchPhaseBegan or phase == GLFMTouchPhaseEnded:
       fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchPos: vec2(x.float32, fau.height.float32 - 1 - y.float32), touchDown: phase == GLFMTouchPhaseBegan))
     elif phase == GLFMTouchPhaseMoved:
-      fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, touchPos: vec2(x.float32, fau.height.float32 - 1 - y.float32)))
+      fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, dragPos: vec2(x.float32, fau.height.float32 - 1 - y.float32)))
 
     return true
   )
@@ -62,6 +81,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
     fau.width = width.int
     fau.height = height.int
+    updateInsets(surf)
 
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
 
