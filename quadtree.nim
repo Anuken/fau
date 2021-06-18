@@ -3,18 +3,22 @@ import fmath
 const maxInQuadrant = 5
 
 type
-  Group = concept g
+  ## Tata to simply distinguish entity grouping.
+  ## Some integer at best.
+  Group* = concept g
     `==`(g, g) is bool
 
   ## An element that can be stored in a quadtree.
   Quadable* = concept q
     `==`(q, q) is bool
   
-  ## reduces junk id collection
+  ## Structure is designed to reduce false positives when querying
+  ## the tree. It uses Group information to optimize queries and select only 
+  ## important data.
   QuadStorage[E, G] = object
     len, count: int 
     # len allows reusing of old groups
-    # count avoids looping trough elements to count them
+    # count avoids looping trough groups to count them
     groups: seq[tuple[group: G, elems: seq[E]]]
   
   PopulationState = enum
@@ -28,13 +32,14 @@ type
   # cut manually. The quadtree can be implemented differently 
   # though, you can store all nodes in seq and use indexes as 
   # references which is arguably faster but also more 
-  # complex and easy to fuck up. 
+  # complex and easy to mess up. 
   Quadtree*[E, G] = ref object
     bounds*: Rect
     leaf, closed: bool
     elems*: QuadStorage[E, G]
     topLeft, botLeft, topRight, botRight, parent: Quadtree[E, G]
 
+## inserts entity into quad storage
 template insert*[E: Quadable, G: Group](q: var QuadStorage, elem: E, aGroup: G) =
   block:
     var unfinished = true
@@ -53,6 +58,7 @@ template insert*[E: Quadable, G: Group](q: var QuadStorage, elem: E, aGroup: G) 
       q.len.inc()
     q.count.inc()
     
+## removes entity from QuadStorage
 template remove*[E: Quadable, G: Group](q: var QuadStorage, elem: E, aGroup: G): bool =
   block:
     var removed: bool
@@ -75,8 +81,8 @@ template remove*[E: Quadable, G: Group](q: var QuadStorage, elem: E, aGroup: G):
       q.count.dec()
     removed
 
-# this is why it is worth it, in cases of big groups of friendly units will not have to loop over
-# them selfs when looking for enemies. Players tent to spam units which by it self slows down the game.
+## Retrieves all ids of given group if including or everything else otherwise. This is the main 
+## purpose of the storage, to reduce amount of junk entities retrieved.
 template query*[E: Quadable, G: Group](q: var QuadStorage, buff: var seq[E], aGroup: G, including: static[bool]) =
   when including:
     for g in q.groups:
@@ -171,7 +177,8 @@ proc split[E: Quadable, G: Group](tree: Quadtree[E, G]) =
   # objects anymore
 
 ## Inserts an object into the tree. Should only be done once. Object is then removed and updated by
-## returned node so store it for later.
+## returned node so store it for later. Group is used to distinguish the entity and assign it to he 
+## subregion for later querying.
 proc insert*[E: Quadable, G: Group](tree: Quadtree[E, G], bounds: Rect, obj: E, group: G, updateCall: static[bool] = false): Quadtree[E, G] =
   result = tree
   while true:
