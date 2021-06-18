@@ -91,7 +91,7 @@ template query*[E: Quadable, G: Group](q: var QuadStorage, buff: var seq[E], aGr
 ## Constructs a new quadtree with the specified bounds.
 proc newQuadtree*[E: Quadable, G: Group](bounds: Rect): Quadtree[E, G] = Quadtree[E, G](bounds: bounds, leaf: true)
 
-## Yields every child node as lon as tree is not leaf.
+## Yields every child node as long as the tree is not a leaf.
 iterator children*[E: Quadable, G: Group](tree: Quadtree[E, G]): Quadtree[E, G] {.inline.} =
   if not tree.leaf:
     yield tree.topLeft
