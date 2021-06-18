@@ -24,7 +24,7 @@ type
 
   ## You should know what a quadtree is.
   # TODO: current implementation heavily relies on arc and 
-  # actually creates a reference cycles that has to be 
+  # actually creates reference cycles that have to be 
   # cut manually. The quadtree can be implemented differently 
   # though, you can store all nodes in seq and use indexes as 
   # references which is arguably faster but also more 
