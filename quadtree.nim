@@ -28,7 +28,7 @@ type
 
   ## You should know what a quadtree is.
   # TODO: current implementation heavily relies on arc and 
-  # actually creates a reference cycles that has to be 
+  # actually creates reference cycles that have to be 
   # cut manually. The quadtree can be implemented differently 
   # though, you can store all nodes in seq and use indexes as 
   # references which is arguably faster but also more 
@@ -97,7 +97,7 @@ template query*[E: Quadable, G: Group](q: var QuadStorage, buff: var seq[E], aGr
 ## Constructs a new quadtree with the specified bounds.
 proc newQuadtree*[E: Quadable, G: Group](bounds: Rect): Quadtree[E, G] = Quadtree[E, G](bounds: bounds, leaf: true)
 
-## Yields every child node as lon as tree is not leaf.
+## Yields every child node as long as the tree is not a leaf.
 iterator children*[E: Quadable, G: Group](tree: Quadtree[E, G]): Quadtree[E, G] {.inline.} =
   if not tree.leaf:
     yield tree.topLeft
