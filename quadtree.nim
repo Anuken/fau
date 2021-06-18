@@ -3,23 +3,9 @@ import fmath
 const maxInQuadrant = 5
 
 type
-  ## Tata to simply distinguish entity grouping.
-  ## Some integer at best.
-  Group* = concept g
-    `==`(g, g) is bool
-
   ## An element that can be stored in a quadtree.
   Quadable* = concept q
     `==`(q, q) is bool
-  
-  ## Structure is designed to reduce false positives when querying
-  ## the tree. It uses Group information to optimize queries and select only 
-  ## important data.
-  QuadStorage[E, G] = object
-    len, count: int 
-    # len allows reusing of old groups
-    # count avoids looping trough groups to count them
-    groups: seq[tuple[group: G, elems: seq[E]]]
   
   PopulationState = enum
     psNone
@@ -33,72 +19,26 @@ type
   # though, you can store all nodes in seq and use indexes as 
   # references which is arguably faster but also more 
   # complex and easy to mess up. 
-  Quadtree*[E, G] = ref object
+  Quadtree*[E] = ref object
     bounds*: Rect
     leaf, closed: bool
-    elems*: QuadStorage[E, G]
-    topLeft, botLeft, topRight, botRight, parent: Quadtree[E, G]
+    elems*: seq[E]
+    topLeft, botLeft, topRight, botRight, parent: Quadtree[E]
 
-## inserts entity into quad storage
-template insert*[E: Quadable, G: Group](q: var QuadStorage, elem: E, aGroup: G) =
+template remove[T](s: var seq[T], value: T): bool =
   block:
-    var unfinished = true
-    for i in 0..<q.len:
-      if q.groups[i].group == aGroup:
-        q.groups[i].elems.add(elem)
-        unfinished = false
-        break
-    
-    if unfinished:
-      if q.groups.len == q.len:
-        q.groups.add((aGroup, @[elem]))
-      else:
-        q.groups[q.len].group = aGroup
-        q.groups[q.len].elems.add(elem)
-      q.len.inc()
-    q.count.inc()
-    
-## removes entity from QuadStorage
-template remove*[E: Quadable, G: Group](q: var QuadStorage, elem: E, aGroup: G): bool =
-  block:
-    var removed: bool
-    for i in 0..<q.len:
-      let g = q.groups[i].addr
-      if g.group == aGroup:
-        if g.elems.len == 1:
-          g.elems.setLen(0)
-          swap(q.groups[i], q.groups[q.groups.high])
-          q.len.dec()
-          removed = true
-          break
-        else:
-          let i = g.elems.find(elem)
-          if i != -1:
-            g.elems.del(i)
-            removed = true
-            break
-    if removed:
-      q.count.dec()
-    removed
-
-## Retrieves all ids of given group if including or everything else otherwise. This is the main 
-## purpose of the storage, to reduce amount of junk entities retrieved.
-template query*[E: Quadable, G: Group](q: var QuadStorage, buff: var seq[E], aGroup: G, including: static[bool]) =
-  when including:
-    for g in q.groups:
-      if g.group == aGroup:
-        buff.add(g.elems)
-        break
-  else:
-    for g in q.groups:
-      if g.group != aGroup:
-        buff.add(g.elems)
+    let id = s.find(value)
+    if id == -1:
+      false
+    else:
+      s.del(id)
+      true
 
 ## Constructs a new quadtree with the specified bounds.
-proc newQuadtree*[E: Quadable, G: Group](bounds: Rect): Quadtree[E, G] = Quadtree[E, G](bounds: bounds, leaf: true)
+proc newQuadtree*[E: Quadable](bounds: Rect): Quadtree[E] = Quadtree[E](bounds: bounds, leaf: true)
 
 ## Yields every child node as long as the tree is not a leaf.
-iterator children*[E: Quadable, G: Group](tree: Quadtree[E, G]): Quadtree[E, G] {.inline.} =
+iterator children*[E: Quadable](tree: Quadtree[E]): Quadtree[E] {.inline.} =
   if not tree.leaf:
     yield tree.topLeft
     yield tree.botLeft
@@ -106,19 +46,19 @@ iterator children*[E: Quadable, G: Group](tree: Quadtree[E, G]): Quadtree[E, G] 
     yield tree.botRight
 
 ## Removes all objects from the tree.
-proc clear*[E: Quadable, G: Group](tree: Quadtree[E, G]) =
+proc clear*[E: Quadable](tree: Quadtree[E]) =
   tree.elems.setLen(0)
   for c in tree.children: c.clear()
   tree.leaf = true
 
 ## closes the branch for passive removal
-proc close*[E: Quadable, G: Group](tree: Quadtree[E, G]) =
+proc close*[E: Quadable](tree: Quadtree[E]) =
   tree.closed = true
   for c in tree.children: c.close()
 
 ## closes the branch for passive removal
-proc population*[E: Quadable, G: Group](tree: Quadtree[E, G], count = 0): PopulationState =
-  let count = count + tree.elems.count
+proc population*[E: Quadable](tree: Quadtree[E], count = 0): PopulationState =
+  let count = count + tree.elems.len
   if count > maxInQuadrant:
     return psOver
   for c in tree.children:
@@ -126,14 +66,14 @@ proc population*[E: Quadable, G: Group](tree: Quadtree[E, G], count = 0): Popula
     if result == psOver:
       return psOver
 
-template fittingChild[E: Quadable, G: Group](tree: Quadtree[E, G], rect: Rect): Quadtree[E, G] =
+template fittingChild[E: Quadable](tree: Quadtree[E], rect: Rect): Quadtree[E] =
   let
     vertMid = tree.bounds.x + tree.bounds.w * 0.5
     horMid = tree.bounds.y + tree.bounds.h * 0.5
     topQuadrant = rect.y > horMid
     bottomQuadrant = rect.top < horMid
   
-  var result: Quadtree[E, G] 
+  var result: Quadtree[E] 
   
   if rect.right < vertMid:
     if topQuadrant: result = tree.topLeft
@@ -148,15 +88,15 @@ template fittingChild[E: Quadable, G: Group](tree: Quadtree[E, G], rect: Rect): 
   # the node, it fits into the smaller quadrant. This method 
   # is pretty hot so we need it inlined.
 
-proc split[E: Quadable, G: Group](tree: Quadtree[E, G]) =
+proc split[E: Quadable](tree: Quadtree[E]) =
   if not tree.leaf: return
 
   let 
     subW = tree.bounds.w / 2.0
     subH = tree.bounds.h / 2.0
 
-  template initNode(x, y: float32): Quadtree[E, G] =
-    Quadtree[E, G](bounds: rect(x, y, subW, subH), leaf: true, parent: tree)
+  template initNode(x, y: float32): Quadtree[E] =
+    Quadtree[E](bounds: rect(x, y, subW, subH), leaf: true, parent: tree)
 
   if tree.botLeft == nil:
     tree.botLeft = initNode(tree.bounds.x, tree.bounds.y)
@@ -179,27 +119,27 @@ proc split[E: Quadable, G: Group](tree: Quadtree[E, G]) =
 ## Inserts an object into the tree. Should only be done once. Object is then removed and updated by
 ## returned node so store it for later. Group is used to distinguish the entity and assign it to he 
 ## subregion for later querying.
-proc insert*[E: Quadable, G: Group](tree: Quadtree[E, G], bounds: Rect, obj: E, group: G, updateCall: static[bool] = false): Quadtree[E, G] =
+proc insert*[E: Quadable](tree: Quadtree[E], bounds: Rect, obj: E, updateCall: static[bool] = false): Quadtree[E] =
   result = tree
   while true:
     let next = result.fittingChild(bounds)
     if next.isNil:
       when updateCall: 
         if result != tree:
-          discard tree.elems.remove(obj, group)
-          result.elems.insert(obj, group)
+          discard tree.elems.remove(obj)
+          result.elems.add(obj)
           break
         return
       else:
-        result.elems.insert(obj, group)
+        result.elems.add(obj)
         break
     result = next
 
-  if result.leaf and result.elems.count > maxInQuadrant: result.split()
+  if result.leaf and result.elems.len > maxInQuadrant: result.split()
 
 ## Removes an object from the tree. Should be called on node provided by insert method.
-proc remove*[E: Quadable, G: Group](tree: Quadtree[E, G], obj: E, group: G): bool =
-  result = tree.elems.remove(obj, group)
+proc remove*[E: Quadable](tree: Quadtree[E], obj: E): bool =
+  result = tree.elems.remove(obj)
   let population = tree.population
   case population:
   of psNone:
@@ -210,7 +150,7 @@ proc remove*[E: Quadable, G: Group](tree: Quadtree[E, G], obj: E, group: G): boo
     discard
 
 ## Updates the object. Returned tree should be stored for another update.
-proc update*[E: Quadable, G: Group](tree: Quadtree[E, G], bounds: Rect, obj: E, group: G): Quadtree[E, G] =
+proc update*[E: Quadable](tree: Quadtree[E], bounds: Rect, obj: E): Quadtree[E] =
   result = tree
   # go up
   while result.closed or not bounds.fits(result.bounds):
@@ -220,29 +160,29 @@ proc update*[E: Quadable, G: Group](tree: Quadtree[E, G], bounds: Rect, obj: E, 
   # go down
   if result == tree and not tree.leaf:
     lower = true
-    result = tree.insert(bounds, obj, group, true)
+    result = tree.insert(bounds, obj, true)
 
   # cleanup
   if result != tree and not lower:
-    discard tree.remove(obj, group)
-    result = result.insert(bounds, obj, group)
+    discard tree.remove(obj)
+    result = result.insert(bounds, obj)
 
 
 ## Returns a list of all objects that intersect this rectangle. Uses the provided sequence for output.
-proc intersect*[E: Quadable, G: Group](tree: Quadtree[E, G], rect: Rect, dest: var seq[E], group = -1, including: static[bool] = false) =
+proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect, dest: var seq[E]) =
   for child in tree.children:
-    if child.bounds.overlaps(rect): child.intersect(rect, dest, group, including)
+    if child.bounds.overlaps(rect): child.intersect(rect, dest)
   
-  tree.elems.query(dest, group, including)
+  dest.add(tree.elems)
 
 ## Returns a list of all objects that intersect this rectangle. Allocates a new sequence.
-proc intersect*[E: Quadable, G: Group](tree: Quadtree[E, G], rect: Rect, group = -1, including: static[bool] = false): seq[E] =
+proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect): seq[E] =
   var s = newSeq[E]()
-  tree.intersect(rect, s, group, including)
+  tree.intersect(rect, s)
   return s
 
 ## has to be called to drop the tree because of reference cycles
-proc destroy*[E: Quadable, G: Group](tree: Quadtree[E, G]) =
+proc destroy*[E: Quadable](tree: Quadtree[E]) =
   for c in tree.children:
     destroy(c)
   tree.parent = nil
@@ -254,35 +194,33 @@ proc destroy*[E: Quadable, G: Group](tree: Quadtree[E, G]) =
 
 when isMainModule:
   import strutils
-  proc visualize[E: Quadable, G: Group](tree: Quadtree[E, G], tabs = 0) =
-    var dest: seq[E]
-    tree.elems.query(dest, -1, false)
-    echo "  ".repeat(tabs), dest
+  proc visualize[E: Quadable](tree: Quadtree[E], tabs = 0) =
+    echo "  ".repeat(tabs), tree.elems
     for c in tree.children:
       c.visualize(tabs + 1)
 
-  let q = newQuadtree[int, int](rect(0, 0, 1000, 1000))
+  let q = newQuadtree[int](rect(0, 0, 1000, 1000))
   
-  var addresses: seq[Quadtree[int, int]]
+  var addresses: seq[Quadtree[int]]
 
   for i in 0..100:
-    addresses.add q.insert(rect(1, 1, 0, 0), i, 0)
+    addresses.add q.insert(rect(1, 1, 0, 0), i)
   
   q.visualize() # nodes are populated
 
   for i in countdown(100, 0):
-    addresses[i] = addresses[i].update(rect(999, 999, 0, 0), i, 0)
+    addresses[i] = addresses[i].update(rect(999, 999, 0, 0), i)
   
   q.visualize() # all objects moved
 
   for i in countdown(100, 0):
-    addresses[i] = addresses[i].update(rect(999, 1, 0, 0), i, 0)
+    addresses[i] = addresses[i].update(rect(999, 1, 0, 0), i)
   
   q.visualize() # There should be lot of empty unclosed nodes because of order in witch
   # objects were removed. This is a perfect scenario though. The closing rules are not so
   # strict to prioritize performance. 
 
   for i, a in addresses:
-    doAssert a.remove(i, 0)
+    doAssert a.remove(i)
   
   q.visualize() # tree is empty
