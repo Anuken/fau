@@ -2,15 +2,19 @@
 
 import fcore
 
-type ButtonStyle* = object
-  downColor*, upColor*, overColor*: Color
-  iconUpColor*, iconDownColor*: Color
-  up*, down*, over*: Patch9
-  font*: Font
-
-type TextStyle* = object
-  font*: Font
-  upColor*, overColor*, downColor*: Color
+type 
+  ButtonStyle* = object
+    downColor*, upColor*, overColor*: Color
+    iconUpColor*, iconDownColor*: Color
+    up*, down*, over*: Patch9
+    font*: Font
+  TextStyle* = object
+    font*: Font
+    upColor*, overColor*, downColor*: Color
+  SliderStyle* = object
+    back*, up*, over*, down*: Patch9
+    backColor*, upColor*, overColor*, downColor*: Color
+    sliderWidth*: float32
 
 var
   uiPatchScale* = 1f
@@ -19,15 +23,17 @@ var
 
   defaultFont*: Font
   defaultButtonStyle* = ButtonStyle()
-  defaultTextStyle = TextStyle()
+  defaultTextStyle* = TextStyle()
+  defaultSliderStyle* = SliderStyle(sliderWidth: 20f)
 
 proc uis*(val: float32): float32 {.inline.} = uiScale * val
 
 proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f): bool =
-  var col = style.upColor
-  var down = toggled
-  var patch = style.up
-  var font = if style.font.isNil: defaultFont else: style.font
+  var 
+    col = style.upColor
+    down = toggled
+    patch = style.up
+    font = if style.font.isNil: defaultFont else: style.font
 
   if bounds.contains(mouse()):
     if style.over.valid: patch = style.over
@@ -53,6 +59,29 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
   if icon.valid:
     draw(icon, bounds.centerX, bounds.centerY, width = iconSize, height = iconSize, mixColor = if down: style.iconDownColor else: style.iconUpColor)
 
+proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle) =
+  #TODO vertical padding would be nice?
+  if style.back.valid:
+    draw(style.back, bounds.x, bounds.y, bounds.w, bounds.h, scale = uiPatchScale, mixColor = style.backColor)
+  
+  let
+    pad = style.sliderWidth.uis
+    clamped = (value - min) / (max - min) * (bounds.w - pad) + bounds.x + pad/2f
+  var 
+    patch = style.up
+    col = style.upColor
+
+  if bounds.contains(mouse()):
+    if style.over.valid: patch = style.over
+
+    col = style.overColor
+    if keyMouseLeft.down:
+      value = clamp((mouse().x - (bounds.x )) / (bounds.w - pad) * (max - min) + min, min, max)
+      col = style.downColor
+      if style.down.valid: patch = style.down
+
+  if patch.valid:
+    draw(patch, clamped - pad/2f, bounds.y, pad, bounds.h, mixColor = col, scale = uiPatchScale)
 
 proc text*(bounds: Rect, text: string, style = defaultTextStyle, align = daCenter) =
   var font = if style.font.isNil: defaultFont else: style.font
