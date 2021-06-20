@@ -16,6 +16,12 @@ type
     backColor*, upColor*, overColor*, downColor*: Color
     sliderWidth*: float32
 
+#hover styles only work on PC, disable them on mobile
+when defined(Android):
+  const canHover = false
+else:
+  const canHover = true
+
 var
   uiPatchScale* = 1f
   uiFontScale* = 1f
@@ -36,9 +42,9 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     font = if style.font.isNil: defaultFont else: style.font
 
   if bounds.contains(mouse()):
-    if style.over.valid: patch = style.over
+    if canHover and style.over.valid: patch = style.over
+    if canHover: col = style.overColor
 
-    col = style.overColor
     if keyMouseLeft.down:
       down = true
       result = keyMouseLeft.tapped
@@ -72,9 +78,9 @@ proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaul
     col = style.upColor
 
   if bounds.contains(mouse()):
-    if style.over.valid: patch = style.over
+    if canHover and style.over.valid: patch = style.over
+    if canHover: col = style.overColor
 
-    col = style.overColor
     if keyMouseLeft.down:
       value = clamp((mouse().x - (bounds.x )) / (bounds.w - pad) * (max - min) + min, min, max)
       col = style.downColor
