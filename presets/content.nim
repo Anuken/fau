@@ -1,6 +1,6 @@
 ## module for defining and storing 'content' ref objects: blocks, items, enemy archetypes, etc
 
-import macros, strutils, sets, tables
+import macros, strutils, sets, tables, ../futils
 
 #holds default values for fields of types
 #maps type name, field name to initialization node
