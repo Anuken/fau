@@ -66,21 +66,12 @@ proc record*() =
     if ftime >= 60f / recordFps:
       ftime = ftime.mod 60f / recordFps
 
-      var pixels = readPixels(
-        (recordOffset.x + fau.widthf/2f - recordSize.x/2f).int,
-        (recordOffset.y + fau.height/2f - recordSize.y/2f).int,
-        recordSize.x.int,
-        recordSize.y.int
-      )
-
-      let len = recordSize.x.int * recordSize.y.int * 4
-      var casted = cast[cstring](pixels)
-
-      #set all alpha values to 1 after pixels are grabbed
-      for i in countup(3, len, 4):
-        casted[i] = 255.char
-
-      frames.add pixels
+      frames.add readPixels(
+         (recordOffset.x + fau.widthf/2f - recordSize.x/2f).int,
+         (recordOffset.y + fau.height/2f - recordSize.y/2f).int,
+         recordSize.x.int,
+         recordSize.y.int
+       )
 
   #draw selection UI
   if open:
@@ -93,10 +84,7 @@ proc record*() =
 
     if resizeKey.down and not recording:
       color = %"f59827"
-      let
-        xs = abs(fau.widthf/2f + recordOffset.x - mouse().x)
-        ys = abs(fau.heightf/2f + recordOffset.y - mouse().y)
-      recordSize = vec2(xs * 2, ys * 2)
+      recordSize = vec2(abs(fau.widthf/2f + recordOffset.x - mouse().x) * 2, abs(fau.heightf/2f + recordOffset.y - mouse().y) * 2)
 
     if shiftKey.down:
       recordOffset = -vec2(fau.widthf / 2f - mouse().x, fau.height / 2f - mouse().y)
@@ -113,4 +101,3 @@ proc record*() =
       )
 
     drawFlush()
-

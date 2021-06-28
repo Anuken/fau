@@ -609,7 +609,7 @@ proc height*(buffer: Framebuffer): int {.inline.} = buffer.height
 proc wh*(buffer: Framebuffer): Vec2 {.inline.} = vec2(buffer.width, buffer.height)
 proc texture*(buffer: Framebuffer): Texture {.inline.} = buffer.texture
 
-proc resize*(buffer: Framebuffer, fwidth: int, fheight: int) =
+proc resize*(buffer: Framebuffer, fwidth, fheight: int) =
   let 
     width = max(fwidth, 2)
     height = max(fheight, 2)
