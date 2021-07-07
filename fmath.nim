@@ -162,27 +162,18 @@ func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag *
 
 #vector-vector operations
 
-func `-`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x - other.x, vec.y - other.y)
-func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
-func `+`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x + other.x, vec.y + other.y)
-func `/`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x / other.x, vec.y / other.y)
-func `*`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x * other.x, vec.y * other.y)
+template op*(op1, op2: untyped): untyped =
+  func op1*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(op1(vec.x, other.x), op1(vec.y, other.y))
+  func op1*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(op1(vec.x, other), op1(vec.y, other))
+  func op2*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(op1(vec.x, other.x), op1(vec.y, other.y))
+  func op2*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(op1(vec.x, other), op1(vec.y, other))
 
-func `-=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x - other.x, vec.y - other.y)
-func `-=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x - other, vec.y - other)
-func `+=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x + other.x, vec.y + other.y)
-func `+=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x + other, vec.y + other)
-func `/=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x / other.x, vec.y / other.y)
-func `/=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x / other, vec.y / other)
-func `*=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x * other.x, vec.y * other.y)
-func `*=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x * other, vec.y * other)
+op(`+`, `+=`)
+op(`-`, `-=`)
+op(`*`, `*=`)
+op(`/`, `/=`)
 
-#vector-number operations
-
-func `-`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x - other, vec.y - other)
-func `+`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x + other, vec.y + other)
-func `*`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x * other, vec.y * other)
-func `/`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x / other, vec.y / other)
+func `-`*(vec: Vec2): Vec2 = vec2(-vec.x, -vec.y)
 
 #vec2i stuff
 
@@ -291,7 +282,7 @@ proc merge*(r: Rect, other: Rect): Rect =
   result.x = min(r.x, other.x)
   result.y = min(r.y, other.y)
   result.w = max(r.right, other.right) - result.x
-  result.h = max(r.top, other.top) - result.h
+  result.h = max(r.top, other.top) - result.y
 
 #collision stuff
 
@@ -299,6 +290,13 @@ proc contains*(r: Rect, x, y: float32): bool {.inline.} = r.x <= x and r.x + r.w
 proc contains*(r: Rect, pos: Vec2): bool {.inline.} = r.contains(pos.x, pos.y)
 
 proc overlaps*(a, b: Rect): bool = a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
+
+## returns whether a if fully contained in b
+proc fits*(a, b: Rect): bool = a.x >= b.x and a.y >= b.y and a.right <= b.right and a.top <= b.top
+
+when isMainModule:
+  assert rect(0, 0, 1, 1).fits(rect(0, 0, 1, 1))
+  assert not rect(0, 0, 2, 1).fits(rect(0, 0, 1, 1))
 
 proc overlaps(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
   let vel = v1 - v2
