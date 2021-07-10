@@ -162,27 +162,18 @@ func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag *
 
 #vector-vector operations
 
-func `-`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x - other.x, vec.y - other.y)
+template op(op1, op2: untyped): untyped =
+  func op1*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(op1(vec.x, other.x), op1(vec.y, other.y))
+  func op1*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(op1(vec.x, other), op1(vec.y, other))
+  func op2*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(op1(vec.x, other.x), op1(vec.y, other.y))
+  func op2*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(op1(vec.x, other), op1(vec.y, other))
+
+op(`+`, `+=`)
+op(`-`, `-=`)
+op(`*`, `*=`)
+op(`/`, `/=`)
+
 func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
-func `+`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x + other.x, vec.y + other.y)
-func `/`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x / other.x, vec.y / other.y)
-func `*`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x * other.x, vec.y * other.y)
-
-func `-=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x - other.x, vec.y - other.y)
-func `-=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x - other, vec.y - other)
-func `+=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x + other.x, vec.y + other.y)
-func `+=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x + other, vec.y + other)
-func `/=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x / other.x, vec.y / other.y)
-func `/=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x / other, vec.y / other)
-func `*=`*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(vec.x * other.x, vec.y * other.y)
-func `*=`*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(vec.x * other, vec.y * other)
-
-#vector-number operations
-
-func `-`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x - other, vec.y - other)
-func `+`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x + other, vec.y + other)
-func `*`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x * other, vec.y * other)
-func `/`*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(vec.x / other, vec.y / other)
 
 #vec2i stuff
 
@@ -291,7 +282,7 @@ proc merge*(r: Rect, other: Rect): Rect =
   result.x = min(r.x, other.x)
   result.y = min(r.y, other.y)
   result.w = max(r.right, other.right) - result.x
-  result.h = max(r.top, other.top) - result.h
+  result.h = max(r.top, other.top) - result.y
 
 #collision stuff
 

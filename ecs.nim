@@ -8,7 +8,7 @@ macro sysMake*(name: static[string], componentTypes: openarray[typedesc], body: 
   ## Unlike sys(), this allows for entity added events.
   var varBody = newEmptyNode()
   for (index, st) in body.pairs:
-    if st.kind == nnkCall and st[0].strVal == "vars":
+    if st.kind == nnkCall and st[0].strVal == "fields":
       body.del(index)
       varBody = st[1]
       break
@@ -20,7 +20,7 @@ macro sys*(name: untyped, componentTypes: openarray[typedesc], body: untyped): u
   ## Defines a system, with an extra vars block for variables. Body is built in launchFau.
   var varBody = newEmptyNode()
   for (index, st) in body.pairs:
-    if st.kind == nnkCall and st[0].strVal == "vars":
+    if st.kind == nnkCall and st[0].strVal == "fields":
       body.del(index)
       varBody = st[1]
       break
