@@ -160,26 +160,32 @@ template vec2*(pos: AnyVec2): Vec2 = Vec2(x: pos.x, y: pos.y)
 template vec2*(): Vec2 = Vec2()
 func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag * sin(angle))
 
+#vec2i stuff
+
+func vec2i*(x, y: int): Vec2i {.inline.} = Vec2i(x: x, y: y)
+func vec2i*(xy: int): Vec2i {.inline.} = Vec2i(x: xy, y: xy)
+func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
+
 #vector-vector operations
 
-template op(op1, op2: untyped): untyped =
-  func op1*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(op1(vec.x, other.x), op1(vec.y, other.y))
-  func op1*(vec: Vec2, other: float32): Vec2 {.inline.} = vec2(op1(vec.x, other), op1(vec.y, other))
-  func op2*(vec: var Vec2, other: Vec2) {.inline.} = vec = vec2(op1(vec.x, other.x), op1(vec.y, other.y))
-  func op2*(vec: var Vec2, other: float32) {.inline.} = vec = vec2(op1(vec.x, other), op1(vec.y, other))
+template op(td: typedesc, comp: typedesc, cons: typed, op1, op2: untyped): untyped =
+  func op1*(vec: td, other: td): td {.inline.} = cons(op1(vec.x, other.x), op1(vec.y, other.y))
+  func op1*(vec: td, other: comp): td {.inline.} = cons(op1(vec.x, other), op1(vec.y, other))
+  func op2*(vec: var td, other: td) {.inline.} = vec = cons(op1(vec.x, other.x), op1(vec.y, other.y))
+  func op2*(vec: var td, other: comp) {.inline.} = vec = cons(op1(vec.x, other), op1(vec.y, other))
 
-op(`+`, `+=`)
-op(`-`, `-=`)
-op(`*`, `*=`)
-op(`/`, `/=`)
+op(Vec2, float32, vec2, `+`, `+=`)
+op(Vec2, float32, vec2, `-`, `-=`)
+op(Vec2, float32, vec2, `*`, `*=`)
+op(Vec2, float32, vec2, `/`, `/=`)
 
 func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
 
-#vec2i stuff
-#TODO vec2i operations
+op(Vec2i, int, vec2i, `+`, `+=`)
+op(Vec2i, int, vec2i, `-`, `-=`)
+op(Vec2i, int, vec2i, `*`, `*=`)
 
-func vec2i*(x, y: int): Vec2i {.inline.} = Vec2i(x: x, y: y)
-func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
+func `-`*(vec: Vec2i): Vec2i {.inline.} = vec2i(-vec.x, -vec.y)
 
 #utility methods
 

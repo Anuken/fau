@@ -29,11 +29,6 @@ type
 ## Constructs a new quadtree with the specified bounds.
 proc newQuadtree*[E: Quadable](bounds: Rect): Quadtree[E] = Quadtree[E](bounds: bounds, leaf: true)
 
-## Yields every object in this node. Not recursive.
-iterator items*[E: Quadable](tree: Quadtree[E]): E =
-  for item in tree.elems:
-    yield item
-
 ## Yields every child node of this non-leaf node.
 iterator children*[E: Quadable](tree: Quadtree[E]): Quadtree[E] =
   if not tree.leaf:
@@ -98,7 +93,8 @@ proc insert*[E: Quadable](tree: Quadtree[E], obj: E) =
   if not tree.bounds.overlaps(obounds):
     return
 
-  if tree.leaf and tree.elems.len + 1 > maxInQuadrant: tree.split()
+  if tree.leaf and tree.elems.len + 1 > maxInQuadrant: 
+    tree.split()
 
   if tree.leaf:
     tree.elems.add obj
@@ -129,9 +125,8 @@ proc remove*[E: Quadable](tree: Quadtree[E], obj: E) =
 
 ## Returns a list of all objects that intersect this rectangle. Uses the provided sequence for output.
 proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect, dest: var seq[E]) =
-  if not tree.leaf:
-    for child in tree.children:
-      if child.bounds.overlaps(rect): child.intersect(rect, dest)
+  for child in tree.children:
+    if child.bounds.overlaps(rect): child.intersect(rect, dest)
   
   for elem in tree.elems:
     if elem.bounds.overlaps(rect):
@@ -142,3 +137,8 @@ proc intersect*[E: Quadable](tree: Quadtree[E], rect: Rect): seq[E] =
   var s = newSeq[E]()
   tree.intersect(rect, s)
   return s
+
+proc count*[E: Quadable](tree: Quadtree[E]): int =
+  result = tree.elems.len
+  for child in tree.children:
+    result += child.count
