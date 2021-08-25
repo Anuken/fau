@@ -9,12 +9,12 @@ macro sysMake*(name: static[string], componentTypes: openarray[typedesc], body: 
   var varBody = newEmptyNode()
   for (index, st) in body.pairs:
     if st.kind == nnkCall and st[0].strVal == "fields":
-      body.del(index)
+      #body.del(index)
       varBody = st[1]
       break
 
   result = quote do:
-    makeSystemOptFields(`name`, `componentTypes`, defaultSystemOptions, `varBody`, `body`)
+    makeSystem(`name`, `componentTypes`, `body`)
 
 macro sys*(name: untyped, componentTypes: openarray[typedesc], body: untyped): untyped =
   ## Defines a system, with an extra vars block for variables. Body is built in launchFau.
@@ -36,9 +36,10 @@ macro whenComp*(entity: EntityRef, t: typedesc, body: untyped) =
   ## Runs the body with the specified lowerCase type when this entity has this component
   let varName = t.repr.toLowerAscii.ident
   result = quote do:
-    if `entity`.alive and `entity`.has `t`:
+    if `entity`.alive:
       let `varName` {.inject.} = `entity`.fetch `t`
-      `body`
+      if `varName`.valid:
+        `body`
 
 macro launchFau*(title: string) =
 

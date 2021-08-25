@@ -176,6 +176,7 @@ op(`/`, `/=`)
 func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
 
 #vec2i stuff
+#TODO vec2i operations
 
 func vec2i*(x, y: int): Vec2i {.inline.} = Vec2i(x: x, y: y)
 func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
