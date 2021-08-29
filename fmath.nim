@@ -348,7 +348,7 @@ proc penetrationY*(a, b: Rect): float32 {.inline.} =
 proc penetration*(a, b: Rect): Vec2 = vec2(penetrationX(a, b), penetrationY(a, b))
 
 #moves a hitbox; may be removed later
-proc moveDelta*(box: Rect, vx, vy: float32, solidity: proc(x, y: int): bool): Vec2 = 
+proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(x, y: int): bool): Vec2 = 
   let
     left = (box.x + 0.5).int - 1
     bottom = (box.y + 0.5).int - 1
@@ -357,7 +357,7 @@ proc moveDelta*(box: Rect, vx, vy: float32, solidity: proc(x, y: int): bool): Ve
   
   var hitbox = box
   
-  hitbox.x += vx
+  hitbox.x += vel.x
 
   for dx in left..right:
     for dy in bottom..top:
@@ -366,7 +366,7 @@ proc moveDelta*(box: Rect, vx, vy: float32, solidity: proc(x, y: int): bool): Ve
         if hitbox.overlaps(tile):
           hitbox.x -= tile.penetrationX(hitbox)
   
-  hitbox.y += vy
+  hitbox.y += vel.y
 
   for dx in left..right:
     for dy in bottom..top:
