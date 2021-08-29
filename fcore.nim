@@ -456,10 +456,17 @@ proc seti*(shader: Shader, name: string, value: int) =
   let loc = shader.findUniform(name)
   if loc != -1: glUniform1i(loc.GLint, value.GLint)
 
+#converts a 2D matrix to 3D and sets it
 proc setmat4*(shader: Shader, name: string, value: Mat) =
   shader.use()
   let loc = shader.findUniform(name)
   if loc != -1: glUniformMatrix4fv(loc.GLint, 1, false, value.toMat4())
+
+#sets a 3D matrix; the input value should be a 4x4 matrix
+proc setmat4*(shader: Shader, name: string, value: array[16, float32]) =
+  shader.use()
+  let loc = shader.findUniform(name)
+  if loc != -1: glUniformMatrix4fv(loc.GLint, 1, false, value)
 
 proc setf*(shader: Shader, name: string, value: float) =
   shader.use()

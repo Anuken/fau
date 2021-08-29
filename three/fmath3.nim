@@ -6,7 +6,9 @@ import math, fmath
 type Vec3* = object
   x*, y*, z*: float32
 
-template vec3*(cx, cy, cz: float32): Vec3 = Vec3(x: cx, y: cy, z: cz)
+template vec3*(cx, cy: float32, cz = 0f): Vec3 = Vec3(x: cx, y: cy, z: cz)
+template vec2*(vec: Vec3): Vec2 = vec2(vec.x, vec.y)
+template vec3*(vec: Vec2, z = 0f): Vec3 = vec3(vec.x, vec.y, z)
 
 template op(td: typedesc, comp: typedesc, cons: typed, op1, op2: untyped): untyped =
   func op1*(vec: td, other: td): td {.inline.} = cons(op1(vec.x, other.x), op1(vec.y, other.y), op1(vec.z, other.z))
@@ -177,7 +179,28 @@ proc `*`*(a, b: Mat3): Mat3 = [
   a[M30] * b[M02] + a[M31] * b[M12] + a[M32] * b[M22] + a[M33] * b[M32],
   a[M30] * b[M03] + a[M31] * b[M13] + a[M32] * b[M23] + a[M33] * b[M33]
 ]
-  
+
+#note: this crashes the nim compiler:
+#proc prj*[N](vecs: array[N, float32], numVecs = vecs.len): array[N, float32] = discard
+
+#multiplies the vectors with the given matrix, performing a division by w.
+proc prj*[N](mat: Mat3, vecs: array[N, Vec3], offset = 0, numVecs = N): array[N, Vec3] =
+  for i in offset..<(numVecs + offset):
+    result[i] = vec3(
+      (vecs[i].x * mat[M00] + vecs[i].y * mat[M01] + vecs[i].z * mat[M02] + mat[M03]),
+      (vecs[i].x * mat[M10] + vecs[i].y * mat[M11] + vecs[i].z * mat[M12] + mat[M13]),
+      (vecs[i].x * mat[M20] + vecs[i].y * mat[M21] + vecs[i].z * mat[M22] + mat[M23])
+    ) / (vecs[i].x * mat[M30] + vecs[i].y * mat[M31] + vecs[i].z * mat[M32] + mat[M33])
+
+#multiplies this vector by the given matrix dividing by w, assuming the fourth (w) component of the vector is 1. 
+proc prj*(v: Vec3, mat: Mat3): Vec3 =
+  let lw = 1f / (v.x * mat[M30] + v.y * mat[M31] + v.z * mat[M32] + mat[M33])
+  return vec3(
+    (v.x * mat[M00] + v.y * mat[M01] + v.z * mat[M02] + mat[M03]) * lw, 
+    (v.x * mat[M10] + v.y * mat[M11] + v.z * mat[M12] + mat[M13]) * lw, 
+    (v.x * mat[M20] + v.y * mat[M21] + v.z * mat[M22] + mat[M23]) * lw
+  )
+
 #creates a projection matrix with a near- and far plane, a field of view in degrees and an aspect ratio. 
 proc projection3*(near, far, fovy, aspectRatio: float32): Mat3 =
   let 
@@ -218,6 +241,79 @@ proc lookAt3*(position, target, up: Vec3): Mat3 =
   #TODO trans3 + multiply
   return lookAt3(target - position, up) * trans3(-position)
 
+# PLANE
+
+type Plane* = object
+  #plane normal direction
+  normal*: Vec3
+  #distance to origin
+  dst*: float32
+
+type PlaneSide* = enum
+  psOn, psBack, psFront
+
+#constructs a plane from a normal and a distance from the origin
+proc initPlane*(normal: Vec3, dst: float32): Plane = Plane(normal: normal, dst: dst)
+
+#sets the plane normal and distance to the origin based on the three given points, which are considered to be on the plane.
+proc initPlane*(p1, p2, p3: Vec3): Plane =
+  result.normal = (p1 - p2).crs(p2 - p3).nor
+  result.dst = -p1.dot(result.normal)
+
+#tests a point against a plane, and returns which side it is on
+proc test*(plane: Plane, vec: Vec3): PlaneSide =
+  let dist = plane.normal.dot(vec) + plane.dst
+
+  return if dist == 0: psOn
+  elif dist < 0: psBack
+  else: psFront
+
+#projects the supplied vector onto this plane.
+proc project*(plane: Plane, v: Vec3): Vec3 =
+  return v - (plane.normal * (plane.normal.dot(v) + plane.dst))
+
+type Ray* = object
+  origin, direction: Vec3
+
+proc ray*(orig, dir: Vec3): Ray {.inline.} = Ray(origin: orig, direction: dir.nor())
+
+proc endPoint*(ray: Ray, dst: float32): Vec3 = ray.origin + ray.direction * dst
+
+# FRUSTUM
+
+type Frustum* = object
+  #the six clipping planes, near, far, left, right, top, bottom
+  planes: array[6, Plane]
+
+#creates a new frustum based on the given inverse combined projection and view matrix.
+proc initFrustum*(invProjView: Mat3): Frustum =
+  #eight points making up the near and far clipping "rectangles". order is counterclockwise, starting at bottom left
+  let points = invProjView.prj([
+    vec3(-1, -1, -1), vec3(1, -1, -1), vec3(1, 1, -1), vec3(-1, 1, -1),
+    vec3(-1, -1, 1), vec3(1, -1, 1), vec3(1, 1, 1), vec3(-1, 1, 1)
+  ])
+  return Frustum(planes: [
+    initPlane(points[1], points[0], points[2]),
+    initPlane(points[4], points[5], points[7]),
+    initPlane(points[0], points[4], points[3]),
+    initPlane(points[5], points[1], points[6]),
+    initPlane(points[2], points[3], points[6]),
+    initPlane(points[4], points[0], points[1])
+  ])
+
+#returns whether this frustum contains a point
+proc contains*(frustum: Frustum, point: Vec3): bool =
+  for plane in frustum.planes:
+    if plane.test(point) == psBack: return false
+  return true
+
+#returns whether this frustum overlaps a sphere
+proc contains*(self: Frustum, center: Vec3, radius: float32): bool =
+  for i in 0..<6:
+    if self.planes[i].normal.x * center.x + self.planes[i].normal.y * center.y + self.planes[i].normal.z * center.z < -radius - self.planes[i].dst: 
+      return false
+  return true
+
 # CAMERAS
 
 #3D camera - TODO make object, or not?
@@ -245,7 +341,7 @@ type Cam3* = ref object
   #inverse combined projection and view matrix
   invProjView: Mat3
   #TODO
-  #frustrum: Frustrum
+  frustum: Frustum
 
 #creates a new camera with standard parameters
 proc newCam3*(): Cam3 = Cam3(
@@ -272,7 +368,7 @@ proc update*(cam: Cam3) =
   cam.view = lookAt3(cam.pos, cam.pos + cam.direction, cam.up)
   cam.combined = cam.proj * cam.view
   cam.invProjView = cam.combined.inv()
-  #TODO frustrum
+  cam.frustum = initFrustum(cam.invProjView)
 
 proc resize*(cam: Cam3, size: Vec2) = 
   cam.size = size
@@ -293,4 +389,17 @@ proc lookAt*(cam: Cam3, pos: Vec3) =
     cam.direction = dir
     cam.up = cam.direction.crs(cam.up).crs(cam.direction).nor()
 
-#TODO project, unproject
+#Translates a point given in screen coordinates to world space.
+proc unproject*(cam: Cam3, coords: Vec3, viewPos: Vec2 = vec2(0, 0), viewSize: Vec2 = cam.size): Vec3 =
+  let rel = coords.vec2 - viewPos
+  return vec3((rel.x * 2f) / viewSize.x - 1f, (rel.y * 2f) / viewSize.y - 1f, 2 * coords.z - 1f).prj(cam.invProjView)
+
+#Projects the coordinates given in world space to screen coordinates.
+proc project*(cam: Cam3, coords: Vec3, viewPos: Vec2 = vec2(0, 0), viewSize: Vec2 = cam.size): Vec3 =
+  let wc = coords.prj(cam.combined)
+  return vec3(viewSize.x * (wc.x + 1)/2f + viewPos.x, viewSize.y * (wc.y + 1)/2f + viewPos.y, (wc.z + 1f) / 2f)
+
+#Creates a picking ray from the coordinates given in screen coordinates.
+proc pickRay*(cam: Cam3, coords: Vec2, viewPos = vec2(0, 0), viewSize = cam.size): Ray =
+  result.origin = cam.unproject(vec3(coords, 0f), viewPos, viewSize)
+  result.direction = (cam.unproject(vec3(coords, 1f), viewPos, viewSize) - result.origin).nor
