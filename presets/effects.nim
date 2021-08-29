@@ -6,7 +6,8 @@ exportAll:
   type
     EffectId = distinct int
     EffectState = object
-      x, y, time, lifetime, rotation: float32
+      pos: Vec2
+      time, lifetime, rotation: float32
       color: Color
       id: int
     EffectProc = proc(e: EffectState)
@@ -72,8 +73,8 @@ macro defineEffects*(body: untyped) =
       proc `procName`(e {.inject.}: EffectState) =
         `effectBody`
       
-      template `templName`*(xp, yp: float32, rot: float32 = 0, col: Color = colorWhite, life: float32 = `lifeVal`) =
-        discard newEntityWith(Pos(x: xp, y: yp), Timed(lifetime: life), Effect(id: `id`.EffectId, rotation: rot, color: col))
+      template `templName`*(pos: Vec2, rot: float32 = 0, col: Color = colorWhite, life: float32 = `lifeVal`) =
+        discard newEntityWith(Pos(x: pos.x, y: pos.y), Timed(lifetime: life), Effect(id: `id`.EffectId, rotation: rot, color: col))
     
     brackets.add quote do:
       `procName`.EffectProc
@@ -83,11 +84,11 @@ macro defineEffects*(body: untyped) =
   result.add quote do:
     const allEffects* {.inject.}: array[`count`, EffectProc] = `brackets`
 
-    template createEffect*(eid: EffectId, xp, yp: float32, rot: float32 = 0, col: Color = colorWhite, life: float32 = 0.2) =
-      discard newEntityWith(Pos(x: xp, y: yp), Timed(lifetime: life), Effect(id: eid, rotation: rot, color: col))
+    template createEffect*(eid: EffectId, pos: Vec2, rot: float32 = 0, col: Color = colorWhite, life: float32 = 0.2) =
+      discard newEntityWith(Pos(x: pos.x, y: pos.y), Timed(lifetime: life), Effect(id: eid, rotation: rot, color: col))
 
 ## Creates the effect entity system for rendering.
 template makeEffectsSystem*() =
   sys("drawEffects", [Pos, Effect, Timed]):
     all:
-      allEffects[item.effect.id.int](EffectState(x: item.pos.x, y: item.pos.y, time: item.timed.time, lifetime: item.timed.lifetime, color: item.effect.color, rotation: item.effect.rotation, id: item.entity.instance.int))
+      allEffects[item.effect.id.int](EffectState(pos: item.pos.vec2, time: item.timed.time, lifetime: item.timed.lifetime, color: item.effect.color, rotation: item.effect.rotation, id: item.entity.instance.int))

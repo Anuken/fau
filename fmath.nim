@@ -199,6 +199,8 @@ func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} =
 
 func floor*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.floor, vec.y.floor)
 
+func abs*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.abs, vec.y.abs)
+
 #returns this vector's x/y aspect ratio
 func ratio*(vec: Vec2): float32 {.inline.} = vec.x / vec.y
 

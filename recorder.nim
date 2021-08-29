@@ -80,22 +80,20 @@ proc record*() =
     if recording:
       color = %"f54033"
 
-    drawMat(ortho(0, 0, fau.widthf, fau.heightf))
+    drawMat(ortho(vec2(), fau.screen))
 
     if resizeKey.down and not recording:
       color = %"f59827"
-      recordSize = vec2(abs(fau.widthf/2f + recordOffset.x - mouse().x) * 2, abs(fau.heightf/2f + recordOffset.y - mouse().y) * 2)
+      recordSize = (fau.screen/2f + recordOffset - fau.mouse).abs * 2f
 
     if shiftKey.down:
-      recordOffset = -vec2(fau.widthf / 2f - mouse().x, fau.height / 2f - mouse().y)
+      recordOffset = fau.mouse - fau.screen/2f
       color = %"27e67a"
 
     for entry in [(color: colorBlack, stroke: 8f), (color: color, stroke: 2f)]:
       lineRect(
-        recordOffset.x + fau.widthf/2f - recordSize.x/2f,
-        recordOffset.y + fau.height/2f - recordSize.y/2f,
-        recordSize.x,
-        recordSize.y,
+        recordOffset + fau.screen/2f - recordSize/2f,
+        recordSize,
         color = entry.color,
         stroke = entry.stroke
       )

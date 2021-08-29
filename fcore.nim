@@ -21,7 +21,7 @@ proc `=destroy`*(shader: var ShaderObj) =
     shader.vertHandle = 0
     shader.fragHandle = 0
 
-proc `=destroy`*(mesh: var MeshObj) =
+proc `=destroy`*[T](mesh: var MeshObj[T]) =
   if mesh.vertexBuffer != 0 and glInitialized:
     glDeleteBuffer(mesh.vertexBuffer)
     mesh.vertexBuffer = 0
@@ -148,11 +148,20 @@ proc use*(blend: Blending) =
 
 #UTILITIES
 
-proc clearScreen*(col: Color) =
+proc clearScreen*(col: Color = colorClear) =
+  ## Clears the color buffer.
   glClearColor(col.r, col.g, col.b, col.a)
   glClear(GlColorBufferBit)
 
-#TEXTURE
+proc readPixels*(x, y, w, h: int): pointer =
+  ## Reads pixels from the screen and returns a pointer to RGBA data.
+  ## The result MUST be deallocated after use!
+  var pixels = alloc(w * h * 4)
+  glPixelStorei(GlPackAlignment, 1.Glint)
+  glReadPixels(x.GLint, y.GLint, w.GLint, h.GLint, GlRgba, GlUnsignedByte, pixels)
+  return pixels
+
+#region TEXTURE
 
 #binds the texture
 proc use*(texture: Texture, unit: int = 0) =
@@ -266,6 +275,9 @@ proc loadTextureStatic*(path: static[string]): Texture =
   else: #load from filesystem on emscripten
     loadTexture("assets/" & path)
 
+#endregion
+#region PATCH
+
 #creates a patch based on pixel coordinates of a texture
 proc newPatch*(texture: Texture, x, y, width, height: int): Patch = 
   Patch(texture: texture, u: x / texture.width, v: y / texture.height, u2: (x + width) / texture.width, v2: (y + height) / texture.height)
@@ -277,6 +289,8 @@ proc width*(patch: Patch): int {.inline.} = ((patch.u2 - patch.u) * patch.textur
 proc height*(patch: Patch): int {.inline.} = ((patch.v2 - patch.v) * patch.texture.height.float32).int
 proc widthf*(patch: Patch): float32 {.inline.} = ((patch.u2 - patch.u) * patch.texture.width.float32)
 proc heightf*(patch: Patch): float32 {.inline.} = ((patch.v2 - patch.v) * patch.texture.height.float32)
+proc size*(patch: Patch): Vec2 {.inline.} = vec2((patch.u2 - patch.u) * patch.texture.width.float32, (patch.v2 - patch.v) * patch.texture.height.float32)
+proc uv*(patch: Patch): Vec2 {.inline.} = vec2(patch.u, patch.v)
 template exists*(patch: Patch): bool = patch != fau.atlas.error
 proc valid*(patch: Patch): bool {.inline.} = not patch.texture.isNil
 
@@ -332,6 +346,9 @@ proc patch9*(patch: Patch): Patch9 = Patch9(
 )
 
 proc valid*(patch: Patch9): bool {.inline.} = not patch.patches[0].texture.isNil
+
+#endregion
+#region SHADER
 
 proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
   result = glCreateShader(shaderType)
@@ -493,52 +510,36 @@ proc setf*(shader: Shader, name: string, value1, value2, value3, value4: float) 
 
 proc setf*(shader: Shader, name: string, col: Color) = shader.setf(name, col.r, col.g, col.b, col.a)
 
-#MESH
-
-
-#returns the size of avertex attribute in bytes
-proc size(attr: VertexAttribute): int =
-  return case attr.componentType:
-    of cGlFloat, cGlFixed: 4 * attr.components
-    of GlUnsignedByte, cGlByte: attr.components
-    of GlUnsignedShort, cGlShort: 2 * attr.components
-    else: 0
-
-#standard attributes
-const
-  attribPos* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_position")
-  attribPos3* = VertexAttribute(componentType: cGlFloat, components: 3, alias: "a_position")
-  attribNormal* = VertexAttribute(componentType: cGlFloat, components: 3, alias: "a_normal")
-  attribTexCoords* = VertexAttribute(componentType: cGlFloat, components: 2, alias: "a_texc")
-  attribColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_color", normalized: true)
-  attribMixColor* = VertexAttribute(componentType: GlUnsignedByte, components: 4, alias: "a_mixcolor", normalized: true)
+#endregion
+#region MESH
 
 #marks a mesh as modified, so its vertices get reuploaded
-proc update*(mesh: Mesh) = 
+proc update*[T](mesh: GenericMesh[T]) = 
   mesh.modifiedVert = true
   mesh.modifiedInd = true
 
 #schedules an index buffer update
-proc updateIndices*(mesh: Mesh) = mesh.modifiedInd = true
+proc updateIndices*[T](mesh: GenericMesh[T]) = mesh.modifiedInd = true
 
 #schedules a vertex buffer update
-proc updateVertices*(mesh: Mesh) = mesh.modifiedVert = true
+proc updateVertices*[T](mesh: GenericMesh[T]) = mesh.modifiedVert = true
 
 #schedule a vertex buffer update in a slice; grows slice if one is already queued
-proc updateVertices*(mesh: Mesh, slice: Slice[int]) =
+proc updateVertices*[T](mesh: GenericMesh[T], slice: Slice[int]) =
   mesh.vertSlice.a = min(mesh.vertSlice.a, slice.a)
   mesh.vertSlice.b = max(mesh.vertSlice.b, slice.b)
 
 #schedule an index buffer update in a slice; grows slice if one is already queued
-proc updateIndices*(mesh: Mesh, slice: Slice[int]) =
+proc updateIndices*[T](mesh: GenericMesh[T], slice: Slice[int]) =
   mesh.indSlice.a = min(mesh.indSlice.a, slice.a)
   mesh.indSlice.b = max(mesh.indSlice.b, slice.b)
 
+proc vertexSize*[T](mesh: GenericMesh[T]): int = T.sizeOf
+
 #creates a mesh with a set of attributes
-proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[GLfloat] = @[], indices: seq[GLushort] = @[]): Mesh = 
-  result = Mesh(
+proc newGenericMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[T] = @[], indices: seq[Index] = @[]): GenericMesh[T] = 
+  result = GenericMesh[T](
     isStatic: isStatic, 
-    attributes: attrs, 
     primitiveType: primitiveType, 
     vertices: vertices, 
     indices: indices,
@@ -548,13 +549,64 @@ proc newMesh*(attrs: seq[VertexAttribute], isStatic: bool = false, primitiveType
     indexBuffer: glGenBuffer()
   )
 
-  #calculate total vertex size
-  for attr in result.attributes.mitems:
-    #calculate vertex offset
-    attr.offset = result.vertexSize
-    result.vertexSize += attr.size().GLsizei
+proc newMesh*(isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[Vert2] = @[], indices: seq[Index] = @[]): Mesh =
+  newGenericMesh[Vert2](isStatic, primitiveType, vertices, indices)
 
-proc beginBind(mesh: Mesh, shader: Shader) =
+#is is assumed the mesh is called 'mesh', the shader is called 'shader' and vsize is the vertex size
+macro enableAttributes(vert: typed): untyped =
+  let vertexType = vert.getType()[1]
+  result = newStmtList()
+
+  for identDefs in getImpl(vertexType)[2][2]:
+    let t = identDefs[^2]
+    let fieldType = t.getType()
+    let typeName = $t
+
+    for i in 0 .. identDefs.len - 3:
+      let field = identDefs[i]
+      let name = $field
+      let alias = "a_" & name
+      
+      var components = 1
+      var componentType = cGlFloat
+      var normalized = false
+
+      #using string comparisons here because Vec3 isn't imported; otherwise I would use 'is'
+      if typeName == "Vec2":
+        components = 2
+      elif typeName == "Vec3":
+        components = 3
+      elif typeName == "Color":
+        components = 4
+        normalized = true
+        componentType = GlUnsignedByte
+      elif typeName == "float32": discard #nothing different here
+      elif typeName == "uint16": componentType = GlUnsignedShort
+      elif typeName == "int16": componentType = cGlShort
+      elif typeName == "uint8": componentType = GlUnsignedByte
+      elif typeName == "int8": componentType = cGlByte
+      else: error("Unknown vertex component type: " & $typeName)
+
+      result.add quote do:
+        let loc = shader.getAttributeLoc(`alias`)
+        if loc != -1:
+          glEnableVertexAttribArray(loc.GLuint)
+          glVertexAttribPointer(loc.GLuint, `components`, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
+
+#is is assumed the mesh is called 'mesh' and the shader is called 'shader'
+macro disableAttributes(vert: typed): untyped =
+  let vertexType = vert.getType()[1]
+  result = newStmtList()
+
+  for identDefs in getImpl(vertexType)[2][2]:
+    for i in 0 .. identDefs.len - 3:
+      let alias = "a_" & $identDefs[i]
+
+      result.add quote do:
+        if shader.attributes.hasKey(`alias`):
+          glDisableVertexAttribArray(shader.attributes[`alias`].location.GLuint)
+
+proc beginBind[T](mesh: GenericMesh[T], shader: Shader) =
   #draw usage
   let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
 
@@ -565,11 +617,14 @@ proc beginBind(mesh: Mesh, shader: Shader) =
   if mesh.indices.len > 0:
     glBindBuffer(GlElementArrayBuffer, mesh.indexBuffer)
 
+  let vsize = mesh.vertexSize
+
+  #TODO everything was in floats. now it's in vertices
   #update vertices if modified
   if mesh.modifiedVert:
-    glBufferData(GlArrayBuffer, mesh.vertices.len * 4, mesh.vertices[0].addr, usage)
+    glBufferData(GlArrayBuffer, mesh.vertices.len * vsize, mesh.vertices[0].addr, usage)
   elif mesh.vertSlice.b != 0:
-    glBufferSubData(GlArrayBuffer, mesh.vertSlice.a * 4, mesh.vertSlice.len * 4, mesh.vertices[mesh.vertSlice.a].addr)
+    glBufferSubData(GlArrayBuffer, mesh.vertSlice.a * vsize, mesh.vertSlice.len * vsize, mesh.vertices[mesh.vertSlice.a].addr)
   
   #update indices if relevant and modified
   if mesh.modifiedInd and mesh.indices.len > 0:
@@ -582,40 +637,47 @@ proc beginBind(mesh: Mesh, shader: Shader) =
   mesh.modifiedVert = false
   mesh.modifiedInd = false
 
-  for attrib in mesh.attributes:
-    let loc = shader.getAttributeLoc(attrib.alias)
-    if loc != -1:
-      glEnableVertexAttribArray(loc.GLuint)
-      glVertexAttribPointer(loc.GLuint, attrib.components, attrib.componentType, attrib.normalized, mesh.vertexSize, 
-        cast[pointer](attrib.offset));
+  enableAttributes(T)
 
-proc endBind(mesh: Mesh, shader: Shader) =
+proc endBind[T](mesh: GenericMesh[T], shader: Shader) =
   #TODO may not be necessary
-  for attrib in mesh.attributes:
-    if shader.attributes.hasKey(attrib.alias):
-      glDisableVertexAttribArray(shader.attributes[attrib.alias].location.GLuint)
+  disableAttributes(T)
 
-proc render*(mesh: Mesh, shader: Shader, offset = 0, count = mesh.vertices.len) =
+#offset and count are in vertices, not floats!
+proc render*[T](mesh: GenericMesh[T], shader: Shader, offset = 0, count = -1) =
+  let pcount = if count < 0: mesh.vertices.len else: count
   shader.use() #binds the shader if it isn't already bound
 
   beginBind(mesh, shader)
 
-  if mesh.indices.len == 0:
-    glDrawArrays(mesh.primitiveType, (offset.GLint * 4) div mesh.vertexSize, (count.Glint * 4) div mesh.vertexSize)
+  let vsize = mesh.vertexSize
+  if mesh.indices.len == 0: #TODO vsize incorrect
+    glDrawArrays(mesh.primitiveType, offset.GLint, (vsize * pcount).GLsizei)
   else:
-    glDrawElements(mesh.primitiveType, count.Glint, GlUnsignedShort, cast[pointer](offset * Glushort.sizeof))
+    glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](offset * Glushort.sizeof))
   
   endBind(mesh, shader)
 
-#creates a mesh with position and tex coordinate attributes that covers the screen.
-proc newScreenMesh*(): Mesh = newMesh(@[attribPos, attribTexCoords], isStatic = true, primitiveType = GlTriangleFan, vertices = @[-1f, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1])
+template vert2*(apos, auv: Vec2, acolor = colorWhite, amixcolor = colorClear): Vert2 = Vert2(pos: apos, uv: auv, color: acolor, mixcolor: amixcolor)
+template vert2*(x, y, u, v: float32, acolor = colorWhite, amixcolor = colorClear): Vert2 = Vert2(pos: vec2(x, y), uv: vec2(u, v), color: acolor, mixcolor: amixcolor)
+template svert2*(x, y, u, v: float32): SVert2 = SVert2(pos: vec2(x, y), uv: vec2(u, v))
 
-#FRAMEBUFFER
+#creates a mesh with position and tex coordinate attributes that covers the screen.
+proc newScreenMesh*(): ScreenMesh = 
+  newGenericMesh[SVert2](isStatic = true, primitiveType = GlTriangleFan, vertices = @[
+    svert2(-1f, -1, 0, 0), 
+    svert2(1, -1, 1, 0), 
+    svert2(1, 1, 1, 1), 
+    svert2(-1, 1, 0, 1)
+  ])
+
+#endregion
+#region FRAMEBUFFER
 
 #accessors; read-only
 proc width*(buffer: Framebuffer): int {.inline.} = buffer.width
 proc height*(buffer: Framebuffer): int {.inline.} = buffer.height
-proc wh*(buffer: Framebuffer): Vec2 {.inline.} = vec2(buffer.width, buffer.height)
+proc size*(buffer: Framebuffer): Vec2 {.inline.} = vec2(buffer.width.float32, buffer.height.float32)
 proc texture*(buffer: Framebuffer): Texture {.inline.} = buffer.texture
 
 proc resize*(buffer: Framebuffer, fwidth, fheight: int) =
@@ -682,7 +744,8 @@ proc use(buffer: Framebuffer) =
   glBindFramebuffer(GlFramebuffer, buffer.handle)
   glViewport(0, 0, buffer.width.Glsizei, buffer.height.Glsizei)
 
-#ATLAS
+#endregion
+#region ATLAS
 
 import strformat
 
@@ -732,9 +795,7 @@ proc patch*(name: string): Patch {.inline.} = fau.atlas[name]
 
 proc patch9*(name: string): Patch9 {.inline.} = fau.atlas.patches9.getOrDefault(name, fau.atlas.error9)
 
-const
-  vertexSize = 2 + 2 + 1 + 1
-  spriteSize = 4 * vertexSize
+#endregion
 
 proc fireFauEvent*(ev: FauEvent) =
   for l in fau.listeners: l(ev)
@@ -752,9 +813,8 @@ proc project*(cam: Cam, vec: Vec2): Vec2 =
   let pro = vec * cam.mat
   return vec2(fau.widthf * (1) / 2 + pro.x, fau.heightf * ( 1) / 2 + pro.y)
 
-proc mouse*(): Vec2 = fau.mouse
-proc mouseWorld*(): Vec2 = fau.cam.unproject(fau.mouse)
-proc screen*(): Vec2 = vec2(fau.width.float32, fau.height.float32)
+proc mouseWorld*(fau: FauState): Vec2 = fau.cam.unproject(fau.mouse)
+proc screen*(fau: FauState): Vec2 {.inline.} = vec2(fau.width.float32, fau.height.float32)
 
 #Batch methods
 proc flush(batch: Batch) =
@@ -770,7 +830,7 @@ proc flush(batch: Batch) =
   shader.setmat4("u_proj", fau.batchMat)
 
   batch.mesh.updateVertices(0..<batch.index)
-  batch.mesh.render(shader, 0, batch.index div spriteSize * 6)
+  batch.mesh.render(shader, 0, batch.index div 4 * 6) #TODO likely incorrect!
   
   batch.index = 0
 
@@ -779,7 +839,7 @@ proc prepare(batch: Batch, texture: Texture) =
     batch.flush()
     batch.lastTexture = texture
 
-proc drawRaw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat], z: float32) =
+proc drawRaw(batch: Batch, texture: Texture, vertices: array[4, Vert2], z: float32) =
   if fau.batchSort:
     batch.reqs.add(Req(kind: reqVert, tex: texture, verts: vertices, blend: fau.batchBlending, z: z))
   else:
@@ -790,10 +850,10 @@ proc drawRaw(batch: Batch, texture: Texture, vertices: array[spriteSize, Glfloat
       idx = batch.index
 
     #copy over the vertices
-    for i in 0..<spriteSize:
+    for i in 0..<4:
       verts[i + idx] = vertices[i]
 
-    batch.index += spriteSize
+    batch.index += 4
 
 proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, originY, rotation: float32, color, mixColor: Color) =
   if fau.batchSort:
@@ -811,10 +871,10 @@ proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, origi
         v2 = region.v
         idx = batch.index
         verts = addr batch.mesh.vertices
-        cf = color.f
-        mf = mixColor.f
+        cf = color
+        mf = mixColor
 
-      verts.minsert(idx, [x, y, u, v, cf, mf, x, y2, u, v2, cf, mf, x2, y2, u2, v2, cf, mf, x2, y, u2, v, cf, mf])
+      verts.minsert(idx, [vert2(x, y, u, v, cf, mf), vert2(x, y2, u, v2, cf, mf), vert2(x2, y2, u2, v2, cf, mf), vert2(x2, y, u2, v, cf, mf)])
     else:
       let
         #bottom left and top right corner points relative to origin
@@ -841,21 +901,20 @@ proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, origi
         v2 = region.v
         idx = batch.index
         verts = addr batch.mesh.vertices
-        cf = color.f
-        mf = mixColor.f
+        cf = color
+        mf = mixColor
 
-      verts.minsert(idx, [x1, y1, u, v, cf, mf, x2, y2, u, v2, cf, mf, x3, y3, u2, v2, cf, mf, x4, y4, u2, v, cf, mf])
+      verts.minsert(idx, [vert2(x1, y1, u, v, cf, mf), vert2(x2, y2, u, v2, cf, mf), vert2(x3, y3, u2, v2, cf, mf), vert2(x4, y4, u2, v, cf, mf)])
 
-    batch.index += spriteSize
+    batch.index += 4
 
 proc newBatch*(size: int = 4092): Batch = 
   let batch = Batch(
     mesh: newMesh(
-      @[attribPos, attribTexCoords, attribColor, attribMixColor],
-      vertices = newSeq[Glfloat](size * spriteSize),
-      indices = newSeq[Glushort](size * 6)
+      vertices = newSeq[Vert2](size * 4),
+      indices = newSeq[Index](size * 6)
     ),
-    size: size * spriteSize
+    size: size * 4
   )
 
   #set up default indices
@@ -872,31 +931,31 @@ proc newBatch*(size: int = 4092): Batch =
   #create default shader
   batch.shader = newShader(
   """
-  attribute vec4 a_position;
+  attribute vec4 a_pos;
   attribute vec4 a_color;
-  attribute vec2 a_texc;
+  attribute vec2 a_uv;
   attribute vec4 a_mixcolor;
   uniform mat4 u_proj;
   varying vec4 v_color;
   varying vec4 v_mixcolor;
-  varying vec2 v_texc;
+  varying vec2 v_uv;
   void main(){
     v_color = a_color;
     v_color.a = v_color.a * (255.0/254.0);
     v_mixcolor = a_mixcolor;
     v_mixcolor.a = v_mixcolor.a * (255.0/254.0);
-    v_texc = a_texc;
-    gl_Position = u_proj * a_position;
+    v_uv = a_uv;
+    gl_Position = u_proj * a_pos;
   }
   """,
 
   """
   varying lowp vec4 v_color;
   varying lowp vec4 v_mixcolor;
-  varying vec2 v_texc;
+  varying vec2 v_uv;
   uniform sampler2D u_texture;
   void main(){
-    vec4 c = texture2D(u_texture, v_texc);
+    vec4 c = texture2D(u_texture, v_uv);
     gl_FragColor = v_color * mix(c, vec4(v_mixcolor.rgb, c.a), v_mixcolor.a);
   }
   """)
@@ -968,33 +1027,34 @@ proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
   draw(z - spread, layerBegin)
   draw(z + spread, layerEnd)
 
-proc draw*(region: Patch, x, y: float32, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+proc draw*(region: Patch, pos: Vec2, size = region.size * fau.pixelScl,
   z = 0f,
-  xscl: float32 = 1.0, yscl: float32 = 1.0,
-  originX = width * 0.5 * xscl, originY = height * 0.5 * yscl, rotation = 0f, align = daCenter,
+  scl = vec2(1f),
+  origin = size * 0.5f * scl, 
+  rotation = 0f, align = daCenter,
   color = colorWhite, mixColor = colorClear) {.inline.} =
 
   let 
     alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
     alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
 
-  fau.batch.drawRaw(region, x - width * alignH * xscl, y - height * alignV * yscl, z, width * xscl, height * yscl, originX, originY, rotation, color, mixColor)
+  fau.batch.drawRaw(region, pos.x - size.x * alignH * scl.x, pos.y - size.y * alignV * scl.y, z, size.x * scl.x, size.y * scl.y, origin.x, origin.y, rotation, color, mixColor)
 
 #draws a region with rotated bits
-proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int): Vec2, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
+proc drawv*(region: Patch, pos: Vec2, mutator: proc(pos: Vec2, idx: int): Vec2, size: Vec2 = region.size * fau.pixelScl,
   z = 0f,
-  originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
+  origin = size * 0.5f, rotation = 0f, align = daCenter,
   color = colorWhite, mixColor = colorClear) =
   
   let
     alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
     alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
-    worldOriginX: float32 = x + originX - width * alignH
-    worldOriginY: float32 = y + originY - height * alignV
-    fx: float32 = -originX
-    fy: float32 = -originY
-    fx2: float32 = width - originX
-    fy2: float32 = height - originY
+    worldOriginX: float32 = pos.x + origin.x - size.x * alignH
+    worldOriginY: float32 = pos.y + origin.y - size.y * alignV
+    fx: float32 = -origin.x
+    fy: float32 = -origin.y
+    fx2: float32 = size.x - origin.x
+    fy2: float32 = size.y - origin.y
     cos: float32 = cos(rotation.degToRad)
     sin: float32 = sin(rotation.degToRad)
     x1 = cos * fx - sin * fy + worldOriginX
@@ -1009,29 +1069,29 @@ proc drawv*(region: Patch, x, y: float32, mutator: proc(x, y: float32, idx: int)
     v = region.v2
     u2 = region.u2
     v2 = region.v
-    cor1 = mutator(x1, y1, 0)
-    cor2 = mutator(x2, y2, 1)
-    cor3 = mutator(x3, y3, 2)
-    cor4 = mutator(x4, y4, 3)
-    cf = color.f
-    mf = mixColor.f
+    cor1 = mutator(vec2(x1, y1), 0)
+    cor2 = mutator(vec2(x2, y2), 1)
+    cor3 = mutator(vec2(x3, y3), 2)
+    cor4 = mutator(vec2(x4, y4), 3)
+    cf = color
+    mf = mixColor
 
-  fau.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, cf, mf, cor2.x, cor2.y, u, v2, cf, mf, cor3.x, cor3.y, u2, v2, cf, mf, cor4.x, cor4.y, u2, v, cf, mf], z)
+  fau.batch.drawRaw(region.texture, [vert2(cor1.x, cor1.y, u, v, cf, mf), vert2(cor2.x, cor2.y, u, v2, cf, mf), vert2(cor3.x, cor3.y, u2, v2, cf, mf), vert2(cor4.x, cor4.y, u2, v, cf, mf)], z)
 
 #draws a region with rotated bits
-proc drawv*(region: Patch, x, y: float32, c1 = vec2(0, 0), c2 = vec2(0, 0), c3 = vec2(0, 0), c4 = vec2(0, 0), z = 0f, width = region.widthf * fau.pixelScl, height = region.heightf * fau.pixelScl,
-  originX = width * 0.5, originY = height * 0.5, rotation = 0f, align = daCenter,
+proc drawv*(region: Patch, pos: Vec2, c1 = vec2(0, 0), c2 = vec2(0, 0), c3 = vec2(0, 0), c4 = vec2(0, 0), z = 0f, size = region.size * fau.pixelScl,
+  origin = size * 0.5f, rotation = 0f, align = daCenter,
   color = colorWhite, mixColor = colorClear) =
 
   let
     alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
     alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
-    worldOriginX: float32 = x + originX - width * alignH
-    worldOriginY: float32 = y + originY - height * alignV
-    fx: float32 = -originX
-    fy: float32 = -originY
-    fx2: float32 = width - originX
-    fy2: float32 = height - originY
+    worldOriginX: float32 = pos.x + origin.x - size.x * alignH
+    worldOriginY: float32 = pos.y + origin.y - size.y * alignV
+    fx: float32 = -origin.x
+    fy: float32 = -origin.y
+    fx2: float32 = size.x - origin.x
+    fy2: float32 = size.y - origin.y
     cos: float32 = cos(rotation.degToRad)
     sin: float32 = sin(rotation.degToRad)
     x1 = cos * fx - sin * fy + worldOriginX
@@ -1050,16 +1110,16 @@ proc drawv*(region: Patch, x, y: float32, c1 = vec2(0, 0), c2 = vec2(0, 0), c3 =
     cor2 = c2 + vec2(x2, y2)
     cor3 = c3 + vec2(x3, y3)
     cor4 = c4 + vec2(x4, y4)
-    cf = color.f
-    mf = mixColor.f
+    cf = color
+    mf = mixColor
 
-  fau.batch.drawRaw(region.texture, [cor1.x, cor1.y, u, v, cf, mf, cor2.x, cor2.y, u, v2, cf, mf, cor3.x, cor3.y, u2, v2, cf, mf, cor4.x, cor4.y, u2, v, cf, mf], z)
+  fau.batch.drawRaw(region.texture, [vert2(cor1.x, cor1.y, u, v, cf, mf), vert2(cor2.x, cor2.y, u, v2, cf, mf), vert2(cor3.x, cor3.y, u2, v2, cf, mf), vert2(cor4.x, cor4.y, u2, v, cf, mf)], z)
 
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, originY = 0f,
   rotation = 0f, color = colorWhite, mixColor = colorClear, z: float32 = 0.0) {.inline.} =
   fau.batch.drawRaw(region, x, y, z, width, height, originX, originY, rotation, color, mixColor)
 
-proc drawVert*(texture: Texture, vertices: array[24, Glfloat], z: float32 = 0) {.inline.} = 
+proc drawVert*(texture: Texture, vertices: array[4, Vert2], z: float32 = 0) {.inline.} = 
   fau.batch.drawRaw(texture, vertices, z)
 
 proc draw*(p: Patch9, x, y, width, height: float32, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
@@ -1087,14 +1147,6 @@ proc draw*(p: Patch9, x, y, width, height: float32, z: float32 = 0f, color = col
   drawRect(p.patches[7], x + p.left * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, width - (p.right + p.left) * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
   #top right
   drawRect(p.patches[8], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, p.right * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
-
-proc readPixels*(x, y, w, h: int): pointer =
-  ## Reads pixels from the screen and returns a pointer to RGBA data.
-  ## The result MUST be deallocated after use!
-  var pixels = alloc(w * h * 4)
-  glPixelStorei(GlPackAlignment, 1.Glint)
-  glReadPixels(x.GLint, y.GLint, w.GLint, h.GLint, GlRgba, GlUnsignedByte, pixels)
-  return pixels
 
 #Activates a camera.
 proc use*(cam: Cam) =
@@ -1151,7 +1203,7 @@ proc clear*(buffer: Framebuffer, color = colorClear) =
 
 #Blits a framebuffer as a sorted rect.
 proc blit*(buffer: Framebuffer, z: float32 = 0, color: Color = colorWhite) =
-  draw(buffer.texture, fau.cam.pos.x, fau.cam.pos.y, z = z, color = color, width = fau.cam.size.x, height = -fau.cam.size.y)
+  draw(buffer.texture, fau.cam.pos, z = z, color = color, size = fau.cam.size * vec2(1, -1))
 
 #Blits a framebuffer immediately as a fullscreen quad. Does not use batch.
 proc blitQuad*(buffer: Framebuffer, shader = fau.screenspace, unit = 0) =

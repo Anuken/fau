@@ -105,29 +105,35 @@ type ShaderObj = object
   attributes: Table[string, ShaderAttr]
 type Shader* = ref ShaderObj
 
-#A single mesh vertex attribute.
-type VertexAttribute* = object
-  componentType: Glenum
-  components: GLint
-  normalized: bool
-  offset: int
-  alias: string
+#Vertex index.
+type Index* = GLushort
+
+#Basic 2D vertex.
+type Vert2* = object
+  pos: Vec2
+  uv: Vec2
+  color, mixcolor: Color
+
+#Uncolored 2D vertex
+type SVert2* = object
+  pos: Vec2
+  uv: Vec2
 
 #Generic mesh, optionally indexed.
-type MeshObj = object
-  vertices*: seq[GLfloat]
+type MeshObj[V] = object
+  vertices*: seq[V]
   indices*: seq[Glushort]
   vertexBuffer: GLuint
   indexBuffer: GLuint
-  attributes: seq[VertexAttribute]
   isStatic: bool
   modifiedVert: bool
   modifiedInd: bool
   vertSlice: Slice[int]
   indSlice: Slice[int]
   primitiveType*: GLenum
-  vertexSize: Glsizei
-type Mesh* = ref MeshObj
+type GenericMesh*[T] = ref MeshObj[T] #TODO bad name
+type Mesh* = GenericMesh[Vert2]
+type ScreenMesh* = GenericMesh[SVert2]
 
 #OpenGL Framebuffer wrapper.
 type FramebufferObj = object
@@ -146,6 +152,7 @@ type Atlas* = ref object
   error*: Patch
   error9*: Patch9
 
+#TODO use vec2 for xy, origin, size
 type
   ReqKind = enum
     reqVert,
@@ -156,7 +163,7 @@ type
     z: float32
     case kind: ReqKind:
     of reqVert:
-      verts: array[24, Glfloat]
+      verts: array[4, Vert2]
       tex: Texture
     of reqRect:
       patch: Patch
@@ -201,7 +208,7 @@ type FauState = object
   #The global camera.
   cam*: Cam
   #Fullscreen quad mesh.
-  quad*: Mesh
+  quad*: ScreenMesh
   #Screenspace shader
   screenspace*: Shader
   #Currently bound framebuffers

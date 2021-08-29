@@ -1,7 +1,7 @@
 
 import math, fmath
 
-# VECTORS
+#region VECTORS
 
 type Vec3* = object
   x*, y*, z*: float32
@@ -67,7 +67,8 @@ func within*(vec: Vec3, other: Vec3, distance: float32): bool {.inline.} = vec.d
 
 proc `$`*(vec: Vec3): string = $vec.x & ", " & $vec.y & ", " & $vec.z
 
-# MATRICES
+#endregion
+#region MATRICES
 
 const
   M00 = 0
@@ -241,7 +242,8 @@ proc lookAt3*(position, target, up: Vec3): Mat3 =
   #TODO trans3 + multiply
   return lookAt3(target - position, up) * trans3(-position)
 
-# PLANE
+#endregion
+#region 3D STRUCTURES
 
 type Plane* = object
   #plane normal direction
@@ -314,7 +316,8 @@ proc contains*(self: Frustum, center: Vec3, radius: float32): bool =
       return false
   return true
 
-# CAMERAS
+#endregion
+#region CAMERA
 
 #3D camera - TODO make object, or not?
 type Cam3* = ref object
@@ -403,3 +406,5 @@ proc project*(cam: Cam3, coords: Vec3, viewPos: Vec2 = vec2(0, 0), viewSize: Vec
 proc pickRay*(cam: Cam3, coords: Vec2, viewPos = vec2(0, 0), viewSize = cam.size): Ray =
   result.origin = cam.unproject(vec3(coords, 0f), viewPos, viewSize)
   result.direction = (cam.unproject(vec3(coords, 1f), viewPos, viewSize) - result.origin).nor
+
+#endregion
