@@ -197,6 +197,11 @@ func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} =
   let invAlpha = 1.0f - alpha
   return vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
 
+func floor*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.floor, vec.y.floor)
+
+#returns this vector's x/y aspect ratio
+func ratio*(vec: Vec2): float32 {.inline.} = vec.x / vec.y
+
 #all angles are in radians
 
 func angle*(vec: Vec2): float32 {.inline.} = 
@@ -275,6 +280,7 @@ type Rect* = object
 
 proc rect*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x, y: y, w: w, h: h)
 proc rect*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: w, h: h)
+proc rect*(xy: Vec2, size: Vec2): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: size.x, h: size.y)
 proc rectCenter*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x - w/2.0, y: y - h/2.0, w: w, h: h)
 proc rectCenter*(x, y, s: float32): Rect {.inline.} = Rect(x: x - s/2.0, y: y - s/2.0, w: s, h: s)
 
@@ -389,7 +395,6 @@ proc collidesTiles*(box: Rect, solidity: proc(x, y: int): bool): bool =
   return false
 
 
-#3x3 matrix for 2D transformations
 const 
   M00 = 0
   M01 = 3
@@ -401,25 +406,23 @@ const
   M21 = 5
   M22 = 8
 
-type Mat* = object
-  val*: array[9, float32]
-
-proc newMat*(values: array[9, float32]): Mat {.inline.} = Mat(val: values)
+#3x3 matrix for 2D transformations
+type Mat* = array[9, float32]
 
 #converts a 2D orthographics 3x3 matrix to a 4x4 matrix for shaders
 proc toMat4*(matrix: Mat): array[16, float32] =
-  result[4] = matrix.val[M01]
-  result[1] = matrix.val[M10]
+  result[4] = matrix[M01]
+  result[1] = matrix[M10]
 
-  result[0] = matrix.val[M00]
-  result[5] = matrix.val[M11]
-  result[10] = matrix.val[M22]
-  result[12] = matrix.val[M02]
-  result[13] = matrix.val[M12]
+  result[0] = matrix[M00]
+  result[5] = matrix[M11]
+  result[10] = matrix[M22]
+  result[12] = matrix[M02]
+  result[13] = matrix[M12]
   result[15] = 1
 
 #creates an identity matrix
-proc idt*(): Mat = newMat [1f, 0, 0, 0, 1, 0, 0, 0, 1]
+proc idt*(): Mat = [1f, 0, 0, 0, 1, 0, 0, 0, 1]
 
 #orthographic projection matrix
 proc ortho*(x, y, width, height: float32): Mat =
@@ -430,45 +433,44 @@ proc ortho*(x, y, width, height: float32): Mat =
   let tx = -(right + x) / (right - x);
   let ty = -(top + y) / (top - y);
 
-  return Mat(val: [xOrth, 0, 0, 0, yOrth, 0, tx, ty, 1])
+  return [xOrth, 0, 0, 0, yOrth, 0, tx, ty, 1]
 
-proc `*`*(self: Mat, m: Mat): Mat =
-  return newMat [
-    self.val[M00] * m.val[M00] + self.val[M01] * m.val[M10] + self.val[M02] * m.val[M20], 
-    self.val[M00] * m.val[M01] + self.val[M01] * m.val[M11] + self.val[M02] * m.val[M21],
-    self.val[M00] * m.val[M02] + self.val[M01] * m.val[M12] + self.val[M02] * m.val[M22],
+proc ortho*(pos, size: Vec2): Mat {.inline.} = ortho(pos.x, pos.y, size.x, size.y)
 
-    self.val[M10] * m.val[M00] + self.val[M11] * m.val[M10] + self.val[M12] * m.val[M20],
-    self.val[M10] * m.val[M01] + self.val[M11] * m.val[M11] + self.val[M12] * m.val[M21],
-    self.val[M10] * m.val[M02] + self.val[M11] * m.val[M12] + self.val[M12] * m.val[M22],
-
-    self.val[M20] * m.val[M00] + self.val[M21] * m.val[M10] + self.val[M22] * m.val[M20],
-    self.val[M20] * m.val[M01] + self.val[M21] * m.val[M11] + self.val[M22] * m.val[M21],
-    self.val[M20] * m.val[M02] + self.val[M21] * m.val[M12] + self.val[M22] * m.val[M22]
+proc `*`*(a: Mat, b: Mat): Mat = [
+    a[M00] * b[M00] + a[M01] * b[M10] + a[M02] * b[M20], 
+    a[M00] * b[M01] + a[M01] * b[M11] + a[M02] * b[M21],
+    a[M00] * b[M02] + a[M01] * b[M12] + a[M02] * b[M22],
+    a[M10] * b[M00] + a[M11] * b[M10] + a[M12] * b[M20],
+    a[M10] * b[M01] + a[M11] * b[M11] + a[M12] * b[M21],
+    a[M10] * b[M02] + a[M11] * b[M12] + a[M12] * b[M22],
+    a[M20] * b[M00] + a[M21] * b[M10] + a[M22] * b[M20],
+    a[M20] * b[M01] + a[M21] * b[M11] + a[M22] * b[M21],
+    a[M20] * b[M02] + a[M21] * b[M12] + a[M22] * b[M22]
   ]
 
 proc det*(self: Mat): float32 =
-  return self.val[M00] * self.val[M11] * self.val[M22] + self.val[M01] * self.val[M12] * self.val[M20] + self.val[M02] * self.val[M10] * self.val[M21] -
-    self.val[M00] * self.val[M12] * self.val[M21] - self.val[M01] * self.val[M10] * self.val[M22] - self.val[M02] * self.val[M11] * self.val[M20]
+  return self[M00] * self[M11] * self[M22] + self[M01] * self[M12] * self[M20] + self[M02] * self[M10] * self[M21] -
+    self[M00] * self[M12] * self[M21] - self[M01] * self[M10] * self[M22] - self[M02] * self[M11] * self[M20]
 
 proc inv*(self: Mat): Mat =
   let invd = 1 / self.det()
 
   if invd == 0.0: raise newException(Exception, "Can't invert a singular matrix")
 
-  return newMat [
-    (self.val[M11] * self.val[M22] - self.val[M21] * self.val[M12]) * invd,
-    (self.val[M20] * self.val[M12] - self.val[M10] * self.val[M22]) * invd,
-    (self.val[M10] * self.val[M21] - self.val[M20] * self.val[M11]) * invd,
-    (self.val[M21] * self.val[M02] - self.val[M01] * self.val[M22]) * invd,
-    (self.val[M00] * self.val[M22] - self.val[M20] * self.val[M02]) * invd,
-    (self.val[M20] * self.val[M01] - self.val[M00] * self.val[M21]) * invd,
-    (self.val[M01] * self.val[M12] - self.val[M11] * self.val[M02]) * invd,
-    (self.val[M10] * self.val[M02] - self.val[M00] * self.val[M12]) * invd,
-    (self.val[M00] * self.val[M11] - self.val[M10] * self.val[M01]) * invd
+  return [
+    (self[M11] * self[M22] - self[M21] * self[M12]) * invd,
+    (self[M20] * self[M12] - self[M10] * self[M22]) * invd,
+    (self[M10] * self[M21] - self[M20] * self[M11]) * invd,
+    (self[M21] * self[M02] - self[M01] * self[M22]) * invd,
+    (self[M00] * self[M22] - self[M20] * self[M02]) * invd,
+    (self[M20] * self[M01] - self[M00] * self[M21]) * invd,
+    (self[M01] * self[M12] - self[M11] * self[M02]) * invd,
+    (self[M10] * self[M02] - self[M00] * self[M12]) * invd,
+    (self[M00] * self[M11] - self[M10] * self[M01]) * invd
   ]
 
-proc `*`*(self: Vec2, mat: Mat): Vec2 = vec2(self.x * mat.val[0] + self.y * mat.val[3] + mat.val[6], self.x * mat.val[1] + self.y * mat.val[4] + mat.val[7])
+proc `*`*(self: Vec2, mat: Mat): Vec2 = vec2(self.x * mat[0] + self.y * mat[3] + mat[6], self.x * mat[1] + self.y * mat[4] + mat[7])
 
 #PARTICLES
 

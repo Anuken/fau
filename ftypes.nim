@@ -51,8 +51,11 @@ type FauListener* = proc(e: FauEvent)
 
 #basic camera
 type Cam* = ref object
+  #world position
   pos*: Vec2
-  w*, h*: float32
+  #viewport size
+  size*: Vec2
+  #projection and inverse projection matrix
   mat*, inv*: Mat
 
 #defines a RGBA color

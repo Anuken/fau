@@ -53,20 +53,22 @@ template staticReadStream*(filename: string): StringStream =
 
 #RENDERING
 
+proc width*(cam: Cam): float32 {.inline.} = cam.size.x
+proc height*(cam: Cam): float32 {.inline.} = cam.size.y
+
 proc update*(cam: Cam) = 
-  cam.mat = ortho(cam.pos.x - cam.w/2, cam.pos.y - cam.h/2, cam.w, cam.h)
+  cam.mat = ortho(cam.pos - cam.size/2f, cam.size)
   cam.inv = cam.mat.inv()
 
 proc newCam*(w: float32 = 1, h: float32 = 1): Cam = 
-  result = Cam(pos: vec2(0.0, 0.0), w: w, h: h)
+  result = Cam(pos: vec2(0.0, 0.0), size: vec2(w, h))
   result.update()
 
 proc resize*(cam: Cam, w, h: float32) = 
-  cam.w = w
-  cam.h = h
+  cam.size = vec2(w, h)
   cam.update()
 
-proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos.x - cam.w/2f, cam.pos.y - cam.h/2f, cam.w, cam.h)
+proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)
 
 #just incase something gets messed up somewhere
 static: assert sizeof(Color) == 4, "Size of Color must be 4 bytes, but is " & $sizeof(Color)
@@ -1142,7 +1144,7 @@ proc clear*(buffer: Framebuffer, color = colorClear) =
 
 #Blits a framebuffer as a sorted rect.
 proc blit*(buffer: Framebuffer, z: float32 = 0, color: Color = colorWhite) =
-  draw(buffer.texture, fau.cam.pos.x, fau.cam.pos.y, z = z, color = color, width = fau.cam.w, height = -fau.cam.h)
+  draw(buffer.texture, fau.cam.pos.x, fau.cam.pos.y, z = z, color = color, width = fau.cam.size.x, height = -fau.cam.size.y)
 
 #Blits a framebuffer immediately as a fullscreen quad. Does not use batch.
 proc blitQuad*(buffer: Framebuffer, shader = fau.screenspace, unit = 0) =
