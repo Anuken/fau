@@ -627,7 +627,6 @@ proc beginBind[T](mesh: Mesh[T], shader: Shader) =
 
   let vsize = mesh.vertexSize
 
-  #TODO everything was in floats. now it's in vertices
   #update vertices if modified
   if mesh.modifiedVert:
     glBufferData(GlArrayBuffer, mesh.vertices.len * vsize, mesh.vertices[0].addr, usage)

@@ -241,8 +241,7 @@ proc lookAt3*(direction, up: Vec3): Mat3 =
   result[M22] = -vez.z
 
 proc lookAt3*(position, target, up: Vec3): Mat3 =
-  #TODO trans3 + multiply
-  return lookAt3(target - position, up) * trans3(-position)
+  lookAt3(target - position, up) * trans3(-position)
 
 #endregion
 #region 3D STRUCTURES
