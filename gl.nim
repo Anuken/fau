@@ -43,11 +43,15 @@ var lastBoundTextures: array[32, int]
 var lastProgram = -1
 #last bound buffer
 var lastArrayBuffer = -1
-#enabled state
+#enabled state; TODO might be better as a bitset.
 var lastEnabled: array[36349, bool]
 #blending S/D factor
 var lastSfactor: GLenum = GLOne
 var lastDfactor: GLenum = GlZero
+#last glCullFace activated
+var lastCullFace = GlBack
+#whether depthMask is on
+var lastDepthMask = true
 
 #fill with -1, since no texture can have that value
 for x in lastBoundTextures.mitems: x = -1
@@ -114,7 +118,12 @@ proc glCopyTexImage2D*(target: GLenum, level: GLint, internalformat: GLenum, x: 
 proc glCopyTexSubImage2D*(target: GLenum, level: GLint, xoffset: GLint, yoffset: GLint, x: GLint, y: GLint, width: GLsizei, height: GLsizei) {.inline.} = glCheck(): wrap.glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height)
 proc glCreateProgram*(): GLuint {.inline.} = glCheck(): result = wrap.glCreateProgram()
 proc glCreateShader*(`type`: GLenum): GLuint {.inline.} = glCheck(): result = wrap.glCreateShader(`type`)
-proc glCullFace*(mode: GLenum) {.inline.} = glCheck(): wrap.glCullFace(mode)
+
+proc glCullFace*(mode: GLenum) {.inline.} = 
+  if mode == lastCullFace: return
+  lastCullFace = mode
+  
+  glCheck(): wrap.glCullFace(mode)
 
 proc glDeleteBuffer*(buffer: GLuint) {.inline.} = 
   lastArrayBuffer = -1
@@ -140,7 +149,12 @@ proc glDeleteTexture*(texture: GLuint) {.inline.} =
   glCheck(): wrap.glDeleteTexture(texture)
 
 proc glDepthFunc*(`func`: GLenum) {.inline.} = glCheck(): wrap.glDepthFunc(`func`)
-proc glDepthMask*(flag: GLboolean) {.inline.} = glCheck(): wrap.glDepthMask(flag)
+proc glDepthMask*(flag: GLboolean) {.inline.} = 
+  if lastDepthMask == flag: return
+
+  lastDepthMask = flag
+  
+  glCheck(): wrap.glDepthMask(flag)
 proc glDepthRangef*(n: GLfloat, f: GLfloat) {.inline.} = glCheck(): wrap.glDepthRangef(n, f)
 proc glDetachShader*(program: GLuint, shader: GLuint) {.inline.} = glCheck(): wrap.glDetachShader(program, shader)
 

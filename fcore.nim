@@ -148,20 +148,11 @@ proc use*(blend: Blending) =
 
 #UTILITIES
 
-#TODO remove, only for testing!
-proc depthTest*(on: bool) =
-  #[
-  glDepthMask(true)
-  glCullFace(GlBack)
-  ]#
-  if on:
-    glEnable(GlDepthTest)
-  else:
-    glDisable(GlDepthTest)
-
 proc clearScreen*(col: Color = colorClear) =
   ## Clears the color buffer.
   glClearColor(col.r, col.g, col.b, col.a)
+  #Enables writing to the depth buffer for clearing. TODO may be inefficient?
+  glDepthMask(true)
   #TODO does GlDepthBufferBit incur additional perf penalties when there is no depth buffer?
   glClear(GlColorBufferBit or GlDepthBufferBit)
 
@@ -664,10 +655,18 @@ proc endBind[T](mesh: Mesh[T], shader: Shader) =
   disableAttributes(T)
 
 #offset and count are in vertices, not floats!
-proc render*[T](mesh: Mesh[T], shader: Shader, offset = 0, count = -1) =
+proc render*[T](mesh: Mesh[T], shader: Shader, offset = 0, count = -1, depth = false, writeDepth = true) =
   shader.use() #binds the shader if it isn't already bound
 
   beginBind(mesh, shader)
+
+  #set up depth buffer info
+  if depth:
+    glEnable(GlDepthTest)
+  else:
+    glDisable(GlDepthTest)
+
+  glDepthMask(depth and writeDepth)
 
   let vsize = mesh.vertexSize
   if mesh.indices.len == 0: #TODO vsize incorrect
