@@ -369,7 +369,7 @@ proc update*(cam: Cam3, size = cam.size) =
   if cam.perspective:
     cam.proj = projection3(cam.near.abs, cam.far.abs, cam.fov, cam.size.ratio)
   else:
-    cam.proj = ortho3(-cam.size.x/2f, cam.size.x/2f, -cam.size.y/2f, cam.size.y/2f, cam.near, cam.near)
+    cam.proj = ortho3(-cam.size.x/2f, cam.size.x/2f, -cam.size.y/2f, cam.size.y/2f, cam.near, cam.far)
   
   cam.view = lookAt3(cam.pos, cam.pos + cam.direction, cam.up)
   cam.combined = cam.proj * cam.view
