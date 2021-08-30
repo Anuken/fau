@@ -131,9 +131,12 @@ type MeshObj[V] = object
   vertSlice: Slice[int]
   indSlice: Slice[int]
   primitiveType*: GLenum
-type GenericMesh*[T] = ref MeshObj[T] #TODO bad name
-type Mesh* = GenericMesh[Vert2]
-type ScreenMesh* = GenericMesh[SVert2]
+#Generic mesh
+type Mesh*[T] = ref MeshObj[T]
+#Basic 2D mesh
+type Mesh2* = Mesh[Vert2]
+#Uncolored mesh
+type SMesh* = Mesh[SVert2]
 
 #OpenGL Framebuffer wrapper.
 type FramebufferObj = object
@@ -173,7 +176,7 @@ type
       draw: proc()
 
 type Batch* = ref object
-  mesh: Mesh
+  mesh: Mesh2
   shader: Shader
   lastTexture: Texture
   index: int
@@ -208,7 +211,7 @@ type FauState = object
   #The global camera.
   cam*: Cam
   #Fullscreen quad mesh.
-  quad*: ScreenMesh
+  quad*: SMesh
   #Screenspace shader
   screenspace*: Shader
   #Currently bound framebuffers

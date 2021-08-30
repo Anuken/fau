@@ -1,5 +1,5 @@
 
-import math, fmath
+import math, fmath, fcore
 
 #region VECTORS
 
@@ -9,6 +9,7 @@ type Vec3* = object
 template vec3*(cx, cy: float32, cz = 0f): Vec3 = Vec3(x: cx, y: cy, z: cz)
 template vec2*(vec: Vec3): Vec2 = vec2(vec.x, vec.y)
 template vec3*(vec: Vec2, z = 0f): Vec3 = vec3(vec.x, vec.y, z)
+template vec3*(): Vec3 = Vec3()
 
 template op(td: typedesc, comp: typedesc, cons: typed, op1, op2: untyped): untyped =
   func op1*(vec: td, other: td): td {.inline.} = cons(op1(vec.x, other.x), op1(vec.y, other.y), op1(vec.z, other.z))
@@ -162,31 +163,32 @@ proc inv*(mat: Mat3): Mat3 =
   ]
 
 #multiplies two matrices together
-proc `*`*(a, b: Mat3): Mat3 = [
-  a[M00] * b[M00] + a[M01] * b[M10] + a[M02] * b[M20] + a[M03] * b[M30],
-  a[M00] * b[M01] + a[M01] * b[M11] + a[M02] * b[M21] + a[M03] * b[M31],
-  a[M00] * b[M02] + a[M01] * b[M12] + a[M02] * b[M22] + a[M03] * b[M32],
-  a[M00] * b[M03] + a[M01] * b[M13] + a[M02] * b[M23] + a[M03] * b[M33],
-  a[M10] * b[M00] + a[M11] * b[M10] + a[M12] * b[M20] + a[M13] * b[M30],
-  a[M10] * b[M01] + a[M11] * b[M11] + a[M12] * b[M21] + a[M13] * b[M31],
-  a[M10] * b[M02] + a[M11] * b[M12] + a[M12] * b[M22] + a[M13] * b[M32],
-  a[M10] * b[M03] + a[M11] * b[M13] + a[M12] * b[M23] + a[M13] * b[M33],
-  a[M20] * b[M00] + a[M21] * b[M10] + a[M22] * b[M20] + a[M23] * b[M30],
-  a[M20] * b[M01] + a[M21] * b[M11] + a[M22] * b[M21] + a[M23] * b[M31],
-  a[M20] * b[M02] + a[M21] * b[M12] + a[M22] * b[M22] + a[M23] * b[M32],
-  a[M20] * b[M03] + a[M21] * b[M13] + a[M22] * b[M23] + a[M23] * b[M33],
-  a[M30] * b[M00] + a[M31] * b[M10] + a[M32] * b[M20] + a[M33] * b[M30],
-  a[M30] * b[M01] + a[M31] * b[M11] + a[M32] * b[M21] + a[M33] * b[M31],
-  a[M30] * b[M02] + a[M31] * b[M12] + a[M32] * b[M22] + a[M33] * b[M32],
-  a[M30] * b[M03] + a[M31] * b[M13] + a[M32] * b[M23] + a[M33] * b[M33]
-]
+proc `*`*(a, b: Mat3): Mat3 = 
+  [
+    a[M00] * b[M00] + a[M01] * b[M10] + a[M02] * b[M20] + a[M03] * b[M30],
+    a[M10] * b[M00] + a[M11] * b[M10] + a[M12] * b[M20] + a[M13] * b[M30],
+    a[M20] * b[M00] + a[M21] * b[M10] + a[M22] * b[M20] + a[M23] * b[M30],
+    a[M30] * b[M00] + a[M31] * b[M10] + a[M32] * b[M20] + a[M33] * b[M30],
+    a[M00] * b[M01] + a[M01] * b[M11] + a[M02] * b[M21] + a[M03] * b[M31],
+    a[M10] * b[M01] + a[M11] * b[M11] + a[M12] * b[M21] + a[M13] * b[M31],
+    a[M20] * b[M01] + a[M21] * b[M11] + a[M22] * b[M21] + a[M23] * b[M31],
+    a[M30] * b[M01] + a[M31] * b[M11] + a[M32] * b[M21] + a[M33] * b[M31],
+    a[M00] * b[M02] + a[M01] * b[M12] + a[M02] * b[M22] + a[M03] * b[M32],
+    a[M10] * b[M02] + a[M11] * b[M12] + a[M12] * b[M22] + a[M13] * b[M32],
+    a[M20] * b[M02] + a[M21] * b[M12] + a[M22] * b[M22] + a[M23] * b[M32],
+    a[M30] * b[M02] + a[M31] * b[M12] + a[M32] * b[M22] + a[M33] * b[M32],
+    a[M00] * b[M03] + a[M01] * b[M13] + a[M02] * b[M23] + a[M03] * b[M33],
+    a[M10] * b[M03] + a[M11] * b[M13] + a[M12] * b[M23] + a[M13] * b[M33],
+    a[M20] * b[M03] + a[M21] * b[M13] + a[M22] * b[M23] + a[M23] * b[M33],
+    a[M30] * b[M03] + a[M31] * b[M13] + a[M32] * b[M23] + a[M33] * b[M33] 
+  ]
 
 #note: this crashes the nim compiler:
 #proc prj*[N](vecs: array[N, float32], numVecs = vecs.len): array[N, float32] = discard
 
 #multiplies the vectors with the given matrix, performing a division by w.
-proc prj*[N](mat: Mat3, vecs: array[N, Vec3], offset = 0, numVecs = N): array[N, Vec3] =
-  for i in offset..<(numVecs + offset):
+proc prj*[N](mat: Mat3, vecs: array[N, Vec3]): array[N, Vec3] =
+  for i in 0..<vecs.len:
     result[i] = vec3(
       (vecs[i].x * mat[M00] + vecs[i].y * mat[M01] + vecs[i].z * mat[M02] + mat[M03]),
       (vecs[i].x * mat[M10] + vecs[i].y * mat[M11] + vecs[i].z * mat[M12] + mat[M13]),
@@ -336,15 +338,15 @@ type Cam3* = ref object
   #normalized up vector
   up*: Vec3
   #combined projection and view matrix
-  combined: Mat3
+  combined*: Mat3
   #projection matrix
-  proj: Mat3
+  proj*: Mat3
   #view matrix
-  view: Mat3
+  view*: Mat3
   #inverse combined projection and view matrix
-  invProjView: Mat3
-  #TODO
-  frustum: Frustum
+  invProjView*: Mat3
+  #frustum for clipping
+  frustum*: Frustum
 
 #creates a new camera with standard parameters
 proc newCam3*(): Cam3 = Cam3(
@@ -362,7 +364,8 @@ proc newCam3*(): Cam3 = Cam3(
 )
 
 #updates the camera's view/proj matrix
-proc update*(cam: Cam3) =
+proc update*(cam: Cam3, size = cam.size) =
+  cam.size = size
   if cam.perspective:
     cam.proj = projection3(cam.near.abs, cam.far.abs, cam.fov, cam.size.ratio)
   else:
@@ -408,3 +411,64 @@ proc pickRay*(cam: Cam3, coords: Vec2, viewPos = vec2(0, 0), viewSize = cam.size
   result.direction = (cam.unproject(vec3(coords, 1f), viewPos, viewSize) - result.origin).nor
 
 #endregion
+#region MESH
+
+#generic 3D vertex with a position, normal, color and UV
+type Vert3* = object
+  pos*: Vec3
+  #TODO: this can be packed as 3 bytes with 1 byte wasted, which would save 8 bytes of space
+  #alternatively this can be 3 shorts with 2 bytes wated, which saves 4 bytes of space
+  normal*: Vec3
+  #TODO color may be optional for some models...
+  color*: Color
+  #TODO UVs can be a normalized (u)int16 pair, which would save 4 bytes of space
+  uv*: Vec2
+
+#basic 3D mesh
+type Mesh3* = Mesh[Vert3]
+
+template vert3*(apos, anormal: Vec3, col: Color): Vert3 = Vert3(pos: apos, normal: anormal, color: col)
+
+proc tri*(mesh: Mesh3, v1, v2, v3: Vec3, nor: Vec3, col: Color) =
+  let len = mesh.vertices.len
+  mesh.vertices.add vert3(v1, nor, col)
+  mesh.vertices.add vert3(v2, nor, col)
+  mesh.vertices.add vert3(v3, nor, col)
+
+  mesh.indices.add [Index(len), Index(len + 1), Index(len + 2)]
+
+proc rect*(mesh: Mesh3, v1, v2, v3, v4: Vec3, nor: Vec3, col: Color) =
+  let len = mesh.vertices.len
+  #TODO minsert?
+  mesh.vertices.add [vert3(v1, nor, col), vert3(v2, nor, col), vert3(v3, nor, col), vert3(v4, nor, col)]
+  mesh.indices.add [Index(len), Index(len + 1), Index(len + 2), Index(len + 2), Index(len + 3), Index(len)]
+
+proc makeCube*(pos: Vec3 = vec3(), size: float = 1f, color: Color = colorWhite): Mesh3 =
+  result = newMesh[Vert3]()
+  var points = [
+    vec3(1, 1, 1), 
+    vec3(-1, 1, 1),
+    vec3(-1, 1, -1),
+    vec3(1, 1, -1),
+
+    vec3(1, -1, 1), 
+    vec3(-1, -1, 1),
+    vec3(-1, -1, -1),
+    vec3(1, -1, -1),
+  ]
+
+  for point in points.mitems:
+    point *= size
+  
+  #top, bottom
+  result.rect(points[0], points[1], points[2], points[3], vec3(0, 1, 0), color)
+  result.rect(points[4], points[5], points[6], points[7], vec3(0, -1, 0), color)
+  #left, right
+  result.rect(points[1], points[2], points[6], points[5], vec3(-1, 0, 0), color)
+  result.rect(points[0], points[3], points[7], points[4], vec3(1, 0, 0), color)
+  #front, back
+  result.rect(points[0], points[1], points[5], points[4], vec3(0, 0, 1), color)
+  result.rect(points[2], points[3], points[7], points[6], vec3(0, 0, -1), color)
+
+  #endregion
+    

@@ -148,10 +148,22 @@ proc use*(blend: Blending) =
 
 #UTILITIES
 
+#TODO remove, only for testing!
+proc depthTest*(on: bool) =
+  #[
+  glDepthMask(true)
+  glCullFace(GlBack)
+  ]#
+  if on:
+    glEnable(GlDepthTest)
+  else:
+    glDisable(GlDepthTest)
+
 proc clearScreen*(col: Color = colorClear) =
   ## Clears the color buffer.
   glClearColor(col.r, col.g, col.b, col.a)
-  glClear(GlColorBufferBit)
+  #TODO does GlDepthBufferBit incur additional perf penalties when there is no depth buffer?
+  glClear(GlColorBufferBit or GlDepthBufferBit)
 
 proc readPixels*(x, y, w, h: int): pointer =
   ## Reads pixels from the screen and returns a pointer to RGBA data.
@@ -514,31 +526,31 @@ proc setf*(shader: Shader, name: string, col: Color) = shader.setf(name, col.r, 
 #region MESH
 
 #marks a mesh as modified, so its vertices get reuploaded
-proc update*[T](mesh: GenericMesh[T]) = 
+proc update*[T](mesh: Mesh[T]) = 
   mesh.modifiedVert = true
   mesh.modifiedInd = true
 
 #schedules an index buffer update
-proc updateIndices*[T](mesh: GenericMesh[T]) = mesh.modifiedInd = true
+proc updateIndices*[T](mesh: Mesh[T]) = mesh.modifiedInd = true
 
 #schedules a vertex buffer update
-proc updateVertices*[T](mesh: GenericMesh[T]) = mesh.modifiedVert = true
+proc updateVertices*[T](mesh: Mesh[T]) = mesh.modifiedVert = true
 
 #schedule a vertex buffer update in a slice; grows slice if one is already queued
-proc updateVertices*[T](mesh: GenericMesh[T], slice: Slice[int]) =
+proc updateVertices*[T](mesh: Mesh[T], slice: Slice[int]) =
   mesh.vertSlice.a = min(mesh.vertSlice.a, slice.a)
   mesh.vertSlice.b = max(mesh.vertSlice.b, slice.b)
 
 #schedule an index buffer update in a slice; grows slice if one is already queued
-proc updateIndices*[T](mesh: GenericMesh[T], slice: Slice[int]) =
+proc updateIndices*[T](mesh: Mesh[T], slice: Slice[int]) =
   mesh.indSlice.a = min(mesh.indSlice.a, slice.a)
   mesh.indSlice.b = max(mesh.indSlice.b, slice.b)
 
-proc vertexSize*[T](mesh: GenericMesh[T]): int = T.sizeOf
+proc vertexSize*[T](mesh: Mesh[T]): int = T.sizeOf
 
 #creates a mesh with a set of attributes
-proc newGenericMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[T] = @[], indices: seq[Index] = @[]): GenericMesh[T] = 
-  result = GenericMesh[T](
+proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[T] = @[], indices: seq[Index] = @[]): Mesh[T] = 
+  result = Mesh[T](
     isStatic: isStatic, 
     primitiveType: primitiveType, 
     vertices: vertices, 
@@ -549,8 +561,8 @@ proc newGenericMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriang
     indexBuffer: glGenBuffer()
   )
 
-proc newMesh*(isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[Vert2] = @[], indices: seq[Index] = @[]): Mesh =
-  newGenericMesh[Vert2](isStatic, primitiveType, vertices, indices)
+proc newMesh2*(isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[Vert2] = @[], indices: seq[Index] = @[]): Mesh =
+  newMesh[Vert2](isStatic, primitiveType, vertices, indices)
 
 #is is assumed the mesh is called 'mesh', the shader is called 'shader' and vsize is the vertex size
 macro enableAttributes(vert: typed): untyped =
@@ -563,7 +575,7 @@ macro enableAttributes(vert: typed): untyped =
     let typeName = $t
 
     for i in 0 .. identDefs.len - 3:
-      let field = identDefs[i]
+      let field = if identDefs[i].kind == nnkPostfix: identDefs[i][1] else: identDefs[i]
       let name = $field
       let alias = "a_" & name
       
@@ -581,10 +593,18 @@ macro enableAttributes(vert: typed): untyped =
         normalized = true
         componentType = GlUnsignedByte
       elif typeName == "float32": discard #nothing different here
-      elif typeName == "uint16": componentType = GlUnsignedShort
-      elif typeName == "int16": componentType = cGlShort
-      elif typeName == "uint8": componentType = GlUnsignedByte
-      elif typeName == "int8": componentType = cGlByte
+      elif typeName == "uint16": 
+        componentType = GlUnsignedShort
+        normalized = true
+      elif typeName == "int16": 
+        componentType = cGlShort
+        normalized = true
+      elif typeName == "uint8": 
+        componentType = GlUnsignedByte
+        normalized = true
+      elif typeName == "int8": 
+        componentType = cGlByte
+        normalized = true
       else: error("Unknown vertex component type: " & $typeName)
 
       result.add quote do:
@@ -606,7 +626,7 @@ macro disableAttributes(vert: typed): untyped =
         if shader.attributes.hasKey(`alias`):
           glDisableVertexAttribArray(shader.attributes[`alias`].location.GLuint)
 
-proc beginBind[T](mesh: GenericMesh[T], shader: Shader) =
+proc beginBind[T](mesh: Mesh[T], shader: Shader) =
   #draw usage
   let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
 
@@ -639,21 +659,22 @@ proc beginBind[T](mesh: GenericMesh[T], shader: Shader) =
 
   enableAttributes(T)
 
-proc endBind[T](mesh: GenericMesh[T], shader: Shader) =
+proc endBind[T](mesh: Mesh[T], shader: Shader) =
   #TODO may not be necessary
   disableAttributes(T)
 
 #offset and count are in vertices, not floats!
-proc render*[T](mesh: GenericMesh[T], shader: Shader, offset = 0, count = -1) =
-  let pcount = if count < 0: mesh.vertices.len else: count
+proc render*[T](mesh: Mesh[T], shader: Shader, offset = 0, count = -1) =
   shader.use() #binds the shader if it isn't already bound
 
   beginBind(mesh, shader)
 
   let vsize = mesh.vertexSize
   if mesh.indices.len == 0: #TODO vsize incorrect
+    let pcount = if count < 0: mesh.vertices.len else: count
     glDrawArrays(mesh.primitiveType, offset.GLint, (vsize * pcount).GLsizei)
   else:
+    let pcount = if count < 0: mesh.indices.len else: count
     glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](offset * Glushort.sizeof))
   
   endBind(mesh, shader)
@@ -663,8 +684,8 @@ template vert2*(x, y, u, v: float32, acolor = colorWhite, amixcolor = colorClear
 template svert2*(x, y, u, v: float32): SVert2 = SVert2(pos: vec2(x, y), uv: vec2(u, v))
 
 #creates a mesh with position and tex coordinate attributes that covers the screen.
-proc newScreenMesh*(): ScreenMesh = 
-  newGenericMesh[SVert2](isStatic = true, primitiveType = GlTriangleFan, vertices = @[
+proc newScreenMesh*(): SMesh = 
+  newMesh[SVert2](isStatic = true, primitiveType = GlTriangleFan, vertices = @[
     svert2(-1f, -1, 0, 0), 
     svert2(1, -1, 1, 0), 
     svert2(1, 1, 1, 1), 
@@ -1369,22 +1390,22 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
     fau.quad = newScreenMesh()
     fau.screenspace = newShader("""
-    attribute vec4 a_position;
-    attribute vec2 a_texc;
-    varying vec2 v_texc;
+    attribute vec4 a_pos;
+    attribute vec2 a_uv;
+    varying vec2 v_uv;
 
     void main(){
-        v_texc = a_texc;
-        gl_Position = a_position;
+        v_uv = a_uv;
+        gl_Position = a_pos;
     }
     """,
 
     """
     uniform sampler2D u_texture;
-    varying vec2 v_texc;
+    varying vec2 v_uv;
 
     void main(){
-      gl_FragColor = texture2D(u_texture, v_texc);
+      gl_FragColor = texture2D(u_texture, v_uv);
     }
     """)
 

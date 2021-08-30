@@ -1,13 +1,13 @@
 import fcore
 
 const screenspace = """
-attribute vec4 a_position;
-attribute vec2 a_texc; 
-varying vec2 v_texc;
+attribute vec4 a_pos;
+attribute vec2 a_uv; 
+varying vec2 v_uv;
 
 void main(){
-	v_texc = a_texc;
-	gl_Position = a_position;
+	v_uv = a_uv;
+	gl_Position = a_pos;
 }
 """
 
@@ -29,10 +29,10 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
   result.thresh = newShader(screenspace,
   """ 
   uniform lowp sampler2D u_texture0;
-  varying vec2 v_texc;
+  varying vec2 v_uv;
 
   void main(){
-    vec4 color = texture2D(u_texture0, v_texc);
+    vec4 color = texture2D(u_texture0, v_uv);
     if(color.r + color.g + color.b > 0.5 * 3.0){
       gl_FragColor = color;
     }else{
@@ -49,11 +49,11 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
   uniform lowp float u_bloomIntensity;
   uniform lowp float u_originalIntensity;
 
-  varying vec2 v_texc;
+  varying vec2 v_uv;
 
   void main(){
-    vec4 original = texture2D(u_texture0, v_texc) * u_originalIntensity;
-    vec4 bloom = texture2D(u_texture1, v_texc) * u_bloomIntensity;
+    vec4 original = texture2D(u_texture0, v_uv) * u_originalIntensity;
+    vec4 bloom = texture2D(u_texture1, v_uv) * u_bloomIntensity;
     gl_FragColor = original * (vec4(1.0) - bloom) + bloom;
   }
 
@@ -62,8 +62,8 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
 
   result.blur = newShader(
   """ 
-  attribute vec4 a_position;
-  attribute vec2 a_texc; 
+  attribute vec4 a_pos;
+  attribute vec2 a_uv; 
   uniform vec2 dir;
   uniform vec2 size;
   varying vec2 v_texCoords0;
@@ -79,13 +79,13 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
     vec2 f = futher*sizeAndDir;
     vec2 c = closer*sizeAndDir;
     
-    v_texCoords0 = a_texc - f;
-    v_texCoords1 = a_texc - c;	
-    v_texCoords2 = a_texc;
-    v_texCoords3 = a_texc + c;
-    v_texCoords4 = a_texc + f;
+    v_texCoords0 = a_uv - f;
+    v_texCoords1 = a_uv - c;	
+    v_texCoords2 = a_uv;
+    v_texCoords3 = a_uv + c;
+    v_texCoords4 = a_uv + f;
     
-    gl_Position = a_position;
+    gl_Position = a_pos;
   }
   """,
   """

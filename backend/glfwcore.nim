@@ -141,7 +141,7 @@ proc mainLoop(target: proc()) =
     while window.windowShouldClose() == 0 and running:
       target()
 
-proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true) =
+proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depthBits = 0) =
   
   discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
     raise Exception.newException("Error initializing GLFW: " & $desc & " (error code: " & $code & ")")
@@ -154,6 +154,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   defaultWindowHints()
   windowHint(CONTEXT_VERSION_MINOR, 0)
   windowHint(CONTEXT_VERSION_MAJOR, 2)
+  if depthBits > 0: windowHint(DEPTH_BITS, depthBits.cint)
   windowHint(DOUBLEBUFFER, 1)
   windowHint(MAXIMIZED, maximize.cint)
 
