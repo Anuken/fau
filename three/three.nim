@@ -376,10 +376,6 @@ proc update*(cam: Cam3, size = cam.size) =
   cam.invProjView = cam.combined.inv()
   cam.frustum = initFrustum(cam.invProjView)
 
-proc resize*(cam: Cam3, size: Vec2) = 
-  cam.size = size
-  cam.update()
-
 proc lookAt*(cam: Cam3, pos: Vec3) =
   let dir = nor(pos - cam.pos)
   if not dir.zero:

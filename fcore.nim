@@ -56,17 +56,14 @@ template staticReadStream*(filename: string): StringStream =
 proc width*(cam: Cam): float32 {.inline.} = cam.size.x
 proc height*(cam: Cam): float32 {.inline.} = cam.size.y
 
-proc update*(cam: Cam) = 
+proc update*(cam: Cam, size: Vec2 = cam.size) = 
+  cam.size = size
   cam.mat = ortho(cam.pos - cam.size/2f, cam.size)
   cam.inv = cam.mat.inv()
 
 proc newCam*(w: float32 = 1, h: float32 = 1): Cam = 
   result = Cam(pos: vec2(0.0, 0.0), size: vec2(w, h))
   result.update()
-
-proc resize*(cam: Cam, w, h: float32) = 
-  cam.size = vec2(w, h)
-  cam.update()
 
 proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)
 
