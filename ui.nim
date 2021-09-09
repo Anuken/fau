@@ -53,7 +53,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     col = style.downColor
     if style.down.valid: patch = style.down
 
-  draw(if patch.valid: patch else: fau.white.patch9, bounds.x, bounds.y, bounds.w, bounds.h, mixColor = col, scale = uiPatchScale)
+  draw(if patch.valid: patch else: fau.white.patch9, bounds, mixColor = col, scale = uiPatchScale)
 
   if text.len != 0 and not font.isNil:
     font.draw(text,
@@ -68,7 +68,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
 proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle) =
   #TODO vertical padding would be nice?
   if style.back.valid:
-    draw(style.back, bounds.x, bounds.y, bounds.w, bounds.h, scale = uiPatchScale, mixColor = style.backColor)
+    draw(style.back, bounds, scale = uiPatchScale, mixColor = style.backColor)
   
   let
     pad = style.sliderWidth.uis
@@ -87,14 +87,14 @@ proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaul
       if style.down.valid: patch = style.down
 
   if patch.valid:
-    draw(patch, clamped - pad/2f, bounds.y, pad, bounds.h, mixColor = col, scale = uiPatchScale)
+    draw(patch, rect(clamped - pad/2f, bounds.y, pad, bounds.h), mixColor = col, scale = uiPatchScale)
 
 proc text*(bounds: Rect, text: string, style = defaultTextStyle, align = daCenter) =
   var font = if style.font.isNil: defaultFont else: style.font
 
   if text.len != 0 and not font.isNil:
     font.draw(text,
-      vec2(bounds.x, bounds.y),
-      bounds = vec2(bounds.w, bounds.h),
+      bounds.pos,
+      bounds = bounds.size,
       scale = uiFontScale, align = align
     )

@@ -1138,10 +1138,14 @@ proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, origin
 proc drawVert*(texture: Texture, vertices: array[4, Vert2], z: float32 = 0) {.inline.} = 
   fau.batch.drawRaw(texture, vertices, z)
 
-proc draw*(p: Patch9, x, y, width, height: float32, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
+proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
   let
     midx = p.width - p.left - p.right
     midy = p.height - p.top - p.bot
+    x = pos.x
+    y = pos.y
+    width = size.x
+    height = size.y
 
   #bot left
   drawRect(p.patches[0], x, y, p.left * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
@@ -1163,6 +1167,9 @@ proc draw*(p: Patch9, x, y, width, height: float32, z: float32 = 0f, color = col
   drawRect(p.patches[7], x + p.left * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, width - (p.right + p.left) * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
   #top right
   drawRect(p.patches[8], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, p.right * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
+
+proc draw*(p: Patch9, bounds: Rect, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
+  draw(p, bounds.pos, bounds.size, z, color, mixColor, scale)
 
 #Activates a camera.
 proc use*(cam: Cam) =
