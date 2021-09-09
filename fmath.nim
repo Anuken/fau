@@ -286,6 +286,9 @@ proc rect*(xy: Vec2, size: Vec2): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: si
 proc rectCenter*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x - w/2.0, y: y - h/2.0, w: w, h: h)
 proc rectCenter*(x, y, s: float32): Rect {.inline.} = Rect(x: x - s/2.0, y: y - s/2.0, w: s, h: s)
 
+proc pos*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
+proc size*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
+
 proc top*(r: Rect): float32 {.inline.} = r.y + r.h
 proc right*(r: Rect): float32 {.inline.} = r.x + r.w
 

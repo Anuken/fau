@@ -41,7 +41,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     patch = style.up
     font = if style.font.isNil: defaultFont else: style.font
 
-  if bounds.contains(mouse()):
+  if bounds.contains(fau.mouse):
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
 
@@ -63,7 +63,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     )
 
   if icon.valid:
-    draw(icon, bounds.centerX, bounds.centerY, width = iconSize, height = iconSize, mixColor = if down: style.iconDownColor else: style.iconUpColor)
+    draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor)
 
 proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle) =
   #TODO vertical padding would be nice?
@@ -77,12 +77,12 @@ proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaul
     patch = style.up
     col = style.upColor
 
-  if bounds.contains(mouse()):
+  if bounds.contains(fau.mouse):
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
 
     if keyMouseLeft.down:
-      value = clamp((mouse().x - (bounds.x )) / (bounds.w - pad) * (max - min) + min, min, max)
+      value = clamp((fau.mouse.x - (bounds.x)) / (bounds.w - pad) * (max - min) + min, min, max)
       col = style.downColor
       if style.down.valid: patch = style.down
 

@@ -85,6 +85,10 @@ proc lineRect*(pos: Vec2, size: Vec2, stroke: float32 = 1.px, color = colorWhite
   line(pos + size - margin, pos + vec2(margin, size.y - margin), stroke, color, z = z)
   line(pos + vec2(margin, size.y - margin), pos + margin, stroke, color, z = z)
 
+
+proc lineRect*(rect: Rect, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0, margin = 0f) =
+  lineRect(rect.pos, rect.size, stroke, color, z, margin)
+
 proc lineSquare*(pos: Vec2, rad: float32, stroke: float32 = 1f, color = colorWhite, z = 0f) =
   lineRect(pos - rad, vec2(rad * 2f), stroke, color, z)
 
