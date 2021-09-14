@@ -11,6 +11,12 @@ template vec2*(vec: Vec3): Vec2 = vec2(vec.x, vec.y)
 template vec3*(vec: Vec2, z = 0f): Vec3 = vec3(vec.x, vec.y, z)
 template vec3*(): Vec3 = Vec3()
 
+const 
+  vec3Zero* = vec3(0, 0, 0)
+  vec3X* = vec3(1, 0, 0)
+  vec3Y* = vec3(0, 1, 0)
+  vec3Z* = vec3(0, 0, 1)
+
 template op(td: typedesc, comp: typedesc, cons: typed, op1, op2: untyped): untyped =
   func op1*(vec: td, other: td): td {.inline.} = cons(op1(vec.x, other.x), op1(vec.y, other.y), op1(vec.z, other.z))
   func op1*(vec: td, other: comp): td {.inline.} = cons(op1(vec.x, other), op1(vec.y, other), op1(vec.z, other))
@@ -69,6 +75,68 @@ func within*(vec: Vec3, other: Vec3, distance: float32): bool {.inline.} = vec.d
 proc `$`*(vec: Vec3): string = $vec.x & ", " & $vec.y & ", " & $vec.z
 
 #endregion
+#region QUATERNION
+
+type Quat* = object
+  x*, y*, z*, w*: float32
+
+template quat*(ax = 0f, ay = 0f, az = 0f, aw = 1f): Quat =
+  Quat(x: ax, y: ay, z: az, w: aw)
+
+proc len2*(quat: Quat): float32 =
+  quat.x * quat.x + quat.y * quat.y + quat.z * quat.z + quat.w * quat.w
+
+proc nor*(quat: Quat): Quat =
+  let len = quat.len2
+  if len != 0f and len != 1f:
+    let sq = len.sqrt
+    return quat(quat.x / sq, quat.y / sq, quat.z / sq, quat.w / sq)
+  return quat
+
+proc conj*(q: Quat): Quat = quat(-q.x, -q.y, -q.z, q.w)
+
+proc quatAxis*(axis: Vec3, angle: float32): Quat =
+  var d = axis.len
+  if d == 0f: return quat()
+  d = 1f / d
+  let 
+    lang = if angle < 0: pi2 - (-angle.mod pi2) else: angle.mod pi2
+    lsin = sin(lang / 2f)
+    lcos = cos(lang / 2f)
+  return quat(d * axis.x * lsin, d * axis.y * lsin, d * axis.z * lsin, lcos).nor
+
+proc `*`*(self, other: Quat): Quat = quat(
+  self.w * other.x + self.x * other.w + self.y * other.z - self.z * other.y,
+  self.w * other.y + self.y * other.w + self.z * other.x - self.x * other.z,
+  self.w * other.z + self.z * other.w + self.x * other.y - self.y * other.x,
+  self.w * other.w - self.x * other.x - self.y * other.y - self.z * other.z
+)
+
+proc slerp*(self, other: Quat, alpha: float32): Quat =
+  let d = self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+  let absDot = if d < 0f: -d else: d
+
+  var 
+    scale0 = 1f - alpha
+    scale1 = alpha
+  
+  if 1 - absDot > 0.1:
+    let angle = arccos(absDot)
+    let invSinTheta = 1f / sin(angle)
+
+    scale0 = sin((1f - alpha) * angle) * invSinTheta
+    scale1 = sin((alpha * angle)) * invSinTheta
+
+  if d < 0f: scale1 = -scale1
+
+  return quat(
+    (scale0 * self.x) + (scale1 * other.x),
+    (scale0 * self.y) + (scale1 * other.y),
+    (scale0 * self.z) + (scale1 * other.z),
+    (scale0 * self.w) + (scale1 * other.w)
+  )
+  
+#endregion
 #region MATRICES
 
 const
@@ -109,6 +177,41 @@ proc trans3*(vec: Vec3): Mat3 =
   result[M03] = vec.x
   result[M13] = vec.y
   result[M23] = vec.z
+
+#creates a 3D rotation matrix
+proc rot3*(quat: Quat): Mat3 =
+  let
+    xs = quat.x * 2f
+    ys = quat.y * 2f
+    zs = quat.z * 2f
+    wx = quat.w * xs
+    wy = quat.w * ys
+    wz = quat.w * zs
+    xx = quat.x * xs
+    xy = quat.x * ys
+    xz = quat.x * zs
+    yy = quat.y * ys
+    yz = quat.y * zs
+    zz = quat.z * zs
+
+  result[M00] = (1f - (yy + zz))
+  result[M01] = (xy - wz)
+  result[M02] = (xz + wy)
+  result[M03] = 0f
+
+  result[M10] = (xy + wz)
+  result[M11] = (1f - (xx + zz))
+  result[M12] = (yz - wx)
+  result[M13] = 0f
+
+  result[M20] = (xz - wy)
+  result[M21] = (yz + wx)
+  result[M22] = (1f - (xx + yy))
+  result[M23] = 0f
+
+  result[M33] = 1f
+
+proc rot3*(axis: Vec3, angle: float32): Mat3 = rot3(quatAxis(axis, angle))
 
 #inverts a matrix
 proc inv*(mat: Mat3): Mat3 =
@@ -182,6 +285,10 @@ proc `*`*(a, b: Mat3): Mat3 =
     a[M20] * b[M03] + a[M21] * b[M13] + a[M22] * b[M23] + a[M23] * b[M33],
     a[M30] * b[M03] + a[M31] * b[M13] + a[M32] * b[M23] + a[M33] * b[M33] 
   ]
+
+proc trans3*(mat: Mat3, vec: Vec3): Mat3 = mat * trans3(vec)
+
+proc rot3*(mat: Mat3, quat: Quat): Mat3 = mat * rot3(quat)
 
 #note: this crashes the nim compiler:
 #proc prj*[N](vecs: array[N, float32], numVecs = vecs.len): array[N, float32] = discard
@@ -424,46 +531,5 @@ type Mesh3* = Mesh[Vert3]
 
 template vert3*(apos, anormal: Vec3, col: Color): Vert3 = Vert3(pos: apos, normal: anormal, color: col)
 
-proc tri*(mesh: Mesh3, v1, v2, v3: Vec3, nor: Vec3, col: Color) =
-  let len = mesh.vertices.len
-  mesh.vertices.add vert3(v1, nor, col)
-  mesh.vertices.add vert3(v2, nor, col)
-  mesh.vertices.add vert3(v3, nor, col)
-
-  mesh.indices.add [Index(len), Index(len + 1), Index(len + 2)]
-
-proc rect*(mesh: Mesh3, v1, v2, v3, v4: Vec3, nor: Vec3, col: Color) =
-  let len = mesh.vertices.len
-  #TODO minsert?
-  mesh.vertices.add [vert3(v1, nor, col), vert3(v2, nor, col), vert3(v3, nor, col), vert3(v4, nor, col)]
-  mesh.indices.add [Index(len), Index(len + 1), Index(len + 2), Index(len + 2), Index(len + 3), Index(len)]
-
-proc makeCube*(pos: Vec3 = vec3(), size: float = 1f, color: Color = colorWhite): Mesh3 =
-  result = newMesh[Vert3]()
-  var points = [
-    vec3(1, 1, 1), 
-    vec3(-1, 1, 1),
-    vec3(-1, 1, -1),
-    vec3(1, 1, -1),
-
-    vec3(1, -1, 1), 
-    vec3(-1, -1, 1),
-    vec3(-1, -1, -1),
-    vec3(1, -1, -1),
-  ]
-
-  for point in points.mitems:
-    point *= size
-  
-  #top, bottom
-  result.rect(points[0], points[1], points[2], points[3], vec3(0, 1, 0), color)
-  result.rect(points[4], points[5], points[6], points[7], vec3(0, -1, 0), color)
-  #left, right
-  result.rect(points[1], points[2], points[6], points[5], vec3(-1, 0, 0), color)
-  result.rect(points[0], points[3], points[7], points[4], vec3(1, 0, 0), color)
-  #front, back
-  result.rect(points[0], points[1], points[5], points[4], vec3(0, 0, 1), color)
-  result.rect(points[2], points[3], points[7], points[6], vec3(0, 0, -1), color)
-
-  #endregion
+#endregion
     
