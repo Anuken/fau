@@ -532,4 +532,3 @@ type Mesh3* = Mesh[Vert3]
 template vert3*(apos, anormal: Vec3, col: Color): Vert3 = Vert3(pos: apos, normal: anormal, color: col)
 
 #endregion
-    

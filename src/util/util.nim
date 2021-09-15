@@ -1,5 +1,7 @@
 import macros, tables
 
+# Utility macros & sugar.
+
 var eventHandlers* {.compileTime} = newTable[string, seq[NimNode]]()
 
 ## copies an array into a seq, element by element.

@@ -21,7 +21,7 @@ proc antialias*(file: string) =
     image = readImage(file)
     output = readImage(file)
 
-  proc getRGB(ix, iy: int): ColorRGBA = image[max(min(ix, image.width - 1), 0), max(min(iy, image.height - 1), 0)]
+  proc getRGB(ix, iy: int): ColorRGBA {.inline.} = image[max(min(ix, image.width - 1), 0), max(min(iy, image.height - 1), 0)]
 
   var p: array[9, ColorRGBA]
 

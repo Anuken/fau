@@ -1,5 +1,7 @@
 import audio/soloud_gen, fcore, os, macros, strutils
 
+# High-level soloud wrapper.
+
 var so: ptr Soloud
 
 type

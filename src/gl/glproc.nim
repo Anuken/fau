@@ -1,3 +1,5 @@
+# Wraps OpenGL and provides some basic optimizations to prevent unnecessary state changes.
+
 import gltypes
 export gltypes
 
@@ -43,6 +45,8 @@ var lastBoundTextures: array[32, int]
 var lastProgram = -1
 #last bound buffer
 var lastArrayBuffer = -1
+#last bound framebuffer
+var lastFramebuffer = -1
 #enabled state; TODO might be better as a bitset.
 var lastEnabled: array[36349, bool]
 #blending S/D factor
@@ -76,7 +80,13 @@ proc glBindBuffer*(target: GLenum, buffer: GLuint) {.inline.} =
 
   if target == GLArrayBuffer: lastArrayBuffer = buffer.int
 
-proc glBindFramebuffer*(target: GLenum, framebuffer: GLuint) {.inline.} = glCheck(): wrap.glBindFramebuffer(target, framebuffer)
+proc glBindFramebuffer*(target: GLenum, framebuffer: GLuint) {.inline.} = 
+  if lastFramebuffer == framebuffer.int: return
+
+  glCheck(): wrap.glBindFramebuffer(target, framebuffer)
+
+  lastFramebuffer = framebuffer.int
+
 proc glBindRenderbuffer*(target: GLenum, renderbuffer: GLuint) {.inline.} = glCheck(): wrap.glBindRenderbuffer(target, renderbuffer)
 
 proc glBindTexture*(target: GLenum, texture: GLuint) {.inline.} = 
@@ -148,6 +158,7 @@ proc glDeleteTexture*(texture: GLuint) {.inline.} =
 
   glCheck(): wrap.glDeleteTexture(texture)
 
+#TODO
 proc glDepthFunc*(`func`: GLenum) {.inline.} = glCheck(): wrap.glDepthFunc(`func`)
 proc glDepthMask*(flag: GLboolean) {.inline.} = 
   if lastDepthMask == flag: return
@@ -267,4 +278,6 @@ proc glVertexAttrib3fv*(index: GLuint, v: openArray[GLfloat]) {.inline.} = glChe
 proc glVertexAttrib4f*(index: GLuint, x: GLfloat, y: GLfloat, z: GLfloat, w: GLfloat) {.inline.} = glCheck(): wrap.glVertexAttrib4f(index, x, y, z, w)
 proc glVertexAttrib4fv*(index: GLuint, v: openArray[GLfloat]) {.inline.} = glCheck(): wrap.glVertexAttrib4fv(index, v)
 proc glVertexAttribPointer*(index: GLuint, size: GLint, `type`: GLenum, normalized: GLboolean, stride: GLsizei, pointer: pointer) {.inline.} = glCheck(): wrap.glVertexAttribPointer(index, size, `type`, normalized, stride, pointer)
+
+#TODO
 proc glViewport*(x: GLint, y: GLint, width: GLsizei, height: GLsizei) {.inline.} = glCheck(): wrap.glViewport(x, y, width, height)

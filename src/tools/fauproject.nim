@@ -58,9 +58,7 @@ const cfgTemplate = """
 --path:"fau"
 --hints:off
 --passC:"-DSTBI_ONLY_PNG"
-
-when not defined(Android):
-  --gc:arc
+--gc:arc
 
 when not defined(debug):
   --passC:"-flto"
@@ -171,11 +169,11 @@ version       = "0.0.1"
 author        = "Anuken"
 description   = "none"
 license       = "GPL-3.0"
-srcDir        = ""
+srcDir        = "src"
 bin           = @["{{APP_NAME}}"]
 binDir        = "build"
 
-requires "nim >= 1.4.2"
+requires "nim >= 1.4.8"
 requires "https://github.com/Anuken/fau#" & staticExec("git -C fau rev-parse HEAD")
 
 import strformat, os
@@ -197,14 +195,14 @@ task pack, "Pack textures":
   shell &"faupack -p:{getCurrentDir()}/assets-raw/sprites -o:{getCurrentDir()}/assets/atlas"
 
 task debug, "Debug build":
-  shell &"nim r -d:debug {app}"
+  shell &"nim r -d:debug src/{app}"
 
 task release, "Release build":
-  shell &"nim r -d:release -d:danger -o:build/{app} {app}"
+  shell &"nim r -d:release -d:danger -o:build/{app} src/{app}"
 
 task web, "Deploy web build":
   mkDir "build/web"
-  shell &"nim c -f -d:emscripten -d:danger {app}.nim"
+  shell &"nim c -f -d:emscripten -d:danger src/{app}.nim"
   writeFile("build/web/index.html", readFile("build/web/index.html").replace("$title$", capitalizeAscii(app)))
 
 task deploy, "Build for all platforms":
@@ -220,7 +218,7 @@ task deploy, "Build for all platforms":
       dangerous = if name == "win32": "" else: "-d:danger"
 
     mkDir dir
-    shell &"nim --cpu:{cpu} --os:{os} --app:gui -f {args} {dangerous} -o:{bin} c {app}"
+    shell &"nim --cpu:{cpu} --os:{os} --app:gui -f {args} {dangerous} -o:{bin} c src/{app}"
     shell &"strip -s {bin}"
     shell &"upx-ucl --best {bin}"
 
@@ -255,6 +253,7 @@ proc fauproject(name: string, directory = getHomeDir() / "Projects", preset = "e
   #pull in latest fau version
   discard execShellCmd("git clone https://github.com/Anuken/fau.git")
   createDir dir/"assets"
+  createDir dir/"src"
   createDir dir/"assets-raw/sprites"
   createDir dir/".vscode"
   createDir dir/".github/workflows"
@@ -264,7 +263,7 @@ proc fauproject(name: string, directory = getHomeDir() / "Projects", preset = "e
 
   let lowerName = name.toLowerAscii()
 
-  writeFile(&"{lowerName}.nim", presetText.replace("{{APP_NAME}}", name))
+  writeFile(&"src/{lowerName}.nim", presetText.replace("{{APP_NAME}}", name))
   writeFile(dir/".github/workflows/build.yml", ciTemplate.replace("{{APP_NAME}}", name))
   writeFile(&"{lowerName}.nimble", nimbleTemplate.replace("{{APP_NAME}}", name))
   writeFile("config.nims", cfgTemplate)

@@ -1,5 +1,7 @@
 import os, nimterop/[cimport, build], macros
 
+# nimterop-based soloud wrapper
+
 const
   FLAGS {.strdefine.} = ""
 

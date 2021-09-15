@@ -47,6 +47,7 @@ elif defined(Windows):
 else:
   static: doAssert false
 
+#TODO trim these, most are unnecessary; ogg clips are all I need
 {.compile: baseDir & "/src/c_api/soloud_c.cpp".}
 {.compile: baseDir & "/src/core/soloud.cpp".}
 {.compile: baseDir & "/src/core/soloud_audiosource.cpp".}

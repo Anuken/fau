@@ -1,6 +1,8 @@
 import polymorph, fcore, strutils
 export polymorph, fcore, strutils
 
+# Wraps Polymorph with some utilities.
+
 var definitions {.compileTime.}: seq[tuple[name: string, body: NimNode]]
 
 macro sysMake*(name: static[string], componentTypes: openarray[typedesc], body: untyped): untyped =

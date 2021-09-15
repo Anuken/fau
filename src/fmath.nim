@@ -1,7 +1,7 @@
 import math, random
 
 #this should be avoided in most cases, but manually turning ints into float32s can be very annoying
-converter toFloat32*(i: int): float32 {.inline.} = i.float32
+#converter toFloat32*(i: int): float32 {.inline.} = i.float32
 
 #TODO angle type, distinct float32
 #TODO make all angle functions use this

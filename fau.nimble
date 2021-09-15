@@ -2,11 +2,11 @@ version       = "0.0.1"
 author        = "Anuken"
 description   = "WIP Nim game framework"
 license       = "MIT"
-srcDir        = ""
+srcDir        = "src"
 bin           = @["tools/faupack", "tools/antialias", "tools/fauproject"]
 binDir        = "build"
 
-requires "nim >= 1.4.2"
+requires "nim >= 1.4.8"
 requires "https://github.com/rlipsc/polymorph#e1c01fae36f9661860248600226d2dc54e1ad60e"
 requires "https://github.com/treeform/staticglfw#d299a0d1727054749100a901d3b4f4fa92ed72f5"
 requires "cligen >= 1.3.2"

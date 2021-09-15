@@ -232,9 +232,9 @@ type FauState = object
   listeners: seq[FauListener]
 
   #Game window size
-  width*, height*: int
+  size*: int
   #Game window size in floats
-  widthf*, heightf*: float32
+  size*: vec2
   #Screen density, for mobile devices
   screenDensity*: float32
   #Safe insets for mobile devices. Order: top, right, bot, left
