@@ -1,5 +1,31 @@
 import gltypes, tables, fmath
 
+## any type that has a time and lifetime
+type Timeable* = concept t
+  t.time is float32
+  t.lifetime is float32
+
+type AnyVec2* = concept t
+  t.x is float32
+  t.y is float32
+
+## any type that can fade in linearly
+type Scaleable* = concept s
+  s.fin() is float32
+
+type Vec2i* = object
+  x*, y*: int
+
+type Vec2* = object
+  x*, y*: float32
+
+#TODO xywh can be vec2s, maybe?
+type Rect* = object
+  x*, y*, w*, h*: float32
+
+#3x3 matrix for 2D transformations
+type Mat* = array[9, float32]
+
 type KeyCode* = enum
   keyA, keyB, keyC, keyD, keyE, keyF, keyG, keyH, keyI, keyJ, keyK, keyL, keyM, keyN, keyO, keyP, keyQ, keyR, keyS, keyT, keyU,
   keyV, keyW, keyX, keyY, keyZ, key1, key2, key3, key4, key5, key6, key7, key8, key9, key0, keyReturn, keyEscape, keyBackspace,
@@ -44,10 +70,9 @@ type FauEvent* = object
   of feScroll:
     scroll*: Vec2
   of feResize:
-    w*, h*: int
+    size*: Vec2i
 
 type FauListener* = proc(e: FauEvent)
-
 
 #basic camera
 type Cam* = ref object
@@ -214,6 +239,8 @@ type FauState = object
   quad*: SMesh
   #Screenspace shader
   screenspace*: Shader
+  #The main (screen) framebuffer
+  buffer*: Framebuffer
   #Currently bound framebuffers
   bufferStack*: seq[Framebuffer]
   #Global texture atlas.
@@ -232,7 +259,7 @@ type FauState = object
   listeners: seq[FauListener]
 
   #Game window size
-  size*: int
+  sizei*: vec2i
   #Game window size in floats
   size*: vec2
   #Screen density, for mobile devices

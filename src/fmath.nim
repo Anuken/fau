@@ -10,15 +10,6 @@ import math, random
 #template rad*(v: float32) = v.Radians
 #converter toFloat(r: Radians): float32 {.inline.} = r.float32
 
-## any type that has a time and lifetime
-type Timeable* = concept t
-  t.time is float32
-  t.lifetime is float32
-
-type AnyVec2* = concept t
-  t.x is float32
-  t.y is float32
-
 iterator d4*(): tuple[x, y: int] =
   yield (1, 0)
   yield (0, 1)
@@ -37,10 +28,6 @@ iterator signs*(): float32 =
 
 ## fade in from 0 to 1
 func fin*(t: Timeable): float32 {.inline.} = t.time / t.lifetime
-
-## any type that can fade in linearly
-type Scaleable* = concept s
-  s.fin() is float32
 
 ## fade in from 1 to 0
 func fout*(t: Scaleable): float32 {.inline.} = 1.0f - t.fin
@@ -147,12 +134,6 @@ func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
 
 func absin*(x, scl, mag: float32): float32 {.inline} = (sin(x / scl) * mag).abs
 func abcos*(x, scl, mag: float32): float32 {.inline} = (cos(x / scl) * mag).abs
-
-type Vec2i* = object
-  x*, y*: int
-
-type Vec2* = object
-  x*, y*: float32
 
 template vec2*(cx, cy: float32): Vec2 = Vec2(x: cx, y: cy)
 template vec2*(xy: float32): Vec2 = Vec2(x: xy, y: xy)
@@ -276,9 +257,6 @@ iterator line*(p1, p2: Vec2i): Vec2i =
       startY += sy
       
 #rectangle utility class
-
-type Rect* = object
-  x*, y*, w*, h*: float32
 
 proc rect*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x, y: y, w: w, h: h)
 proc rect*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: w, h: h)
@@ -411,9 +389,6 @@ const
   M21 = 5
   M22 = 8
 
-#3x3 matrix for 2D transformations
-type Mat* = array[9, float32]
-
 #converts a 2D orthographics 3x3 matrix to a 4x4 matrix for shaders
 proc toMat4*(matrix: Mat): array[16, float32] =
   result[4] = matrix[M01]
@@ -507,3 +482,27 @@ template shotgun*(amount: int, spacing: float32, body: untyped) =
   for i in 0..<amount:
     let angle {.inject.} = ((i - (amount div 2).float32) * spacing).degToRad
     body
+
+
+#CAMERA
+
+proc unproject*(cam: Cam, vec: Vec2): Vec2 = 
+  vec2((2 * vec.x) / fau.widthf - 1, (2 * vec.y) / fau.heightf - 1) * cam.inv
+
+proc project*(cam: Cam, vec: Vec2): Vec2 = 
+  let pro = vec * cam.mat
+  return vec2(fau.widthf * 1 / 2 + pro.x, fau.heightf * 1 / 2 + pro.y)
+
+proc width*(cam: Cam): float32 {.inline.} = cam.size.x
+proc height*(cam: Cam): float32 {.inline.} = cam.size.y
+
+proc update*(cam: Cam, size: Vec2 = cam.size) = 
+  cam.size = size
+  cam.mat = ortho(cam.pos - cam.size/2f, cam.size)
+  cam.inv = cam.mat.inv()
+
+proc newCam*(w: float32 = 1, h: float32 = 1): Cam = 
+  result = Cam(pos: vec2(0.0, 0.0), size: vec2(w, h))
+  result.update()
+
+proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)

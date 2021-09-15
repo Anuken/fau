@@ -1,4 +1,10 @@
 
+const
+  blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
+  blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
+  blendDisabled* = Blending(src: GlZero, dst: GlZero)
+  blendErase* = Blending(src: GlZero, dst: GlOneMinusSrcAlpha)
+
 proc `=destroy`*[T](mesh: var MeshObj[T]) =
   if mesh.vertexBuffer != 0 and glInitialized:
     glDeleteBuffer(mesh.vertexBuffer)

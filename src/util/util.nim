@@ -1,6 +1,16 @@
 import macros, tables
 
-# Utility macros & sugar.
+# Utility macros, templates & sugar.
+
+const rootDir = if getProjectPath().endsWith("src"): getProjectPath()[0..^5] else: getProjectPath()
+
+template staticReadString*(filename: string): string = 
+  const realDir = rootDir & "/assets/" & filename
+  const str = staticRead(realDir)
+  str
+
+template staticReadStream*(filename: string): StringStream =
+  newStringStream(staticReadString(filename))
 
 var eventHandlers* {.compileTime} = newTable[string, seq[NimNode]]()
 

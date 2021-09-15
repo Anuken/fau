@@ -80,8 +80,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
     echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
 
-    fau.width = width.int
-    fau.height = height.int
+    fau.sizei = vec2i(width.int, height.int)
     updateInsets(surf)
 
     glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)

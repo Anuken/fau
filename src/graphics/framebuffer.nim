@@ -123,6 +123,7 @@ template inside*(buffer: Framebuffer, clearColor: Color, body: untyped) =
   body
   buffer.pop()
 
+#TODO bad impl
 proc clear*(buffer: Framebuffer, color = colorClear) =
   buffer.push(color)
   buffer.pop()
@@ -136,3 +137,21 @@ proc blitQuad*(buffer: Framebuffer, shader = fau.screenspace, unit = 0) =
   drawFlush()
   buffer.texture.use(unit)
   fau.quad.render(shader)
+
+#TODO both of the procs below need to be bound to framebuffers.
+
+proc clearScreen*(col: Color = colorClear) =
+  ## Clears the color buffer.
+  glClearColor(col.r, col.g, col.b, col.a)
+  #Enables writing to the depth buffer for clearing. TODO may be inefficient?
+  glDepthMask(true)
+  #TODO does GlDepthBufferBit incur additional perf penalties when there is no depth buffer?
+  glClear(GlColorBufferBit or GlDepthBufferBit)
+
+proc readPixels*(x, y, w, h: int): pointer =
+  ## Reads pixels from the screen and returns a pointer to RGBA data.
+  ## The result MUST be deallocated after use!
+  var pixels = alloc(w * h * 4)
+  glPixelStorei(GlPackAlignment, 1.Glint)
+  glReadPixels(x.GLint, y.GLint, w.GLint, h.GLint, GlRgba, GlUnsignedByte, pixels)
+  return pixels

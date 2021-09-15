@@ -22,43 +22,23 @@ func rgb*(rgba: float32): Color {.inline.} = rgb(rgba, rgba, rgba)
 
 func alpha*(a: float32): Color {.inline.} = rgba(1.0, 1.0, 1.0, a)
 
-#HSV are all floats from 0 to 1
+#H, S, V are all floats from 0 to 1
 func hsv*(h, s, v: float32, a = 1f): Color =
   let 
-    x = (h * 60f + 6).mod(6)
-    i = x.int
+    x = (h * 60f + 6).mod(6f)
+    i = x.floor
     f = x - i
     p = v * (1 - s)
     q = v * (1 - s * f)
     t = v * (1 - s * (1 - f))
   
-  result.a = a
-  
-  case i
-  of 0:
-      result.r = v
-      result.g = t
-      result.b = p
-  of 1:
-      result.r = q
-      result.g = v
-      result.b = p
-  of 2:
-      result.r = p
-      result.g = v
-      result.b = t
-  of 3:
-      result.r = p
-      result.g = q
-      result.b = v
-  of 4:
-      result.r = t
-      result.g = p
-      result.b = v
-  else:
-      result.r = v
-      result.g = p
-      result.b = q
+  return case i
+  of 0: rgba(v, t, p, a)
+  of 1: rgba(q, v, p, a)
+  of 2: rgba(p, v, t, a)
+  of 3: rgba(p, q, v, a)
+  of 4: rgba(t, p, v, a)
+  else: rgba(v, p, q, a)
 
 func `*`*(a, b: Color): Color {.inline.} = rgba(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a)
 func `*`*(a: Color, b: float32): Color {.inline.} = rgba(a.r * b, a.g * b, a.b * b, a.a)
