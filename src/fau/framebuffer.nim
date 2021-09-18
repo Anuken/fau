@@ -99,11 +99,11 @@ proc clear*(buffer: Framebuffer, color = colorClear) =
   glClear(GlColorBufferBit) # or GlDepthBufferBit
 
 #TODO wrap pixels in a object with a destructor?
-proc read*(buffer: Framebuffer, x, y, w, h: int): pointer =
+proc read*(buffer: Framebuffer, pos: Vec2i, size: Vec2i): pointer =
   ## Reads pixels from the screen and returns a pointer to RGBA data.
   ## The result MUST be deallocated after use!
   buffer.use()
-  var pixels = alloc(w * h * 4)
+  var pixels = alloc(size.x * size.y * 4)
   glPixelStorei(GlPackAlignment, 1.Glint)
-  glReadPixels(x.GLint, y.GLint, w.GLint, h.GLint, GlRgba, GlUnsignedByte, pixels)
+  glReadPixels(pos.x.GLint, pos.y.GLint, size.x.GLint, size.y.GLint, GlRgba, GlUnsignedByte, pixels)
   return pixels

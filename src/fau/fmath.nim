@@ -181,6 +181,7 @@ func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag *
 func vec2i*(x, y: int): Vec2i {.inline.} = Vec2i(x: x, y: y)
 func vec2i*(xy: int): Vec2i {.inline.} = Vec2i(x: xy, y: xy)
 func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
+func vec2i*(v: Vec2): Vec2i {.inline.} = vec2i(v.x.int, v.y.int)
 
 #vector-vector operations
 

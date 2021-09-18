@@ -7,12 +7,12 @@ import os, macros
 
 #TODO broken for windows
 const
-  baseDir = "/tmp/fau/soloud"
+  baseDir = "/home/anuke/Projects/soloud"
   incl = baseDir & "/include"
   src = baseDir & "/src"
 
 static:
-  if not dirExists(baseDir) or defined(clearCache):
+  if false and not dirExists(baseDir) or defined(clearCache):
     echo "Fetching SoLoud repo..."
     if dirExists(baseDir): echo staticExec("rm -rf " & baseDir)
     echo staticExec("git clone --depth 1 https://github.com/Anuken/soloud " & baseDir)
@@ -47,7 +47,6 @@ elif defined(Windows):
 else:
   static: doAssert false
 
-#TODO trim these, most are unnecessary; ogg clips are all I need
 {.compile: baseDir & "/src/c_api/soloud_c.cpp".}
 {.compile: baseDir & "/src/core/soloud.cpp".}
 {.compile: baseDir & "/src/core/soloud_audiosource.cpp".}
@@ -68,9 +67,8 @@ else:
 {.compile: baseDir & "/src/core/soloud_misc.cpp".}
 {.compile: baseDir & "/src/core/soloud_queue.cpp".}
 {.compile: baseDir & "/src/core/soloud_thread.cpp".}
-{.compile: baseDir & "/src/audiosource/wav/dr_impl.cpp".}
-{.compile: baseDir & "/src/audiosource/wav/soloud_wav.cpp".}
-{.compile: baseDir & "/src/audiosource/wav/soloud_wavstream.cpp".}
+{.compile: baseDir & "/src/audiosource/wav/soloud_wav_ogg.cpp".}
+{.compile: baseDir & "/src/audiosource/wav/soloud_wavstream_ogg.cpp".}
 {.compile: baseDir & "/src/audiosource/wav/stb_vorbis.c".}
 {.compile: baseDir & "/src/filter/soloud_bassboostfilter.cpp".}
 {.compile: baseDir & "/src/filter/soloud_biquadresonantfilter.cpp".}
@@ -82,25 +80,6 @@ else:
 {.compile: baseDir & "/src/filter/soloud_lofifilter.cpp".}
 {.compile: baseDir & "/src/filter/soloud_robotizefilter.cpp".}
 {.compile: baseDir & "/src/filter/soloud_waveshaperfilter.cpp".}
-
-#unnecessary
-#[
-{.compile: baseDir & "/src/audiosource/monotone/soloud_monotone.cpp".}
-{.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt.cpp".}
-{.compile: baseDir & "/src/audiosource/vizsn/soloud_vizsn.cpp".}
-{.compile: baseDir & "/src/audiosource/tedsid/ted.cpp".}
-{.compile: baseDir & "/src/audiosource/tedsid/sid.cpp".}
-{.compile: baseDir & "/src/audiosource/tedsid/soloud_tedsid.cpp".}
-{.compile: baseDir & "/src/audiosource/vic/soloud_vic.cpp".}
-{.compile: baseDir & "/src/audiosource/sfxr/soloud_sfxr.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/soloud_speech.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/klatt.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/darray.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/tts.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/resonator.cpp".}
-{.compile: baseDir & "/src/audiosource/noise/soloud_noise.cpp".}
-{.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt_dll.c".}
-]#
 
 macro defineEnum(typ: untyped): untyped =
   result = newNimNode(nnkStmtList)
@@ -197,34 +176,9 @@ const
   LOFIFILTER_WET* = (0).SOLOUD_ENUMS
   LOFIFILTER_SAMPLERATE* = (1).SOLOUD_ENUMS
   LOFIFILTER_BITDEPTH* = (2).SOLOUD_ENUMS
-  NOISE_WHITE* = (0).SOLOUD_ENUMS
-  NOISE_PINK* = (1).SOLOUD_ENUMS
-  NOISE_BROWNISH* = (2).SOLOUD_ENUMS
-  NOISE_BLUEISH* = (3).SOLOUD_ENUMS
   ROBOTIZEFILTER_WET* = (0).SOLOUD_ENUMS
   ROBOTIZEFILTER_FREQ* = (1).SOLOUD_ENUMS
   ROBOTIZEFILTER_WAVE* = (2).SOLOUD_ENUMS
-  SFXR_COIN* = (0).SOLOUD_ENUMS
-  SFXR_LASER* = (1).SOLOUD_ENUMS
-  SFXR_EXPLOSION* = (2).SOLOUD_ENUMS
-  SFXR_POWERUP* = (3).SOLOUD_ENUMS
-  SFXR_HURT* = (4).SOLOUD_ENUMS
-  SFXR_JUMP* = (5).SOLOUD_ENUMS
-  SFXR_BLIP* = (6).SOLOUD_ENUMS
-  SPEECH_KW_SAW* = (0).SOLOUD_ENUMS
-  SPEECH_KW_TRIANGLE* = (1).SOLOUD_ENUMS
-  SPEECH_KW_SIN* = (2).SOLOUD_ENUMS
-  SPEECH_KW_SQUARE* = (3).SOLOUD_ENUMS
-  SPEECH_KW_PULSE* = (4).SOLOUD_ENUMS
-  SPEECH_KW_NOISE* = (5).SOLOUD_ENUMS
-  SPEECH_KW_WARBLE* = (6).SOLOUD_ENUMS
-  VIC_PAL* = (0).SOLOUD_ENUMS
-  VIC_NTSC* = (1).SOLOUD_ENUMS
-  VIC_BASS* = (0).SOLOUD_ENUMS
-  VIC_ALTO* = (1).SOLOUD_ENUMS
-  VIC_SOPRANO* = (2).SOLOUD_ENUMS
-  VIC_NOISE* = (3).SOLOUD_ENUMS
-  VIC_MAX_REGS* = (4).SOLOUD_ENUMS
   WAVESHAPERFILTER_WET* = (0).SOLOUD_ENUMS
   WAVESHAPERFILTER_AMOUNT* = (1).SOLOUD_ENUMS
 type
@@ -247,16 +201,10 @@ type
   FlangerFilter* {.importc, impsoloud_cHdr.} = pointer
   FreeverbFilter* {.importc, impsoloud_cHdr.} = pointer
   LofiFilter* {.importc, impsoloud_cHdr.} = pointer
-  Monotone* {.importc, impsoloud_cHdr.} = pointer
-  Noise* {.importc, impsoloud_cHdr.} = pointer
-  Openmpt* {.importc, impsoloud_cHdr.} = pointer
   Queue* {.importc, impsoloud_cHdr.} = pointer
   RobotizeFilter* {.importc, impsoloud_cHdr.} = pointer
   Sfxr* {.importc, impsoloud_cHdr.} = pointer
   Speech* {.importc, impsoloud_cHdr.} = pointer
-  TedSid* {.importc, impsoloud_cHdr.} = pointer
-  Vic* {.importc, impsoloud_cHdr.} = pointer
-  Vizsn* {.importc, impsoloud_cHdr.} = pointer
   Wav* {.importc, impsoloud_cHdr.} = pointer
   WaveShaperFilter* {.importc, impsoloud_cHdr.} = pointer
   WavStream* {.importc, impsoloud_cHdr.} = pointer
@@ -746,143 +694,6 @@ proc LofiFilter_getParamMin*(aLofiFilter: ptr LofiFilter; aParamIndex: cuint): c
 proc LofiFilter_create*(): ptr LofiFilter {.importc, cdecl, impsoloud_cHdr.}
 proc LofiFilter_setParams*(aLofiFilter: ptr LofiFilter; aSampleRate: cfloat;
                           aBitdepth: cfloat): cint {.importc, cdecl, impsoloud_cHdr.}
-proc Monotone_destroy*(aMonotone: ptr Monotone) {.importc, cdecl, impsoloud_cHdr.}
-  ## ```
-  ##   Monotone
-  ## ```
-proc Monotone_create*(): ptr Monotone {.importc, cdecl, impsoloud_cHdr.}
-proc Monotone_setParams*(aMonotone: ptr Monotone; aHardwareChannels: cint): cint {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Monotone_setParamsEx*(aMonotone: ptr Monotone; aHardwareChannels: cint;
-                          aWaveform: cint): cint {.importc, cdecl, impsoloud_cHdr.}
-proc Monotone_load*(aMonotone: ptr Monotone; aFilename: cstring): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_loadMem*(aMonotone: ptr Monotone; aMem: ptr cuchar; aLength: cuint): cint {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Monotone_loadMemEx*(aMonotone: ptr Monotone; aMem: ptr cuchar; aLength: cuint;
-                        aCopy: cint; aTakeOwnership: cint): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_loadFile*(aMonotone: ptr Monotone; aFile: ptr File): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_setVolume*(aMonotone: ptr Monotone; aVolume: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_setLooping*(aMonotone: ptr Monotone; aLoop: cint) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_set3dMinMaxDistance*(aMonotone: ptr Monotone; aMinDistance: cfloat;
-                                  aMaxDistance: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_set3dAttenuation*(aMonotone: ptr Monotone; aAttenuationModel: cuint;
-                               aAttenuationRolloffFactor: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_set3dDopplerFactor*(aMonotone: ptr Monotone; aDopplerFactor: cfloat) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Monotone_set3dListenerRelative*(aMonotone: ptr Monotone;
-                                    aListenerRelative: cint) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_set3dDistanceDelay*(aMonotone: ptr Monotone; aDistanceDelay: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Monotone_set3dCollider*(aMonotone: ptr Monotone; aCollider: ptr AudioCollider) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Monotone_set3dColliderEx*(aMonotone: ptr Monotone;
-                              aCollider: ptr AudioCollider; aUserData: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Monotone_set3dAttenuator*(aMonotone: ptr Monotone;
-                              aAttenuator: ptr AudioAttenuator) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_setInaudibleBehavior*(aMonotone: ptr Monotone; aMustTick: cint;
-                                   aKill: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Monotone_setLoopPoint*(aMonotone: ptr Monotone; aLoopPoint: cdouble) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Monotone_getLoopPoint*(aMonotone: ptr Monotone): cdouble {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Monotone_setFilter*(aMonotone: ptr Monotone; aFilterId: cuint;
-                        aFilter: ptr Filter) {.importc, cdecl, impsoloud_cHdr.}
-proc Monotone_stop*(aMonotone: ptr Monotone) {.importc, cdecl, impsoloud_cHdr.}
-proc Noise_destroy*(aNoise: ptr Noise) {.importc, cdecl, impsoloud_cHdr.}
-  ## ```
-  ##   Noise
-  ## ```
-proc Noise_create*(): ptr Noise {.importc, cdecl, impsoloud_cHdr.}
-proc Noise_setOctaveScale*(aNoise: ptr Noise; aOct0: cfloat; aOct1: cfloat;
-                          aOct2: cfloat; aOct3: cfloat; aOct4: cfloat; aOct5: cfloat;
-                          aOct6: cfloat; aOct7: cfloat; aOct8: cfloat; aOct9: cfloat) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Noise_setType*(aNoise: ptr Noise; aType: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Noise_setVolume*(aNoise: ptr Noise; aVolume: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Noise_setLooping*(aNoise: ptr Noise; aLoop: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Noise_set3dMinMaxDistance*(aNoise: ptr Noise; aMinDistance: cfloat;
-                               aMaxDistance: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Noise_set3dAttenuation*(aNoise: ptr Noise; aAttenuationModel: cuint;
-                            aAttenuationRolloffFactor: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Noise_set3dDopplerFactor*(aNoise: ptr Noise; aDopplerFactor: cfloat) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Noise_set3dListenerRelative*(aNoise: ptr Noise; aListenerRelative: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Noise_set3dDistanceDelay*(aNoise: ptr Noise; aDistanceDelay: cint) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Noise_set3dCollider*(aNoise: ptr Noise; aCollider: ptr AudioCollider) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Noise_set3dColliderEx*(aNoise: ptr Noise; aCollider: ptr AudioCollider;
-                           aUserData: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Noise_set3dAttenuator*(aNoise: ptr Noise; aAttenuator: ptr AudioAttenuator) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Noise_setInaudibleBehavior*(aNoise: ptr Noise; aMustTick: cint; aKill: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Noise_setLoopPoint*(aNoise: ptr Noise; aLoopPoint: cdouble) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Noise_getLoopPoint*(aNoise: ptr Noise): cdouble {.importc, cdecl, impsoloud_cHdr.}
-proc Noise_setFilter*(aNoise: ptr Noise; aFilterId: cuint; aFilter: ptr Filter) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Noise_stop*(aNoise: ptr Noise) {.importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_destroy*(aOpenmpt: ptr Openmpt) {.importc, cdecl, impsoloud_cHdr.}
-  ## ```
-  ##   Openmpt
-  ## ```
-proc Openmpt_create*(): ptr Openmpt {.importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_load*(aOpenmpt: ptr Openmpt; aFilename: cstring): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Openmpt_loadMem*(aOpenmpt: ptr Openmpt; aMem: ptr cuchar; aLength: cuint): cint {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_loadMemEx*(aOpenmpt: ptr Openmpt; aMem: ptr cuchar; aLength: cuint;
-                       aCopy: cint; aTakeOwnership: cint): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Openmpt_loadFile*(aOpenmpt: ptr Openmpt; aFile: ptr File): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Openmpt_setVolume*(aOpenmpt: ptr Openmpt; aVolume: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Openmpt_setLooping*(aOpenmpt: ptr Openmpt; aLoop: cint) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Openmpt_set3dMinMaxDistance*(aOpenmpt: ptr Openmpt; aMinDistance: cfloat;
-                                 aMaxDistance: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Openmpt_set3dAttenuation*(aOpenmpt: ptr Openmpt; aAttenuationModel: cuint;
-                              aAttenuationRolloffFactor: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Openmpt_set3dDopplerFactor*(aOpenmpt: ptr Openmpt; aDopplerFactor: cfloat) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_set3dListenerRelative*(aOpenmpt: ptr Openmpt; aListenerRelative: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_set3dDistanceDelay*(aOpenmpt: ptr Openmpt; aDistanceDelay: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_set3dCollider*(aOpenmpt: ptr Openmpt; aCollider: ptr AudioCollider) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_set3dColliderEx*(aOpenmpt: ptr Openmpt; aCollider: ptr AudioCollider;
-                             aUserData: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_set3dAttenuator*(aOpenmpt: ptr Openmpt;
-                             aAttenuator: ptr AudioAttenuator) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Openmpt_setInaudibleBehavior*(aOpenmpt: ptr Openmpt; aMustTick: cint; aKill: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_setLoopPoint*(aOpenmpt: ptr Openmpt; aLoopPoint: cdouble) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Openmpt_getLoopPoint*(aOpenmpt: ptr Openmpt): cdouble {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Openmpt_setFilter*(aOpenmpt: ptr Openmpt; aFilterId: cuint; aFilter: ptr Filter) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Openmpt_stop*(aOpenmpt: ptr Openmpt) {.importc, cdecl, impsoloud_cHdr.}
 proc Queue_destroy*(aQueue: ptr Queue) {.importc, cdecl, impsoloud_cHdr.}
   ## ```
   ##   Queue
@@ -950,213 +761,6 @@ proc RobotizeFilter_getParamMin*(aRobotizeFilter: ptr RobotizeFilter;
 proc RobotizeFilter_setParams*(aRobotizeFilter: ptr RobotizeFilter; aFreq: cfloat;
                               aWaveform: cint) {.importc, cdecl, impsoloud_cHdr.}
 proc RobotizeFilter_create*(): ptr RobotizeFilter {.importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_destroy*(aSfxr: ptr Sfxr) {.importc, cdecl, impsoloud_cHdr.}
-  ## ```
-  ##   Sfxr
-  ## ```
-proc Sfxr_create*(): ptr Sfxr {.importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_resetParams*(aSfxr: ptr Sfxr) {.importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_loadParams*(aSfxr: ptr Sfxr; aFilename: cstring): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Sfxr_loadParamsMem*(aSfxr: ptr Sfxr; aMem: ptr cuchar; aLength: cuint): cint {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_loadParamsMemEx*(aSfxr: ptr Sfxr; aMem: ptr cuchar; aLength: cuint;
-                          aCopy: cint; aTakeOwnership: cint): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Sfxr_loadParamsFile*(aSfxr: ptr Sfxr; aFile: ptr File): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Sfxr_loadPreset*(aSfxr: ptr Sfxr; aPresetNo: cint; aRandSeed: cint): cint {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Sfxr_setVolume*(aSfxr: ptr Sfxr; aVolume: cfloat) {.importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_setLooping*(aSfxr: ptr Sfxr; aLoop: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_set3dMinMaxDistance*(aSfxr: ptr Sfxr; aMinDistance: cfloat;
-                              aMaxDistance: cfloat) {.importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_set3dAttenuation*(aSfxr: ptr Sfxr; aAttenuationModel: cuint;
-                           aAttenuationRolloffFactor: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Sfxr_set3dDopplerFactor*(aSfxr: ptr Sfxr; aDopplerFactor: cfloat) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Sfxr_set3dListenerRelative*(aSfxr: ptr Sfxr; aListenerRelative: cint) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Sfxr_set3dDistanceDelay*(aSfxr: ptr Sfxr; aDistanceDelay: cint) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Sfxr_set3dCollider*(aSfxr: ptr Sfxr; aCollider: ptr AudioCollider) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Sfxr_set3dColliderEx*(aSfxr: ptr Sfxr; aCollider: ptr AudioCollider;
-                          aUserData: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_set3dAttenuator*(aSfxr: ptr Sfxr; aAttenuator: ptr AudioAttenuator) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_setInaudibleBehavior*(aSfxr: ptr Sfxr; aMustTick: cint; aKill: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_setLoopPoint*(aSfxr: ptr Sfxr; aLoopPoint: cdouble) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Sfxr_getLoopPoint*(aSfxr: ptr Sfxr): cdouble {.importc, cdecl, impsoloud_cHdr.}
-proc Sfxr_setFilter*(aSfxr: ptr Sfxr; aFilterId: cuint; aFilter: ptr Filter) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Sfxr_stop*(aSfxr: ptr Sfxr) {.importc, cdecl, impsoloud_cHdr.}
-proc Speech_destroy*(aSpeech: ptr Speech) {.importc, cdecl, impsoloud_cHdr.}
-  ## ```
-  ##   Speech
-  ## ```
-proc Speech_create*(): ptr Speech {.importc, cdecl, impsoloud_cHdr.}
-proc Speech_setText*(aSpeech: ptr Speech; aText: cstring): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Speech_setParams*(aSpeech: ptr Speech): cint {.importc, cdecl, impsoloud_cHdr.}
-proc Speech_setParamsEx*(aSpeech: ptr Speech; aBaseFrequency: cuint;
-                        aBaseSpeed: cfloat; aBaseDeclination: cfloat;
-                        aBaseWaveform: cint): cint {.importc, cdecl, impsoloud_cHdr.}
-proc Speech_setVolume*(aSpeech: ptr Speech; aVolume: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Speech_setLooping*(aSpeech: ptr Speech; aLoop: cint) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Speech_set3dMinMaxDistance*(aSpeech: ptr Speech; aMinDistance: cfloat;
-                                aMaxDistance: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Speech_set3dAttenuation*(aSpeech: ptr Speech; aAttenuationModel: cuint;
-                             aAttenuationRolloffFactor: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Speech_set3dDopplerFactor*(aSpeech: ptr Speech; aDopplerFactor: cfloat) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Speech_set3dListenerRelative*(aSpeech: ptr Speech; aListenerRelative: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Speech_set3dDistanceDelay*(aSpeech: ptr Speech; aDistanceDelay: cint) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Speech_set3dCollider*(aSpeech: ptr Speech; aCollider: ptr AudioCollider) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Speech_set3dColliderEx*(aSpeech: ptr Speech; aCollider: ptr AudioCollider;
-                            aUserData: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Speech_set3dAttenuator*(aSpeech: ptr Speech; aAttenuator: ptr AudioAttenuator) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Speech_setInaudibleBehavior*(aSpeech: ptr Speech; aMustTick: cint; aKill: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Speech_setLoopPoint*(aSpeech: ptr Speech; aLoopPoint: cdouble) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Speech_getLoopPoint*(aSpeech: ptr Speech): cdouble {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Speech_setFilter*(aSpeech: ptr Speech; aFilterId: cuint; aFilter: ptr Filter) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Speech_stop*(aSpeech: ptr Speech) {.importc, cdecl, impsoloud_cHdr.}
-proc TedSid_destroy*(aTedSid: ptr TedSid) {.importc, cdecl, impsoloud_cHdr.}
-  ## ```
-  ##   TedSid
-  ## ```
-proc TedSid_create*(): ptr TedSid {.importc, cdecl, impsoloud_cHdr.}
-proc TedSid_load*(aTedSid: ptr TedSid; aFilename: cstring): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_loadToMem*(aTedSid: ptr TedSid; aFilename: cstring): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_loadMem*(aTedSid: ptr TedSid; aMem: ptr cuchar; aLength: cuint): cint {.
-    importc, cdecl, impsoloud_cHdr.}
-proc TedSid_loadMemEx*(aTedSid: ptr TedSid; aMem: ptr cuchar; aLength: cuint;
-                      aCopy: cint; aTakeOwnership: cint): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_loadFileToMem*(aTedSid: ptr TedSid; aFile: ptr File): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_loadFile*(aTedSid: ptr TedSid; aFile: ptr File): cint {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_setVolume*(aTedSid: ptr TedSid; aVolume: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_setLooping*(aTedSid: ptr TedSid; aLoop: cint) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_set3dMinMaxDistance*(aTedSid: ptr TedSid; aMinDistance: cfloat;
-                                aMaxDistance: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_set3dAttenuation*(aTedSid: ptr TedSid; aAttenuationModel: cuint;
-                             aAttenuationRolloffFactor: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_set3dDopplerFactor*(aTedSid: ptr TedSid; aDopplerFactor: cfloat) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc TedSid_set3dListenerRelative*(aTedSid: ptr TedSid; aListenerRelative: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc TedSid_set3dDistanceDelay*(aTedSid: ptr TedSid; aDistanceDelay: cint) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc TedSid_set3dCollider*(aTedSid: ptr TedSid; aCollider: ptr AudioCollider) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc TedSid_set3dColliderEx*(aTedSid: ptr TedSid; aCollider: ptr AudioCollider;
-                            aUserData: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc TedSid_set3dAttenuator*(aTedSid: ptr TedSid; aAttenuator: ptr AudioAttenuator) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc TedSid_setInaudibleBehavior*(aTedSid: ptr TedSid; aMustTick: cint; aKill: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc TedSid_setLoopPoint*(aTedSid: ptr TedSid; aLoopPoint: cdouble) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_getLoopPoint*(aTedSid: ptr TedSid): cdouble {.importc, cdecl,
-    impsoloud_cHdr.}
-proc TedSid_setFilter*(aTedSid: ptr TedSid; aFilterId: cuint; aFilter: ptr Filter) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc TedSid_stop*(aTedSid: ptr TedSid) {.importc, cdecl, impsoloud_cHdr.}
-proc Vic_destroy*(aVic: ptr Vic) {.importc, cdecl, impsoloud_cHdr.}
-  ## ```
-  ##   Vic
-  ## ```
-proc Vic_create*(): ptr Vic {.importc, cdecl, impsoloud_cHdr.}
-proc Vic_setModel*(aVic: ptr Vic; model: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Vic_getModel*(aVic: ptr Vic): cint {.importc, cdecl, impsoloud_cHdr.}
-proc Vic_setRegister*(aVic: ptr Vic; reg: cint; value: cuchar) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vic_getRegister*(aVic: ptr Vic; reg: cint): cuchar {.importc, cdecl, impsoloud_cHdr.}
-proc Vic_setVolume*(aVic: ptr Vic; aVolume: cfloat) {.importc, cdecl, impsoloud_cHdr.}
-proc Vic_setLooping*(aVic: ptr Vic; aLoop: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Vic_set3dMinMaxDistance*(aVic: ptr Vic; aMinDistance: cfloat;
-                             aMaxDistance: cfloat) {.importc, cdecl, impsoloud_cHdr.}
-proc Vic_set3dAttenuation*(aVic: ptr Vic; aAttenuationModel: cuint;
-                          aAttenuationRolloffFactor: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vic_set3dDopplerFactor*(aVic: ptr Vic; aDopplerFactor: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vic_set3dListenerRelative*(aVic: ptr Vic; aListenerRelative: cint) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Vic_set3dDistanceDelay*(aVic: ptr Vic; aDistanceDelay: cint) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vic_set3dCollider*(aVic: ptr Vic; aCollider: ptr AudioCollider) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vic_set3dColliderEx*(aVic: ptr Vic; aCollider: ptr AudioCollider; aUserData: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Vic_set3dAttenuator*(aVic: ptr Vic; aAttenuator: ptr AudioAttenuator) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Vic_setInaudibleBehavior*(aVic: ptr Vic; aMustTick: cint; aKill: cint) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Vic_setLoopPoint*(aVic: ptr Vic; aLoopPoint: cdouble) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vic_getLoopPoint*(aVic: ptr Vic): cdouble {.importc, cdecl, impsoloud_cHdr.}
-proc Vic_setFilter*(aVic: ptr Vic; aFilterId: cuint; aFilter: ptr Filter) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Vic_stop*(aVic: ptr Vic) {.importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_destroy*(aVizsn: ptr Vizsn) {.importc, cdecl, impsoloud_cHdr.}
-  ## ```
-  ##   Vizsn
-  ## ```
-proc Vizsn_create*(): ptr Vizsn {.importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_setText*(aVizsn: ptr Vizsn; aText: cstring) {.importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_setVolume*(aVizsn: ptr Vizsn; aVolume: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vizsn_setLooping*(aVizsn: ptr Vizsn; aLoop: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_set3dMinMaxDistance*(aVizsn: ptr Vizsn; aMinDistance: cfloat;
-                               aMaxDistance: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vizsn_set3dAttenuation*(aVizsn: ptr Vizsn; aAttenuationModel: cuint;
-                            aAttenuationRolloffFactor: cfloat) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vizsn_set3dDopplerFactor*(aVizsn: ptr Vizsn; aDopplerFactor: cfloat) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Vizsn_set3dListenerRelative*(aVizsn: ptr Vizsn; aListenerRelative: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_set3dDistanceDelay*(aVizsn: ptr Vizsn; aDistanceDelay: cint) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Vizsn_set3dCollider*(aVizsn: ptr Vizsn; aCollider: ptr AudioCollider) {.importc,
-    cdecl, impsoloud_cHdr.}
-proc Vizsn_set3dColliderEx*(aVizsn: ptr Vizsn; aCollider: ptr AudioCollider;
-                           aUserData: cint) {.importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_set3dAttenuator*(aVizsn: ptr Vizsn; aAttenuator: ptr AudioAttenuator) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_setInaudibleBehavior*(aVizsn: ptr Vizsn; aMustTick: cint; aKill: cint) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_setLoopPoint*(aVizsn: ptr Vizsn; aLoopPoint: cdouble) {.importc, cdecl,
-    impsoloud_cHdr.}
-proc Vizsn_getLoopPoint*(aVizsn: ptr Vizsn): cdouble {.importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_setFilter*(aVizsn: ptr Vizsn; aFilterId: cuint; aFilter: ptr Filter) {.
-    importc, cdecl, impsoloud_cHdr.}
-proc Vizsn_stop*(aVizsn: ptr Vizsn) {.importc, cdecl, impsoloud_cHdr.}
 proc Wav_destroy*(aWav: ptr Wav) {.importc, cdecl, impsoloud_cHdr.}
   ## ```
   ##   Wav

@@ -1,8 +1,5 @@
-import fau/[fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer]
+import fau/[fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer, input]
 import times, random
-
-when defined(debug):
-  import recorder
 
 when defined(Android):
   include fau/backend/glfmcore
@@ -13,7 +10,10 @@ when not defined(noAudio):
   import fau/audio
   export audio
 
-export fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer
+when defined(debug):
+  import fau/util/recorder
+
+export fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer, input
 
 #global state for input/time
 var
@@ -21,15 +21,6 @@ var
   frameCounterStart: int64
   frames: int
   startTime: Time
-
-  keysPressed: array[KeyCode, bool]
-  keysJustDown: array[KeyCode, bool]
-  keysJustUp: array[KeyCode, bool]
-
-proc down*(key: KeyCode): bool {.inline.} = keysPressed[key]
-proc tapped*(key: KeyCode): bool {.inline.} = keysJustDown[key]
-proc released*(key: KeyCode): bool {.inline.} = keysJustUp[key]
-proc axis*(left, right: KeyCode): int = right.down.int - left.down.int
 
 #TODO all of these should be struct parameters!
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 

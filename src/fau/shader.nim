@@ -1,5 +1,5 @@
 
-import tables, gl/[glproc, gltypes], strutils, fmath, color
+import tables, gl/[glproc, gltypes], strutils, fmath, color, macros
 
 #Internal shader attribute.
 type ShaderAttr* = object
@@ -190,3 +190,7 @@ proc setf*(shader: Shader, name: string, value1, value2, value3, value4: float) 
   if loc != -1: glUniform4f(loc.GLint, value1.GLfloat, value2.GLfloat, value3.GLfloat, value4.GLfloat)
 
 proc setf*(shader: Shader, name: string, col: Color) = shader.setf(name, col.r, col.g, col.b, col.a)
+
+#TODO
+macro uniforms*(shader: Shader, body: untyped): untyped =
+  result = newStmtList()

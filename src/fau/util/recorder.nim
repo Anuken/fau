@@ -1,4 +1,4 @@
-import fcore, shapes, os, strformat, times, osproc, math, streams, strutils
+import ../draw, ../globals, ../fmath, ../input, ../screenbuffer, ../color, os, strformat, times, osproc, math, streams, strutils
 
 const
   resizeKey = keyLctrl
@@ -9,7 +9,7 @@ const
 var
   gifOutDir = "gifs"
   speedMultiplier* = 1f
-  recordFps* = 40
+  recordFps* = 40f
   recordSize* = vec2(300f)
   recordOffset* = vec2(0f)
   recording = false
@@ -66,11 +66,9 @@ proc record*() =
     if ftime >= 60f / recordFps:
       ftime = ftime.mod 60f / recordFps
 
-      frames.add readPixels(
-         (recordOffset.x + fau.widthf/2f - recordSize.x/2f).int,
-         (recordOffset.y + fau.height/2f - recordSize.y/2f).int,
-         recordSize.x.int,
-         recordSize.y.int
+      frames.add screen.read(
+         (recordOffset + fau.size/2f - recordSize/2f).vec2i,
+         recordSize.vec2i
        )
 
   #draw selection UI
@@ -80,19 +78,19 @@ proc record*() =
     if recording:
       color = %"f54033"
 
-    drawMat(ortho(vec2(), fau.screen))
+    drawMat(ortho(vec2(), fau.size))
 
     if resizeKey.down and not recording:
       color = %"f59827"
-      recordSize = (fau.screen/2f + recordOffset - fau.mouse).abs * 2f
+      recordSize = (fau.size/2f + recordOffset - fau.mouse).abs * 2f
 
     if shiftKey.down:
-      recordOffset = fau.mouse - fau.screen/2f
+      recordOffset = fau.mouse - fau.size/2f
       color = %"27e67a"
 
     for entry in [(color: colorBlack, stroke: 8f), (color: color, stroke: 2f)]:
       lineRect(
-        recordOffset + fau.screen/2f - recordSize/2f,
+        recordOffset + fau.size/2f - recordSize/2f,
         recordSize,
         color = entry.color,
         stroke = entry.stroke
