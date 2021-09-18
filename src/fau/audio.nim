@@ -1,4 +1,4 @@
-import audio/soloud_gen, os, macros, strutils
+import audio/soloud_gen, os, macros, strutils, util/util
 
 # High-level soloud wrapper.
 

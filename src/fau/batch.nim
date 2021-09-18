@@ -1,39 +1,42 @@
-import color, mesh, texture, framebuffer, patch, shader, fmath, math, util/util, sugar, algorithm
+import color, mesh, texture, framebuffer, patch, shader, fmath, math, util/util, sugar, algorithm, screenbuffer
 
-#TODO use vec2 for xy, origin, size
+## "Low-level" sprite batcher.
+
 type
   ReqKind* = enum
     reqVert,
     reqRect,
     reqProc
   Req* = object
-    blend: Blending
-    shader: Shader
-    z: float32
-    case kind: ReqKind:
+    blend*: Blending
+    shader*: Shader
+    z*: float32
+    case kind*: ReqKind:
     of reqVert:
-      verts: array[4, Vert2]
-      tex: Texture
+      verts*: array[4, Vert2]
+      tex*: Texture
     of reqRect:
-      patch: Patch
-      x, y, originX, originY, width, height, rotation: float32
-      color, mixColor: Color
+      patch*: Patch
+      pos*, origin*, size*: Vec2
+      rotation*: float32
+      color*, mixColor*: Color
     of reqProc:
-      draw: proc()
+      draw*: proc()
 
 type Batch* = ref object
   mesh: Mesh2
   defaultShader: Shader
+  lastShader: Shader
   lastTexture: Texture
+  lastBlend: Blending
+  buffer: Framebuffer
   index: int
   size: int
-  req*: seq[Req]
-
-  #TODO
-  #The matrix being used by the batch
-  mat*: Mat
-  #Whether sorting is enabled for the batch - requires sorted batch
-  sort*: bool
+  req: seq[Req]
+  #The projection matrix being used by the batch; requires flush
+  mat: Mat
+  #Whether sorting is enabled for the batch
+  sort: bool
 
 #types of draw alignment for sprites
 const
@@ -51,14 +54,15 @@ proc flushInternal(batch: Batch) =
   if batch.index == 0: return
 
   #use global shader if there is one set
-  let shader = if batch.shader.isNil: batch.defaultShader else: batch.shader
+  let shader = if batch.lastShader.isNil: batch.defaultShader else: batch.lastShader
 
+  #TODO completely broken
   #TODO sampler system - replacement for batch.lastTexture.use()
   shader.seti("u_texture", 0)
   shader.setmat4("u_proj", batch.mat)
 
   batch.mesh.updateVertices(0..<batch.index)
-  batch.mesh.render(shader, 0, batch.index div 4 * 6)
+  batch.mesh.render(shader, batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend)
 
   batch.index = 0
 
@@ -67,10 +71,15 @@ proc prepare(batch: Batch, texture: Texture) =
     batch.flushInternal()
     batch.lastTexture = texture
 
-proc draw(batch: Batch, req: Req) =
+proc draw*(batch: Batch, req: Req) =
   if batch.sort:
     batch.req.add req
   else:
+    if batch.lastShader != req.shader or batch.lastBlend != req.blend:
+      batch.flushInternal()
+      batch.lastShader = req.shader
+      batch.lastBlend = req.blend
+
     case req.kind
     of reqVert:
       batch.prepare(req.tex)
@@ -88,8 +97,8 @@ proc draw(batch: Batch, req: Req) =
       batch.prepare(req.patch.texture)
       if req.rotation == 0.0f:
         let
-          x2 = req.width + req.x
-          y2 = req.height + req.y
+          x2 = req.size.x + req.pos.x
+          y2 = req.size.y + req.pos.y
           u = req.patch.u
           v = req.patch.v2
           u2 = req.patch.u2
@@ -99,16 +108,16 @@ proc draw(batch: Batch, req: Req) =
           cf = req.color
           mf = req.mixColor
 
-        verts.minsert(idx, [vert2(x, y, u, v, cf, mf), vert2(x, y2, u, v2, cf, mf), vert2(x2, y2, u2, v2, cf, mf), vert2(x2, y, u2, v, cf, mf)])
+        verts.minsert(idx, [vert2(req.pos.x, req.pos.y, u, v, cf, mf), vert2(req.pos.x, y2, u, v2, cf, mf), vert2(x2, y2, u2, v2, cf, mf), vert2(x2, req.pos.y, u2, v, cf, mf)])
       else:
         let
           #bottom left and top right corner points relative to origin
-          worldOriginX = req.x + req.originX
-          worldOriginY = req.y + req.originY
-          fx = -req.originX
-          fy = -req.originY
-          fx2 = req.width - req.originX
-          fy2 = req.height - req.originY
+          worldOriginX = req.pos.x + req.origin.x
+          worldOriginY = req.pos.y + req.origin.y
+          fx = -req.origin.x
+          fy = -req.origin.y
+          fx2 = req.size.x - req.origin.x
+          fy2 = req.size.y - req.origin.y
           #rotate
           cos = cos(req.rotation)
           sin = sin(req.rotation)
@@ -141,7 +150,9 @@ proc newBatch*(size: int = 4092): Batch =
       vertices = newSeq[Vert2](size * 4),
       indices = newSeq[Index](size * 6)
     ),
-    size: size * 4
+    buffer: screen,
+    size: size * 4,
+    sort: true
   )
 
   #set up default indices
@@ -198,171 +209,17 @@ proc flush*(batch: Batch) =
     batch.sort = false
 
     for req in batch.req:
-      
-      case req.kind:
-      of reqVert:
-        batch.drawRaw(req.tex, req.verts, 0)
-      of reqRect:
-        batch.drawRaw(req.patch, req.x, req.y, 0.0, req.width, req.height, req.originX, req.originY, req.rotation, req.color, req.mixColor)
-      of reqProc:
-        req.draw()
+      batch.draw(req)
     
-    batch.reqs.setLen(0)
-    batchSort = true
-    batchBlending = last
+    batch.req.setLen(0)
+    batch.sort = true
 
   #flush the base batch
   batch.flushInternal()
 
 #Sets the matrix used for rendering. This flushes the batch.
-proc drawMat*(mat: Mat) = 
-  drawFlush()
-  fau.batchMat = mat
+proc `mat`*(batch: Batch, mat: Mat) = 
+  batch.flush()
+  batch.mat = mat
 
-proc screenMat*() =
-  drawMat(ortho(0f, 0f, fau.widthf, fau.heightf))
-
-#Draws something custom at a specific Z layer
-proc draw*(z: float32, value: proc()) =
-  if fau.batchSort:
-    fau.batch.reqs.add(Req(kind: reqProc, draw: value, z: z, blend: fau.batchBlending))
-  else:
-    value()
-
-#Custom handling of begin/end for a specific Z layer
-proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
-  draw(z - spread, layerBegin)
-  draw(z + spread, layerEnd)
-
-proc draw*(region: Patch, pos: Vec2, size = region.size * fau.pixelScl,
-  z = 0f,
-  scl = vec2(1f),
-  origin = size * 0.5f * scl, 
-  rotation = 0f, align = daCenter,
-  color = colorWhite, mixColor = colorClear) {.inline.} =
-
-  let 
-    alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
-    alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
-
-  fau.batch.drawRaw(region, pos.x - size.x * alignH * scl.x, pos.y - size.y * alignV * scl.y, z, size.x * scl.x, size.y * scl.y, origin.x, origin.y, rotation, color, mixColor)
-
-#draws a region with rotated bits
-proc drawv*(region: Patch, pos: Vec2, mutator: proc(pos: Vec2, idx: int): Vec2, size: Vec2 = region.size * fau.pixelScl,
-  z = 0f,
-  origin = size * 0.5f, rotation = 0f, align = daCenter,
-  color = colorWhite, mixColor = colorClear) =
-  
-  let
-    alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
-    alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
-    worldOriginX: float32 = pos.x + origin.x - size.x * alignH
-    worldOriginY: float32 = pos.y + origin.y - size.y * alignV
-    fx: float32 = -origin.x
-    fy: float32 = -origin.y
-    fx2: float32 = size.x - origin.x
-    fy2: float32 = size.y - origin.y
-    cos: float32 = cos(rotation.degToRad)
-    sin: float32 = sin(rotation.degToRad)
-    x1 = cos * fx - sin * fy + worldOriginX
-    y1 = sin * fx + cos * fy + worldOriginY
-    x2 = cos * fx - sin * fy2 + worldOriginX
-    y2 = sin * fx + cos * fy2 + worldOriginY
-    x3 = cos * fx2 - sin * fy2 + worldOriginX
-    y3 = sin * fx2 + cos * fy2 + worldOriginY
-    x4 = x1 + (x3 - x2)
-    y4 = y3 - (y2 - y1)
-    u = region.u
-    v = region.v2
-    u2 = region.u2
-    v2 = region.v
-    cor1 = mutator(vec2(x1, y1), 0)
-    cor2 = mutator(vec2(x2, y2), 1)
-    cor3 = mutator(vec2(x3, y3), 2)
-    cor4 = mutator(vec2(x4, y4), 3)
-    cf = color
-    mf = mixColor
-
-  fau.batch.drawRaw(region.texture, [vert2(cor1.x, cor1.y, u, v, cf, mf), vert2(cor2.x, cor2.y, u, v2, cf, mf), vert2(cor3.x, cor3.y, u2, v2, cf, mf), vert2(cor4.x, cor4.y, u2, v, cf, mf)], z)
-
-#draws a region with rotated bits
-proc drawv*(region: Patch, pos: Vec2, c1 = vec2(0, 0), c2 = vec2(0, 0), c3 = vec2(0, 0), c4 = vec2(0, 0), z = 0f, size = region.size * fau.pixelScl,
-  origin = size * 0.5f, rotation = 0f, align = daCenter,
-  color = colorWhite, mixColor = colorClear) =
-
-  let
-    alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
-    alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
-    worldOriginX: float32 = pos.x + origin.x - size.x * alignH
-    worldOriginY: float32 = pos.y + origin.y - size.y * alignV
-    fx: float32 = -origin.x
-    fy: float32 = -origin.y
-    fx2: float32 = size.x - origin.x
-    fy2: float32 = size.y - origin.y
-    cos: float32 = cos(rotation.degToRad)
-    sin: float32 = sin(rotation.degToRad)
-    x1 = cos * fx - sin * fy + worldOriginX
-    y1 = sin * fx + cos * fy + worldOriginY
-    x2 = cos * fx - sin * fy2 + worldOriginX
-    y2 = sin * fx + cos * fy2 + worldOriginY
-    x3 = cos * fx2 - sin * fy2 + worldOriginX
-    y3 = sin * fx2 + cos * fy2 + worldOriginY
-    x4 = x1 + (x3 - x2)
-    y4 = y3 - (y2 - y1)
-    u = region.u
-    v = region.v2
-    u2 = region.u2
-    v2 = region.v
-    cor1 = c1 + vec2(x1, y1)
-    cor2 = c2 + vec2(x2, y2)
-    cor3 = c3 + vec2(x3, y3)
-    cor4 = c4 + vec2(x4, y4)
-    cf = color
-    mf = mixColor
-
-  fau.batch.drawRaw(region.texture, [vert2(cor1.x, cor1.y, u, v, cf, mf), vert2(cor2.x, cor2.y, u, v2, cf, mf), vert2(cor3.x, cor3.y, u2, v2, cf, mf), vert2(cor4.x, cor4.y, u2, v, cf, mf)], z)
-
-proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, originY = 0f,
-  rotation = 0f, color = colorWhite, mixColor = colorClear, z: float32 = 0.0) {.inline.} =
-  fau.batch.drawRaw(region, x, y, z, width, height, originX, originY, rotation, color, mixColor)
-
-proc drawVert*(texture: Texture, vertices: array[4, Vert2], z: float32 = 0) {.inline.} = 
-  fau.batch.drawRaw(texture, vertices, z)
-
-proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
-  let
-    midx = p.width - p.left - p.right
-    midy = p.height - p.top - p.bot
-    x = pos.x
-    y = pos.y
-    width = size.x
-    height = size.y
-
-  #bot left
-  drawRect(p.patches[0], x, y, p.left * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
-  #bot
-  drawRect(p.patches[1], x + p.left * scale, y, width - (p.right + p.left) * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
-  #bot right
-  drawRect(p.patches[2], x + p.left * scale + width - (p.right + p.left) * scale, y, p.right * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
-
-  #mid left
-  drawRect(p.patches[3], x, y + p.bot * scale, p.left * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor)
-  #mid
-  drawRect(p.patches[4], x + p.left * scale, y + p.bot * scale, width - (p.right + p.left) * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor)
-  #mid right
-  drawRect(p.patches[5], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale, p.right * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor)
-
-  #top left
-  drawRect(p.patches[6], x, y + p.bot * scale + height - (p.top + p.bot) * scale, p.left * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
-  #top
-  drawRect(p.patches[7], x + p.left * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, width - (p.right + p.left) * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
-  #top right
-  drawRect(p.patches[8], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, p.right * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
-
-proc draw*(p: Patch9, bounds: Rect, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
-  draw(p, bounds.pos, bounds.size, z, color, mixColor, scale)
-
-#Activates a camera.
-proc use*(cam: Cam) =
-  cam.update()
-  drawMat cam.mat
+#TODO set dest buffer

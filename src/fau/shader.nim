@@ -147,6 +147,8 @@ proc findUniform(shader: Shader, name: string): int =
   shader.uniforms[name] = location
   return location
 
+#TODO all of these functions should be unnecessary. pass uniforms properly!
+
 proc seti*(shader: Shader, name: string, value: int) =
   shader.use()
   let loc = shader.findUniform(name)

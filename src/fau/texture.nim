@@ -1,4 +1,4 @@
-import stb_image/read as stbi, gl/[glproc, gltypes], fmath
+import stb_image/read as stbi, gl/[glproc, gltypes], fmath, util/util
 
 #an openGL image
 type TextureObj = object

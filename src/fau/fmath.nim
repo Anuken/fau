@@ -535,8 +535,10 @@ proc update*(cam: Cam, size: Vec2 = cam.size) =
   cam.mat = ortho(cam.pos - cam.size/2f, cam.size)
   cam.inv = cam.mat.inv()
 
-proc newCam*(w: float32 = 1, h: float32 = 1): Cam = 
-  result = Cam(pos: vec2(0.0, 0.0), size: vec2(w, h))
+proc newCam*(size: Vec2): Cam = 
+  result = Cam(pos: vec2(0.0, 0.0), size: size)
   result.update()
 
 proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)
+
+proc mouseWorld*(fau: FauState): Vec2 {.inline.} = fau.cam.unproject(fau.mouse)

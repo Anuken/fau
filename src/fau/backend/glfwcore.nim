@@ -225,8 +225,6 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   window.getFramebufferSize(addr inWidth, addr inHeight)
   fau.mouse = vec2(inHeight.float32 - 1 - inMouseX.float32, inMouseY.float32)
   fau.sizei = vec2i(inWidth.int, inHeight.int)
-  
-  glViewport(0.GLint, 0.GLint, inWidth.GLsizei, inHeight.GLsizei)
 
   glInitialized = true
   initProc()

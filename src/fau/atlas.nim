@@ -1,5 +1,5 @@
 
-import strformat
+import strformat, tables, texture, patch, util/util, streams
 
 #A single-texture atlas.
 type Atlas* = ref object
@@ -50,7 +50,3 @@ proc loadAtlasStatic*(path: static[string]): Atlas =
 
 # accesses a region from an atlas
 proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.error)
-
-proc patch*(name: string): Patch {.inline.} = fau.atlas[name]
-
-proc patch9*(name: string): Patch9 {.inline.} = fau.atlas.patches9.getOrDefault(name, fau.atlas.error9)

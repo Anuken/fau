@@ -1,15 +1,65 @@
 
-import math, fmath, fcore
+import math, ../fmath
+export fmath
 
 #region VECTORS
 
 type Vec3* = object
   x*, y*, z*: float32
 
+type Plane* = object
+  #plane normal direction
+  normal*: Vec3
+  #distance to origin
+  dst*: float32
+
+type PlaneSide* = enum
+  psOn, psBack, psFront
+
+type Quat* = object
+  x*, y*, z*, w*: float32
+
+#4x4 matrix for 3D transformations - called Mat3 for Vec3 consistency
+type Mat3* = array[16, float32]
+
+type Ray* = object
+  origin, direction: Vec3
+
+type Frustum* = object
+  #the six clipping planes, near, far, left, right, top, bottom
+  planes: array[6, Plane]
+
+#3D camera - TODO make object, or not?
+type Cam3* = ref object
+  #field of view for perspective cameras
+  fov*: float32
+  #near/far clipping planes
+  near*, far*: float32
+  #if set to true, a perspective projection is used.
+  perspective*: bool
+  #viewport size
+  size*: Vec2
+  #world position
+  pos*: Vec3
+  #normalized facing direction
+  direction*: Vec3
+  #normalized up vector
+  up*: Vec3
+  #combined projection and view matrix
+  combined*: Mat3
+  #projection matrix
+  proj*: Mat3
+  #view matrix
+  view*: Mat3
+  #inverse combined projection and view matrix
+  invProjView*: Mat3
+  #frustum for clipping
+  frustum*: Frustum
+
 template vec3*(cx, cy: float32, cz = 0f): Vec3 = Vec3(x: cx, y: cy, z: cz)
 template vec2*(vec: Vec3): Vec2 = vec2(vec.x, vec.y)
 template vec3*(vec: Vec2, z = 0f): Vec3 = vec3(vec.x, vec.y, z)
-template vec3*(): Vec3 = Vec3()
+proc vec3*(): Vec3 {.inline.} = Vec3()
 
 const 
   vec3Zero* = vec3(0, 0, 0)
@@ -76,9 +126,6 @@ proc `$`*(vec: Vec3): string = $vec.x & ", " & $vec.y & ", " & $vec.z
 
 #endregion
 #region QUATERNION
-
-type Quat* = object
-  x*, y*, z*, w*: float32
 
 template quat*(ax = 0f, ay = 0f, az = 0f, aw = 1f): Quat =
   Quat(x: ax, y: ay, z: az, w: aw)
@@ -156,9 +203,6 @@ const
   M31 = 7
   M32 = 11
   M33 = 15
-
-#4x4 matrix for 3D transformations - called Mat3 for Vec3 consistency
-type Mat3* = array[16, float32]
 
 #creates an identity 3D matrix
 proc idt3*(): Mat3 {.inline.} =
@@ -353,15 +397,6 @@ proc lookAt3*(position, target, up: Vec3): Mat3 =
 #endregion
 #region 3D STRUCTURES
 
-type Plane* = object
-  #plane normal direction
-  normal*: Vec3
-  #distance to origin
-  dst*: float32
-
-type PlaneSide* = enum
-  psOn, psBack, psFront
-
 #constructs a plane from a normal and a distance from the origin
 proc initPlane*(normal: Vec3, dst: float32): Plane = Plane(normal: normal, dst: dst)
 
@@ -382,18 +417,11 @@ proc test*(plane: Plane, vec: Vec3): PlaneSide =
 proc project*(plane: Plane, v: Vec3): Vec3 =
   return v - (plane.normal * (plane.normal.dot(v) + plane.dst))
 
-type Ray* = object
-  origin, direction: Vec3
-
 proc ray*(orig, dir: Vec3): Ray {.inline.} = Ray(origin: orig, direction: dir.nor())
 
 proc endPoint*(ray: Ray, dst: float32): Vec3 = ray.origin + ray.direction * dst
 
 # FRUSTUM
-
-type Frustum* = object
-  #the six clipping planes, near, far, left, right, top, bottom
-  planes: array[6, Plane]
 
 #creates a new frustum based on the given inverse combined projection and view matrix.
 proc initFrustum*(invProjView: Mat3): Frustum =
@@ -426,33 +454,6 @@ proc contains*(self: Frustum, center: Vec3, radius: float32): bool =
 
 #endregion
 #region CAMERA
-
-#3D camera - TODO make object, or not?
-type Cam3* = ref object
-  #field of view for perspective cameras
-  fov*: float32
-  #near/far clipping planes
-  near*, far*: float32
-  #if set to true, a perspective projection is used.
-  perspective*: bool
-  #viewport size
-  size*: Vec2
-  #world position
-  pos*: Vec3
-  #normalized facing direction
-  direction*: Vec3
-  #normalized up vector
-  up*: Vec3
-  #combined projection and view matrix
-  combined*: Mat3
-  #projection matrix
-  proj*: Mat3
-  #view matrix
-  view*: Mat3
-  #inverse combined projection and view matrix
-  invProjView*: Mat3
-  #frustum for clipping
-  frustum*: Frustum
 
 #creates a new camera with standard parameters
 proc newCam3*(): Cam3 = Cam3(
@@ -515,20 +516,6 @@ proc pickRay*(cam: Cam3, coords: Vec2, viewPos = vec2(0, 0), viewSize = cam.size
 #endregion
 #region MESH
 
-#generic 3D vertex with a position, normal, color and UV
-type Vert3* = object
-  pos*: Vec3
-  #TODO: this can be packed as 3 bytes with 1 byte wasted, which would save 8 bytes of space
-  #alternatively this can be 3 shorts with 2 bytes wated, which saves 4 bytes of space
-  normal*: Vec3
-  #TODO color may be optional for some models...
-  color*: Color
-  #TODO UVs can be a normalized (u)int16 pair, which would save 4 bytes of space
-  uv*: Vec2
 
-#basic 3D mesh
-type Mesh3* = Mesh[Vert3]
-
-template vert3*(apos, anormal: Vec3, col: Color): Vert3 = Vert3(pos: apos, normal: anormal, color: col)
 
 #endregion

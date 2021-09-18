@@ -1,4 +1,4 @@
-import fau/[fmath, globals, color, framebuffer, mesh, patch, shader, texture,], fau/g2/[shapes, font]
+import fau/[fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer]
 import times, random
 
 when defined(debug):
@@ -11,9 +11,9 @@ else:
 
 when not defined(noAudio):
   import fau/audio
-  export fau/audio
+  export audio
 
-export fmath, shapes, font, globals, color, framebuffer, mesh, patch, shader, texture
+export fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer
 
 #global state for input/time
 var
@@ -52,8 +52,6 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     of feResize:
       fau.sizei = e.size
       fau.size = e.size.vec2
-      #TODO unnecessary? should be set when using standard FBO
-      glViewport(0.GLint, 0.GLint, e.size.x.GLsizei, e.size.y.GLsizei)
     of feTouch:
       if e.touchDown:
         keysJustDown[e.touchButton] = true
@@ -100,8 +98,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
     fau.size = fau.sizei.vec2
 
-    fau.buffer.resize(fau.sizei)
-    fau.buffer.clear(fau.clearColor)
+    screen.resize(fau.sizei)
+    screen.clear(fau.clearColor)
     loopProc()
 
     #flush any pending draw operations
@@ -127,15 +125,12 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
       initAudio()
       #load the necessary audio files (macro generated)
       loadAudio()
-
-    #add default framebuffer to state
-    fau.bufferStack.add newDefaultFramebuffer()
     
     #set up default density
     if fau.screenDensity <= 0.0001f:
       fau.screenDensity = 1f
 
-    fau.buffer = newDefaultFramebuffer()
+    screen = newDefaultFramebuffer()
     
     #create and use batch
     fau.batch = newBatch()
@@ -143,15 +138,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     fau.pixelScl = 1.0f
 
     fau.maxDelta = 1f / 60f
-      
-    #enable sorting by default
-    fau.batchSort = true
-    
-    #use standard blending
-    fau.batchBlending = blendNormal
 
     #set matrix to ortho
-    fau.batchMat = ortho(vec2(), fau.size)
+    screenMat()
 
     #create default camera
     fau.cam = newCam(fau.size)

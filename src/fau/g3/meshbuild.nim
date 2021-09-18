@@ -1,4 +1,4 @@
-import three, ../fcore
+import fmath3, mesh3, ../color
 
 #add a triangle to the mesh
 proc tri*(mesh: Mesh3, v1, v2, v3: Vec3, nor: Vec3, col: Color) =

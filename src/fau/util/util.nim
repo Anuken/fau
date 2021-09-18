@@ -1,4 +1,4 @@
-import macros, tables
+import macros, tables, streams, strutils
 
 # Utility macros, templates & sugar.
 
@@ -60,6 +60,8 @@ template importAll*(): untyped =
   
   importAllDef(instantiationInfo().filename)
 
+#this was kind of a bad idea...
+#[
 ## registers an event to be handled with `onEventName:`
 macro event*(tname: untyped, args: varargs[untyped]): untyped =
   result = newStmtList()
@@ -104,3 +106,5 @@ macro buildEvents*() =
     result.add quote do:
       `fireName` = proc(event {.inject.}: `tname`) =
         `sts`
+]#
+

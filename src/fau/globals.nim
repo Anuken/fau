@@ -71,8 +71,6 @@ type FauState* = object
   quad*: SMesh
   #Screenspace shader
   screenspace*: Shader
-  #The main (screen) framebuffer
-  buffer*: Framebuffer
   #Global texture atlas.
   atlas*: Atlas
   #Frame number
@@ -117,5 +115,3 @@ proc addFauListener*(ev: FauListener) =
 
 #Turns pixel units into world units
 proc px*(val: float32): float32 {.inline.} = val * fau.pixelScl
-
-#proc mouseWorld*(fau: FauState): Vec2 {.inline.} = fau.cam.unproject(fau.mouse)

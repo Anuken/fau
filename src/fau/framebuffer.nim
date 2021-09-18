@@ -7,6 +7,7 @@ type FramebufferObj* = object
   handle*: Gluint
   size: Vec2i
   texture: Texture
+  isDefault: bool
 type Framebuffer* = ref FramebufferObj
 
 proc `=destroy`*(buffer: var FramebufferObj) =
@@ -21,6 +22,11 @@ proc texture*(buffer: Framebuffer): Texture {.inline.} = buffer.texture
 #TODO rendering should keep track of this, don't call manually? or do
 
 proc resize*(buffer: Framebuffer, size: Vec2i) =
+  #default buffers can't be resized
+  if buffer.isDefault:
+    buffer.size = size
+    return
+
   let 
     width = max(size.x, 2)
     height = max(size.y, 2)
@@ -72,13 +78,12 @@ proc newFramebuffer*(size = vec2i(2)): Framebuffer =
   if size.x != 2 or size.y != 2: result.resize(size)
 
 #Returns a new default framebuffer object. Internal use only.
-proc newDefaultFramebuffer*(): Framebuffer = Framebuffer(handle: glGetIntegerv(GlFramebufferBinding).GLuint)
+proc newDefaultFramebuffer*(): Framebuffer = Framebuffer(handle: glGetIntegerv(GlFramebufferBinding).GLuint, isDefault: true)
 
 #Binds the framebuffer. Internal use only!
 proc use*(buffer: Framebuffer) =
   glBindFramebuffer(GlFramebuffer, buffer.handle)
   glViewport(0, 0, buffer.size.x.Glsizei, buffer.size.y.Glsizei)
-
 
 #TODO bad impl
 proc clear*(buffer: Framebuffer, color = colorClear) =

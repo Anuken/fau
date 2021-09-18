@@ -1,5 +1,8 @@
 
-import gl/[glproc, gltypes], color, fmath, shader, framebuffer
+import gl/[glproc, gltypes], color, fmath, shader, framebuffer, hashes, macros, screenbuffer
+
+#TODO this is necessary for macros but very hacky, what's the solution?
+export glproc, gltypes
 
 #types of blending
 type Blending* = object
@@ -92,11 +95,27 @@ proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, ve
 proc newMesh2*(isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[Vert2] = @[], indices: seq[Index] = @[]): Mesh =
   newMesh[Vert2](isStatic, primitiveType, vertices, indices)
 
-#TODO! do not enable unnecessary attributes
-#is is assumed the mesh is called 'mesh', the shader is called 'shader' and vsize is the vertex size
-macro enableAttributes(vert: typed): untyped =
+#global state for active attribute management
+#current active attributes; maps the index to the glEnableVertexAttribArray location
+var activeAttribs: array[32, GLuint]
+#total active attributes in activeAttribs
+var totalActive = 0
+#last vertex type used as a string hash (yes, collisions are possible here, but unlikely)
+var lastVertexType: Hash
+
+macro enableAttributes(shader: Shader, vert: typed): untyped =
   let vertexType = vert.getType()[1]
   result = newStmtList()
+  let typeHash = vertexType.repr.hash
+  var attribIndex = 0
+
+  #disable older attributes
+  result.add quote do:
+    if lastVertexType != `typeHash`:
+      for i in 0..<totalActive:
+        if activeAttribs[i] != 0:
+          glDisableVertexAttribArray(activeAttribs[i])
+          activeAttribs[i] = 0
 
   for identDefs in getImpl(vertexType)[2][2]:
     let t = identDefs[^2]
@@ -139,24 +158,23 @@ macro enableAttributes(vert: typed): untyped =
       result.add quote do:
         let loc = shader.getAttributeLoc(`alias`)
         if loc != -1:
+          activeAttribs[`attribIndex`] = loc.GLuint
           glEnableVertexAttribArray(loc.GLuint)
           glVertexAttribPointer(loc.GLuint, `components`, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
+      
+      attribIndex.inc
+  
+  result.add quote do:
+    totalActive = `attribIndex`
+    lastVertexType = `typeHash`
 
-#TODO! do not disable attributes, only do it in enableAttributes if there is a mismatch!
-#is is assumed the mesh is called 'mesh' and the shader is called 'shader'
-macro disableAttributes(vert: typed): untyped =
-  let vertexType = vert.getType()[1]
-  result = newStmtList()
+#TODO buffer parameter should default to fau global framebuffer!
+#offset and count are in vertices, not floats!
+proc render*[T](mesh: Mesh[T], shader: Shader, buffer: Framebuffer = screen, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled) =
+  #bind shader and buffer for drawing to
+  shader.use()
+  buffer.use()
 
-  for identDefs in getImpl(vertexType)[2][2]:
-    for i in 0 .. identDefs.len - 3:
-      let alias = "a_" & $identDefs[i]
-
-      result.add quote do:
-        if shader.attributes.hasKey(`alias`):
-          glDisableVertexAttribArray(shader.attributes[`alias`].location.GLuint)
-
-proc beginBind[T](mesh: Mesh[T], shader: Shader) =
   #draw usage
   let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
 
@@ -186,18 +204,7 @@ proc beginBind[T](mesh: Mesh[T], shader: Shader) =
   mesh.modifiedVert = false
   mesh.modifiedInd = false
 
-  enableAttributes(T)
-
-proc endBind[T](mesh: Mesh[T], shader: Shader) =
-  #TODO may not be necessary
-  disableAttributes(T)
-
-#TODO buffer parameter should default to fau global framebuffer!
-#offset and count are in vertices, not floats!
-proc render*[T](mesh: Mesh[T], shader: Shader, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled) =
-  shader.use() #binds the shader if it isn't already bound
-
-  beginBind(mesh, shader)
+  enableAttributes(shader, T)
 
   #set up depth buffer info
   if depth:
@@ -214,15 +221,12 @@ proc render*[T](mesh: Mesh[T], shader: Shader, offset = 0, count = -1, depth = f
     glEnable(GlBlend)
     glBlendFunc(blend.src, blend.dst)
 
-  let vsize = mesh.vertexSize
   if mesh.indices.len == 0: #TODO vsize incorrect
     let pcount = if count < 0: mesh.vertices.len else: count
     glDrawArrays(mesh.primitiveType, offset.GLint, (vsize * pcount).GLsizei)
   else:
     let pcount = if count < 0: mesh.indices.len else: count
     glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](offset * Glushort.sizeof))
-  
-  endBind(mesh, shader)
 
 template vert2*(apos, auv: Vec2, acolor = colorWhite, amixcolor = colorClear): Vert2 = Vert2(pos: apos, uv: auv, color: acolor, mixcolor: amixcolor)
 template vert2*(x, y, u, v: float32, acolor = colorWhite, amixcolor = colorClear): Vert2 = Vert2(pos: vec2(x, y), uv: vec2(u, v), color: acolor, mixcolor: amixcolor)
