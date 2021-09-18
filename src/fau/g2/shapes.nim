@@ -1,4 +1,4 @@
-import fcore, math
+import math
 
 var quadv: array[4, Vert2]
 

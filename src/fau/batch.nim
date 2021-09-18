@@ -1,3 +1,40 @@
+import color, mesh, texture, framebuffer, patch, shader, fmath, math, util/util, sugar, algorithm
+
+#TODO use vec2 for xy, origin, size
+type
+  ReqKind* = enum
+    reqVert,
+    reqRect,
+    reqProc
+  Req* = object
+    blend: Blending
+    shader: Shader
+    z: float32
+    case kind: ReqKind:
+    of reqVert:
+      verts: array[4, Vert2]
+      tex: Texture
+    of reqRect:
+      patch: Patch
+      x, y, originX, originY, width, height, rotation: float32
+      color, mixColor: Color
+    of reqProc:
+      draw: proc()
+
+type Batch* = ref object
+  mesh: Mesh2
+  defaultShader: Shader
+  lastTexture: Texture
+  index: int
+  size: int
+  req*: seq[Req]
+
+  #TODO
+  #The matrix being used by the batch
+  mat*: Mat
+  #Whether sorting is enabled for the batch - requires sorted batch
+  sort*: bool
+
 #types of draw alignment for sprites
 const
   daLeft* = 1
@@ -10,17 +47,15 @@ const
   daBotRight* = daBot or daRight
   daCenter* = daLeft or daRight or daTop or daBot
 
-proc flush(batch: Batch) =
+proc flushInternal(batch: Batch) =
   if batch.index == 0: return
 
-  batch.lastTexture.use()
-  fau.batchBlending.use()
-
   #use global shader if there is one set
-  let shader = if fau.batchShader.isNil: batch.shader else: fau.batchShader
+  let shader = if batch.shader.isNil: batch.defaultShader else: batch.shader
 
+  #TODO sampler system - replacement for batch.lastTexture.use()
   shader.seti("u_texture", 0)
-  shader.setmat4("u_proj", fau.batchMat)
+  shader.setmat4("u_proj", batch.mat)
 
   batch.mesh.updateVertices(0..<batch.index)
   batch.mesh.render(shader, 0, batch.index div 4 * 6)
@@ -29,77 +64,76 @@ proc flush(batch: Batch) =
 
 proc prepare(batch: Batch, texture: Texture) =
   if batch.lastTexture != texture or batch.index >= batch.size:
-    batch.flush()
+    batch.flushInternal()
     batch.lastTexture = texture
 
-proc drawRaw(batch: Batch, texture: Texture, vertices: array[4, Vert2], z: float32) =
-  if fau.batchSort:
-    batch.reqs.add(Req(kind: reqVert, tex: texture, verts: vertices, blend: fau.batchBlending, z: z))
+proc draw(batch: Batch, req: Req) =
+  if batch.sort:
+    batch.req.add req
   else:
-    batch.prepare(texture)
+    case req.kind
+    of reqVert:
+      batch.prepare(req.tex)
 
-    let
-      verts = addr batch.mesh.vertices
-      idx = batch.index
-
-    #copy over the vertices
-    for i in 0..<4:
-      verts[i + idx] = vertices[i]
-
-    batch.index += 4
-
-proc drawRaw(batch: Batch, region: Patch, x, y, z, width, height, originX, originY, rotation: float32, color, mixColor: Color) =
-  if fau.batchSort:
-    batch.reqs.add(Req(kind: reqRect, patch: region, x: x, y: y, z: z, width: width, height: height, originX: originX, originY: originY, rotation: rotation, color: color, mixColor: mixColor, blend: fau.batchBlending))
-  else:
-    batch.prepare(region.texture)
-
-    if rotation == 0.0f:
       let
-        x2 = width + x
-        y2 = height + y
-        u = region.u
-        v = region.v2
-        u2 = region.u2
-        v2 = region.v
-        idx = batch.index
         verts = addr batch.mesh.vertices
-        cf = color
-        mf = mixColor
-
-      verts.minsert(idx, [vert2(x, y, u, v, cf, mf), vert2(x, y2, u, v2, cf, mf), vert2(x2, y2, u2, v2, cf, mf), vert2(x2, y, u2, v, cf, mf)])
-    else:
-      let
-        #bottom left and top right corner points relative to origin
-        worldOriginX = x + originX
-        worldOriginY = y + originY
-        fx = -originX
-        fy = -originY
-        fx2 = width - originX
-        fy2 = height - originY
-        #rotate
-        cos = cos(rotation)
-        sin = sin(rotation)
-        x1 = cos * fx - sin * fy + worldOriginX
-        y1 = sin * fx + cos * fy + worldOriginY
-        x2 = cos * fx - sin * fy2 + worldOriginX
-        y2 = sin * fx + cos * fy2 + worldOriginY
-        x3 = cos * fx2 - sin * fy2 + worldOriginX
-        y3 = sin * fx2 + cos * fy2 + worldOriginY
-        x4 = x1 + (x3 - x2)
-        y4 = y3 - (y2 - y1)
-        u = region.u
-        v = region.v2
-        u2 = region.u2
-        v2 = region.v
         idx = batch.index
-        verts = addr batch.mesh.vertices
-        cf = color
-        mf = mixColor
 
-      verts.minsert(idx, [vert2(x1, y1, u, v, cf, mf), vert2(x2, y2, u, v2, cf, mf), vert2(x3, y3, u2, v2, cf, mf), vert2(x4, y4, u2, v, cf, mf)])
+      #copy over the vertices
+      for i in 0..<4:
+        verts[i + idx] = req.verts[i]
 
-    batch.index += 4
+      batch.index += 4
+    of reqRect:
+      batch.prepare(req.patch.texture)
+      if req.rotation == 0.0f:
+        let
+          x2 = req.width + req.x
+          y2 = req.height + req.y
+          u = req.patch.u
+          v = req.patch.v2
+          u2 = req.patch.u2
+          v2 = req.patch.v
+          idx = batch.index
+          verts = addr batch.mesh.vertices
+          cf = req.color
+          mf = req.mixColor
+
+        verts.minsert(idx, [vert2(x, y, u, v, cf, mf), vert2(x, y2, u, v2, cf, mf), vert2(x2, y2, u2, v2, cf, mf), vert2(x2, y, u2, v, cf, mf)])
+      else:
+        let
+          #bottom left and top right corner points relative to origin
+          worldOriginX = req.x + req.originX
+          worldOriginY = req.y + req.originY
+          fx = -req.originX
+          fy = -req.originY
+          fx2 = req.width - req.originX
+          fy2 = req.height - req.originY
+          #rotate
+          cos = cos(req.rotation)
+          sin = sin(req.rotation)
+          x1 = cos * fx - sin * fy + worldOriginX
+          y1 = sin * fx + cos * fy + worldOriginY
+          x2 = cos * fx - sin * fy2 + worldOriginX
+          y2 = sin * fx + cos * fy2 + worldOriginY
+          x3 = cos * fx2 - sin * fy2 + worldOriginX
+          y3 = sin * fx2 + cos * fy2 + worldOriginY
+          x4 = x1 + (x3 - x2)
+          y4 = y3 - (y2 - y1)
+          u = req.patch.u
+          v = req.patch.v2
+          u2 = req.patch.u2
+          v2 = req.patch.v
+          idx = batch.index
+          verts = addr batch.mesh.vertices
+          cf = req.color
+          mf = req.mixColor
+
+        verts.minsert(idx, [vert2(x1, y1, u, v, cf, mf), vert2(x2, y2, u, v2, cf, mf), vert2(x3, y3, u2, v2, cf, mf), vert2(x4, y4, u2, v, cf, mf)])
+
+      batch.index += 4
+    of reqProc:
+      req.draw()
 
 proc newBatch*(size: int = 4092): Batch = 
   let batch = Batch(
@@ -122,7 +156,7 @@ proc newBatch*(size: int = 4092): Batch =
     j += 4
   
   #create default shader
-  batch.shader = newShader(
+  batch.defaultShader = newShader(
   """
   attribute vec4 a_pos;
   attribute vec4 a_color;
@@ -155,46 +189,30 @@ proc newBatch*(size: int = 4092): Batch =
 
   result = batch
 
-#Flush the batched items.
-proc drawFlush*() =
-  if fau.batchSort:
+#Flush the batched items. TODO when is this even necessary in user code?
+proc flush*(batch: Batch) =
+  if batch.sort:
     #sort requests by their Z value
-    fau.batch.reqs.sort((a, b) => a.z.cmp b.z)
+    batch.req.sort((a, b) => a.z.cmp b.z)
     #disable it so following reqs are not sorted again
-    fau.batchSort = false
+    batch.sort = false
 
-    let last = fau.batchBlending
-    
-    for req in fau.batch.reqs:
-      if fau.batchBlending != req.blend:
-        fau.batch.flush()
-        req.blend.use()
-        fau.batchBlending = req.blend
+    for req in batch.req:
       
       case req.kind:
       of reqVert:
-        fau.batch.drawRaw(req.tex, req.verts, 0)
+        batch.drawRaw(req.tex, req.verts, 0)
       of reqRect:
-        fau.batch.drawRaw(req.patch, req.x, req.y, 0.0, req.width, req.height, req.originX, req.originY, req.rotation, req.color, req.mixColor)
+        batch.drawRaw(req.patch, req.x, req.y, 0.0, req.width, req.height, req.originX, req.originY, req.rotation, req.color, req.mixColor)
       of reqProc:
         req.draw()
     
-    fau.batch.reqs.setLen(0)
-    fau.batchSort = true
-    fau.batchBlending = last
+    batch.reqs.setLen(0)
+    batchSort = true
+    batchBlending = last
 
   #flush the base batch
-  fau.batch.flush()
-
-#Set a shader to be used for rendering. This flushes the batch.
-proc drawShader*(shader: Shader) = 
-  drawFlush()
-  fau.batchShader = shader
-
-template withShader*(shader: Shader, body: untyped) =
-  shader.drawShader()
-  body
-  drawShader(nil)
+  batch.flushInternal()
 
 #Sets the matrix used for rendering. This flushes the batch.
 proc drawMat*(mat: Mat) = 

@@ -1,4 +1,44 @@
 
+import gl/[glproc, gltypes], color, fmath, shader, framebuffer
+
+#types of blending
+type Blending* = object
+  src*: GLenum
+  dst*: Glenum
+
+#Vertex index.
+type Index* = GLushort
+
+#Basic 2D vertex.
+type Vert2* = object
+  pos: Vec2
+  uv: Vec2
+  color, mixcolor: Color
+
+#Uncolored 2D vertex
+type SVert2* = object
+  pos: Vec2
+  uv: Vec2
+
+#Generic mesh, optionally indexed.
+type MeshObj*[V] = object
+  vertices*: seq[V]
+  indices*: seq[Glushort]
+  vertexBuffer: GLuint
+  indexBuffer: GLuint
+  isStatic: bool
+  modifiedVert: bool
+  modifiedInd: bool
+  vertSlice: Slice[int]
+  indSlice: Slice[int]
+  primitiveType*: GLenum
+#Generic mesh
+type Mesh*[T] = ref MeshObj[T]
+#Basic 2D mesh
+type Mesh2* = Mesh[Vert2]
+#Uncolored mesh
+type SMesh* = Mesh[SVert2]
+
 const
   blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
   blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
@@ -152,6 +192,7 @@ proc endBind[T](mesh: Mesh[T], shader: Shader) =
   #TODO may not be necessary
   disableAttributes(T)
 
+#TODO buffer parameter should default to fau global framebuffer!
 #offset and count are in vertices, not floats!
 proc render*[T](mesh: Mesh[T], shader: Shader, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled) =
   shader.use() #binds the shader if it isn't already bound

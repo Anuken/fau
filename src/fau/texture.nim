@@ -1,3 +1,14 @@
+import stb_image/read as stbi, gl/[glproc, gltypes], fmath
+
+#an openGL image
+type TextureObj = object
+  handle*: Gluint
+  uwrap, vwrap: Glenum
+  minfilter, magfilter: Glenum
+  target*: Glenum
+  width*, height*: int
+type Texture* = ref TextureObj
+
 proc `=destroy`*(texture: var TextureObj) =
   if texture.handle != 0 and glInitialized:
     glDeleteTexture(texture.handle)

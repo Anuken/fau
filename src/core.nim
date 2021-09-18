@@ -1,39 +1,19 @@
-import gl, strutils, gltypes, tables, fmath, streams, macros, math, algorithm, sugar, futils
-import stb_image/read as stbi
-
-#TODO do not.
-include ftypes
-
-export fmath, futils
-
-#Global instance of fau state.
-var fau* = FauState()
-
-proc fireFauEvent*(ev: FauEvent) =
-  for l in fau.listeners: l(ev)
-
-proc addFauListener*(ev: FauListener) =
-  fau.listeners.add ev
-
-#Turns pixel units into world units
-proc px*(val: float32): float32 {.inline.} = val * fau.pixelScl
-
-proc mouseWorld*(fau: FauState): Vec2 {.inline.} = fau.cam.unproject(fau.mouse)
-
-when defined(Android):
-  include backend/glfmcore
-else:
-  include backend/glfwcore
-
-when not defined(noAudio):
-  import audio
-  export audio
+import fau/[fmath, globals, color, framebuffer, mesh, patch, shader, texture,], fau/g2/[shapes, font]
+import times, random
 
 when defined(debug):
   import recorder
 
-import times, shapes, random, font
-export shapes, font
+when defined(Android):
+  include fau/backend/glfmcore
+else:
+  include fau/backend/glfwcore
+
+when not defined(noAudio):
+  import fau/audio
+  export fau/audio
+
+export fmath, shapes, font, globals, color, framebuffer, mesh, patch, shader, texture
 
 #global state for input/time
 var
@@ -53,7 +33,7 @@ proc axis*(left, right: KeyCode): int = right.down.int - left.down.int
 
 #TODO all of these should be struct parameters!
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
-  depth = false, clearColor = rgba(0, 0, 0, 0), atlasFile: static[string] = "atlas") =
+  depth = false, clearColor = colorClear, atlasFile: static[string] = "atlas") =
 
   fau.clearColor = clearColor
 
@@ -120,6 +100,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
     fau.size = fau.sizei.vec2
 
+    fau.buffer.resize(fau.sizei)
     fau.buffer.clear(fau.clearColor)
     loopProc()
 

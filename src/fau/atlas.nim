@@ -1,6 +1,14 @@
 
 import strformat
 
+#A single-texture atlas.
+type Atlas* = ref object
+  patches*: Table[string, Patch]
+  patches9*: Table[string, Patch9]
+  texture*: Texture
+  error*: Patch
+  error9*: Patch9
+
 #Loads an atlas from static resources.
 proc loadAtlasStatic*(path: static[string]): Atlas =
   result = Atlas()

@@ -1,4 +1,23 @@
 
+import tables, gl/[glproc, gltypes], strutils, fmath, color
+
+#Internal shader attribute.
+type ShaderAttr* = object
+  name*: string
+  gltype*: GLenum
+  size*: GLint
+  length*: Glsizei
+  location*: GLint
+
+#OpenGL Shader program.
+type ShaderObj* = object
+  handle, vertHandle, fragHandle: GLuint
+  compileLog: string
+  compiled: bool
+  uniforms: Table[string, int]
+  attributes: Table[string, ShaderAttr]
+type Shader* = ref ShaderObj
+
 proc `=destroy`*(shader: var ShaderObj) =
   if shader.handle != 0 and glInitialized:
     glDeleteProgram(shader.handle)

@@ -1,9 +1,8 @@
 import tables, unicode, packer
 import math
+import ../texture, ../patch, ../color
 
-import fcore except vec2
-
-from fmath import nil
+from ../fmath import nil
 from pixie import Image, draw, newImage, typeset, getGlyphPath, commandsToShapes, scale, fillPath, lineHeight, ascent, descent, transform, computePixelBounds, parseSomePaint
 from vmath import x, y, `*`, `-`, isNaN
 from bumpy import xy

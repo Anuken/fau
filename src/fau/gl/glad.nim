@@ -20,7 +20,7 @@
         https://glad.dav1d.de/#profile=core&language=nim&specification=gl&loader=on&api=gl%3D2.0&api=gles2%3D2.0&extensions=GL_EXT_framebuffer_object
 ]#
 
-import strutils, ../gltypes
+import strutils, gltypes
 
 var glVersionMajor*, glVersionMinor*: int
 

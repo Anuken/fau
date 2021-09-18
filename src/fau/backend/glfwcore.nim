@@ -1,4 +1,4 @@
-import staticglfw, glad
+import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 
@@ -182,11 +182,11 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   #listen to window size changes and relevant events.
 
   discard window.setFramebufferSizeCallback(proc(window: Window, width: cint, height: cint) {.cdecl.} = 
-    fireFauEvent(FauEvent(kind: feResize, w: width.int, h: height.int))
+    fireFauEvent(FauEvent(kind: feResize, size: vec2i(width.int, height.int)))
   )
 
   discard window.setCursorPosCallback(proc(window: Window, x: cdouble, y: cdouble) {.cdecl.} = 
-    fireFauEvent FauEvent(kind: feDrag, dragPos: vec2(x.float32, fau.height.float32 - 1 - y.float32))
+    fireFauEvent FauEvent(kind: feDrag, dragPos: vec2(x.float32, fau.size.y - 1f - y.float32))
   )
 
   discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} = 

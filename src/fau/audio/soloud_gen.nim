@@ -68,24 +68,9 @@ else:
 {.compile: baseDir & "/src/core/soloud_misc.cpp".}
 {.compile: baseDir & "/src/core/soloud_queue.cpp".}
 {.compile: baseDir & "/src/core/soloud_thread.cpp".}
-{.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt.cpp".}
-{.compile: baseDir & "/src/audiosource/vizsn/soloud_vizsn.cpp".}
-{.compile: baseDir & "/src/audiosource/tedsid/ted.cpp".}
-{.compile: baseDir & "/src/audiosource/tedsid/sid.cpp".}
-{.compile: baseDir & "/src/audiosource/tedsid/soloud_tedsid.cpp".}
-{.compile: baseDir & "/src/audiosource/monotone/soloud_monotone.cpp".}
 {.compile: baseDir & "/src/audiosource/wav/dr_impl.cpp".}
 {.compile: baseDir & "/src/audiosource/wav/soloud_wav.cpp".}
 {.compile: baseDir & "/src/audiosource/wav/soloud_wavstream.cpp".}
-{.compile: baseDir & "/src/audiosource/vic/soloud_vic.cpp".}
-{.compile: baseDir & "/src/audiosource/sfxr/soloud_sfxr.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/soloud_speech.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/klatt.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/darray.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/tts.cpp".}
-{.compile: baseDir & "/src/audiosource/speech/resonator.cpp".}
-{.compile: baseDir & "/src/audiosource/noise/soloud_noise.cpp".}
-{.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt_dll.c".}
 {.compile: baseDir & "/src/audiosource/wav/stb_vorbis.c".}
 {.compile: baseDir & "/src/filter/soloud_bassboostfilter.cpp".}
 {.compile: baseDir & "/src/filter/soloud_biquadresonantfilter.cpp".}
@@ -97,6 +82,25 @@ else:
 {.compile: baseDir & "/src/filter/soloud_lofifilter.cpp".}
 {.compile: baseDir & "/src/filter/soloud_robotizefilter.cpp".}
 {.compile: baseDir & "/src/filter/soloud_waveshaperfilter.cpp".}
+
+#unnecessary
+#[
+{.compile: baseDir & "/src/audiosource/monotone/soloud_monotone.cpp".}
+{.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt.cpp".}
+{.compile: baseDir & "/src/audiosource/vizsn/soloud_vizsn.cpp".}
+{.compile: baseDir & "/src/audiosource/tedsid/ted.cpp".}
+{.compile: baseDir & "/src/audiosource/tedsid/sid.cpp".}
+{.compile: baseDir & "/src/audiosource/tedsid/soloud_tedsid.cpp".}
+{.compile: baseDir & "/src/audiosource/vic/soloud_vic.cpp".}
+{.compile: baseDir & "/src/audiosource/sfxr/soloud_sfxr.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/soloud_speech.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/klatt.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/darray.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/tts.cpp".}
+{.compile: baseDir & "/src/audiosource/speech/resonator.cpp".}
+{.compile: baseDir & "/src/audiosource/noise/soloud_noise.cpp".}
+{.compile: baseDir & "/src/audiosource/openmpt/soloud_openmpt_dll.c".}
+]#
 
 macro defineEnum(typ: untyped): untyped =
   result = newNimNode(nnkStmtList)

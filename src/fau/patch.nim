@@ -1,3 +1,16 @@
+import texture, fmath
+
+#region of a texture
+type Patch* = object
+  texture*: Texture
+  u*, v*, u2*, v2*: float32
+
+#a grid of 9 patches of a texture, used for rendering UI elements
+type Patch9* = object
+  texture*: Texture
+  left*, right*, top*, bot*, width*, height*: int
+  #the 9 patches, arranged in left to right, then bottom to top order
+  patches*: array[9, Patch]
 
 #creates a patch based on pixel coordinates of a texture
 proc newPatch*(texture: Texture, x, y, width, height: int): Patch = 

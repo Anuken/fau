@@ -3,7 +3,7 @@
 import gltypes
 export gltypes
 
-import backend/glad as wrap
+import glad as wrap
 
 #Thrown when something goes wrong with openGL
 type
@@ -38,24 +38,30 @@ var glInitialized* = false
 #openGL wrapper functions. these are optimized
 
 #last active texture unit - 0 is default
-var lastActiveTextureUnit = 0.GLenum
-#last bound texture2ds, mapping from texture unit to texture handle
-var lastBoundTextures: array[32, int]
-#last program activated
-var lastProgram = -1
-#last bound buffer
-var lastArrayBuffer = -1
-#last bound framebuffer
-var lastFramebuffer = -1
-#enabled state; TODO might be better as a bitset.
-var lastEnabled: array[36349, bool]
-#blending S/D factor
-var lastSfactor: GLenum = GLOne
-var lastDfactor: GLenum = GlZero
-#last glCullFace activated
-var lastCullFace = GlBack
-#whether depthMask is on
-var lastDepthMask = true
+var 
+  lastActiveTextureUnit = 0.GLenum
+  #last bound texture2ds, mapping from texture unit to texture handle
+  lastBoundTextures: array[32, int]
+  #last program activated
+  lastProgram = -1
+  #last bound buffer
+  lastArrayBuffer = -1
+  #last bound framebuffer
+  lastFramebuffer = -1
+  #last glViewport parameters
+  lastViewX = -1
+  lastViewY = -1
+  lastViewW = -1
+  lastViewH = -1
+  #enabled state; TODO might be better as a bitset.
+  lastEnabled: array[36349, bool]
+  #blending S/D factor
+  lastSfactor: GLenum = GLOne
+  lastDfactor: GLenum = GlZero
+  #last glCullFace activated
+  lastCullFace = GlBack
+  #whether depthMask is on
+  lastDepthMask = true
 
 #fill with -1, since no texture can have that value
 for x in lastBoundTextures.mitems: x = -1
@@ -279,5 +285,9 @@ proc glVertexAttrib4f*(index: GLuint, x: GLfloat, y: GLfloat, z: GLfloat, w: GLf
 proc glVertexAttrib4fv*(index: GLuint, v: openArray[GLfloat]) {.inline.} = glCheck(): wrap.glVertexAttrib4fv(index, v)
 proc glVertexAttribPointer*(index: GLuint, size: GLint, `type`: GLenum, normalized: GLboolean, stride: GLsizei, pointer: pointer) {.inline.} = glCheck(): wrap.glVertexAttribPointer(index, size, `type`, normalized, stride, pointer)
 
-#TODO
-proc glViewport*(x: GLint, y: GLint, width: GLsizei, height: GLsizei) {.inline.} = glCheck(): wrap.glViewport(x, y, width, height)
+proc glViewport*(x: GLint, y: GLint, width: GLsizei, height: GLsizei) {.inline.} = 
+  if x == lastViewX and y == lastViewY and width == lastViewW and height == lastViewH: return
+
+  glCheck(): wrap.glViewport(x, y, width, height)
+
+  (lastViewX, lastViewY, lastViewW, lastViewH) = (x, y, width, height)

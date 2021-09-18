@@ -10,6 +10,41 @@ import math, random
 #template rad*(v: float32) = v.Radians
 #converter toFloat(r: Radians): float32 {.inline.} = r.float32
 
+## any type that has a time and lifetime
+type Timeable* = concept t
+  t.time is float32
+  t.lifetime is float32
+
+type AnyVec2* = concept t
+  t.x is float32
+  t.y is float32
+
+## any type that can fade in linearly
+type Scaleable* = concept s
+  s.fin() is float32
+
+type Vec2i* = object
+  x*, y*: int
+
+type Vec2* = object
+  x*, y*: float32
+
+#TODO xywh can be vec2s, maybe?
+type Rect* = object
+  x*, y*, w*, h*: float32
+
+#3x3 matrix for 2D transformations
+type Mat* = array[9, float32]
+
+#basic camera
+type Cam* = ref object
+  #world position
+  pos*: Vec2
+  #viewport size
+  size*: Vec2
+  #projection and inverse projection matrix
+  mat*, inv*: Mat
+
 iterator d4*(): tuple[x, y: int] =
   yield (1, 0)
   yield (0, 1)
@@ -486,12 +521,11 @@ template shotgun*(amount: int, spacing: float32, body: untyped) =
 
 #CAMERA
 
-proc unproject*(cam: Cam, vec: Vec2): Vec2 = 
-  vec2((2 * vec.x) / fau.widthf - 1, (2 * vec.y) / fau.heightf - 1) * cam.inv
+#ugh, cyclic dependencies
+import globals
 
-proc project*(cam: Cam, vec: Vec2): Vec2 = 
-  let pro = vec * cam.mat
-  return vec2(fau.widthf * 1 / 2 + pro.x, fau.heightf * 1 / 2 + pro.y)
+proc unproject*(cam: Cam, vec: Vec2): Vec2 = ((vec * 2f) / (fau.size - 1f)) * cam.inv
+proc project*(cam: Cam, vec: Vec2): Vec2 = fau.size * (vec * cam.mat + 1f) / 2f
 
 proc width*(cam: Cam): float32 {.inline.} = cam.size.x
 proc height*(cam: Cam): float32 {.inline.} = cam.size.y

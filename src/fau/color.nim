@@ -1,4 +1,10 @@
 
+import fmath, math, strutils
+
+#defines a RGBA color
+type Color* = object
+  rv*, gv*, bv*, av*: uint8
+
 #just incase something gets messed up somewhere
 static: assert sizeof(Color) == 4, "Size of Color must be 4 bytes, but is " & $sizeof(Color)
 
@@ -25,7 +31,7 @@ func alpha*(a: float32): Color {.inline.} = rgba(1.0, 1.0, 1.0, a)
 #H, S, V are all floats from 0 to 1
 func hsv*(h, s, v: float32, a = 1f): Color =
   let 
-    x = (h * 60f + 6).mod(6f)
+    x = (h * 60f + 6f).mod(6f)
     i = x.floor
     f = x - i
     p = v * (1 - s)
