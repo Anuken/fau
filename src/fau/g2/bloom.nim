@@ -15,16 +15,14 @@ type Bloom* = object
   buffer, p1, p2: Framebuffer
   thresh, bloom, blur: Shader
   blurPasses*: int
-  scaling: int
-  blend: bool
+  scaling*: int
 
-proc newBloom*(scaling: int = 4, passes: int = 1, blend = true, depth = false): Bloom =
+proc newBloom*(scaling: int = 4, passes: int = 1, depth = false): Bloom =
   result.buffer = newFramebuffer(depth = depth)
   result.p1 = newFramebuffer()
   result.p2 = newFramebuffer()
   result.scaling = scaling
   result.blurPasses = passes
-  result.blend = blend
 
   result.thresh = newShader(screenspace,
   """ 
