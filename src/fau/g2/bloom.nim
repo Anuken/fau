@@ -1,4 +1,4 @@
-import fcore
+import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../globals, ../draw
 
 const screenspace = """
 attribute vec4 a_pos;
@@ -64,8 +64,8 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
   """ 
   attribute vec4 a_pos;
   attribute vec2 a_uv; 
-  uniform vec2 dir;
-  uniform vec2 size;
+  uniform vec2 u_dir;
+  uniform vec2 u_size;
   varying vec2 v_texCoords0;
   varying vec2 v_texCoords1;
   varying vec2 v_texCoords2;
@@ -75,7 +75,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
   const vec2 closer = vec2(1.3846153846, 1.3846153846);
 
   void main(){
-    vec2 sizeAndDir = dir / size;
+    vec2 sizeAndDir = u_dir / u_size;
     vec2 f = futher*sizeAndDir;
     vec2 c = closer*sizeAndDir;
     
@@ -109,13 +109,28 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
   """
   )
 
+#[
   result.bloom.seti("u_texture0", 0)
   result.bloom.seti("u_texture1", 1)
   result.bloom.setf("u_bloomIntensity", 2.5)
   result.bloom.setf("u_originalIntensity", 1.0)
+]#
 
-proc pause*(bloom: Bloom) =
-  bloom.buffer.pop()
+
+proc buffer*(bloom: Bloom, clearColor = colorClear): Framebuffer =
+  bloom.buffer.resize(fau.sizei)
+  bloom.p1.resize(fau.sizei div bloom.scaling)
+  bloom.p2.resize(fau.sizei div bloom.scaling)
+  #TODO would be nice if buffer resizes preserved filters...
+  bloom.buffer.texture.filter = tfLinear
+  bloom.p1.texture.filter = tfLinear
+  bloom.p2.texture.filter = tfLinear
+
+  bloom.buffer.clear(clearColor)
+  return bloom.buffer
+
+#[
+
 
 proc capture*(bloom: Bloom) =
   let
@@ -126,37 +141,44 @@ proc capture*(bloom: Bloom) =
     bloom.buffer.resize(w, h)
     bloom.p1.resize(w div bloom.scaling, h div bloom.scaling)
     bloom.p2.resize(w div bloom.scaling, h div bloom.scaling)
+
     bloom.blur.setf("size", bloom.p1.width.float32, bloom.p1.height.float32)
+
     bloom.buffer.texture.filterLinear()
     bloom.p1.texture.filterLinear()
     bloom.p2.texture.filterLinear()
 
   bloom.buffer.push(colorClear)
+]#
 
-proc render*(bloom: Bloom) =
-  if bloom.buffer.isCurrent:
-    bloom.buffer.pop()
+#[
+  result.bloom.seti("u_texture0", 0)
+  result.bloom.seti("u_texture1", 1)
+  result.bloom.setf("u_bloomIntensity", 2.5)
+  result.bloom.setf("u_originalIntensity", 1.0)
+]#
 
-  blendDisabled.use()
+proc blit*(bloom: Bloom, params = meshParams()) =
+  
+  bloom.buffer.blit(bloom.thresh, meshParams(buffer = bloom.p1))
 
-  bloom.p1.push()
-  bloom.buffer.blitQuad(bloom.thresh)
-  bloom.p1.pop()
+  #TODO uniform blocks bad
+  bloom.blur.uniforms:
+    size = bloom.p1.size.vec2
 
   for i in 0..<bloom.blurPasses:
     #horizontal
-    bloom.p2.push()
-    bloom.blur.setf("dir", 1, 0)
-    bloom.p1.blitQuad(bloom.blur)
-    bloom.p2.pop()
-
+    blit(bloom.blur, meshParams(buffer = bloom.p2)):
+      texture = bloom.p1.sampler
+      dir = vec2(1, 0)
     #vertical
-    bloom.p1.push()
-    bloom.blur.setf("dir", 0, 1)
-    bloom.p2.blitQuad(bloom.blur)
-    bloom.p1.pop()
+    blit(bloom.blur, meshParams(buffer = bloom.p1)):
+      texture = bloom.p2.sampler
+      dir = vec2(0, 1)
 
-  (if bloom.blend: blendNormal else: blendDisabled).use()
-  bloom.buffer.texture.use(0)
-  bloom.p1.blitQuad(bloom.bloom, unit = 1)
+  blit(bloom.bloom, params):
+    texture0 = bloom.buffer.sampler(0)
+    texture1 = bloom.p1.sampler(1)
+    bloomIntensity = 2.5f
+    originalIntensity = 1f
   

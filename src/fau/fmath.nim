@@ -29,6 +29,10 @@ type Vec2i* = object
 type Vec2* = object
   x*, y*: float32
 
+#doesn't really belong here, but I need it for shaders.
+type Vec3* = object
+  x*, y*, z*: float32
+
 #TODO xywh can be vec2s, maybe?
 type Rect* = object
   x*, y*, w*, h*: float32
@@ -201,6 +205,7 @@ func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
 op(Vec2i, int, vec2i, `+`, `+=`)
 op(Vec2i, int, vec2i, `-`, `-=`)
 op(Vec2i, int, vec2i, `*`, `*=`)
+op(Vec2i, int, vec2i, `div`, `div=`)
 
 func `-`*(vec: Vec2i): Vec2i {.inline.} = vec2i(-vec.x, -vec.y)
 

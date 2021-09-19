@@ -121,7 +121,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     if fau.screenDensity <= 0.0001f:
       fau.screenDensity = 1f
 
-    screen = newDefaultFramebuffer()
+    screen = newDefaultFramebuffer(depth)
     
     #create and use batch
     fau.batch = newBatch()

@@ -56,13 +56,11 @@ proc flushInternal(batch: Batch) =
   #use global shader if there is one set
   let shader = if batch.lastShader.isNil: batch.defaultShader else: batch.lastShader
 
-  #TODO completely broken
-  #TODO sampler system - replacement for batch.lastTexture.use()
-  shader.seti("u_texture", 0)
-  shader.setmat4("u_proj", batch.mat)
-
   batch.mesh.updateVertices(0..<batch.index)
-  batch.mesh.render(shader, batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend)
+  
+  batch.mesh.render(shader, meshParams(batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend)):
+    texture = batch.lastTexture.sampler
+    proj = batch.mat
 
   batch.index = 0
 
@@ -218,8 +216,13 @@ proc flush*(batch: Batch) =
   batch.flushInternal()
 
 #Sets the matrix used for rendering. This flushes the batch.
-proc `mat`*(batch: Batch, mat: Mat) = 
+proc mat*(batch: Batch, mat: Mat) = 
   batch.flush()
   batch.mat = mat
+
+#Sets the framebuffer used for rendering. This flushes the batch.
+proc buffer*(batch: Batch, buffer: Framebuffer) = 
+  batch.flush()
+  batch.buffer = buffer
 
 #TODO set dest buffer

@@ -1,5 +1,5 @@
 
-import tables, gl/[glproc, gltypes], strutils, fmath, color, macros
+import tables, gl/[glproc, gltypes], strutils, fmath, color, macros, texture, framebuffer
 
 #Internal shader attribute.
 type ShaderAttr* = object
@@ -17,6 +17,10 @@ type ShaderObj* = object
   uniforms: Table[string, int]
   attributes: Table[string, ShaderAttr]
 type Shader* = ref ShaderObj
+
+type Sampler* = object
+  texture*: Texture
+  index*: int
 
 proc `=destroy`*(shader: var ShaderObj) =
   if shader.handle != 0 and glInitialized:
@@ -147,50 +151,52 @@ proc findUniform(shader: Shader, name: string): int =
   shader.uniforms[name] = location
   return location
 
-#TODO all of these functions should be unnecessary. pass uniforms properly!
+proc sampler*(tex: Texture, index = 0): Sampler = Sampler(texture: tex, index: index)
+proc sampler*(buf: Framebuffer, index = 0): Sampler = Sampler(texture: buf.texture, index: index)
 
-proc seti*(shader: Shader, name: string, value: int) =
+#TODO all of these functions should be unnecessary. pass uniforms properly!
+#TODO do not export
+
+template withUniform(shader: Shader, name: string, body: untyped) =
   shader.use()
-  let loc = shader.findUniform(name)
-  if loc != -1: glUniform1i(loc.GLint, value.GLint)
+  let loc {.inject.} = shader.findUniform(name)
+  if loc != -1:
+    body
+
+proc uniform*(shader: Shader, name: string, value: Sampler) =
+  shader.withUniform(name): 
+    value.texture.use(value.index)
+    glUniform1i(loc.GLint, value.index.GLint)
+
+proc uniform*(shader: Shader, name: string, value: int) =
+  shader.withUniform(name): glUniform1i(loc.GLint, value.GLint)
 
 #converts a 2D matrix to 3D and sets it
-proc setmat4*(shader: Shader, name: string, value: Mat) =
-  shader.use()
-  let loc = shader.findUniform(name)
-  if loc != -1: glUniformMatrix4fv(loc.GLint, 1, false, value.toMat4())
+proc uniform*(shader: Shader, name: string, value: Mat) =
+  shader.withUniform(name): glUniformMatrix4fv(loc.GLint, 1, false, value.toMat4())
 
 #sets a 3D matrix; the input value should be a 4x4 matrix
-proc setmat4*(shader: Shader, name: string, value: array[16, float32]) =
-  shader.use()
-  let loc = shader.findUniform(name)
-  if loc != -1: glUniformMatrix4fv(loc.GLint, 1, false, value)
+proc uniform*(shader: Shader, name: string, value: array[16, float32]) =
+  shader.withUniform(name): glUniformMatrix4fv(loc.GLint, 1, false, value)
 
-proc setf*(shader: Shader, name: string, value: float) =
-  shader.use()
-  let loc = shader.findUniform(name)
-  if loc != -1: glUniform1f(loc.GLint, value.GLfloat)
+proc uniform*(shader: Shader, name: string, value: float32) =
+  shader.withUniform(name): glUniform1f(loc.GLint, value)
 
-proc setf*(shader: Shader, name: string, value1, value2: float) =
-  shader.use()
-  let loc = shader.findUniform(name)
-  if loc != -1: glUniform2f(loc.GLint, value1.GLfloat, value2.GLfloat)
+proc uniform*(shader: Shader, name: string, value: Vec2) =
+  shader.withUniform(name): glUniform2f(loc.GLint, value.x, value.y)
 
-proc setf*(shader: Shader, name: string, value: Vec2) =
-  shader.setf(name, value.x, value.y)
+proc uniform*(shader: Shader, name: string, value: Vec3) =
+  shader.withUniform(name): glUniform3f(loc.GLint, value.x, value.y, value.z)
 
-proc setf*(shader: Shader, name: string, value1, value2, value3: float) =
-  shader.use()
-  let loc = shader.findUniform(name)
-  if loc != -1: glUniform3f(loc.GLint, value1.GLfloat, value2.GLfloat, value3.GLfloat)
+proc uniform*(shader: Shader, name: string, col: Color) =
+  shader.withUniform(name): glUniform4f(loc.GLint, col.r, col.g, col.b, col.a)
 
-proc setf*(shader: Shader, name: string, value1, value2, value3, value4: float) =
-  shader.use()
-  let loc = shader.findUniform(name)
-  if loc != -1: glUniform4f(loc.GLint, value1.GLfloat, value2.GLfloat, value3.GLfloat, value4.GLfloat)
-
-proc setf*(shader: Shader, name: string, col: Color) = shader.setf(name, col.r, col.g, col.b, col.a)
-
-#TODO
+#TODO internal use only!
 macro uniforms*(shader: Shader, body: untyped): untyped =
   result = newStmtList()
+
+  for a in body:
+    let uname = ("u_" & a[0].strVal)
+    let ucall = a[1]
+    result.add quote do:
+      `shader`.uniform(`uname`, `ucall`)

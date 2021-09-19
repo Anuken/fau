@@ -1,12 +1,20 @@
 import stb_image/read as stbi, gl/[glproc, gltypes], fmath, util/util
 
-#an openGL image
+type TextureFilter* = enum
+  tfNearest,
+  tfLinear
+
+type TextureWrap* = enum
+  twClamp,
+  twRepeat,
+  twMirroredRepeat
+
 type TextureObj = object
   handle*: Gluint
-  uwrap, vwrap: Glenum
-  minfilter, magfilter: Glenum
+  uwrap, vwrap: TextureWrap
+  minfilter, magfilter: TextureFilter
   target*: Glenum
-  width*, height*: int
+  size*: Vec2i
 type Texture* = ref TextureObj
 
 proc `=destroy`*(texture: var TextureObj) =
@@ -20,84 +28,82 @@ proc use*(texture: Texture, unit: int = 0) =
   glActiveTexture((GlTexture0.int + unit).GLenum)
   glBindTexture(texture.target, texture.handle)
 
-#assigns min and mag filters
-proc `filter=`*(texture: Texture, filter: Glenum) =
-  if texture.minfilter != filter or texture.magfilter != filter:
+proc toGlEnum(filter: TextureFilter): GLenum =
+  case filter
+  of tfNearest: GlNearest
+  of tfLinear: GlLinear
+
+proc toGlEnum(wrap: TextureWrap): GLenum =
+  case wrap
+  of twClamp: GlClampToEdge
+  of twRepeat: GlRepeat
+  of twMirroredRepeat: GlMirroredRepeat
+
+proc `filterMin=`*(texture: Texture, filter: TextureFilter) =
+  if texture.minfilter != filter:
     texture.minfilter = filter
+    texture.use()
+    glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.toGlEnum.GLint)
+
+proc `filterMag=`*(texture: Texture, filter: TextureFilter) =
+  if texture.magfilter != filter:
     texture.magfilter = filter
     texture.use()
-    glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.GLint)
-    glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.GLint)
+    glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.toGlEnum.GLint)
 
-#TODO use enum.
-proc filterLinear*(texture: Texture) = texture.filter = GlLinear
-proc filterNearest*(texture: Texture) = texture.filter = GlNearest
+#assigns min and mag filters
+proc `filter=`*(texture: Texture, filter: TextureFilter) =
+  texture.filterMin = filter
+  texture.filterMag = filter
+
+proc `wrapU=`*(texture: Texture, wrap: TextureWrap) =
+  if texture.uwrap != wrap:
+    texture.uwrap = wrap
+    texture.use()
+    glTexParameteri(texture.target, GlTextureWrapS, texture.uwrap.toGlEnum.GLint)
+
+proc `wrapV=`*(texture: Texture, wrap: TextureWrap) =
+  if texture.vwrap != wrap:
+    texture.vwrap = wrap
+    texture.use()
+    glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.toGlEnum.GLint)
 
 #assigns wrap modes for each axis
-proc `wrap=`*(texture: Texture, wrap: Glenum) =
-  texture.uwrap = wrap
-  texture.vwrap = wrap
-  texture.use()
-  glTexParameteri(texture.target, GlTextureWrapS, texture.uwrap.GLint)
-  glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
-
-proc `filterMin=`*(texture: Texture, filter: Glenum) =
-  texture.minfilter = filter
-  texture.use()
-  glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.GLint)
-
-proc `filterMag=`*(texture: Texture, filter: Glenum) =
-  texture.magfilter = filter
-  texture.use()
-  glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.GLint)
-
-proc `wrapU=`*(texture: Texture, wrap: Glenum) =
-  texture.uwrap = wrap
-  texture.use()
-  glTexParameteri(texture.target, GlTextureWrapS, texture.uwrap.GLint)
-
-proc `wrapV=`*(texture: Texture, wrap: Glenum) =
-  texture.vwrap = wrap
-  texture.use()
-  glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.GLint)
-
-proc wrapRepeat*(texture: Texture) =
-  texture.wrap = GlRepeat
+proc `wrap=`*(texture: Texture, wrap: TextureWrap) =
+  texture.wrapU = wrap
+  texture.wrapV = wrap
 
 #completely reloads texture data
-proc load*(texture: Texture, width, height: int, pixels: pointer) =
+proc load*(texture: Texture, size: Vec2i, pixels: pointer) =
   #bind texture
   texture.use()
   glPixelStorei(GlUnpackAlignment, 1)
-  glTexImage2D(texture.target, 0, GlRGBA.Glint, width.GLsizei, height.GLsizei, 0, GlRGBA, GlUnsignedByte, pixels)
-  texture.width = width
-  texture.height = height
+  glTexImage2D(texture.target, 0, GlRGBA.Glint, size.x.GLsizei, size.y.GLsizei, 0, GlRGBA, GlUnsignedByte, pixels)
+  texture.size = size
 
 #updates a portion of a texture with some pixels.
-proc update*(texture: Texture, x, y, width, height: int, pixels: pointer) =
+proc update*(texture: Texture, pos: Vec2i, size: Vec2i, pixels: pointer) =
   #bind texture
   texture.use()
-  glTexSubImage2D(texture.target, 0, x.GLint, y.GLint, width.GLsizei, height.GLsizei, GlRGBA, GlUnsignedByte, pixels)
+  glTexSubImage2D(texture.target, 0, pos.x.GLint, pos.y.GLint, size.x.GLsizei, size.y.GLsizei, GlRGBA, GlUnsignedByte, pixels)
 
 #creates a base texture with no data uploaded
-proc newTexture*(width, height: int = 1): Texture = 
-  result = Texture(handle: glGenTexture(), uwrap: GlClampToEdge, vwrap: GlClampToEdge, minfilter: GlNearest, magfilter: GlNearest, target: GlTexture2D, width: width, height: height)
+proc newTexture*(size: Vec2i = vec2i(1)): Texture = 
+  result = Texture(handle: glGenTexture(), uwrap: twClamp, vwrap: twClamp, minfilter: tfNearest, magfilter: tfNearest, target: GlTexture2D, size: size)
   result.use()
 
   #set parameters
-  glTexParameteri(result.target, GlTextureMinFilter, result.minfilter.GLint)
-  glTexParameteri(result.target, GlTextureMagFilter, result.magfilter.GLint)
-  glTexParameteri(result.target, GlTextureWrapS, result.uwrap.GLint)
-  glTexParameteri(result.target, GlTextureWrapT, result.vwrap.GLint)
+  glTexParameteri(result.target, GlTextureMinFilter, result.minfilter.toGlEnum.GLint)
+  glTexParameteri(result.target, GlTextureMagFilter, result.magfilter.toGlEnum.GLint)
+  glTexParameteri(result.target, GlTextureWrapS, result.uwrap.toGlEnum.GLint)
+  glTexParameteri(result.target, GlTextureWrapT, result.vwrap.toGlEnum.GLint)
 
 #load texture from ptr to decoded PNG data
-proc loadTexturePtr*(width, height: int, data: pointer): Texture =
+proc loadTexturePtr*(size: Vec2i, data: pointer): Texture =
   result = newTexture()
 
-  result.width = width
-  result.height = height
-
-  result.load(width, height, data)
+  result.size = size
+  result.load(size, data)
 
 #load texture from bytes
 proc loadTextureBytes*(bytes: string): Texture =
@@ -108,7 +114,7 @@ proc loadTextureBytes*(bytes: string): Texture =
     data: seq[uint8]
 
   data = stbi.loadFromMemory(cast[seq[byte]](bytes), width, height, channels, 4)
-  result.load(width, height, addr data[0])
+  result.load(vec2i(width, height), addr data[0])
 
   
 #load texture from path
@@ -120,7 +126,7 @@ proc loadTexture*(path: string): Texture =
     data: seq[uint8]
 
   data = stbi.load(path, width, height, channels, 4)
-  result.load(width, height, addr data[0])
+  result.load(vec2i(width, height), addr data[0])
 
 proc loadTextureStatic*(path: static[string]): Texture =
   when not defined(emscripten):

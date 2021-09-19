@@ -4,22 +4,28 @@ import gl/[glproc, gltypes], fmath, texture, color
 #OpenGL Framebuffer wrapper.
 #TODO no depth buffer support!
 type FramebufferObj* = object
-  handle*: Gluint
+  handle: Gluint
   size: Vec2i
   texture: Texture
   isDefault: bool
+  #TODO no way to attach depth yet
+  hasDepth: bool
+  depthHandle: GLuint
 type Framebuffer* = ref FramebufferObj
 
 proc `=destroy`*(buffer: var FramebufferObj) =
   if buffer.handle != 0 and glInitialized:
     glDeleteFramebuffer(buffer.handle)
     buffer.handle = 0
+  if buffer.depthHandle != 0 and glInitialized:
+    glDeleteRenderbuffer(buffer.depthHandle)
+    buffer.depthHandle = 0
 
 #accessors; read-only
 proc size*(buffer: Framebuffer): Vec2i {.inline.} = buffer.size
 proc texture*(buffer: Framebuffer): Texture {.inline.} = buffer.texture
 
-#TODO rendering should keep track of this, don't call manually? or do
+#TODO rendering should keep track of this, don't call manually?
 
 proc resize*(buffer: Framebuffer, size: Vec2i) =
   #default buffers can't be resized
@@ -39,26 +45,32 @@ proc resize*(buffer: Framebuffer, size: Vec2i) =
     glDeleteFramebuffer(buffer.handle)
     buffer.handle = 0
   
+  if buffer.depthHandle != 0:
+    glDeleteRenderbuffer(buffer.depthHandle)
+    buffer.depthHandle = 0
+  
   buffer.size = vec2i(width, height)
 
   buffer.handle = glGenFramebuffer()
-  buffer.texture = Texture(handle: glGenTexture(), target: GlTexture2D, width: width, height: height)
-
-  #get previous buffer handle - this does incur a slight overhead, but resizing happens rarely anyway
-  let previous = glGetIntegerv(GlFramebufferBinding)
+  buffer.texture = Texture(handle: glGenTexture(), target: GlTexture2D, size: buffer.size)
 
   glBindFramebuffer(GlFramebuffer, buffer.handle)
+
+  if buffer.hasDepth:
+    buffer.depthHandle = glGenRenderbuffer()
+    glBindRenderbuffer(GlRenderbuffer, buffer.depthHandle)
+    glRenderbufferStorage(GlRenderbuffer, GlDepthComponent16, width.GLsizei, height.GLsizei)
+
   glBindTexture(GlTexture2D, buffer.texture.handle)
 
-  buffer.texture.filter = GlNearest
-
   glTexImage2D(GlTexture2D, 0, GlRgba.Glint, width.GLsizei, height.GLsizei, 0, GlRgba, GlUnsignedByte, nil)
+
+  if buffer.hasDepth:
+    glFramebufferRenderbuffer(GlFramebuffer, GlDepthAttachment, GlRenderbuffer, buffer.depthHandle)
+
   glFramebufferTexture2D(GlFramebuffer, GlColorAttachment0, GlTexture2D, buffer.texture.handle, 0)
 
   let status = glCheckFramebufferStatus(GlFramebuffer)
-
-  #restore old buffer
-  glBindFramebuffer(GlFramebuffer, previous.GLuint)
 
   #check for errors
   if status != GlFramebufferComplete:
@@ -71,14 +83,16 @@ proc resize*(buffer: Framebuffer, size: Vec2i) =
     
     raise GlError.newException(message)
 
+proc resize*(buffer: Framebuffer, size: Vec2) = buffer.resize(size.vec2i)
+
 #If not size arguments are provided, this buffer cannot be used until it is resized.
-proc newFramebuffer*(size = vec2i(2)): Framebuffer = 
-  result = Framebuffer()
+proc newFramebuffer*(size = vec2i(2), depth = false): Framebuffer = 
+  result = Framebuffer(hasDepth: depth)
   
   if size.x != 2 or size.y != 2: result.resize(size)
 
 #Returns a new default framebuffer object. Internal use only.
-proc newDefaultFramebuffer*(): Framebuffer = Framebuffer(handle: glGetIntegerv(GlFramebufferBinding).GLuint, isDefault: true)
+proc newDefaultFramebuffer*(windowDepth: bool): Framebuffer = Framebuffer(handle: glGetIntegerv(GlFramebufferBinding).GLuint, isDefault: true, hasDepth: windowDepth)
 
 #Binds the framebuffer. Internal use only!
 proc use*(buffer: Framebuffer) =
@@ -91,12 +105,12 @@ proc clear*(buffer: Framebuffer, color = colorClear) =
   ## Clears the color buffer.
   glClearColor(color.r, color.g, color.b, color.a)
 
-  #TODO only clear these if the buffer has the right attachments.
-
-  #Enables writing to the depth buffer for clearing. TODO may be inefficient?
-  #glDepthMask(true)
-  #TODO does GlDepthBufferBit incur additional perf penalties when there is no depth buffer?
-  glClear(GlColorBufferBit) # or GlDepthBufferBit
+  if buffer.hasDepth:
+    #Enables writing to the depth buffer for clearing. TODO may be inefficient?
+    glDepthMask(true)
+    glClear(GlColorBufferBit or GlDepthBufferBit)
+  else:
+    glClear(GlColorBufferBit)
 
 #TODO wrap pixels in a object with a destructor?
 proc read*(buffer: Framebuffer, pos: Vec2i, size: Vec2i): pointer =

@@ -22,6 +22,7 @@ type Vert2* = object
 type SVert2* = object
   pos: Vec2
   uv: Vec2
+  color: Color
 
 #Generic mesh, optionally indexed.
 type MeshObj*[V] = object
@@ -42,6 +43,14 @@ type Mesh2* = Mesh[Vert2]
 #Uncolored mesh
 type SMesh* = Mesh[SVert2]
 
+type MeshParam* = object
+  buffer*: Framebuffer
+  offset*: int
+  count*: int
+  depth*: bool
+  writeDepth*: bool
+  blend*: Blending
+
 const
   blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
   blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
@@ -55,6 +64,10 @@ proc `=destroy`*[T](mesh: var MeshObj[T]) =
   if mesh.indexBuffer != 0 and glInitialized:
     glDeleteBuffer(mesh.indexBuffer)
     mesh.indexBuffer = 0
+
+#creates a new set of mesh parameters
+proc meshParams*(buffer: Framebuffer = screen, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled): MeshParam {.inline.} = 
+  MeshParam(buffer: buffer, offset: offset, count: count, depth: depth, writeDepth: writeDepth, blend: blend)
 
 #marks a mesh as modified, so its vertices get reuploaded
 proc update*[T](mesh: Mesh[T]) = 
@@ -97,11 +110,14 @@ proc newMesh2*(isStatic: bool = false, primitiveType: Glenum = GlTriangles, vert
 
 #global state for active attribute management
 #current active attributes; maps the index to the glEnableVertexAttribArray location
-var activeAttribs: array[32, GLuint]
+var activeAttribs: array[32, int]
 #total active attributes in activeAttribs
 var totalActive = 0
 #last vertex type used as a string hash (yes, collisions are possible here, but unlikely)
 var lastVertexType: Hash
+#fill with -1s
+for i in 0..<activeAttribs.len:
+  activeAttribs[i] = -1
 
 macro enableAttributes(shader: Shader, vert: typed): untyped =
   let vertexType = vert.getType()[1]
@@ -113,9 +129,9 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
   result.add quote do:
     if lastVertexType != `typeHash`:
       for i in 0..<totalActive:
-        if activeAttribs[i] != 0:
-          glDisableVertexAttribArray(activeAttribs[i])
-          activeAttribs[i] = 0
+        if activeAttribs[i] != -1:
+          glDisableVertexAttribArray(activeAttribs[i].GLuint)
+          activeAttribs[i] = -1
 
   for identDefs in getImpl(vertexType)[2][2]:
     let t = identDefs[^2]
@@ -158,9 +174,11 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
       result.add quote do:
         let loc = shader.getAttributeLoc(`alias`)
         if loc != -1:
-          activeAttribs[`attribIndex`] = loc.GLuint
+          activeAttribs[`attribIndex`] = loc
           glEnableVertexAttribArray(loc.GLuint)
           glVertexAttribPointer(loc.GLuint, `components`, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
+        else:
+          activeAttribs[`attribIndex`] = -1
       
       attribIndex.inc
   
@@ -168,12 +186,11 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
     totalActive = `attribIndex`
     lastVertexType = `typeHash`
 
-#TODO buffer parameter should default to fau global framebuffer!
 #offset and count are in vertices, not floats!
-proc render*[T](mesh: Mesh[T], shader: Shader, buffer: Framebuffer = screen, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled) =
+proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   #bind shader and buffer for drawing to
   shader.use()
-  buffer.use()
+  args.buffer.use()
 
   #draw usage
   let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
@@ -207,26 +224,30 @@ proc render*[T](mesh: Mesh[T], shader: Shader, buffer: Framebuffer = screen, off
   enableAttributes(shader, T)
 
   #set up depth buffer info
-  if depth:
+  if args.depth:
     glEnable(GlDepthTest)
   else:
     glDisable(GlDepthTest)
 
-  glDepthMask(depth and writeDepth)
+  glDepthMask(args.depth and args.writeDepth)
 
   #set up blending state
-  if blend == blendDisabled:
+  if args.blend == blendDisabled:
     glDisable(GLBlend)
   else:
     glEnable(GlBlend)
-    glBlendFunc(blend.src, blend.dst)
+    glBlendFunc(args.blend.src, args.blend.dst)
 
-  if mesh.indices.len == 0: #TODO vsize incorrect
-    let pcount = if count < 0: mesh.vertices.len else: count
-    glDrawArrays(mesh.primitiveType, offset.GLint, (vsize * pcount).GLsizei)
+  if mesh.indices.len == 0:
+    let pcount = if args.count < 0: mesh.vertices.len else: args.count
+    glDrawArrays(mesh.primitiveType, args.offset.GLint, pcount.GLsizei)
   else:
-    let pcount = if count < 0: mesh.indices.len else: count
-    glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](offset * Glushort.sizeof))
+    let pcount = if args.count < 0: mesh.indices.len else: args.count
+    glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](args.offset * Glushort.sizeof))
+
+template render*[T](mesh: Mesh[T], shader: Shader, args: MeshParam, uniformList: untyped) =
+  shader.uniforms(uniformList)
+  renderInternal(mesh, shader, args)
 
 template vert2*(apos, auv: Vec2, acolor = colorWhite, amixcolor = colorClear): Vert2 = Vert2(pos: apos, uv: auv, color: acolor, mixcolor: amixcolor)
 template vert2*(x, y, u, v: float32, acolor = colorWhite, amixcolor = colorClear): Vert2 = Vert2(pos: vec2(x, y), uv: vec2(u, v), color: acolor, mixcolor: amixcolor)
@@ -235,7 +256,7 @@ template svert2*(x, y, u, v: float32): SVert2 = SVert2(pos: vec2(x, y), uv: vec2
 #creates a mesh with position and tex coordinate attributes that covers the screen.
 proc newScreenMesh*(): SMesh = 
   newMesh[SVert2](isStatic = true, primitiveType = GlTriangleFan, vertices = @[
-    svert2(-1f, -1, 0, 0), 
+    svert2(-1, -1, 0, 0), 
     svert2(1, -1, 1, 0), 
     svert2(1, 1, 1, 1), 
     svert2(-1, 1, 0, 1)

@@ -4,9 +4,6 @@ export fmath
 
 #region VECTORS
 
-type Vec3* = object
-  x*, y*, z*: float32
-
 type Plane* = object
   #plane normal direction
   normal*: Vec3

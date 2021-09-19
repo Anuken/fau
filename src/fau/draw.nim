@@ -1,6 +1,18 @@
-import globals, batch, fmath, color, patch, mesh, shader, math, texture, lenientops, atlas, tables
+import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, tables
 
 ## Drawing utilities based on global state.
+
+proc blit*(buffer: Texture | Framebuffer, shader: Shader = fau.screenspace, params = meshParams()) =
+  when buffer is Texture:
+    let tex = buffer
+  else:
+    let tex = buffer.texture
+  
+  fau.quad.render(shader, params):
+    texture = tex.sampler
+
+template blit*(shader: Shader, params = meshParams(), body: untyped) =
+  fau.quad.render(shader, params, body)
 
 proc patch*(name: string): Patch {.inline.} = fau.atlas[name]
 
@@ -11,6 +23,9 @@ proc drawFlush*() =
 
 proc drawMat*(mat: Mat) =
   fau.batch.mat(mat)
+
+proc drawBuffer*(buffer: Framebuffer) =
+  fau.batch.buffer(buffer)
 
 proc screenMat*() =
   drawMat(ortho(vec2(), fau.size))
