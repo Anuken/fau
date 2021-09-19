@@ -2,10 +2,12 @@ import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, tex
 
 ## Drawing utilities based on global state.
 
+#renders the fullscreen mesh with u_texture set to the specified buffer
 proc blit*(buffer: Texture | Framebuffer, shader: Shader = fau.screenspace, params = meshParams()) =
   fau.quad.render(shader, params):
     texture = buffer.sampler
 
+#renders the fullscreen mesh
 template blit*(shader: Shader, params = meshParams(), body: untyped) =
   fau.quad.render(shader, params, body)
 

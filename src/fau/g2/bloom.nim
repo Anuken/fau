@@ -122,35 +122,6 @@ proc buffer*(bloom: Bloom, clearColor = colorClear): Framebuffer =
   bloom.buffer.clear(clearColor)
   return bloom.buffer
 
-#[
-
-
-proc capture*(bloom: Bloom) =
-  let
-    w = fau.width
-    h = fau.height
-
-  if w != bloom.buffer.width or h != bloom.buffer.height:
-    bloom.buffer.resize(w, h)
-    bloom.p1.resize(w div bloom.scaling, h div bloom.scaling)
-    bloom.p2.resize(w div bloom.scaling, h div bloom.scaling)
-
-    bloom.blur.setf("size", bloom.p1.width.float32, bloom.p1.height.float32)
-
-    bloom.buffer.texture.filterLinear()
-    bloom.p1.texture.filterLinear()
-    bloom.p2.texture.filterLinear()
-
-  bloom.buffer.push(colorClear)
-]#
-
-#[
-  result.bloom.seti("u_texture0", 0)
-  result.bloom.seti("u_texture1", 1)
-  result.bloom.setf("u_bloomIntensity", 2.5)
-  result.bloom.setf("u_originalIntensity", 1.0)
-]#
-
 proc blit*(bloom: Bloom, params = meshParams()) =
   
   bloom.buffer.blit(bloom.thresh, meshParams(buffer = bloom.p1))
