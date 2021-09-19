@@ -3,13 +3,8 @@ import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, tex
 ## Drawing utilities based on global state.
 
 proc blit*(buffer: Texture | Framebuffer, shader: Shader = fau.screenspace, params = meshParams()) =
-  when buffer is Texture:
-    let tex = buffer
-  else:
-    let tex = buffer.texture
-  
   fau.quad.render(shader, params):
-    texture = tex.sampler
+    texture = buffer.sampler
 
 template blit*(shader: Shader, params = meshParams(), body: untyped) =
   fau.quad.render(shader, params, body)

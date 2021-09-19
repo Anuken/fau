@@ -109,13 +109,6 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
   """
   )
 
-#[
-  result.bloom.seti("u_texture0", 0)
-  result.bloom.seti("u_texture1", 1)
-  result.bloom.setf("u_bloomIntensity", 2.5)
-  result.bloom.setf("u_originalIntensity", 1.0)
-]#
-
 
 proc buffer*(bloom: Bloom, clearColor = colorClear): Framebuffer =
   bloom.buffer.resize(fau.sizei)

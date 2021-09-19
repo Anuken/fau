@@ -13,7 +13,7 @@ type TextureObj = object
   handle*: Gluint
   uwrap, vwrap: TextureWrap
   minfilter, magfilter: TextureFilter
-  target*: Glenum
+  target: Glenum
   size*: Vec2i
 type Texture* = ref TextureObj
 
@@ -88,8 +88,8 @@ proc update*(texture: Texture, pos: Vec2i, size: Vec2i, pixels: pointer) =
   glTexSubImage2D(texture.target, 0, pos.x.GLint, pos.y.GLint, size.x.GLsizei, size.y.GLsizei, GlRGBA, GlUnsignedByte, pixels)
 
 #creates a base texture with no data uploaded
-proc newTexture*(size: Vec2i = vec2i(1)): Texture = 
-  result = Texture(handle: glGenTexture(), uwrap: twClamp, vwrap: twClamp, minfilter: tfNearest, magfilter: tfNearest, target: GlTexture2D, size: size)
+proc newTexture*(size: Vec2i = vec2i(1), filter = tfNearest, wrap = twClamp): Texture = 
+  result = Texture(handle: glGenTexture(), uwrap: wrap, vwrap: wrap, minfilter: filter, magfilter: filter, target: GlTexture2D, size: size)
   result.use()
 
   #set parameters

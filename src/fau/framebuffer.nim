@@ -52,7 +52,7 @@ proc resize*(buffer: Framebuffer, size: Vec2i) =
   buffer.size = vec2i(width, height)
 
   buffer.handle = glGenFramebuffer()
-  buffer.texture = Texture(handle: glGenTexture(), target: GlTexture2D, size: buffer.size)
+  buffer.texture = newTexture(size)
 
   glBindFramebuffer(GlFramebuffer, buffer.handle)
 
@@ -62,7 +62,6 @@ proc resize*(buffer: Framebuffer, size: Vec2i) =
     glRenderbufferStorage(GlRenderbuffer, GlDepthComponent16, width.GLsizei, height.GLsizei)
 
   glBindTexture(GlTexture2D, buffer.texture.handle)
-
   glTexImage2D(GlTexture2D, 0, GlRgba.Glint, width.GLsizei, height.GLsizei, 0, GlRgba, GlUnsignedByte, nil)
 
   if buffer.hasDepth:

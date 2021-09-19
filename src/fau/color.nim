@@ -46,8 +46,14 @@ func hsv*(h, s, v: float32, a = 1f): Color =
   of 4: rgba(t, p, v, a)
   else: rgba(v, p, q, a)
 
+func `/`*(a, b: Color): Color {.inline.} = rgba(a.r / b.r, a.g / b.g, a.b / b.b, a.a / b.a)
+func `/`*(a: Color, b: float32): Color {.inline.} = rgba(a.r / b, a.g / b, a.b / b, a.a)
+
 func `*`*(a, b: Color): Color {.inline.} = rgba(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a)
 func `*`*(a: Color, b: float32): Color {.inline.} = rgba(a.r * b, a.g * b, a.b * b, a.a)
+
+func `+`*(a, b: Color): Color {.inline.} = rgba(a.r + b.r, a.g + b.g, a.b + b.b, a.a + b.a)
+func `+`*(a: Color, b: float32): Color {.inline.} = rgba(a.r + b, a.g + b, a.b + b, a.a)
 
 proc mix*(color: Color, other: Color, alpha: float32): Color =
   let inv = 1.0 - alpha
