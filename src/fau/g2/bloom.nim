@@ -18,8 +18,8 @@ type Bloom* = object
   scaling: int
   blend: bool
 
-proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
-  result.buffer = newFramebuffer()
+proc newBloom*(scaling: int = 4, passes: int = 1, blend = true, depth = false): Bloom =
+  result.buffer = newFramebuffer(depth = depth)
   result.p1 = newFramebuffer()
   result.p2 = newFramebuffer()
   result.scaling = scaling
@@ -28,11 +28,11 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
 
   result.thresh = newShader(screenspace,
   """ 
-  uniform lowp sampler2D u_texture0;
+  uniform lowp sampler2D u_texture;
   varying vec2 v_uv;
 
   void main(){
-    vec4 color = texture2D(u_texture0, v_uv);
+    vec4 color = texture2D(u_texture, v_uv);
     if(color.r + color.g + color.b > 0.5 * 3.0){
       gl_FragColor = color;
     }else{
@@ -108,7 +108,6 @@ proc newBloom*(scaling: int = 4, passes: int = 1, blend = true): Bloom =
   }
   """
   )
-
 
 proc buffer*(bloom: Bloom, clearColor = colorClear): Framebuffer =
   bloom.buffer.resize(fau.sizei)
