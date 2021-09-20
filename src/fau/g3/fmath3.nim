@@ -26,7 +26,7 @@ type Frustum* = object
   #the six clipping planes, near, far, left, right, top, bottom
   planes: array[6, Plane]
 
-#3D camera - TODO make object, or not?
+#3D camera
 type Cam3* = ref object
   #field of view for perspective cameras
   fov*: float32

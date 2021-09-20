@@ -1,4 +1,5 @@
 import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, tables
+export batch #for aligns
 
 ## Drawing utilities based on global state.
 

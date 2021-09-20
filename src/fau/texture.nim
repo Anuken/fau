@@ -28,12 +28,12 @@ proc use*(texture: Texture, unit: int = 0) =
   glActiveTexture((GlTexture0.int + unit).GLenum)
   glBindTexture(texture.target, texture.handle)
 
-proc toGlEnum(filter: TextureFilter): GLenum =
+proc toGlEnum(filter: TextureFilter): GLenum {.inline.} =
   case filter
   of tfNearest: GlNearest
   of tfLinear: GlLinear
 
-proc toGlEnum(wrap: TextureWrap): GLenum =
+proc toGlEnum(wrap: TextureWrap): GLenum {.inline.} =
   case wrap
   of twClamp: GlClampToEdge
   of twRepeat: GlRepeat

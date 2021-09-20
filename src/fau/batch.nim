@@ -198,7 +198,7 @@ proc newBatch*(size: int = 4092): Batch =
 
   result = batch
 
-#Flush the batched items. TODO when is this even necessary in user code?
+#Flush the batched items.
 proc flush*(batch: Batch) =
   if batch.sort:
     #sort requests by their Z value

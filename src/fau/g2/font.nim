@@ -1,6 +1,6 @@
 import tables, unicode, packer
 import math
-import ../texture, ../patch, ../color
+import ../texture, ../patch, ../color, ../globals, ../batch
 
 from ../fmath import nil
 from pixie import Image, draw, newImage, typeset, getGlyphPath, commandsToShapes, scale, fillPath, lineHeight, ascent, descent, transform, computePixelBounds, parseSomePaint
@@ -15,11 +15,11 @@ type TexturePacker* = ref object
   image*: Image
 
 # Creates a new texture packer limited by the specified width/height
-proc newTexturePacker*(width, height: int): TexturePacker =
+proc newTexturePacker*(size: fmath.Vec2i): TexturePacker =
   TexturePacker(
-    packer: newPacker(width, height),
-    texture: newTexture(width, height),
-    image: newImage(width, height)
+    packer: newPacker(size.x, size.y),
+    texture: newTexture(size),
+    image: newImage(size.x, size.y)
   )
 
 proc pack*(packer: TexturePacker, image: Image): Patch =
@@ -29,13 +29,13 @@ proc pack*(packer: TexturePacker, image: Image): Patch =
 
 # Updates the texture of a texture packer. Call this when you're done packing.
 proc update*(packer: TexturePacker) =
-  packer.texture.load(packer.image.width, packer.image.height, addr packer.image.data[0])
+  packer.texture.load(fmath.vec2i(packer.image.width, packer.image.height), addr packer.image.data[0])
 
 type
   Font* = ref object
     font: pixie.Font
     patches: Table[Rune, Patch]
-    offsets: Table[Rune, Vec2]
+    offsets: Table[Rune, fmath.Vec2]
 
 proc toVAlign(align: int): pixie.VAlignMode {.inline.} =
   return if (align and daBot) != 0 and (align and daTop) != 0: pixie.vaMiddle
@@ -49,7 +49,7 @@ proc toHAlign(align: int): pixie.HAlignMode {.inline.} =
   elif (align and daRight) != 0: pixie.haRight
   else: pixie.haCenter
 
-proc getGlyphImage(font: pixie.Font, r: Rune): (Image, Vec2) =
+proc getGlyphImage(font: pixie.Font, r: Rune): (Image, fmath.Vec2) =
   var path = font.typeface.getGlyphPath(r)
   path.transform(vmath.scale(vmath.vec2(font.scale)))
   let bounds = path.computePixelBounds()
@@ -87,7 +87,7 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128): Fo
 
   packer.update()
 
-proc draw*(font: Font, text: string, pos: Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: int = daCenter, z: float32 = 0.0) =
+proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: int = daCenter, z: float32 = 0.0) =
 
   let arrangement = font.font.typeset(text, hAlign = align.toHAlign, vAlign = align.toVAlign, bounds = vmath.vec2(bounds.x / scale, bounds.y / scale))
 

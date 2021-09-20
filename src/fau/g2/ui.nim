@@ -1,6 +1,6 @@
 ## Basic implementation of immediate-mode elements rendered at specific positions. No layout is implemented here.
 
-import fcore
+import ../draw, ../globals, ../color, ../patch, ../fmath, ../input, font
 
 type 
   ButtonStyle* = object
@@ -57,8 +57,8 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
 
   if text.len != 0 and not font.isNil:
     font.draw(text,
-      vec2(bounds.x, bounds.y) + vec2(patch.left, patch.bot) * uiPatchScale,
-      bounds = vec2(bounds.w, bounds.h) - vec2(patch.left + patch.right, patch.bot - patch.top) * uiPatchScale,
+      vec2(bounds.x, bounds.y) + vec2(patch.left.float32, patch.bot.float32) * uiPatchScale,
+      bounds = vec2(bounds.w, bounds.h) - vec2(patch.left.float32 + patch.right.float32, patch.bot.float32 - patch.top.float32) * uiPatchScale,
       scale = uiFontScale, align = daCenter
     )
 

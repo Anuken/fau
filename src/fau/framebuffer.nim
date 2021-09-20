@@ -1,14 +1,11 @@
 
 import gl/[glproc, gltypes], fmath, texture, color
 
-#OpenGL Framebuffer wrapper.
-#TODO no depth buffer support!
 type FramebufferObj* = object
   handle: Gluint
   size: Vec2i
   texture: Texture
   isDefault: bool
-  #TODO no way to attach depth yet
   hasDepth: bool
   depthHandle: GLuint
 type Framebuffer* = ref FramebufferObj
@@ -24,8 +21,6 @@ proc `=destroy`*(buffer: var FramebufferObj) =
 #accessors; read-only
 proc size*(buffer: Framebuffer): Vec2i {.inline.} = buffer.size
 proc texture*(buffer: Framebuffer): Texture {.inline.} = buffer.texture
-
-#TODO rendering should keep track of this, don't call manually?
 
 proc resize*(buffer: Framebuffer, size: Vec2i) =
   #default buffers can't be resized
@@ -98,10 +93,10 @@ proc use*(buffer: Framebuffer) =
   glBindFramebuffer(GlFramebuffer, buffer.handle)
   glViewport(0, 0, buffer.size.x.Glsizei, buffer.size.y.Glsizei)
 
-#TODO bad impl
 proc clear*(buffer: Framebuffer, color = colorClear) =
+  ## Clears the color & depth buffers.
   buffer.use()
-  ## Clears the color buffer.
+  
   glClearColor(color.r, color.g, color.b, color.a)
 
   if buffer.hasDepth:

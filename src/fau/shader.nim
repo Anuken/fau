@@ -154,8 +154,7 @@ proc findUniform(shader: Shader, name: string): int =
 proc sampler*(tex: Texture, index = 0): Sampler = Sampler(texture: tex, index: index)
 proc sampler*(buf: Framebuffer, index = 0): Sampler = Sampler(texture: buf.texture, index: index)
 
-#TODO all of these functions should be unnecessary. pass uniforms properly!
-#TODO do not export
+#TODO all of these functions should not be exported
 
 template withUniform(shader: Shader, name: string, body: untyped) =
   shader.use()
@@ -191,7 +190,7 @@ proc uniform*(shader: Shader, name: string, value: Vec3) =
 proc uniform*(shader: Shader, name: string, col: Color) =
   shader.withUniform(name): glUniform4f(loc.GLint, col.r, col.g, col.b, col.a)
 
-#TODO internal use only!
+#TODO internal use only?
 macro uniforms*(shader: Shader, body: untyped): untyped =
   result = newStmtList()
 
