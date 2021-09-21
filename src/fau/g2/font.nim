@@ -1,6 +1,6 @@
 import tables, unicode, packer
 import math
-import ../texture, ../patch, ../color, ../globals, ../batch
+import ../texture, ../patch, ../color, ../globals, ../batch, ../util/util, ../draw
 
 from ../fmath import nil
 from pixie import Image, draw, newImage, typeset, getGlyphPath, commandsToShapes, scale, fillPath, lineHeight, ascent, descent, transform, computePixelBounds, parseSomePaint
@@ -73,7 +73,7 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128): Fo
 
   result = Font(font: font, patches: initTable[Rune, Patch]())
 
-  let packer = newTexturePacker(textureSize, textureSize)
+  let packer = newTexturePacker(fmath.vec2i(textureSize, textureSize))
 
   for ch in 0x0020'u16..0x00FF'u16:
     let code = Rune(ch)

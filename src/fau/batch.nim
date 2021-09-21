@@ -215,6 +215,11 @@ proc flush*(batch: Batch) =
   #flush the base batch
   batch.flushInternal()
 
+proc sort*(batch: Batch, val: bool) =
+  if batch.sort != val:
+    batch.flush()
+    batch.sort = val
+
 #Sets the matrix used for rendering. This flushes the batch.
 proc mat*(batch: Batch, mat: Mat) = 
   batch.flush()

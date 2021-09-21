@@ -1,4 +1,4 @@
-import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, tables
+import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, tables, screenbuffer
 export batch #for aligns
 
 ## Drawing utilities based on global state.
@@ -19,11 +19,17 @@ proc patch9*(name: string): Patch9 {.inline.} = fau.atlas.patches9.getOrDefault(
 proc drawFlush*() =
   fau.batch.flush()
 
+proc drawSort*(sort: bool) =
+  fau.batch.sort(sort)
+
 proc drawMat*(mat: Mat) =
   fau.batch.mat(mat)
 
 proc drawBuffer*(buffer: Framebuffer) =
   fau.batch.buffer(buffer)
+
+proc drawBufferScreen*() =
+  fau.batch.buffer(screen)
 
 proc screenMat*() =
   drawMat(ortho(vec2(), fau.size))

@@ -1,7 +1,7 @@
 import math, random
 
 #this should be avoided in most cases, but manually turning ints into float32s can be very annoying
-#converter toFloat32*(i: int): float32 {.inline.} = i.float32
+converter toFloat32*(i: int): float32 {.inline.} = i.float32
 
 #TODO angle type, distinct float32
 #TODO make all angle functions use this
@@ -184,6 +184,7 @@ func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag *
 
 func vec2i*(x, y: int): Vec2i {.inline.} = Vec2i(x: x, y: y)
 func vec2i*(xy: int): Vec2i {.inline.} = Vec2i(x: xy, y: xy)
+func vec2i*(): Vec2i {.inline.} = Vec2i()
 func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
 func vec2i*(v: Vec2): Vec2i {.inline.} = vec2i(v.x.int, v.y.int)
 
@@ -269,6 +270,7 @@ proc `$`*(vec: Vec2): string = $vec.x & ", " & $vec.y
 
 proc inside*(x, y, w, h: int): bool {.inline.} = x >= 0 and y >= 0 and x < w and y < h
 proc inside*(p: Vec2i, w, h: int): bool {.inline.} = p.x >= 0 and p.y >= 0 and p.x < w and p.y < h
+proc inside*(p: Vec2i, size: Vec2i): bool {.inline.} = p.x >= 0 and p.y >= 0 and p.x < size.x and p.y < size.y
 
 #Implementation of bresenham's line algorithm; iterates through a line connecting the two points.
 iterator line*(p1, p2: Vec2i): Vec2i =
@@ -457,6 +459,10 @@ proc ortho*(x, y, width, height: float32): Mat =
   return [xOrth, 0, 0, 0, yOrth, 0, tx, ty, 1]
 
 proc ortho*(pos, size: Vec2): Mat {.inline.} = ortho(pos.x, pos.y, size.x, size.y)
+
+proc ortho*(size: Vec2): Mat {.inline.} = ortho(0, 0, size.x, size.y)
+
+proc ortho*(size: Vec2i): Mat {.inline.} = ortho(size.vec2)
 
 proc `*`*(a: Mat, b: Mat): Mat = [
     a[M00] * b[M00] + a[M01] * b[M10] + a[M02] * b[M20], 
