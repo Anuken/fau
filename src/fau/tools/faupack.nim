@@ -1,4 +1,4 @@
-import ../packer, os, pixie, strformat, tables, math, streams, times, chroma, strutils
+import ../g2/packer, os, pixie, strformat, tables, math, streams, times, chroma, strutils
 
 from vmath import nil
 
