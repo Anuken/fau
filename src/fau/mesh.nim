@@ -9,6 +9,11 @@ type Blending* = object
   src*: GLenum
   dst*: Glenum
 
+type CullFace* = enum
+  cfFront,
+  cfBack,
+  cfFrontAndBack
+
 #Vertex index.
 type Index* = GLushort
 
@@ -50,6 +55,7 @@ type MeshParam* = object
   depth*: bool
   writeDepth*: bool
   blend*: Blending
+  cullFace*: CullFace #TODO not applied yet
 
 const
   blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
@@ -66,8 +72,8 @@ proc `=destroy`*[T](mesh: var MeshObj[T]) =
     mesh.indexBuffer = 0
 
 #creates a new set of mesh parameters
-proc meshParams*(buffer: Framebuffer = screen, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled): MeshParam {.inline.} = 
-  MeshParam(buffer: buffer, offset: offset, count: count, depth: depth, writeDepth: writeDepth, blend: blend)
+proc meshParams*(buffer: Framebuffer = screen, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled, cullFace = cfBack): MeshParam {.inline.} = 
+  MeshParam(buffer: buffer, offset: offset, count: count, depth: depth, writeDepth: writeDepth, blend: blend, cullFace: cullFace)
 
 #marks a mesh as modified, so its vertices get reuploaded
 proc update*[T](mesh: Mesh[T]) = 

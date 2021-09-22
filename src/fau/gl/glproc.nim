@@ -146,7 +146,11 @@ proc glDeleteBuffer*(buffer: GLuint) {.inline.} =
 
   glCheck(): wrap.glDeleteBuffer(buffer)
 
-proc glDeleteFramebuffer*(framebuffer: GLuint) {.inline.} = glCheck(): wrap.glDeleteFramebuffer(framebuffer)
+proc glDeleteFramebuffer*(framebuffer: GLuint) {.inline.} = 
+  #reset last used buffer when deleted.
+  if framebuffer == lastFramebuffer.GLuint: lastFramebuffer = -1
+
+  glCheck(): wrap.glDeleteFramebuffer(framebuffer)
 
 proc glDeleteProgram*(program: GLuint) {.inline.} = 
   #reset last used program when deleted.
@@ -181,7 +185,6 @@ proc glDisable*(cap: GLenum) {.inline.} =
   
   glCheck(): wrap.glDisable(cap)
   lastEnabled[cap.int] = false
-
 
 proc glDisableVertexAttribArray*(index: GLuint) {.inline.} = glCheck(): wrap.glDisableVertexAttribArray(index)
 proc glDrawArrays*(mode: GLenum, first: GLint, count: GLsizei) {.inline.} = glCheck(): wrap.glDrawArrays(mode, first, count)

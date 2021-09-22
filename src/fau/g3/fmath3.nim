@@ -219,6 +219,20 @@ proc trans3*(vec: Vec3): Mat3 =
   result[M13] = vec.y
   result[M23] = vec.z
 
+proc pos*(mat: Mat3): Vec3 = vec3(mat[M03], mat[M13], mat[M23])
+
+proc `pos=`*(mat: var Mat3, vec: Vec3) =
+  mat[M03] = vec.x
+  mat[M13] = vec.y
+  mat[M23] = vec.z
+
+proc scl*(mat: Mat3): Vec3 = vec3(mat[M00], mat[M11], mat[M22])
+
+proc `scl=`*(mat: var Mat3, vec: Vec3) =
+  mat[M00] = vec.x
+  mat[M11] = vec.y
+  mat[M22] = vec.z
+
 #creates a 3D rotation matrix
 proc rot3*(quat: Quat): Mat3 =
   let
@@ -334,7 +348,7 @@ proc rot3*(mat: Mat3, quat: Quat): Mat3 = mat * rot3(quat)
 #note: this crashes the nim compiler:
 #proc prj*[N](vecs: array[N, float32], numVecs = vecs.len): array[N, float32] = discard
 
-#multiplies the vectors with the given matrix, performing a division by w.
+#multiplies the vectors with the given matrix
 proc prj*[N](mat: Mat3, vecs: array[N, Vec3]): array[N, Vec3] =
   for i in 0..<vecs.len:
     result[i] = vec3(
@@ -343,7 +357,7 @@ proc prj*[N](mat: Mat3, vecs: array[N, Vec3]): array[N, Vec3] =
       (vecs[i].x * mat[M20] + vecs[i].y * mat[M21] + vecs[i].z * mat[M22] + mat[M23])
     ) / (vecs[i].x * mat[M30] + vecs[i].y * mat[M31] + vecs[i].z * mat[M32] + mat[M33])
 
-#multiplies this vector by the given matrix dividing by w, assuming the fourth (w) component of the vector is 1. 
+#multiplies this vector by the given matrix
 proc prj*(v: Vec3, mat: Mat3): Vec3 =
   let lw = 1f / (v.x * mat[M30] + v.y * mat[M31] + v.z * mat[M32] + mat[M33])
   return vec3(
@@ -352,7 +366,7 @@ proc prj*(v: Vec3, mat: Mat3): Vec3 =
     (v.x * mat[M20] + v.y * mat[M21] + v.z * mat[M22] + mat[M23]) * lw
   )
 
-#creates a projection matrix with a near- and far plane, a field of view in degrees and an aspect ratio. 
+#creates a projection matrix with a near and far plane, a field of view in degrees and an aspect ratio. 
 proc projection3*(near, far, fovy, aspectRatio: float32): Mat3 =
   let 
     fd = 1f / tan((fovy * (PI / 180f)) / 2f).float32
