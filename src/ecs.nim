@@ -1,5 +1,5 @@
-import polymorph, fcore, strutils
-export polymorph, fcore, strutils
+import polymorph, core, strutils
+export polymorph, core, strutils
 
 # Wraps Polymorph with some utilities.
 

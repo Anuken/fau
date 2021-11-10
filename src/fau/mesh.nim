@@ -55,13 +55,15 @@ type MeshParam* = object
   depth*: bool
   writeDepth*: bool
   blend*: Blending
-  cullFace*: CullFace #TODO not applied yet
+  cullFace*: CullFace
 
 const
   blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
   blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
-  blendDisabled* = Blending(src: GlZero, dst: GlZero)
+  blendPremultiplied* = Blending(src: GlOne, dst: GlOneMinusSrcAlpha)
   blendErase* = Blending(src: GlZero, dst: GlOneMinusSrcAlpha)
+  #implies glDisable(GlBlend)
+  blendDisabled* = Blending(src: GlZero, dst: GlZero)
 
 proc `=destroy`*[T](mesh: var MeshObj[T]) =
   if mesh.vertexBuffer != 0 and glInitialized:
@@ -71,9 +73,18 @@ proc `=destroy`*[T](mesh: var MeshObj[T]) =
     glDeleteBuffer(mesh.indexBuffer)
     mesh.indexBuffer = 0
 
+proc toGlEnum(face: CullFace): GlEnum {.inline.} =
+  case face
+  of cfFront: GlFront
+  of cfBack: GlBack
+  of cfFrontAndBack: GlFrontAndBack
+
 #creates a new set of mesh parameters
 proc meshParams*(buffer: Framebuffer = screen, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled, cullFace = cfBack): MeshParam {.inline.} = 
   MeshParam(buffer: buffer, offset: offset, count: count, depth: depth, writeDepth: writeDepth, blend: blend, cullFace: cullFace)
+
+#returns the unique ID of the shader - currently this is just the GL handle to the vertex buffer
+proc id*(mesh: Mesh): int {.inline.} = mesh.vertexBuffer.int
 
 #marks a mesh as modified, so its vertices get reuploaded
 proc update*[T](mesh: Mesh[T]) = 
@@ -197,6 +208,8 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   #bind shader and buffer for drawing to
   shader.use()
   args.buffer.use()
+
+  glCullFace(args.cullFace.toGlEnum)
 
   #draw usage
   let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw

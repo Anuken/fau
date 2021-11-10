@@ -77,7 +77,6 @@ proc `wrap=`*(texture: Texture, wrap: TextureWrap) =
 proc load*(texture: Texture, size: Vec2i, pixels: pointer) =
   #bind texture
   texture.use()
-  glPixelStorei(GlUnpackAlignment, 1)
   glTexImage2D(texture.target, 0, GlRGBA.Glint, size.x.GLsizei, size.y.GLsizei, 0, GlRGBA, GlUnsignedByte, pixels)
   texture.size = size
 

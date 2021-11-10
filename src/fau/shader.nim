@@ -52,6 +52,10 @@ proc loadSource(shader: Shader, shaderType: GLenum, source: string): GLuint =
       shader.compileLog &= infoLog #append reason to log
     glDeleteShader(result)
 
+#returns the unique ID of the shader - currently this is just the GL handle
+proc id*(shader: Shader): int {.inline.} = shader.handle.int
+
+#internal use only!
 proc use*(shader: Shader) =
   glUseProgram(shader.handle)
 

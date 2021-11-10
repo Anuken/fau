@@ -20,7 +20,11 @@ type Quat* = object
 type Mat3* = array[16, float32]
 
 type Ray* = object
-  origin, direction: Vec3
+  origin*, direction*: Vec3
+
+#axis-aligned bounding box
+type Aabb* = object
+  min*, max*: Vec3
 
 type Frustum* = object
   #the six clipping planes, near, far, left, right, top, bottom
@@ -395,9 +399,11 @@ proc lookAt3*(direction, up: Vec3): Mat3 =
   result[M00] = vex.x
   result[M01] = vex.y
   result[M02] = vex.z
+
   result[M10] = vey.x
   result[M11] = vey.y
   result[M12] = vey.z
+  
   result[M20] = -vez.x
   result[M21] = -vez.y
   result[M22] = -vez.z
