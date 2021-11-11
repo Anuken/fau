@@ -67,7 +67,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
       if e.dragId < fau.touches.len:
         template t: Touch = fau.touches[e.dragId]
         t.pos = e.dragPos
-    else: discard #show/hide not supported yet
+    of feVisible:
+      fau.shown = e.shown
   )
 
   initCore(
@@ -123,6 +124,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     #set up default density
     if fau.screenDensity <= 0.0001f:
       fau.screenDensity = 1f
+
+    #assume window starts out shown
+    fau.shown = true
 
     screen = newDefaultFramebuffer(depth)
     

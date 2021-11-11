@@ -1,4 +1,4 @@
-import jnim, jnim/java/lang, ../gl/[glad, gltypes, glproc], ../globals, ../fmath
+import ../gl/[glad, gltypes, glproc], ../globals, ../fmath
 
 #avert your eyes, this is an abomination
 
@@ -89,6 +89,8 @@ var
   cloopProc: proc()
   cinitProc: proc()
 
+type jint = int32
+
 #most parameters are ignored here, unnecessary
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depth = false) =
   cloopProc = loopProc
@@ -110,7 +112,7 @@ else:
   #assume SDL backend is used, import that
   proc glGetProcAddress*(procedure: cstring): pointer {.cdecl, dynlib: sdlLibName, importc: "SDL_GL_GetProcAddress".}
 
-proc Java_mindustry_debug_NimBridge_init*(vm: JavaVMPtr, obj: jobject, screenW, screenH: jint): jint {.cdecl, exportc, dynlib.} =
+proc Java_mindustry_debug_NimBridge_init*(vm, obj: pointer, screenW, screenH: jint): jint {.cdecl, exportc, dynlib.} =
   #invoked from java so NimMain is necessary
   NimMain()
 
@@ -141,7 +143,7 @@ type JavaEvent = enum
   jeScroll,
   jeVisible
 
-proc Java_mindustry_debug_NimBridge_inputEvent*(vm: JavaVMPtr, obj: jobject, kind, p1, p2, p3, p4, p5: jint) {.cdecl, exportc, dynlib.} =
+proc Java_mindustry_debug_NimBridge_inputEvent*(vm, obj: pointer, kind, p1, p2, p3, p4, p5: jint) {.cdecl, exportc, dynlib.} =
   case kind.JavaEvent:
   of jeLoop: cloopProc()
   of jeResize: fireFauEvent(FauEvent(kind: feResize, size: vec2i(p1.int, p2.int)))

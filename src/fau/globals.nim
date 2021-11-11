@@ -98,6 +98,8 @@ type FauState* = object
   screenDensity*: float32
   #Safe insets for mobile devices. Order: top, right, bot, left
   insets*: array[4, float32]
+  #Whether the game window is in the forground
+  shown*: bool
 
   #Mouse position
   mouse*: Vec2
