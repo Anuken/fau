@@ -83,8 +83,6 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     fau.sizei = vec2i(width.int, height.int)
     updateInsets(surf)
 
-    glViewport(0.GLint, 0.GLint, width.GLsizei, height.GLsizei)
-
     glInitialized = true
     cinitProc()
   )
@@ -99,9 +97,8 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     quit(QuitSuccess)
   )
   
-
-#most parameters are ignored here
-proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true) =
+#TODO most parameters are ignored here, depth matters!
+proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depth = false) =
   cloopProc = loopProc
   cinitProc = initProc
 

@@ -533,12 +533,6 @@ template shotgun*(amount: int, spacing: float32, body: untyped) =
 
 #CAMERA
 
-#ugh, cyclic dependencies
-import globals
-
-proc unproject*(cam: Cam, vec: Vec2): Vec2 = ((vec * 2f) / (fau.size - 1f)) * cam.inv
-proc project*(cam: Cam, vec: Vec2): Vec2 = fau.size * (vec * cam.mat + 1f) / 2f
-
 proc width*(cam: Cam): float32 {.inline.} = cam.size.x
 proc height*(cam: Cam): float32 {.inline.} = cam.size.y
 
@@ -552,5 +546,3 @@ proc newCam*(size: Vec2): Cam =
   result.update()
 
 proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)
-
-proc mouseWorld*(fau: FauState): Vec2 {.inline.} = fau.cam.unproject(fau.mouse)

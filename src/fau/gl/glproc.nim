@@ -53,11 +53,11 @@ var
   lastViewY = -1
   lastViewW = -1
   lastViewH = -1
-  #enabled state; TODO might be better as a bitset.
-  lastEnabled: array[36349, bool]
-  #blending S/D factor
-  lastSfactor: GLenum = GLOne
-  lastDfactor: GLenum = GlZero
+  #enabled state: 0 = unknown, 1 = off 2 = on TODO might be better as a bitset.
+  lastEnabled: array[36349, byte]
+  #blending S/D factor, set to false (invalid)
+  lastSfactor: GLenum = GlFalse
+  lastDfactor: GLenum = GlFalse
   #last glCullFace activated
   lastCullFace = GlBack
   #whether depthMask is on
@@ -181,10 +181,10 @@ proc glDetachShader*(program: GLuint, shader: GLuint) {.inline.} = glCheck(): wr
 
 proc glDisable*(cap: GLenum) {.inline.} = 
   #skip disabling twice
-  if not lastEnabled[cap.int]: return
+  if lastEnabled[cap.int] == 1: return
   
   glCheck(): wrap.glDisable(cap)
-  lastEnabled[cap.int] = false
+  lastEnabled[cap.int] = 1
 
 proc glDisableVertexAttribArray*(index: GLuint) {.inline.} = glCheck(): wrap.glDisableVertexAttribArray(index)
 proc glDrawArrays*(mode: GLenum, first: GLint, count: GLsizei) {.inline.} = glCheck(): wrap.glDrawArrays(mode, first, count)
@@ -192,10 +192,10 @@ proc glDrawElements*(mode: GLenum, count: GLsizei, `type`: GLenum, indices: poin
 
 proc glEnable*(cap: GLenum) {.inline.} = 
   #skip enabling twice
-  if lastEnabled[cap.int]: return
+  if lastEnabled[cap.int] == 2: return
   
   glCheck(): wrap.glEnable(cap)
-  lastEnabled[cap.int] = true
+  lastEnabled[cap.int] = 2
 
 proc glEnableVertexAttribArray*(index: GLuint) {.inline.} = glCheck(): wrap.glEnableVertexAttribArray(index)
 proc glFinish*() {.inline.} = glCheck(): wrap.glFinish()

@@ -3,6 +3,8 @@ import times, random
 
 when defined(Android):
   include fau/backend/glfmcore
+elif defined(JavaBackend):
+  include fau/backend/javacore
 else:
   include fau/backend/glfwcore
 
