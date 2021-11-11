@@ -3,7 +3,7 @@ import times, random
 
 when defined(Android):
   include fau/backend/glfmcore
-elif defined(JavaBackend):
+elif defined(javaBackend):
   include fau/backend/javacore
 else:
   include fau/backend/glfwcore
@@ -67,6 +67,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
       if e.dragId < fau.touches.len:
         template t: Touch = fau.touches[e.dragId]
         t.pos = e.dragPos
+    else: discard #show/hide not supported yet
   )
 
   initCore(

@@ -96,6 +96,10 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     #force an exit to clean up resources, ditch the Android app lifecycle
     quit(QuitSuccess)
   )
+
+  display.glfmSetAppFocusFunc(proc(display: ptr GLFMDisplay, focused: bool) {.cdecl.} =
+    fireFauEvent(FauEvent(kind: feVisible, shown: focused))
+  )
   
 #TODO most parameters are ignored here, depth matters!
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depth = false) =

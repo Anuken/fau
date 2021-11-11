@@ -138,30 +138,21 @@ type JavaEvent = enum
   jeTouchUp,
   jeTouchDrag,
   jeMouseMove,
-  jeScroll
+  jeScroll,
+  jeVisible
 
 proc Java_mindustry_debug_NimBridge_inputEvent*(vm: JavaVMPtr, obj: jobject, kind, p1, p2, p3, p4, p5: jint) {.cdecl, exportc, dynlib.} =
   case kind.JavaEvent:
-  of jeLoop:
-    cloopProc()
-  of jeResize:
-    fireFauEvent(FauEvent(kind: feResize, size: vec2i(p1.int, p2.int)))
-  of jeKeyDown:
-    echo p1.int.toKeyCode
-    fireFauEvent FauEvent(kind: feKey, key: p1.int.toKeyCode, keyDown: true)
-  of jeKeyUp:
-    fireFauEvent FauEvent(kind: feKey, key: p1.int.toKeyCode, keyDown: false)
-  of jeTouchDown:
-    fireFauEvent FauEvent(kind: feTouch, touchPos: vec2(p1.float32, p2.float32), touchId: p3.int, touchDown: true, touchButton: keyMouseLeft)
-  of jeTouchUp:
-    fireFauEvent FauEvent(kind: feTouch, touchPos: vec2(p1.float32, p2.float32), touchId: p3.int, touchDown: false, touchButton: keyMouseLeft)
-  of jeTouchDrag:
-    fireFauEvent FauEvent(kind: feDrag, dragPos: vec2(p1.float32, p2.float32), dragId: p3.int)
-  of jeMouseMove:
-    fireFauEvent FauEvent(kind: feDrag, dragPos: vec2(p1.float32, p2.float32))
-  of jeScroll:
-    fireFauEvent FauEvent(kind: feScroll, scroll: vec2(cast[float32](p1), cast[float32](p2)))
-  else: discard
+  of jeLoop: cloopProc()
+  of jeResize: fireFauEvent(FauEvent(kind: feResize, size: vec2i(p1.int, p2.int)))
+  of jeKeyDown: fireFauEvent FauEvent(kind: feKey, key: p1.int.toKeyCode, keyDown: true)
+  of jeKeyUp: fireFauEvent FauEvent(kind: feKey, key: p1.int.toKeyCode, keyDown: false)
+  of jeTouchDown, jeTouchUp: fireFauEvent FauEvent(kind: feTouch, touchPos: vec2(p1.float32, p2.float32), touchId: p3.int, touchDown: kind.JavaEvent == jeTouchDown, touchButton: keyMouseLeft)
+  of jeTouchDrag: fireFauEvent FauEvent(kind: feDrag, dragPos: vec2(p1.float32, p2.float32), dragId: p3.int)
+  of jeMouseMove: fireFauEvent FauEvent(kind: feDrag, dragPos: vec2(p1.float32, p2.float32))
+  of jeScroll: fireFauEvent FauEvent(kind: feScroll, scroll: vec2(cast[float32](p1), cast[float32](p2)))
+  of jeVisible: fireFauEvent FauEvent(kind: feVisible, shown: p1.bool)
+  else: discard #TODO key typing
 
 #no quitting for you
 #I tried making it just call quit() but that segfaults, which still technically solves the problem

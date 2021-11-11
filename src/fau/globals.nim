@@ -25,7 +25,9 @@ type FauEventKind* = enum
   ## mousewheel scroll up/down
   feScroll,
   ## window resized
-  feResize
+  feResize,
+  ## visibility changed (show/hide)
+  feVisible
 
 #a generic input event
 type FauEvent* = object
@@ -45,6 +47,8 @@ type FauEvent* = object
     scroll*: Vec2
   of feResize:
     size*: Vec2i
+  of feVisible:
+    shown*: bool
 
 type FauListener* = proc(e: FauEvent)
   

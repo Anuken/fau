@@ -214,6 +214,10 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
       else: discard
   )
 
+  discard window.setWindowIconifyCallback(proc(window: Window, iconified: cint) {.cdecl.} =
+    fireFauEvent FauEvent(kind: feVisible, shown: iconified.bool)
+  )
+
   #grab the state at application start
   var 
     inMouseX: cdouble = 0

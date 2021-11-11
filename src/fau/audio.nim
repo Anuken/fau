@@ -1,4 +1,4 @@
-import audio/soloud_gen, os, macros, strutils, util/util
+import audio/soloud_gen, os, macros, strutils, util/util, globals
 
 # High-level soloud wrapper.
 
@@ -18,6 +18,13 @@ proc initAudio*(visualize = false) =
   so = SoloudCreate()
   checkErr("Failed to initialize"): so.SoloudInit()
   echo "Initialized SoLoud v" & $so.SoloudGetVersion() & " w/ " & $so.SoloudGetBackendString()
+
+  #on Android, audio is not paused in the background, so that needs to be handled manually
+  when defined(Android):
+    addFauListener(proc(e: FauEvent) =
+      if e.kind == feVisible:
+        so.SoloudSetPauseAll(e.shown.cint)
+    )
 
 proc getFft*(): array[256, float32] =
   let data = so.SoloudCalcFFT()
@@ -99,7 +106,8 @@ macro defineAudio*() =
     if folder.kind == pcDir:
       for f in walkDir(folder.path):
         let file = f.path.substr("assets/".len)
-        if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext in [".ogg", ".mp3", ".wav"]:
+        #all assets MUST be ogg, I don't care to support other formats.
+        if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext == ".ogg":
           let
             mus = file.startsWith("music")
             name = file.splitFile.name
