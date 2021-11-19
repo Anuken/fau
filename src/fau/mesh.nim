@@ -131,7 +131,7 @@ var activeAttribs: array[32, int]
 #total active attributes in activeAttribs
 var totalActive = 0
 #last vertex type used as a string hash (yes, collisions are possible here, but unlikely)
-var lastVertexType: Hash
+var lastVertexType: int64
 #fill with -1s
 for i in 0..<activeAttribs.len:
   activeAttribs[i] = -1

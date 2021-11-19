@@ -65,7 +65,8 @@ when not defined(debug):
   --passL:"-flto"
 
 if defined(emscripten):
-
+  #no sysrand on emscripten
+  --d:nimNoGetRandom
   --os:linux
   --cpu:i386
   --cc:clang

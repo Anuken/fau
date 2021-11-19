@@ -309,11 +309,18 @@ proc rect*(xy: Vec2, size: Vec2): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: si
 proc rectCenter*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x - w/2.0, y: y - h/2.0, w: w, h: h)
 proc rectCenter*(x, y, s: float32): Rect {.inline.} = Rect(x: x - s/2.0, y: y - s/2.0, w: s, h: s)
 
+proc xy*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
+proc `xy=`*(r: var Rect, pos: Vec2) {.inline.} =
+  r.x = pos.x
+  r.y = pos.y
 proc pos*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
 proc size*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
 
 proc top*(r: Rect): float32 {.inline.} = r.y + r.h
 proc right*(r: Rect): float32 {.inline.} = r.x + r.w
+
+proc x2*(r: Rect): float32 {.inline.} = r.y + r.h
+proc y2*(r: Rect): float32 {.inline.} = r.x + r.w
 
 proc centerX*(r: Rect): float32 {.inline.} = r.x + r.w/2.0
 proc centerY*(r: Rect): float32 {.inline.} = r.y + r.h/2.0
@@ -324,6 +331,17 @@ proc merge*(r: Rect, other: Rect): Rect =
   result.y = min(r.y, other.y)
   result.w = max(r.right, other.right) - result.x
   result.h = max(r.top, other.top) - result.y
+
+proc intersect*(r1: Rect, r2: Rect): Rect =
+  var
+    x1 = max(r1.x, r2.x)
+    y1 = max(r1.y, r2.y)
+    x2 = max(r1.x2, r2.x2)
+    y2 = max(r1.y2, r2.y2)
+  
+  if x2 < x1: x2 = x1
+  if y2 < y1: y2 = y1
+  return rect(x1, y1, x2 - x1, y2 - y1)
 
 #collision stuff
 
