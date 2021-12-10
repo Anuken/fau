@@ -3,8 +3,8 @@ import math
 import ../texture, ../patch, ../color, ../globals, ../batch, ../util/util, ../draw
 
 from ../fmath import nil
-from pixie import Image, draw, newImage, typeset, getGlyphPath, commandsToShapes, scale, fillPath, lineHeight, ascent, descent, transform, computePixelBounds, parseSomePaint
-from vmath import x, y, `*`, `-`, isNaN
+from pixie import Image, draw, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint
+from vmath import x, y, `*`, `-`, isNaN, translate
 from bumpy import xy
 from chroma import nil
 
@@ -24,7 +24,7 @@ proc newTexturePacker*(size: fmath.Vec2i): TexturePacker =
 
 proc pack*(packer: TexturePacker, image: Image): Patch =
   let (x, y) = packer.packer.pack(image.width, image.height)
-  packer.image.draw(image, vmath.vec2(x.float32, y.float32))
+  packer.image.draw(image, vmath.translate(vmath.vec2(x.float32, y.float32)))
   return newPatch(packer.texture, x, y, image.width, image.height)
 
 # Updates the texture of a texture packer. Call this when you're done packing.
@@ -37,13 +37,13 @@ type
     patches: Table[Rune, Patch]
     offsets: Table[Rune, fmath.Vec2]
 
-proc toVAlign(align: int): pixie.VAlignMode {.inline.} =
+proc toVAlign(align: int): pixie.VerticalAlignment {.inline.} =
   return if (align and daBot) != 0 and (align and daTop) != 0: pixie.vaMiddle
   elif (align and daBot) != 0: pixie.vaBottom
   elif (align and daTop) != 0: pixie.vaTop
   else: pixie.vaMiddle
 
-proc toHAlign(align: int): pixie.HAlignMode {.inline.} =
+proc toHAlign(align: int): pixie.HorizontalAlignment {.inline.} =
   return if (align and daLeft) != 0 and (align and daRight) != 0: pixie.haCenter
   elif (align and daLeft) != 0: pixie.haLeft
   elif (align and daRight) != 0: pixie.haRight
@@ -52,12 +52,12 @@ proc toHAlign(align: int): pixie.HAlignMode {.inline.} =
 proc getGlyphImage(font: pixie.Font, r: Rune): (Image, fmath.Vec2) =
   var path = font.typeface.getGlyphPath(r)
   path.transform(vmath.scale(vmath.vec2(font.scale)))
-  let bounds = path.computePixelBounds()
+  let bounds = path.computeBounds()
   #no path found
   if bounds.w < 1 or bounds.h < 1: return
   let bxy = -bounds.xy
   result[0] = newImage(bounds.w.int, bounds.h.int)
-  result[0].fillPath(path, chroma.rgba(255, 255, 255, 255), bxy)
+  result[0].fillPath(path, chroma.rgba(255, 255, 255, 255), pixie.translate(bxy))
   result[1] = fmath.vec2(bounds.xy)
 
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
@@ -75,6 +75,7 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128): Fo
 
   let packer = newTexturePacker(fmath.vec2i(textureSize, textureSize))
 
+  #load standard latin characters
   for ch in 0x0020'u16..0x00FF'u16:
     let code = Rune(ch)
 

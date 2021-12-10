@@ -44,13 +44,17 @@ proc loadMusicStatic*(path: static[string]): Sound =
   checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   return Sound(handle: handle, protect: true)
 
+proc loadMusicFile*(path: string): Sound =
+  let handle = WavStreamCreate()
+  checkErr(path): handle.WavStreamLoad(path)
+  return Sound(handle: handle)
+
 proc loadMusic*(path: static[string]): Sound =
+  ## Loads music from the assets folder, or statically.
   when not defined(emscripten):
     return loadMusicStatic(path)
   else: #load from filesystem on emscripten
-    let handle = WavStreamCreate()
-    checkErr(path): handle.WavStreamLoad("assets/" & path)
-    return Sound(handle: handle)
+    return loadMusicFile("assets/" & path)
 
 proc loadSoundStatic*(path: static[string]): Sound =
   const data = staticReadString(path)
@@ -58,13 +62,17 @@ proc loadSoundStatic*(path: static[string]): Sound =
   checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   return Sound(handle: handle)
 
+proc loadSoundFile*(path: string): Sound =
+  let handle = WavCreate()
+  checkErr(path): handle.WavLoad(path)
+  return Sound(handle: handle)
+
 proc loadSound*(path: static[string]): Sound =
+  ## Loads a sound from the assets folder, or statically.
   when not defined(emscripten):
     return loadSoundStatic(path)
   else: #load from filesystem on emscripten
-    let handle = WavCreate()
-    checkErr(path): handle.WavLoad("assets/" & path)
-    return Sound(handle: handle)
+    return loadSoundFile("assets/" & path)
 
 proc play*(sound: Sound, pitch = 1.0f, volume = 1.0f, pan = 1.0f, loop = false): Voice {.discardable.} =
   #handle may not exist due to failed loading

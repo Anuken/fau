@@ -1,4 +1,4 @@
-import ../draw, ../globals, ../color, ../patch, ../fmath, ../input, font, macros, hashes
+import ../draw, ../globals, ../color, ../patch, ../fmath, ../input, font, macros, hashes, algorithm
 
 # https://github.com/rxi/microui/blob/master/src/microui.h
 
@@ -14,6 +14,20 @@ type LayoutType = enum
   ltNone,
   ltRelative,
   ltAbsolute
+
+type UiOpt = enum
+  optAlignCenter,
+  optAlignRight,
+  optNoInteract,
+  optNoResize,
+  optNoScroll,
+  optNoClose,
+  optNoTitle,
+  optHoldFocus,
+  optAutosize,
+  optPopup,
+  optClosed,
+  optExpanded
 
 #TODO ref or not?
 type Layout = ref object
@@ -67,6 +81,13 @@ var context = Context()
 
 # https://github.com/rxi/microui/blob/master/src/microui.c
 
+proc mouseDown(): bool = keyMouseLeft.down
+proc mousePressed(): bool = keyMouseLeft.tapped
+
+proc toFront(cont: Container) =
+  cont.zIndex = context.lastZindex + 1
+  context.lastZindex.inc
+
 proc beginUi() =
   context.rootList.setLen(0)
   context.scrollTarget = nil
@@ -76,7 +97,26 @@ proc beginUi() =
 
 proc endUi() =
   #TODO
-  discard
+  doAssert context.containerStack.len == 0
+  doAssert context.clipStack.len == 0
+  doAssert context.idStack.len == 0
+  doAssert context.layoutStack.len == 0
+
+  if context.scrollTarget != nil:
+    context.scrollTarget.scroll += fau.scroll
+  
+  if not context.updatedFocus:
+    context.focus = 0
+
+  if mousePressed() and context.nextHoverRoot != nil and context.nextHoverRoot.zindex < context.lastZindex and context.nextHoverRoot.zindex >= 0:
+    toFront(context.nextHoverRoot)
+  
+  #TODO rootList never gets added to, why bother?
+  context.rootList.sort proc(a, b: Container): int =
+    cmp(a.zIndex, b.zIndex)
+
+  #TODO actually draw everything
+  
 
 proc setFocus(id: Uid) =
   context.focus = id
@@ -219,10 +259,6 @@ proc popContainer() =
   discard context.layoutStack.pop()
   popId()
 
-proc toFront(cont: Container) =
-  cont.zIndex = context.lastZindex + 1
-  context.lastZindex.inc
-
 #TODO is memory pool stuff important?
 proc getContainer(id: Uid): Container =
   result = Container()
@@ -296,3 +332,47 @@ void mu_draw_box(mu_Context *ctx, mu_Rect rect, mu_Color color) {
 }
 
 ]#
+
+proc inHoverRoot(): bool =
+  var i = context.containerStack.len
+  while i >= 0:
+    #TODO should stop at root container, but does not (no head)
+    if context.containerStack[i] == context.hoverRoot: return true
+    i.dec
+  
+  return false
+
+
+proc mouseOver(rec: Rect): bool = rec.contains(fau.mouse) and getClipRect().contains(fau.mouse) and inHoverRoot()
+proc updateControl(id: Uid, rect: Rect, opt: set[UiOpt]) =
+  let over = mouseOver(rect)
+
+  if context.focus == id:
+    context.updatedFocus = true
+  if optNoInteract in opt: return
+  if over and not mouseDown(): 
+    context.hover = id
+  
+  if context.focus == id:
+    if mousePressed() and not over: setFocus(0)
+    if mouseDown() and optHoldFocus notin opt: setFocus(0)
+  
+  if context.hover == id:
+    if mousePressed(): setFocus(id)
+    elif not over: context.focus = 0
+
+
+proc beginRootContainer(cont: Container) =
+  context.containerStack.add cont
+  context.rootList.add cont
+
+  if cont.rect.contains(fau.mouse) and (context.nextHoverRoot == nil or cont.zindex > context.nextHoverRoot.zIndex):
+    context.nextHoverRoot = cont
+  
+  #this counts as an "unclipped rect"
+  #TODO implement properly
+  context.clipStack.add rect(0, 0, 0x1000000, 0x1000000)
+
+proc endRootContainer() =
+  popClip()
+  popContainer()

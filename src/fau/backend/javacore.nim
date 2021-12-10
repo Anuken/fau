@@ -1,4 +1,5 @@
-import ../gl/[glad, gltypes, glproc], ../globals, ../fmath
+#I would like to avoid the jnim dependency, but it's necessary for string conversion.
+import ../gl/[glad, gltypes, glproc], ../globals, ../fmath, jnim
 
 #avert your eyes, this is an abomination
 
@@ -112,11 +113,14 @@ else:
   #assume SDL backend is used, import that
   proc glGetProcAddress*(procedure: cstring): pointer {.cdecl, dynlib: sdlLibName, importc: "SDL_GL_GetProcAddress".}
 
-proc Java_mindustry_debug_NimBridge_init*(vm, obj: pointer, screenW, screenH: jint): jint {.cdecl, exportc, dynlib.} =
+proc Java_mindustry_debug_NimBridge_init*(vm: JNIEnvPtr, obj: pointer, assetPath: jstring, screenW, screenH: jint): jint {.cdecl, exportc, dynlib.} =
   #invoked from java so NimMain is necessary
   NimMain()
 
   echo "the nightmare begins"
+
+  let str = $assetPath
+  echo "asset path: ", str
 
   glInitialized = true
   when defined(Android):
