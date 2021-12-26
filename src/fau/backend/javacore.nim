@@ -1,5 +1,5 @@
 #I would like to avoid the jnim dependency, but it's necessary for string conversion.
-import ../gl/[glad, gltypes, glproc], ../globals, ../fmath, jnim
+import ../gl/[glad, gltypes, glproc], ../globals, ../fmath, jnim, ../assets
 
 #avert your eyes, this is an abomination
 
@@ -117,10 +117,13 @@ proc Java_mindustry_debug_NimBridge_init*(vm: JNIEnvPtr, obj: pointer, assetPath
   #invoked from java so NimMain is necessary
   NimMain()
 
-  echo "the nightmare begins"
+  echo "the nightmare begins."
 
-  let str = $assetPath
-  echo "asset path: ", str
+  let assetStr = $assetPath
+  echo "Fau asset path: ", assetStr
+
+  #assign the correct asset folder, presumably extracted
+  assetFolder = assetStr
 
   glInitialized = true
   when defined(Android):

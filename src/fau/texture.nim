@@ -1,4 +1,4 @@
-import stb_image/read as stbi, gl/[glproc, gltypes], fmath, util/util
+import stb_image/read as stbi, gl/[glproc, gltypes], fmath, assets
 
 type TextureFilter* = enum
   tfNearest,
@@ -115,9 +115,8 @@ proc loadTextureBytes*(bytes: string): Texture =
   data = stbi.loadFromMemory(cast[seq[byte]](bytes), width, height, channels, 4)
   result.load(vec2i(width, height), addr data[0])
 
-  
 #load texture from path
-proc loadTexture*(path: string): Texture = 
+proc loadTextureFile*(path: string): Texture = 
   result = newTexture()
 
   var
@@ -127,8 +126,8 @@ proc loadTexture*(path: string): Texture =
   data = stbi.load(path, width, height, channels, 4)
   result.load(vec2i(width, height), addr data[0])
 
-proc loadTextureStatic*(path: static[string]): Texture =
-  when not defined(emscripten):
+proc loadTexture*(path: static[string]): Texture =
+  when staticAssets:
     loadTextureBytes(staticReadString(path))
-  else: #load from filesystem on emscripten
-    loadTexture("assets/" & path)
+  else: #load from filesystem
+    loadTextureFile(path.assetFile)

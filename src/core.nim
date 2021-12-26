@@ -144,7 +144,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     fau.cam = newCam(fau.size)
 
     #load sprites
-    fau.atlas = loadAtlasStatic(atlasFile)
+    fau.atlas = loadAtlas(atlasFile)
 
     fau.quad = newScreenMesh()
     fau.screenspace = newShader("""

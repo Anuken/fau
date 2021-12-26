@@ -1,4 +1,4 @@
-import audio/soloud, os, macros, strutils, util/util, globals
+import audio/soloud, os, macros, strutils, assets, globals
 
 # High-level soloud wrapper.
 
@@ -51,10 +51,10 @@ proc loadMusicFile*(path: string): Sound =
 
 proc loadMusic*(path: static[string]): Sound =
   ## Loads music from the assets folder, or statically.
-  when not defined(emscripten):
+  when staticAssets:
     return loadMusicStatic(path)
-  else: #load from filesystem on emscripten
-    return loadMusicFile("assets/" & path)
+  else: #load from filesystem
+    return loadMusicFile(path.assetFile)
 
 proc loadSoundStatic*(path: static[string]): Sound =
   const data = staticReadString(path)
@@ -69,10 +69,10 @@ proc loadSoundFile*(path: string): Sound =
 
 proc loadSound*(path: static[string]): Sound =
   ## Loads a sound from the assets folder, or statically.
-  when not defined(emscripten):
+  when staticAssets:
     return loadSoundStatic(path)
-  else: #load from filesystem on emscripten
-    return loadSoundFile("assets/" & path)
+  else: #load from filesystem
+    return loadSoundFile(path.assetFile)
 
 proc play*(sound: Sound, pitch = 1.0f, volume = 1.0f, pan = 1.0f, loop = false): Voice {.discardable.} =
   #handle may not exist due to failed loading

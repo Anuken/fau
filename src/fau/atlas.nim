@@ -1,5 +1,5 @@
 
-import strformat, tables, texture, patch, util/util, streams
+import strformat, tables, texture, patch, assets, streams
 
 #A single-texture atlas.
 type Atlas* = ref object
@@ -10,15 +10,12 @@ type Atlas* = ref object
   error9*: Patch9
 
 #Loads an atlas from static resources.
-proc loadAtlasStatic*(path: static[string]): Atlas =
+proc loadAtlas*(path: static[string]): Atlas =
   result = Atlas()
-
-  const dataPath = path & ".dat"
-  const pngPath = path & ".png"
   
-  result.texture = loadTextureStatic(pngPath)
+  result.texture = loadTexture(path & ".png")
 
-  let stream = staticReadStream(dataPath)
+  let stream = assetStream(path & ".dat")
 
   let amount = stream.readInt32()
   for i in 0..<amount:
