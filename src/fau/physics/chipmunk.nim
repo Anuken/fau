@@ -10,8 +10,7 @@ import std/tables
 import std/typetraits
 import ../fmath
 
-include wrapper/engine
-
+include wrapper
 
 # stuff
 
