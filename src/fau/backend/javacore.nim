@@ -98,8 +98,30 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   cinitProc = initProc
 
 when defined(Android):
-  #this is only necessary for glfmGetProcAddress!
-  import glfm
+  #grab GLFM's proc address function (this is awful I know, probably doesn't even work)
+  {.emit: """
+  #include <EGL/egl.h>
+  #include <dlfcn.h>
+  #include <unistd.h>
+
+  typedef void (*GLFMProc)(void);
+
+  """.}
+
+  type GLFMProc* = proc() {.cdecl.}
+
+  proc glfmGetProcAddress*(functionName: cstring): GLFMProc =
+    {.emit: """
+    GLFMProc function = eglGetProcAddress(functionName);
+    if(!function){
+      static void *handle = NULL;
+      if(!handle){
+        handle = dlopen(NULL, RTLD_LAZY);
+      }
+      function = handle ? (GLFMProc)dlsym(handle, functionName) : NULL;
+    }
+    return function;
+    """}
 else:
   when defined(windows):
     const sdlLibName* = "SDL2.dll"
@@ -142,7 +164,7 @@ type JavaEvent = enum
   jeResize,
   jeKeyDown,
   jeKeyUp,
-  jeKeyType, #TODO
+  jeKeyType, #TODO not implemented, but it's not like I need text fields anyway...
   jeTouchDown,
   jeTouchUp,
   jeTouchDrag,

@@ -65,8 +65,6 @@ when not defined(debug):
   --passL:"-flto"
 
 if defined(emscripten):
-  #no sysrand on emscripten
-  --d:nimNoGetRandom
   --os:linux
   --cpu:i386
   --cc:clang
@@ -174,7 +172,7 @@ srcDir        = "src"
 bin           = @["{{APP_NAME}}"]
 binDir        = "build"
 
-requires "nim >= 1.4.8"
+requires "nim >= 1.6.2"
 requires "https://github.com/Anuken/fau#" & staticExec("git -C fau rev-parse HEAD")
 
 import strformat, os
@@ -188,7 +186,6 @@ const
 
   builds = [
     #(name: "linux64", os: "linux", cpu: "amd64", args: ""), #doesn't work due to glibc
-    #(name: "win32", os: "windows", cpu: "i386", args: "--gcc.exe:i686-w64-mingw32-gcc --gcc.linkerexe:i686-w64-mingw32-g++"), #usually unnecessary
     (name: "win64", os: "windows", cpu: "amd64", args: "--gcc.exe:x86_64-w64-mingw32-gcc --gcc.linkerexe:x86_64-w64-mingw32-g++"),
   ]
 
@@ -215,11 +212,9 @@ task deploy, "Build for all platforms":
       dir = "build"
       exeExt = if os == "windows": ".exe" else: ""
       bin = dir / exeName & exeExt
-      #win32 crashes when the release/danger/optSize flag is specified
-      dangerous = if name == "win32": "" else: "-d:danger"
 
     mkDir dir
-    shell &"nim --cpu:{cpu} --os:{os} --app:gui -f {args} {dangerous} -o:{bin} c src/{app}"
+    shell &"nim --cpu:{cpu} --os:{os} --app:gui -f {args} -d:danger -o:{bin} c src/{app}"
     shell &"strip -s {bin}"
     shell &"upx-ucl --best {bin}"
 
