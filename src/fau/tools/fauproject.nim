@@ -55,14 +55,20 @@ initFau(run, init, windowTitle = "{{APP_NAME}}")
 }.toTable
 
 const cfgTemplate = """
---path:"fau"
+--path:"fau/src"
 --hints:off
 --passC:"-DSTBI_ONLY_PNG"
 --gc:arc
+--d:nimPreviewHashRef
+--tlsEmulation:off
 
-when not defined(debug):
+when defined(release) or defined(danger):
   --passC:"-flto"
   --passL:"-flto"
+  --d:strip
+
+when defined(Android):
+  --d:androidNDK
 
 if defined(emscripten):
   --os:linux

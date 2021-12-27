@@ -1,5 +1,4 @@
-#I would like to avoid the jnim dependency, but it's necessary for string conversion.
-import ../gl/[glad, gltypes, glproc], ../globals, ../fmath, jnim, ../assets
+import ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, os
 
 #avert your eyes, this is an abomination
 
@@ -86,7 +85,8 @@ proc toKeyCode(id: int): KeyCode =
   else: keyUnknown
 
 var
-  running: bool = true
+  running = true
+  initialized = false
   cloopProc: proc()
   cinitProc: proc()
 
@@ -124,7 +124,7 @@ when defined(Android):
     """}
 else:
   when defined(windows):
-    const sdlLibName* = "SDL2.dll"
+    const sdlLibName* = "sdl-arc64.dll"
   elif defined(macosx):
     const sdlLibName* = "libSDL2.dylib"
   elif defined(openbsd):
@@ -135,13 +135,23 @@ else:
   #assume SDL backend is used, import that
   proc glGetProcAddress*(procedure: cstring): pointer {.cdecl, dynlib: sdlLibName, importc: "SDL_GL_GetProcAddress".}
 
-proc Java_mindustry_debug_NimBridge_init*(vm: JNIEnvPtr, obj: pointer, assetPath: jstring, screenW, screenH: jint): jint {.cdecl, exportc, dynlib.} =
+proc Java_mindustry_debug_NimBridge_init*(vm, obj: pointer, screenW, screenH: int32): int32 {.cdecl, exportc, dynlib.} =
   #invoked from java so NimMain is necessary
   NimMain()
 
   echo "the nightmare begins."
 
-  let assetStr = $assetPath
+  var path = "thepath"
+
+  when defined(Android):
+    path = "/storage/emulated/0/Android/data/io.anuke.mindustry/files/thepath"
+
+  if not fileExists(path):
+    echo "Asset not found: " & path
+    return 1
+
+  echo "Preparing to read fau asset path: ", path
+  let assetStr = readFile(path)
   echo "Fau asset path: ", assetStr
 
   #assign the correct asset folder, presumably extracted
@@ -154,8 +164,6 @@ proc Java_mindustry_debug_NimBridge_init*(vm: JNIEnvPtr, obj: pointer, assetPath
     if not loadGl(glGetProcAddress): return 1
 
   fau.sizei = vec2i(screenW.int, screenH.int)
-
-  cinitProc()
 
   return 0
 
@@ -172,9 +180,13 @@ type JavaEvent = enum
   jeScroll,
   jeVisible
 
-proc Java_mindustry_debug_NimBridge_inputEvent*(vm, obj: pointer, kind, p1, p2, p3, p4, p5: jint) {.cdecl, exportc, dynlib.} =
+proc Java_mindustry_debug_NimBridge_inputEvent*(vm, obj: pointer, kind, p1, p2, p3, p4, p5: int32) {.cdecl, exportc, dynlib.} =
   case kind.JavaEvent:
-  of jeLoop: cloopProc()
+  of jeLoop:
+    if not initialized:
+      cinitProc()
+      initialized = true
+    cloopProc()
   of jeResize: fireFauEvent(FauEvent(kind: feResize, size: vec2i(p1.int, p2.int)))
   of jeKeyDown: fireFauEvent FauEvent(kind: feKey, key: p1.int.toKeyCode, keyDown: true)
   of jeKeyUp: fireFauEvent FauEvent(kind: feKey, key: p1.int.toKeyCode, keyDown: false)

@@ -23,7 +23,7 @@ proc initAudio*(visualize = false) =
   when defined(Android):
     addFauListener(proc(e: FauEvent) =
       if e.kind == feVisible:
-        so.SoloudSetPauseAll(e.shown.cint)
+        so.SoloudSetPauseAll(e.shown.not.cint)
     )
 
 proc getFft*(): array[256, float32] =
