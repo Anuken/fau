@@ -238,7 +238,7 @@ proc fauproject(directory = getHomeDir() / "Projects", preset = "ecs", names: se
     echo "One project name must be provided."
     return
 
-  let name = names[1]
+  let name = names[0]
 
   if name.len == 0:
     echo "Project name must not be empty."
