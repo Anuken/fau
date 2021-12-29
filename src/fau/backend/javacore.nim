@@ -98,7 +98,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   cinitProc = initProc
 
 when defined(Android):
-  #grab GLFM's proc address function (this is awful I know, probably doesn't even work)
+  #grab GLFM's proc address function (this is awful I know, really surprised it worked first try)
   {.emit: """
   #include <EGL/egl.h>
   #include <dlfcn.h>
@@ -124,10 +124,13 @@ when defined(Android):
     """}
 else:
   when defined(windows):
+    #sdl is statically linked into arc on windows
     const sdlLibName* = "sdl-arc64.dll"
   elif defined(macosx):
+    #probably never used since I don't target mac with this nonsense
     const sdlLibName* = "libSDL2.dylib"
   elif defined(openbsd):
+    #who even uses this
     const sdlLibName* = "libSDL2.so.0.6"
   else:
     const sdlLibName* = "libSDL2.so"
@@ -183,6 +186,7 @@ type JavaEvent = enum
 proc Java_mindustry_debug_NimBridge_inputEvent*(vm, obj: pointer, kind, p1, p2, p3, p4, p5: int32) {.cdecl, exportc, dynlib.} =
   case kind.JavaEvent:
   of jeLoop:
+    #initialization delayed until first event, since that's when the java listeners are torn down
     if not initialized:
       cinitProc()
       initialized = true
@@ -195,7 +199,7 @@ proc Java_mindustry_debug_NimBridge_inputEvent*(vm, obj: pointer, kind, p1, p2, 
   of jeMouseMove: fireFauEvent FauEvent(kind: feDrag, dragPos: vec2(p1.float32, p2.float32))
   of jeScroll: fireFauEvent FauEvent(kind: feScroll, scroll: vec2(cast[float32](p1), cast[float32](p2)))
   of jeVisible: fireFauEvent FauEvent(kind: feVisible, shown: p1.bool)
-  else: discard #TODO key typing
+  else: discard #TODO key typing (do I care? not really)
 
 #no quitting for you
 #I tried making it just call quit() but that segfaults, which still technically solves the problem

@@ -12,6 +12,7 @@ type
 
 template checkErr(details: string, body: untyped) =
   let err = body
+  #the game shouldn't crash when an audio error happens, but it would be nice to log to stderr
   if err != 0: echo "[Audio] ", details, ": ", so.SoloudGetErrorString(err)
 
 proc initAudio*(visualize = false) =
@@ -32,6 +33,7 @@ proc getFft*(): array[256, float32] =
   for i in 0..<256:
     result[i] = dataArr[i].float32
 
+#TODO remove, this should be more generic
 proc filterEcho*(sound: Sound, delay = 0.4, decay = 0.9, filtering = 0.5) =
   let filter = EchoFilterCreate()
   discard filter.EchoFilterSetParamsEx(delay, decay, filtering)
