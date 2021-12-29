@@ -1,6 +1,6 @@
 ## basic components, such as position
 
-import ../ecs
+import ../fau/ecs
 
 exportAll:
   registerComponents(defaultComponentOptions):
