@@ -1,4 +1,4 @@
-import pixie, math, chroma, os, algorithm
+import pixie, chroma, os, algorithm
 
 # This file contains an implementation of an antialiasing algorithm.
 # It's not very fast, but definitely faster than my previous Groovy version.

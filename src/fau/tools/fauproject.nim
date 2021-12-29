@@ -233,7 +233,17 @@ template staticReadString*(filename: string): string =
   const str = staticRead(filename)
   str
 
-proc fauproject(name: string, directory = getHomeDir() / "Projects", preset = "ecs") =
+proc fauproject(directory = getHomeDir() / "Projects", preset = "ecs", names: seq[string]) =
+  if names.len != 1:
+    echo "One project name must be provided."
+    return
+
+  let name = names[1]
+
+  if name.len == 0:
+    echo "Project name must not be empty."
+    return
+
   echo &"Generating project '{name}'..."
 
   let dir = directory / name
@@ -275,6 +285,5 @@ proc fauproject(name: string, directory = getHomeDir() / "Projects", preset = "e
   echo &"Project generated in {dir}"
 
 dispatch(fauproject, help = {
-  "name": "name of project",
   "directory": "directory to place project in"
 })
