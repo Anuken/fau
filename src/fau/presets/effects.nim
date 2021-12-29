@@ -2,22 +2,21 @@
 
 import ../../ecs, ../util/util, strutils, basic
 
-exportAll:
-  type
-    EffectId = distinct int
-    EffectState = object
-      pos: Vec2
-      time, lifetime, rotation: float32
-      color: Color
-      id: int
-    EffectProc = proc(e: EffectState)
+type
+  EffectId* = distinct int
+  EffectState* = object
+    pos*: Vec2
+    time*, lifetime*, rotation*: float32
+    color*: Color
+    id*: int
+  EffectProc* = proc(e: EffectState)
 
-  registerComponents(defaultComponentOptions):
-    type
-      Effect = object
-        id: EffectId
-        rotation: float32
-        color: Color
+registerComponents(defaultComponentOptions):
+  type
+    Effect* = object
+      id*: EffectId
+      rotation*: float32
+      color*: Color
 
 ## Defines several effects. Requires makeEffectsSystem() to be called somewhere to function properly.
 ## 
