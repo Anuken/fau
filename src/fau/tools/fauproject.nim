@@ -272,7 +272,7 @@ proc fauproject(directory = getHomeDir() / "Projects", preset = "ecs", names: se
   createDir dir/".github/workflows"
 
   #default sprites
-  writeFile(dir/"assets-raw/sprites/circle.png", staticReadString("../../res/circle.png"))
+  writeFile(dir/"assets-raw/sprites/circle.png", staticReadString("../../../res/circle.png"))
 
   let lowerName = name.toLowerAscii()
 
