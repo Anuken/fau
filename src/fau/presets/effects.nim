@@ -1,6 +1,6 @@
 ## components for rendering effects
 
-import ../../ecs, strutils, basic
+import ../../ecs, ../util/util, strutils, basic
 
 exportAll:
   type

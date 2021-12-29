@@ -2,14 +2,13 @@
 
 import ../../ecs
 
-exportAll:
-  registerComponents(defaultComponentOptions):
-    type
-      Main = object
-      Pos = object
-        x, y: float32
-      Timed = object
-        time, lifetime: float32
+registerComponents(defaultComponentOptions):
+  type
+    Main* = object
+    Pos* = object
+      x*, y*: float32
+    Timed* = object
+      time*, lifetime*: float32
 
 template makeTimedSystem*() =
   sys("timed", [Timed]):

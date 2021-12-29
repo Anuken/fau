@@ -1,4 +1,4 @@
-import polymorph, core, strutils
+import polymorph, core, strutils, fau/util/util
 export polymorph, core, strutils
 
 # Wraps Polymorph with some utilities.
@@ -57,6 +57,5 @@ macro launchFau*(title: string) =
   
   result.add quote do:
     commitSystems("run")
-    buildEvents()
     initFau(run, windowTitle = `title`)
   
