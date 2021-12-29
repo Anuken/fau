@@ -4,6 +4,12 @@ import macros, tables, streams, strutils
 
 var eventHandlers* {.compileTime} = newTable[string, seq[NimNode]]()
 
+template incTimer*(value: untyped, increment: float32, body: untyped): untyped =
+  `value` += `increment`
+  if `value` >= 1f:
+    `value` = 0f
+    `body`
+
 ## copies an array into a seq, element by element.
 macro minsert*(dest: untyped, index: int, data: untyped): untyped =
   result = newStmtList()

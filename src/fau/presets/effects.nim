@@ -14,7 +14,7 @@ type
 registerComponents(defaultComponentOptions):
   type
     Effect* = object
-      id*: EffectId
+      ide*: EffectId
       rotation*: float32
       color*: Color
 
@@ -73,7 +73,7 @@ macro defineEffects*(body: untyped) =
         `effectBody`
       
       template `templName`*(pos: Vec2, rot: float32 = 0, col: Color = colorWhite, life: float32 = `lifeVal`) =
-        discard newEntityWith(Pos(x: pos.x, y: pos.y), Timed(lifetime: life), Effect(id: `id`.EffectId, rotation: rot, color: col))
+        discard newEntityWith(Pos(x: pos.x, y: pos.y), Timed(lifetime: life), Effect(ide: `id`.EffectId, rotation: rot, color: col))
     
     brackets.add quote do:
       `procName`.EffectProc
@@ -90,4 +90,4 @@ macro defineEffects*(body: untyped) =
 template makeEffectsSystem*() =
   sys("drawEffects", [Pos, Effect, Timed]):
     all:
-      allEffects[item.effect.id.int](EffectState(pos: item.pos.vec2, time: item.timed.time, lifetime: item.timed.lifetime, color: item.effect.color, rotation: item.effect.rotation, id: item.entity.instance.int))
+      allEffects[item.effect.ide.int](EffectState(pos: item.pos.vec2, time: item.timed.time, lifetime: item.timed.lifetime, color: item.effect.color, rotation: item.effect.rotation, id: item.entity.instance.int))

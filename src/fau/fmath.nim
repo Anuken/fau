@@ -179,6 +179,7 @@ template vec2*(xy: float32): Vec2 = Vec2(x: xy, y: xy)
 template vec2*(pos: AnyVec2): Vec2 = Vec2(x: pos.x, y: pos.y)
 template vec2*(): Vec2 = Vec2()
 func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag * sin(angle))
+proc randVec*(len: float32): Vec2 {.inline.} = vec2l(rand(0f..(PI.float32 * 2f)), rand(0f..len))
 
 #vec2i stuff
 
