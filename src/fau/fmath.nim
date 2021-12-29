@@ -250,6 +250,9 @@ func len*(vec: Vec2): float32 {.inline.} = sqrt(vec.x * vec.x + vec.y * vec.y)
 func len2*(vec: Vec2): float32 {.inline.} = vec.x * vec.x + vec.y * vec.y
 func `len=`*(vec: var Vec2, b: float32) = vec *= b / vec.len
 
+func angled*(vec: Vec2, angle: float32): Vec2 {.inline.} =
+  vec2l(angle, vec.len)
+
 func nor*(vec: Vec2): Vec2 {.inline.} = 
   let len = vec.len
   return if len == 0f: vec else: vec / len
