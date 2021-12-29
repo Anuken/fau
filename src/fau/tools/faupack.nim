@@ -106,7 +106,7 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
 
   #blit packed images and write them to the stream
   for region in positions.values:
-    image.draw(region.image, vmath.vec2(region.pos.x.float32, region.pos.y.float32))
+    image.draw(region.image, vmath.translate(vmath.vec2(region.pos.x.float32, region.pos.y.float32)))
 
     #apply bleeding/gutters
     if bleeding > 0:
