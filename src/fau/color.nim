@@ -69,6 +69,7 @@ const
   colorClear* = rgba(0, 0, 0, 0)
   colorWhite* = rgb(1, 1, 1)
   colorBlack* = rgba(0, 0, 0)
+  colorGray* = rgb(0.5f, 0.5f, 0.5f)
   colorRoyal* = %"4169e1"
   colorCoral* = %"ff7f50"
   colorRed* = rgb(1, 0, 0)

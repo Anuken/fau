@@ -180,6 +180,7 @@ template vec2*(pos: AnyVec2): Vec2 = Vec2(x: pos.x, y: pos.y)
 template vec2*(): Vec2 = Vec2()
 func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag * sin(angle))
 proc randVec*(len: float32): Vec2 {.inline.} = vec2l(rand(0f..(PI.float32 * 2f)), rand(0f..len))
+proc randRangeVec*(r: float32): Vec2 {.inline.} = vec2(rand(-r..r), rand(-r..r))
 
 #vec2i stuff
 
@@ -325,6 +326,9 @@ proc right*(r: Rect): float32 {.inline.} = r.x + r.w
 
 proc x2*(r: Rect): float32 {.inline.} = r.y + r.h
 proc y2*(r: Rect): float32 {.inline.} = r.x + r.w
+
+proc grow*(r: var Rect, amount: float32) = r = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)
+proc grow*(r: Rect, amount: float32): Rect = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)
 
 proc centerX*(r: Rect): float32 {.inline.} = r.x + r.w/2.0
 proc centerY*(r: Rect): float32 {.inline.} = r.y + r.h/2.0
@@ -560,8 +564,9 @@ template shotgun*(amount: int, spacing: float32, body: untyped) =
 proc width*(cam: Cam): float32 {.inline.} = cam.size.x
 proc height*(cam: Cam): float32 {.inline.} = cam.size.y
 
-proc update*(cam: Cam, size: Vec2 = cam.size) = 
+proc update*(cam: Cam, size: Vec2 = cam.size, pos = cam.pos) = 
   cam.size = size
+  cam.pos = pos
   cam.mat = ortho(cam.pos - cam.size/2f, cam.size)
   cam.inv = cam.mat.inv()
 
