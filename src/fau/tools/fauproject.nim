@@ -263,6 +263,7 @@ proc fauproject(directory = getHomeDir() / "Projects", preset = "ecs", names: se
   setCurrentDir dir
 
   #pull in latest fau version
+  #TODO git submodule add https://github.com/Anuken/fau.git fau
   discard execShellCmd("git clone https://github.com/Anuken/fau.git")
   createDir dir/"assets"
   createDir dir/"src"
@@ -271,7 +272,7 @@ proc fauproject(directory = getHomeDir() / "Projects", preset = "ecs", names: se
   createDir dir/".github/workflows"
 
   #default sprites
-  writeFile(dir/"assets-raw/sprites/circle.png", staticReadString("../res/circle.png"))
+  writeFile(dir/"assets-raw/sprites/circle.png", staticReadString("../../res/circle.png"))
 
   let lowerName = name.toLowerAscii()
 
