@@ -165,6 +165,44 @@ proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite
 proc draw*(p: Patch9, bounds: Rect, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
   draw(p, bounds.pos, bounds.size, z, color, mixColor, scale)
 
+#TODO does not support mid != 0
+proc drawBend*(p: Patch, pos: Vec2, divs: openArray[float32], mid = 0, rotation = 0f, z: float32 = 0f, size = p.size * fau.pixelScl, scl = vec2(1f, 1f), color = colorWhite, mixColor = colorClear) = 
+  let 
+    outs = size * scl
+    v = p.v
+    v2 = p.v2
+
+  var cur = rotation
+  var cpos = pos
+  var segSpace = outs.x / divs.len.float32
+
+  for i in mid..<divs.len:
+    let
+      mid1 = cpos
+      top1 = vec2l(cur + 90f.rad, outs.y / 2f)
+      top2 = vec2l(cur + 90f.rad + divs[i], outs.y / 2f)
+      progress = i / (divs.len - 1).float32 - 1f / divs.len
+      u = lerp(p.u, p.u2, progress)
+      u2 = lerp(p.u, p.u2, progress + 1f / divs.len)
+      
+    cpos += vec2l(cur, segSpace)
+
+    let 
+      mid2 = cpos
+      p1 = mid1 + top1
+      p2 = mid2 + top2
+      p3 = mid2 - top2
+      p4 = mid1 - top1
+    
+    drawVert(p.texture, [
+      vert2(p1, vec2(u, v), color, mixColor),
+      vert2(p2, vec2(u2, v), color, mixColor),
+      vert2(p3, vec2(u2, v2), color, mixColor),
+      vert2(p4, vec2(u, v2), color, mixColor)
+    ], z = z)
+
+    cur += divs[i]
+
 proc fillQuad*(v1: Vec2, c1: Color, v2: Vec2, c2: Color, v3: Vec2, c3: Color, v4: Vec2, c4: Color, z: float32 = 0) =
   drawVert(fau.white.texture, [vert2(v1, fau.white.uv, c1), vert2(v2, fau.white.uv, c2),  vert2(v3, fau.white.uv, c3), vert2(v4, fau.white.uv, c4)], z)
 
