@@ -90,4 +90,4 @@ macro defineEffects*(body: untyped) =
 template makeEffectsSystem*() =
   sys("drawEffects", [Pos, Effect, Timed]):
     all:
-      allEffects[item.effect.ide.int](EffectState(pos: item.pos.vec2, time: item.timed.time, lifetime: item.timed.lifetime, color: item.effect.color, rotation: item.effect.rotation, id: item.entity.instance.int))
+      allEffects[item.effect.ide.int](EffectState(pos: item.pos.vec2, time: item.timed.time, lifetime: item.timed.lifetime, color: item.effect.color, rotation: item.effect.rotation, id: item.entity.entityId.int))

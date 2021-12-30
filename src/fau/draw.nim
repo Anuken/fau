@@ -236,6 +236,9 @@ proc line*(p1, p2: Vec2, stroke: float32 = 1.px, color = colorWhite, square = tr
     color, z
   )
 
+proc lineAngle*(p: Vec2, angle, len: float32, stroke: float32 = 1.px, color = colorWhite, square = true, z: float32 = 0) =
+  line(p, p + vec2l(angle, len), stroke, color, square, z)
+
 #TODO bad
 proc lineRect*(pos: Vec2, size: Vec2, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0, margin = 0f) =
   line(pos + margin, pos + vec2(size.x - margin, margin), stroke, color, z = z)

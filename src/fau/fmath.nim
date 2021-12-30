@@ -536,13 +536,22 @@ proc `*`*(self: Vec2, mat: Mat): Vec2 = vec2(self.x * mat[0] + self.y * mat[3] +
 #PARTICLES
 
 ## Stateless particles based on RNG. x/y are injected into template body.
-template particles*(seed: int, amount: int, cx, cy, rad: float32, body: untyped) =
+template particles*(seed: int, amount: int, ppos: Vec2, radius: float32, body: untyped) =
   var r = initRand(seed)
-  for i in 0..amount:
+  for i in 0..<amount:
     let 
-      v = vec2l(r.rand(360.0).float32, r.rand(1.0).float32 * rad)
-      x {.inject.} = cx + v.x
-      y {.inject.} = cy + v.y
+      v = vec2l(r.rand(360f.rad).float32, r.rand(1.0).float32 * radius)
+      pos {.inject.} = ppos + v
+    body
+
+## Stateless particles based on RNG. x/y are injected into template body.
+template particlesAngle*(seed: int, amount: int, ppos: Vec2, radius: float32, rotation, spread: float32, body: untyped) =
+  var r = initRand(seed)
+  for i in 0..<amount:
+    let
+      rot {.inject.} = rotation + r.rand(-spread..spread).float32
+      v = vec2l(rot, r.rand(1.0).float32 * radius)
+      pos {.inject.} = ppos + v
     body
 
 template circle*(amount: int, body: untyped) =
