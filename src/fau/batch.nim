@@ -177,9 +177,7 @@ proc newBatch*(size: int = 4092): Batch =
   varying vec2 v_uv;
   void main(){
     v_color = a_color;
-    v_color.a = v_color.a * (255.0/254.0);
     v_mixcolor = a_mixcolor;
-    v_mixcolor.a = v_mixcolor.a * (255.0/254.0);
     v_uv = a_uv;
     gl_Position = u_proj * a_pos;
   }

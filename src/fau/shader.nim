@@ -22,6 +22,26 @@ type Sampler* = object
   texture*: Texture
   index*: int
 
+const screenspaceVertex* = """
+attribute vec4 a_pos;
+attribute vec2 a_uv;
+varying vec2 v_uv;
+
+void main(){
+    v_uv = a_uv;
+    gl_Position = a_pos;
+}
+"""
+
+const screenspaceFragment* = """
+uniform sampler2D u_texture;
+varying vec2 v_uv;
+
+void main(){
+  gl_FragColor = texture2D(u_texture, v_uv);
+}
+"""
+
 proc `=destroy`*(shader: var ShaderObj) =
   if shader.handle != 0 and glInitialized:
     glDeleteProgram(shader.handle)

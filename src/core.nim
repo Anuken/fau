@@ -147,25 +147,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     fau.atlas = loadAtlas(atlasFile)
 
     fau.quad = newScreenMesh()
-    fau.screenspace = newShader("""
-    attribute vec4 a_pos;
-    attribute vec2 a_uv;
-    varying vec2 v_uv;
-
-    void main(){
-        v_uv = a_uv;
-        gl_Position = a_pos;
-    }
-    """,
-
-    """
-    uniform sampler2D u_texture;
-    varying vec2 v_uv;
-
-    void main(){
-      gl_FragColor = texture2D(u_texture, v_uv);
-    }
-    """)
+    fau.screenspace = newShader(screenspaceVertex, screenspaceFragment)
 
     #load special regions
     fau.white = fau.atlas["white"]

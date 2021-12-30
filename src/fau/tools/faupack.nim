@@ -45,9 +45,12 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
   var bytes: array[24, uint8]
   var outp: seq[uint8]
 
+  #grab and sort files in order of size for more deterministic packing
   for file in walkDirRec(path):
     let split = file.splitFile
     if split.ext == ".png":
+
+      #TODO must be a better way to read an int from a file
       let f = open(file)
       discard readBytes(f, bytes, 0, bytes.len)
       close(f)
