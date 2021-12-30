@@ -1,4 +1,4 @@
-import ../g2/packer, os, pixie, strformat, tables, math, streams, times, chroma, strutils
+import ../g2/packer, os, algorithm, pixie, strformat, tables, math, streams, times, chroma, strutils
 
 from vmath import nil
 
@@ -40,48 +40,71 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
     
     positions[name] = (image, file, pos, splits)
 
-  #pack every file in directory
+  type PackEntry = tuple[file: string, size: int]
+  var toPack: seq[PackEntry]
+  var bytes: array[24, uint8]
+  var outp: seq[uint8]
+
   for file in walkDirRec(path):
     let split = file.splitFile
     if split.ext == ".png":
-      #check for 9patches!
-      if split.name.endsWith(".9"):
-        let
-          img = readImage(file)
-          cropped = img.subImage(1, 1, img.width - 2, img.height - 2)
+      let f = open(file)
+      discard readBytes(f, bytes, 0, bytes.len)
+      close(f)
 
-        #find all the split points for the patch
-        var
-          top = -1
-          left = -1
-          bot = -1
-          right = -1
+      outp = bytes[16..19]
+      reverse(outp)
+      let w = cast[ptr int32](addr outp[0])[]
+      outp = bytes[20..23]
+      reverse(outp)
+      let h = cast[ptr int32](addr outp[0])[]
 
-        for i in 1..<img.width:
-          if img[i, 0].a == 255:
-            left = i - 1
-            break
+      toPack.add (file, max(w, h).int)
 
-        for i in left+1..<img.width:
-          if img[i, 0].a == 0:
-            right = img.width - 1 - i
-            break
+  toPack.sort do (a, b: PackEntry) -> int: -cmp(a.size, b.size)
 
-        for i in 1..<img.height:
-          if img[0, i].a == 255:
-            top = i - 1
-            break
+  #pack every file in directory
+  for (file, size) in toPack:
+    let split = file.splitFile
+    #check for 9patches!
+    if split.name.endsWith(".9"):
+      let
+        img = readImage(file)
+        cropped = img.subImage(1, 1, img.width - 2, img.height - 2)
 
-        for i in top+1..<img.height:
-          if img[0, i].a == 0:
-            bot = img.height - 1 - i
-            break
+      #find all the split points for the patch
+      var
+        top = -1
+        left = -1
+        bot = -1
+        right = -1
 
-        #only save the cropped variant.
-        packFile(split.name, cropped, [left, right, top, bot])
-      else:
-        packFile(file, readImage(file))
-  
+      for i in 1..<img.width:
+        if img[i, 0].a == 255:
+          left = i - 1
+          break
+
+      for i in left+1..<img.width:
+        if img[i, 0].a == 0:
+          right = img.width - 1 - i
+          break
+
+      for i in 1..<img.height:
+        if img[0, i].a == 255:
+          top = i - 1
+          break
+
+      for i in top+1..<img.height:
+        if img[0, i].a == 0:
+          bot = img.height - 1 - i
+          break
+
+      #only save the cropped variant.
+      packFile(split.name, cropped, [left, right, top, bot])
+    else:
+      packFile(file, readImage(file))
+
+
   #save a white image
   if not positions.hasKey("white"):
     let img = newImage(1, 1)
