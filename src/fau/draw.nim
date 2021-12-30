@@ -172,21 +172,22 @@ proc drawBend*(p: Patch, pos: Vec2, divs: openArray[float32], mid = 0, rotation 
     outs = size * scl
     v = p.v
     v2 = p.v2
+    segSpace = outs.x / divs.len.float32
 
-  var cur = rotation
-  var cpos = pos
-  var segSpace = outs.x / divs.len.float32
+  var 
+    cur = rotation
+    cpos = pos
 
-  for i in mid..<divs.len:
+  template drawAt(i: int, sign: float32) =
     let
       mid1 = cpos
       top1 = vec2l(cur + 90f.rad, outs.y / 2f)
-      top2 = vec2l(cur + 90f.rad + divs[i], outs.y / 2f)
-      progress = i / (divs.len - 1).float32 - 1f / divs.len
+      top2 = vec2l(cur + 90f.rad + divs[i] * sign, outs.y / 2f)
+      progress = i / (divs.len).float32 - (1f / divs.len) * -(sign < 0).float32
       u = lerp(p.u, p.u2, progress)
-      u2 = lerp(p.u, p.u2, progress + 1f / divs.len)
+      u2 = lerp(p.u, p.u2, progress + 1f / divs.len * sign)
       
-    cpos += vec2l(cur, segSpace)
+    cpos += vec2l(cur, segSpace) * sign
 
     let 
       mid2 = cpos
@@ -202,7 +203,16 @@ proc drawBend*(p: Patch, pos: Vec2, divs: openArray[float32], mid = 0, rotation 
       vert2(p4, vec2(u, v2), color, mixColor)
     ], z = z)
 
-    cur += divs[i]
+    cur += divs[i] * sign
+
+  for i in mid..<divs.len:
+    drawAt(i, 1f)
+  
+  cur = rotation
+  cpos = pos
+
+  for i in countdown(mid - 1, 0):
+    drawAt(i, -1f)
 
 proc fillQuad*(v1: Vec2, c1: Color, v2: Vec2, c2: Color, v3: Vec2, c3: Color, v4: Vec2, c4: Color, z: float32 = 0) =
   drawVert(fau.white.texture, [vert2(v1, fau.white.uv, c1), vert2(v2, fau.white.uv, c2),  vert2(v3, fau.white.uv, c3), vert2(v4, fau.white.uv, c4)], z)

@@ -537,7 +537,7 @@ proc `*`*(self: Vec2, mat: Mat): Vec2 = vec2(self.x * mat[0] + self.y * mat[3] +
 
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particles*(seed: int, amount: int, ppos: Vec2, radius: float32, body: untyped) =
-  var r = initRand(seed)
+  var r {.inject.} = initRand(seed)
   for i in 0..<amount:
     let 
       rot {.inject.} = r.rand(360f.rad).float32
@@ -547,7 +547,7 @@ template particles*(seed: int, amount: int, ppos: Vec2, radius: float32, body: u
 
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particlesAngle*(seed: int, amount: int, ppos: Vec2, radius: float32, rotation, spread: float32, body: untyped) =
-  var r = initRand(seed)
+  var r {.inject.} = initRand(seed)
   for i in 0..<amount:
     let
       rot {.inject.} = rotation + r.rand(-spread..spread).float32
@@ -557,13 +557,14 @@ template particlesAngle*(seed: int, amount: int, ppos: Vec2, radius: float32, ro
 
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particlesLife*(seed: int, amount: int, ppos: Vec2, basefin: float32, radius: float32, body: untyped) =
-  var r = initRand(seed)
+  var r {.inject.} = initRand(seed)
   for i in 0..<amount:
     let
       lscl = r.rand(0.1f..1f)
       fin {.inject.} = basefin / lscl
       fout {.inject.} = 1f - fin
       rot {.inject.} = r.rand(360f.rad).float32
+      count {.inject.} = i
       v = vec2l(rot, r.rand(radius * fin))
       pos {.inject.} = ppos + v
     if fin <= 1f:
