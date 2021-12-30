@@ -126,7 +126,7 @@ func rad*(val: float32): float32 {.inline.} = val * PI / 180.0
 func deg*(val: float32): float32 {.inline.} = val / (PI / 180.0)
 
 ## angle lerp
-func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + 360.rad + 180.rad) mod 360.rad) - 180.rad)) * progress + 360.0.rad) mod 360.rad
+func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + 360.rad + 180.rad) mod 360.rad) - 180.rad) * progress + 360.0.rad)) mod 360.rad
 
 ## angle dist
 func adist*(a, b: float32): float32 {.inline.} = min(if a - b < 0: a - b + 360.0.rad else: a - b, if b - a < 0: b - a + 360.0.rad else: b - a)
@@ -144,6 +144,12 @@ func aapproach*(a, b, amount: float32): float32 =
   return if diff <= amount: b
   elif (a > b) == (back > forw): (a - amount).emod 360.rad
   else: (a + amount).emod 360.rad
+
+## angle clamp
+func aclamp*(angle, dest, dst: float32): float32 =
+  let diff = adist(angle, dest)
+  if diff <= dst: angle
+  else: angle.aapproach(dest, diff - dst)
 
 func dst*(x1, y1, z1, x2, y2, z2: float32): float32 {.inline.} =
   let 
