@@ -83,6 +83,8 @@ type FauState* = object
   fps*: int
   #Delta time between frames in 60th of a second
   delta*: float32
+  #Target FPS; 0 to ignore.
+  targetFps*: float32
   #Maximum value that the delta can be - prevents erratic behavior at low FPS values. Default: 1/60
   maxDelta*: float32
   #Time passed since game launch, in seconds

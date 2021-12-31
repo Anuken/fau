@@ -1,5 +1,5 @@
 import fau/[fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer, input]
-import times, random
+import os, times, random
 
 when defined(javaBackend):
   include fau/backend/javacore
@@ -73,8 +73,20 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
   initCore(
   (proc() =
-    let time = (times.getTime() - startTime).inNanoseconds
+    var time = (times.getTime() - startTime).inNanoseconds
     if lastFrameTime == -1: lastFrameTime = time
+
+    if fau.targetFps != 0:
+      #expected ns between frames
+      let targetDelay = 1f / fau.targetFps * 1000000000.0
+      #actual time between frames
+      let actualDelay = float(time - lastFrameTime)
+      #time to sleep
+      if targetDelay > actualDelay:
+        #sleep and update time
+        sleep(((targetDelay - actualDelay) * 1e-6).int)
+
+        time = (times.getTime() - startTime).inNanoseconds
 
     fau.delta = min(float(time - lastFrameTime) / 1000000000.0, fau.maxDelta)
     fau.time += fau.delta
@@ -136,6 +148,10 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     fau.pixelScl = 1.0f
 
     fau.maxDelta = 1f / 60f
+
+    #TODO is this necessary on emscripten?
+    when not defined(emscripten):
+      fau.targetFps = 60
 
     #set matrix to ortho
     screenMat()

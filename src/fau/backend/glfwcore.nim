@@ -247,5 +247,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
 proc `windowTitle=`*(title: string) =
   window.setWindowTitle(title)
 
+proc setVsync*(on: bool) =
+  swapInterval(on.cint)
+
 #stops the game, does not quit immediately
 proc quitApp*() = running = false
