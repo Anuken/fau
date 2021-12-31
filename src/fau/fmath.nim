@@ -77,7 +77,9 @@ func fouts*(t: Scaleable): float32 {.inline.} = 2.0 * abs(t.fin - 0.5)
 ## fade in from 1 to 0 to 1
 func fins*(t: Scaleable): float32 {.inline.} = 1.0 - t.fouts
 
-func powout*(a, power: float32): float32 {.inline.} = pow(max(a - 1, 0f), power) * (if power mod 2 == 0: -1 else: 1) + 1
+func powout*(a, power: float32): float32 {.inline.} = 
+  result = pow(a - 1, power) * (if power mod 2 == 0: -1 else: 1) + 1
+  if isNan(result): result = 0f
 
 #utility functions
 
