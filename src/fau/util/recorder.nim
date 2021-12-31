@@ -55,7 +55,8 @@ proc record*() =
         stream.writeData(frame, len)
         stream.flush()
 
-      p.close()
+      stream.close()
+      discard p.waitForExit()
 
       clearFrames()
       ftime = 0f
