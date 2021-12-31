@@ -9,6 +9,25 @@ type
     handle: ptr AudioSource
     protect: bool
   Voice* = distinct cuint
+  AudioFilter* = distinct ptr
+  EchoFilter* = distinct ptr
+  BiquadFilter* = ptr BiquadResonantFilter
+
+  FilterParam* = enum
+    biquadWet = 0
+    biquadFrequency = 2
+    biquadResonance = 3
+
+#TODO
+#[
+  BIQUADRESONANTFILTER_LOWPASS* = 0.cint
+  BIQUADRESONANTFILTER_HIGHPASS* = 1.cint
+  BIQUADRESONANTFILTER_BANDPASS* = 2.cint
+  BIQUADRESONANTFILTER_WET* = 0.cint
+  BIQUADRESONANTFILTER_TYPE* = 1.cint
+  BIQUADRESONANTFILTER_FREQUENCY* = 2.cint
+  BIQUADRESONANTFILTER_RESONANCE* = 3.cint
+]#
 
 template checkErr(details: string, body: untyped) =
   let err = body
@@ -32,13 +51,6 @@ proc getFft*(): array[256, float32] =
   let dataArr = cast[ptr UncheckedArray[cfloat]](data)
   for i in 0..<256:
     result[i] = dataArr[i].float32
-
-#TODO remove, this should be more generic
-proc filterEcho*(sound: Sound, delay = 0.4, decay = 0.9, filtering = 0.5) =
-  let filter = EchoFilterCreate()
-  discard filter.EchoFilterSetParamsEx(delay, decay, filtering)
-  #TODO set filter depending on type
-  sound.handle.WavStreamSetFilter(0, filter)
 
 proc loadMusicStatic*(path: static[string]): Sound =
   const data = staticReadString(path)
@@ -76,13 +88,13 @@ proc loadSound*(path: static[string]): Sound =
   else: #load from filesystem
     return loadSoundFile(path.assetFile)
 
-proc play*(sound: Sound, pitch = 1.0f, volume = 1.0f, pan = 1.0f, loop = false): Voice {.discardable.} =
+proc play*(sound: Sound, pitch = 1.0f, volume = 1.0f, pan = 0f, loop = false): Voice {.discardable.} =
   #handle may not exist due to failed loading
   if sound.handle.isNil: return
 
   let id = so.SoloudPlay(sound.handle)
   if volume != 1.0: so.SoloudSetVolume(id, volume)
-  if pan != 1.0: so.SoloudSetPan(id, pan)
+  if pan != 0f: so.SoloudSetPan(id, pan)
   if pitch != 1.0: discard so.SoloudSetRelativePlaySpeed(id, pitch)
   if loop: so.SoloudSetLooping(id, 1)
   if sound.protect: so.SoloudSetProtectVoice(id, 1)
@@ -101,6 +113,41 @@ proc `paused=`*(v: Voice, value: bool) {.inline.} = so.SoloudSetPause(v.cuint, v
 proc `volume=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetVolume(v.cuint, value)
 proc `pitch=`*(v: Voice, value: float32) {.inline.} = discard so.SoloudSetRelativePlaySpeed(v.cuint, value)
 proc `pan=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetPan(v.cuint, value)
+
+#TODO only works with wavs, not streams
+proc setFilter*(sound: Sound, index: int, filter: AudioFilter) =
+  cast[ptr Wav](sound.handle).WavSetFilter(index.cuint, cast[ptr Filter](filter))
+
+proc fadeFilter*(voice: Voice, index: int, attribute: FilterParam, value, timeSec: float32) =
+  so.SoloudFadeFilterParameter(voice.cuint, index.cuint, attribute.cuint, value.float32, timeSec.float32)
+
+proc setFilterParam*(voice: Voice, index: int, attribute: FilterParam, value: float32) =
+  so.SoloudSetFilterParameter(voice.cuint, index.cuint, attribute.cuint, value.float32)
+
+proc setGlobalFilter*(index: int, filter: AudioFilter) =
+  so.SoloudSetGlobalFilter(index.cuint, cast[ptr Filter](filter))
+
+proc newBiquadFilter*(): BiquadFilter =
+  return BiquadResonantFilterCreate().BiquadFilter
+
+proc setLowpass*(filter: BiquadFilter, value: float32, resonance: float32 = 2f) =
+  discard cast[ptr BiquadResonantFilter](filter).BiquadResonantFilterSetParams(BIQUADRESONANTFILTER_LOWPASS, value.cfloat, resonance.cfloat)
+
+proc setHighpass*(filter: BiquadFilter, value: float32, resonance: float32 = 2f) =
+  discard cast[ptr BiquadResonantFilter](filter).BiquadResonantFilterSetParams(BIQUADRESONANTFILTER_HIGHPASS, value.cfloat, resonance.cfloat)
+
+proc newLowpassFilter*(cutoff: float32, resonance = 2f): BiquadFilter =
+  result = newBiquadFilter()
+  result.setLowpass(cutoff, resonance)
+
+#TODO remove, this should be more generic
+#[
+proc filterEcho*(sound: Sound, delay = 0.4, decay = 0.9, filtering = 0.5) =
+  let filter = EchoFilterCreate()
+  discard filter.EchoFilterSetParamsEx(delay, decay, filtering)
+  #TODO set filter depending on type
+  sound.handle.WavStreamSetFilter(0, filter)
+  ]#
 
 ## defines all audio files as global variables and generates a loadAudio proc for loading them
 ## all files in music/ are loaded with the "music" prefix; likewise for sounds/

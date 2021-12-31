@@ -77,7 +77,7 @@ func fouts*(t: Scaleable): float32 {.inline.} = 2.0 * abs(t.fin - 0.5)
 ## fade in from 1 to 0 to 1
 func fins*(t: Scaleable): float32 {.inline.} = 1.0 - t.fouts
 
-func powout*(a, power: float32): float32 {.inline.} = pow(a - 1, power) * (if power mod 2 == 0: -1 else: 1) + 1
+func powout*(a, power: float32): float32 {.inline.} = pow(max(a - 1, 0f), power) * (if power mod 2 == 0: -1 else: 1) + 1
 
 #utility functions
 
@@ -454,6 +454,32 @@ proc collidesTiles*(box: Rect, solidity: proc(x, y: int): bool): bool =
   
   return false
 
+
+## Returns a point on the segment nearest to the specified point.
+proc nearestSegmentPoint*(a, b, point: Vec2): Vec2 =
+  let length2 = a.dst2(b)
+  if length2 == 0f: return a
+  let t = ((point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y)) / length2
+  if t < 0: return a
+  if t > 1: return b
+  return a + (b - a) * t
+
+## Returns the distance between the given segment and point.
+proc distanceSegmentPoint*(a, b, point: Vec2): float32 = nearestSegmentPoint(a, b, point).dst(point)
+
+## Distance between a rectangle and a point.
+proc dst*(r: Rect, point: Vec2): float32 =
+  if r.contains(point): 0f
+  else: min(
+    min(
+      distanceSegmentPoint(r.xy, r.xy + vec2(r.w, 0f), point),
+      distanceSegmentPoint(r.xy, r.xy + vec2(0f, r.h), point)
+    ),
+    min(
+      distanceSegmentPoint(r.xy + r.size, r.xy + vec2(r.w, 0f), point),
+      distanceSegmentPoint(r.xy + r.size, r.xy + vec2(0f, r.h), point)
+    )
+  )
 
 const 
   M00 = 0
