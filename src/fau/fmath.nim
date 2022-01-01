@@ -629,7 +629,7 @@ proc update*(cam: Cam, size: Vec2 = cam.size, pos = cam.pos) =
   cam.mat = ortho(cam.pos - cam.size/2f, cam.size)
   cam.inv = cam.mat.inv()
 
-proc newCam*(size: Vec2): Cam = 
+proc newCam*(size: Vec2 = vec2(0f, 0f)): Cam = 
   result = Cam(pos: vec2(0.0, 0.0), size: size)
   result.update()
 
