@@ -1,4 +1,4 @@
-import glfm, glad
+import glfm, ../gl/[glad, gltypes, glproc], ../globals, ../fmath
 
 # backend for mobile platforms
 # NOTE: this backend is unfinished! keyboard doesn't work
@@ -43,16 +43,16 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
   display.glfmSetSurfaceResizedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
     updateInsets(surf)
-    fireFauEvent(FauEvent(kind: feResize, w: width.int, h: height.int))
+    fireFauEvent(FauEvent(kind: feResize, size: vec2i(width.int, height.int)))
   )
 
   display.glfmSetTouchFunc(proc(display: ptr GLFMDisplay, touch: cint, phase: GLFMTouchPhase, x, y: cdouble): bool {.cdecl.} = 
-    fau.mouse = vec2(x.float32, fau.heightf - 1 - y.float32)
+    fau.mouse = vec2(x.float32, fau.size.y - 1 - y.float32)
 
     if phase == GLFMTouchPhaseBegan or phase == GLFMTouchPhaseEnded:
-      fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchPos: vec2(x.float32, fau.height.float32 - 1 - y.float32), touchDown: phase == GLFMTouchPhaseBegan, touchButton: keyMouseLeft))
+      fireFauEvent(FauEvent(kind: feTouch, touchId: touch.int, touchPos: vec2(x.float32, fau.size.y - 1 - y.float32), touchDown: phase == GLFMTouchPhaseBegan, touchButton: keyMouseLeft))
     elif phase == GLFMTouchPhaseMoved:
-      fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, dragPos: vec2(x.float32, fau.height.float32 - 1 - y.float32)))
+      fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, dragPos: vec2(x.float32, fau.size.y - 1 - y.float32)))
 
     return true
   )
