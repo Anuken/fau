@@ -9,25 +9,18 @@ type
     handle: ptr AudioSource
     protect: bool
   Voice* = distinct cuint
-  AudioFilter* = distinct ptr
-  EchoFilter* = distinct ptr
+  AudioFilter* = ptr Filter
+  #EchoFilter* = ptr EchoFilter #TODO how to resolve name conflict?
   BiquadFilter* = ptr BiquadResonantFilter
+  FilterParam* = distinct uint
 
-  FilterParam* = enum
-    biquadWet = 0
-    biquadFrequency = 2
-    biquadResonance = 3
-
-#TODO
-#[
-  BIQUADRESONANTFILTER_LOWPASS* = 0.cint
-  BIQUADRESONANTFILTER_HIGHPASS* = 1.cint
-  BIQUADRESONANTFILTER_BANDPASS* = 2.cint
-  BIQUADRESONANTFILTER_WET* = 0.cint
-  BIQUADRESONANTFILTER_TYPE* = 1.cint
-  BIQUADRESONANTFILTER_FREQUENCY* = 2.cint
-  BIQUADRESONANTFILTER_RESONANCE* = 3.cint
-]#
+const
+  fWet* = 0.FilterParam
+  fBiquadFrequency* = 2.FilterParam
+  fBiquadResonance* = 3.FilterParam
+  fEchoDelay* = 1.FilterParam
+  fEchoDecay* = 2.FilterParam
+  fEchoFilter* = 3.FilterParam
 
 template checkErr(details: string, body: untyped) =
   let err = body
@@ -128,13 +121,19 @@ proc setGlobalFilter*(index: int, filter: AudioFilter) =
   so.SoloudSetGlobalFilter(index.cuint, cast[ptr Filter](filter))
 
 proc newBiquadFilter*(): BiquadFilter =
-  return BiquadResonantFilterCreate().BiquadFilter
+  return BiquadResonantFilterCreate()
+
+#proc newEchoFilter*(): EchoFilter =
+#  return EchoFilterCreate()
+
+#proc set*(filter: EchoFilter, delay = 0.4, decay = 0.9, filtering = 0.5) =
+#  discard filter.EchoFilterSetParamsEx(delay, decay, filtering)
 
 proc setLowpass*(filter: BiquadFilter, value: float32, resonance: float32 = 2f) =
-  discard cast[ptr BiquadResonantFilter](filter).BiquadResonantFilterSetParams(BIQUADRESONANTFILTER_LOWPASS, value.cfloat, resonance.cfloat)
+  discard filter.BiquadResonantFilterSetParams(BIQUADRESONANTFILTER_LOWPASS, value.cfloat, resonance.cfloat)
 
 proc setHighpass*(filter: BiquadFilter, value: float32, resonance: float32 = 2f) =
-  discard cast[ptr BiquadResonantFilter](filter).BiquadResonantFilterSetParams(BIQUADRESONANTFILTER_HIGHPASS, value.cfloat, resonance.cfloat)
+  discard filter.BiquadResonantFilterSetParams(BIQUADRESONANTFILTER_HIGHPASS, value.cfloat, resonance.cfloat)
 
 proc newLowpassFilter*(cutoff: float32, resonance = 2f): BiquadFilter =
   result = newBiquadFilter()
