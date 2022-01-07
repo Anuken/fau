@@ -22,7 +22,7 @@ macro sys*(name: untyped, componentTypes: openarray[typedesc], body: untyped): u
   ## Defines a system, with an extra vars block for variables. Body is built in launchFau.
   var varBody = newEmptyNode()
   for (index, st) in body.pairs:
-    if st.kind == nnkCall and st[0].strVal == "fields":
+    if st.kind == nnkCall and st[0].kind == nnkIdent and st[0].strVal == "fields":
       body.del(index)
       varBody = st[1]
       break
