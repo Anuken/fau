@@ -26,7 +26,7 @@ var
 
 #TODO all of these should be struct parameters!
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
-  depth = false, clearColor = colorClear, atlasFile: static[string] = "atlas") =
+  depth = false, clearColor = colorClear) =
 
   fau.clearColor = clearColor
 
@@ -159,8 +159,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     #create default camera
     fau.cam = newCam(fau.size)
 
-    #load sprites
-    fau.atlas = loadAtlas(atlasFile)
+    #load sprites - always atlas.dat
+    fau.atlas = loadAtlas("atlas")
 
     fau.quad = newScreenMesh()
     fau.screenspace = newShader(screenspaceVertex, screenspaceFragment)
