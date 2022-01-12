@@ -19,6 +19,10 @@ type AnyVec2* = concept t
   t.x is float32
   t.y is float32
 
+type AnyVec2i* = concept t
+  t.x is int
+  t.y is int
+
 ## any type that can fade in linearly
 type Scaleable* = concept s
   s.fin() is float32
@@ -88,6 +92,8 @@ func clamp*(val: float32): float32 {.inline.} = clamp(val, 0f, 1f)
 
 func lerp*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * progress
 func lerpc*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * clamp(progress)
+
+func slope*(value: float32): float32 = 1f - abs(value - 0.5f) * 2f
 
 func inv*(f: float32): float32 {.inline.} = 1f / f
 
@@ -197,6 +203,7 @@ func vec2i*(xy: int): Vec2i {.inline.} = Vec2i(x: xy, y: xy)
 func vec2i*(): Vec2i {.inline.} = Vec2i()
 func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
 func vec2i*(v: Vec2): Vec2i {.inline.} = vec2i(v.x.int, v.y.int)
+proc vec2i*(pos: AnyVec2i): Vec2i {.inline.} = Vec2i(x: pos.x, y: pos.y)
 
 #vector-vector operations
 
@@ -236,6 +243,8 @@ func abs*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.abs, vec.y.abs)
 
 #returns this vector's x/y aspect ratio
 func ratio*(vec: Vec2): float32 {.inline.} = vec.x / vec.y
+
+func zero*(vec: Vec2): bool {.inline.} = vec.x == 0f and vec.y == 0f
 
 #all angles are in radians
 
