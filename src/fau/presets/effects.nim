@@ -73,7 +73,7 @@ macro defineEffects*(body: untyped) =
         `effectBody`
       
       template `templName`*(pos: Vec2, rot: float32 = 0, col: Color = colorWhite, life: float32 = `lifeVal`) =
-        discard newEntityWith(Pos(x: pos.x, y: pos.y), Timed(lifetime: life), Effect(ide: `id`.EffectId, rotation: rot, color: col))
+        discard newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: `id`.EffectId, rotation: rot, color: col))
     
     brackets.add quote do:
       `procName`.EffectProc
@@ -84,10 +84,10 @@ macro defineEffects*(body: untyped) =
     const allEffects* {.inject.}: array[`count`, EffectProc] = `brackets`
 
     template createEffect*(eid: EffectId, pos: Vec2, rot: float32 = 0, col: Color = colorWhite, life: float32 = 0.2) =
-      discard newEntityWith(Pos(x: pos.x, y: pos.y), Timed(lifetime: life), Effect(id: eid, rotation: rot, color: col))
+      discard newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(id: eid, rotation: rot, color: col))
 
 ## Creates the effect entity system for rendering.
 template makeEffectsSystem*() =
   sys("drawEffects", [Pos, Effect, Timed]):
     all:
-      allEffects[item.effect.ide.int](EffectState(pos: item.pos.vec2, time: item.timed.time, lifetime: item.timed.lifetime, color: item.effect.color, rotation: item.effect.rotation, id: item.entity.entityId.int))
+      allEffects[item.effect.ide.int](EffectState(pos: item.pos.vec, time: item.timed.time, lifetime: item.timed.lifetime, color: item.effect.color, rotation: item.effect.rotation, id: item.entity.entityId.int))

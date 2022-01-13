@@ -6,7 +6,7 @@ registerComponents(defaultComponentOptions):
   type
     Main* = object
     Pos* = object
-      x*, y*: float32
+      vec*: Vec2
     Timed* = object
       time*, lifetime*: float32
 
