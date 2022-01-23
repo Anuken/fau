@@ -20,6 +20,10 @@ func `g=`*(col: var Color, val: float32) {.inline.} = col.gv = clamp(val * 255f,
 func `b=`*(col: var Color, val: float32) {.inline.} = col.bv = clamp(val * 255f, 0, 255f).uint8
 func `a=`*(col: var Color, val: float32) {.inline.} = col.av = clamp(val * 255f, 0, 255f).uint8
 
+func withA*(col: Color, val: float32): Color {.inline.} =
+  result = col
+  result.a = val
+
 func rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color {.inline.} = Color(rv: (clamp(r.float32) * 255f).uint8, gv: (clamp(g) * 255f).uint8, bv: (clamp(b) * 255f).uint8, av: (clamp(a) * 255f).uint8)
 
 func rgb*(r: float32, g: float32, b: float32): Color {.inline.} = rgba(r, g, b, 1f)

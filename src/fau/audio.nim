@@ -27,7 +27,7 @@ template checkErr(details: string, body: untyped) =
   #the game shouldn't crash when an audio error happens, but it would be nice to log to stderr
   if err != 0: echo "[Audio] ", details, ": ", so.SoloudGetErrorString(err)
 
-proc initAudio*(visualize = false) =
+proc initAudio*() =
   so = SoloudCreate()
   checkErr("Failed to initialize"): so.SoloudInit()
   echo "Initialized SoLoud v" & $so.SoloudGetVersion() & " w/ " & $so.SoloudGetBackendString()
@@ -39,6 +39,9 @@ proc initAudio*(visualize = false) =
         so.SoloudSetPauseAll(e.shown.not.cint)
     )
 
+proc enableSoundVisualization*(visualize = true) =
+  so.SoloudSetVisualizationEnable(visualize.cint)
+
 proc getFft*(): array[256, float32] =
   let data = so.SoloudCalcFFT()
   let dataArr = cast[ptr UncheckedArray[cfloat]](data)
@@ -49,6 +52,7 @@ proc loadMusicStatic*(path: static[string]): Sound =
   const data = staticReadString(path)
   let handle = WavStreamCreate()
   checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+  
   return Sound(handle: handle, protect: true)
 
 proc loadMusicFile*(path: string): Sound =
@@ -96,11 +100,16 @@ proc play*(sound: Sound, pitch = 1.0f, volume = 1.0f, pan = 0f, loop = false): V
 proc stop*(v: Voice) {.inline.} = so.SoloudStop(v.cuint)
 proc pause*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 1)
 proc resume*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 0)
+proc seek*(v: Voice, pos: float) {.inline.} = discard so.SoloudSeek(v.cuint, pos.cdouble)
 
 proc valid*(v: Voice): bool {.inline.} = so.SoloudIsValidVoiceHandle(v.cuint).bool
 proc paused*(v: Voice): bool {.inline.} = so.SoloudGetPause(v.cuint).bool
+proc playing*(v: Voice): bool {.inline.} = not v.paused
 proc volume*(v: Voice): float32 {.inline.} = so.SoloudGetVolume(v.cuint).float32
 proc pitch*(v: Voice): float32 {.inline.} = discard so.SoloudGetRelativePlaySpeed(v.cuint).float32
+proc streamTime*(v: Voice): float {.inline.} = so.SoloudGetStreamTime(v.cuint).float
+#TODO what is the difference?
+proc streamPos*(v: Voice): float {.inline.} = so.SoloudGetStreamPosition(v.cuint).float
 
 proc `paused=`*(v: Voice, value: bool) {.inline.} = so.SoloudSetPause(v.cuint, value.cint)
 proc `volume=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetVolume(v.cuint, value)

@@ -88,7 +88,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
 
         time = (times.getTime() - startTime).inNanoseconds
 
-    fau.delta = min(float(time - lastFrameTime) / 1000000000.0, fau.maxDelta)
+    fau.rawDelta = float(time - lastFrameTime) / 1000000000.0
+    fau.delta = min(fau.rawDelta, fau.maxDelta)
     fau.time += fau.delta
     lastFrameTime = time
 
