@@ -21,7 +21,7 @@ template glCheck(body: untyped) =
       let message = case error:
         of GL_INVALID_VALUE: "Invalid value"
         of GL_INVALID_OPERATION: "Invalid operation"
-        of GL_INVALID_FRAMEBUFFER_OPERATION: "Invalid framebuffer operration"
+        of GL_INVALID_FRAMEBUFFER_OPERATION: "Invalid framebuffer operation"
         of GL_INVALID_ENUM: "Invalid enum"
         of GL_OUT_OF_MEMORY: "Out of memory"
         else: "Code " & $error

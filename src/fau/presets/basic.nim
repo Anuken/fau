@@ -2,16 +2,15 @@
 
 import ../../ecs
 
-registerComponents(defaultComponentOptions):
+register(defaultComponentOptions):
   type
-    Main* = object
     Pos* = object
       vec*: Vec2
     Timed* = object
       time*, lifetime*: float32
 
 template makeTimedSystem*() =
-  sys("timed", [Timed]):
+  makeSystem("timed", [Timed]):
     all:
       item.timed.time += fau.delta
       if item.timed.time >= item.timed.lifetime:

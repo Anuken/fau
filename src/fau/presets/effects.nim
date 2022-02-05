@@ -88,6 +88,6 @@ macro defineEffects*(body: untyped) =
 
 ## Creates the effect entity system for rendering.
 template makeEffectsSystem*() =
-  sys("drawEffects", [Pos, Effect, Timed]):
+  makeSystem("drawEffects", [Pos, Effect, Timed]):
     all:
       allEffects[item.effect.ide.int](EffectState(pos: item.pos.vec, time: item.timed.time, lifetime: item.timed.lifetime, color: item.effect.color, rotation: item.effect.rotation, id: item.entity.entityId.int))

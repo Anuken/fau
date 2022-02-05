@@ -16,6 +16,15 @@ proc patch*(name: string): Patch {.inline.} = fau.atlas[name]
 
 proc patch9*(name: string): Patch9 {.inline.} = fau.atlas.patches9.getOrDefault(name, fau.atlas.error9)
 
+template patchConst*(name: string): Patch =
+  #NIM BUG: Patch vars can't be {.global.}, they are not stored! this seems like a new bug, as https://github.com/nim-lang/Nim/issues/17552 has different conditions
+  #related to putting code in start: block maybe???
+  var arr {.global.}: array[4, float32]
+  once:
+    let res = name.patch
+    arr = [res.u, res.v, res.u2, res.v2]
+  Patch(u: arr[0], v: arr[1], u2: arr[2], v2: arr[3], texture: fau.atlas.texture)
+
 proc drawFlush*() =
   fau.batch.flush()
 
