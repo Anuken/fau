@@ -7,8 +7,8 @@ bin           = @["fau/tools/faupack", "fau/tools/antialias", "fau/tools/fauproj
 binDir        = "build"
 
 requires "nim >= 1.4.8"
-requires "https://github.com/rlipsc/polymorph#57e64daacb23890cf9851c57d6d90608fbb4ca98"
 requires "https://github.com/treeform/staticglfw#d299a0d1727054749100a901d3b4f4fa92ed72f5"
+requires "polymorph >= 0.3.0"
 requires "cligen >= 1.5.19"
 requires "chroma >= 0.2.5"
 requires "pixie >= 2.0.2"
