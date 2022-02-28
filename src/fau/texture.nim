@@ -126,8 +126,11 @@ proc loadTextureFile*(path: string): Texture =
   data = stbi.load(path, width, height, channels, 4)
   result.load(vec2i(width, height), addr data[0])
 
+proc loadTextureAsset*(path: string): Texture =
+  loadTextureBytes(assetRead(path))
+
 proc loadTexture*(path: static[string]): Texture =
   when staticAssets:
-    loadTextureBytes(staticReadString(path))
+    loadTextureBytes(assetReadStatic(path))
   else: #load from filesystem
     loadTextureFile(path.assetFile)

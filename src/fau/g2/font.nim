@@ -64,7 +64,7 @@ proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 
 proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128): Font =
   when not defined(emscripten):
-    const str = staticReadString(path)
+    const str = assetReadStatic(path)
     var font = pixie.parseTtf(str)
   else:
     var font = pixie.parseTtf(readFile("assets/" & path))

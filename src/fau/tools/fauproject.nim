@@ -66,6 +66,8 @@ when defined(release) or defined(danger):
   --passC:"-flto"
   --passL:"-flto"
   --d:strip
+else:
+  --d:localAssets
 
 when defined(Android):
   --d:androidNDK
@@ -229,7 +231,7 @@ task deploy, "Build for all platforms":
 
 """
 
-template staticReadString*(filename: string): string = 
+template assetReadStatic*(filename: string): string = 
   const str = staticRead(filename)
   str
 
@@ -272,7 +274,7 @@ proc fauproject(directory = getHomeDir() / "Projects", preset = "ecs", names: se
   createDir dir/".github/workflows"
 
   #default sprites
-  writeFile(dir/"assets-raw/sprites/circle.png", staticReadString("../../../res/circle.png"))
+  writeFile(dir/"assets-raw/sprites/circle.png", assetReadStatic("../../../res/circle.png"))
 
   let lowerName = name.toLowerAscii()
 

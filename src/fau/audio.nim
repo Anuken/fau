@@ -49,7 +49,7 @@ proc getFft*(): array[256, float32] =
     result[i] = dataArr[i].float32
 
 proc loadMusicStatic*(path: static[string]): Sound =
-  const data = staticReadString(path)
+  const data = assetReadStatic(path)
   let handle = WavStreamCreate()
   checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   
@@ -68,7 +68,7 @@ proc loadMusic*(path: static[string]): Sound =
     return loadMusicFile(path.assetFile)
 
 proc loadSoundStatic*(path: static[string]): Sound =
-  const data = staticReadString(path)
+  const data = assetReadStatic(path)
   let handle = WavCreate()
   checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   return Sound(handle: handle)

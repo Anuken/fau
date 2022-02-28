@@ -15,7 +15,7 @@ proc loadAtlas*(path: static[string]): Atlas =
   
   result.texture = loadTexture(path & ".png")
 
-  let stream = assetStream(path & ".dat")
+  let stream = assetStaticStream(path & ".dat")
 
   let amount = stream.readInt32()
   for i in 0..<amount:
