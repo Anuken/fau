@@ -39,6 +39,9 @@ proc initAudio*() =
         so.SoloudSetPauseAll(e.shown.not.cint)
     )
 
+proc setGlobalVolume*(vol: float32) =
+  so.SoloudSetGlobalVolume(vol.cdouble)
+
 proc enableSoundVisualization*(visualize = true) =
   so.SoloudSetVisualizationEnable(visualize.cint)
 

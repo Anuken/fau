@@ -16,8 +16,6 @@ type LayoutType = enum
   ltAbsolute
 
 type UiOpt = enum
-  optAlignCenter,
-  optAlignRight,
   optNoInteract,
   optNoResize,
   optNoScroll,
