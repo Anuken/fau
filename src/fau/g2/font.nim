@@ -1,6 +1,6 @@
 import tables, unicode, packer
 import math
-import ../texture, ../patch, ../color, ../globals, ../batch, ../util/util, ../draw
+import ../texture, ../patch, ../color, ../globals, ../batch, ../util/util, ../draw, ../assets
 
 from ../fmath import nil
 from pixie import Image, draw, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint
@@ -38,16 +38,16 @@ type
     offsets: Table[Rune, fmath.Vec2]
 
 proc toVAlign(align: int): pixie.VerticalAlignment {.inline.} =
-  return if (align and daBot) != 0 and (align and daTop) != 0: pixie.vaMiddle
-  elif (align and daBot) != 0: pixie.vaBottom
-  elif (align and daTop) != 0: pixie.vaTop
-  else: pixie.vaMiddle
+  return if (align and daBot) != 0 and (align and daTop) != 0: pixie.MiddleAlign
+  elif (align and daBot) != 0: pixie.BottomAlign
+  elif (align and daTop) != 0: pixie.TopAlign
+  else: pixie.MiddleAlign
 
 proc toHAlign(align: int): pixie.HorizontalAlignment {.inline.} =
-  return if (align and daLeft) != 0 and (align and daRight) != 0: pixie.haCenter
-  elif (align and daLeft) != 0: pixie.haLeft
-  elif (align and daRight) != 0: pixie.haRight
-  else: pixie.haCenter
+  return if (align and daLeft) != 0 and (align and daRight) != 0: pixie.CenterAlign
+  elif (align and daLeft) != 0: pixie.LeftAlign
+  elif (align and daRight) != 0: pixie.RightAlign
+  else: pixie.CenterAlign
 
 proc getGlyphImage(font: pixie.Font, r: Rune): (Image, fmath.Vec2) =
   var path = font.typeface.getGlyphPath(r)
@@ -65,9 +65,9 @@ proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128): Font =
   when not defined(emscripten):
     const str = assetReadStatic(path)
-    var font = pixie.parseTtf(str)
+    var font = pixie.newFont(pixie.parseTtf(str))
   else:
-    var font = pixie.parseTtf(readFile("assets/" & path))
+    var font = pixie.newFont(pixie.parseTtf(readFile("assets/" & path)))
 
   font.size = size
 
