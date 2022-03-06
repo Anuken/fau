@@ -11,6 +11,6 @@ requires "https://github.com/treeform/staticglfw#d299a0d1727054749100a901d3b4f4f
 requires "polymorph >= 0.3.0"
 requires "cligen >= 1.5.19"
 requires "chroma >= 0.2.5"
-requires "pixie >= 2.0.2"
+requires "pixie >= 4.0.1"
 requires "vmath >= 1.0.8"
 requires "stbimage >= 2.5"
