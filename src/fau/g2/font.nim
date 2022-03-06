@@ -101,6 +101,6 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
       let patch = font.patches[rune]
       drawRect(patch,
         (p.x + offset.x) * scale + pos.x,
-        (bounds.y/scale - 1 - p.y - offset.y - patch.heightf) * scale + pos.y,
+        (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y,
         patch.widthf*scale, patch.heightf*scale, color = color, z = z
       )
