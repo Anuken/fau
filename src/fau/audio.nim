@@ -110,6 +110,7 @@ proc paused*(v: Voice): bool {.inline.} = so.SoloudGetPause(v.cuint).bool
 proc playing*(v: Voice): bool {.inline.} = not v.paused
 proc volume*(v: Voice): float32 {.inline.} = so.SoloudGetVolume(v.cuint).float32
 proc pitch*(v: Voice): float32 {.inline.} = discard so.SoloudGetRelativePlaySpeed(v.cuint).float32
+proc loopCount*(v: Voice): int {.inline.} = so.SoloudGetLoopCount(v.cuint).int
 proc streamTime*(v: Voice): float {.inline.} = so.SoloudGetStreamTime(v.cuint).float
 #TODO what is the difference?
 proc streamPos*(v: Voice): float {.inline.} = so.SoloudGetStreamPosition(v.cuint).float
