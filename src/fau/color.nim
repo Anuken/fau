@@ -79,3 +79,4 @@ const
   colorRed* = rgb(1, 0, 0)
   colorGreen* = rgb(0, 1, 0)
   colorBlue* = rgb(0, 0, 1)
+  colorPink* = %"ff69b4"

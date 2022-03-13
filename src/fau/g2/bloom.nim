@@ -120,6 +120,8 @@ proc buffer*(bloom: Bloom, clearColor = colorClear): Framebuffer =
   return bloom.buffer
 
 proc blit*(bloom: Bloom, params = meshParams()) =
+  #no texture
+  if bloom.buffer.texture.isNil: return
   
   bloom.buffer.blit(bloom.thresh, meshParams(buffer = bloom.p1))
 

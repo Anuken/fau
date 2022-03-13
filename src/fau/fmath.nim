@@ -123,6 +123,8 @@ func hashInt*(value: int): int {.inline.} =
   return x.int.abs
 
 proc chance*(c: float): bool = rand(0.0..1.0) < c
+proc randRange*[T](value: T): T = rand((-value)..value)
+proc range*[T](r: var Rand, value: T): T = r.rand((-value)..value)
 
 {.pop.}
 
@@ -219,6 +221,9 @@ op(Vec2, float32, vec2, `*`, `*=`)
 op(Vec2, float32, vec2, `/`, `/=`)
 
 func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
+
+func `mod`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x mod other.x, vec.y mod other.y)
+func `emod`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x.emod other.x, vec.y.emod other.y)
 
 op(Vec2i, int, vec2i, `+`, `+=`)
 op(Vec2i, int, vec2i, `-`, `-=`)
