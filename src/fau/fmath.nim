@@ -53,18 +53,6 @@ type Cam* = ref object
   #projection and inverse projection matrix
   mat*, inv*: Mat
 
-iterator d4*(): tuple[x, y: int] =
-  yield (1, 0)
-  yield (0, 1)
-  yield (-1, 0)
-  yield (0, -1)
-
-iterator d4i*(): tuple[x, y, i: int] =
-  yield (1, 0, 0)
-  yield (0, 1, 1)
-  yield (-1, 0, 2)
-  yield (0, -1, 3)
-
 iterator signs*(): float32 =
   yield 1f
   yield -1f
@@ -296,6 +284,36 @@ func dst*(vec: Vec2, other: Vec2): float32 {.inline.} = sqrt(vec.dst2(other))
 func within*(vec: Vec2, other: Vec2, distance: float32): bool {.inline.} = vec.dst2(other) <= distance*distance
 
 proc `$`*(vec: Vec2): string = $vec.x & ", " & $vec.y
+proc `$`*(vec: Vec2i): string = $vec.x & ", " & $vec.y
+
+#TODO better impl
+const
+  d4i* = [vec2i(0, 1), vec2i(0, 1), vec2i(-1, 0), vec2i(0, -1)]
+  d4iedge* = [vec2i(1, 1), vec2i(-1, 1), vec2i(-1, -1), vec2i(1, -1)]
+  d4f* = [vec2(0, 1), vec2(0, 1), vec2(-1, 0), vec2(0, -1)]
+  d4fedge* = [vec2(1, 1), vec2(-1, 1), vec2(-1, -1), vec2(1, -1)]
+
+iterator d4*(): Vec2i =
+  yield vec2i(1, 0)
+  yield vec2i(0, 1)
+  yield vec2i(-1, 0)
+  yield vec2i(0, -1)
+
+iterator d4edge*(): Vec2i =
+  yield vec2i(1, 1)
+  yield vec2i(-1, 1)
+  yield vec2i(-1, -1)
+  yield vec2i(1, -1)
+
+iterator d8*(): Vec2i =
+  yield vec2i(1, 0)
+  yield vec2i(1, 1)
+  yield vec2i(0, 1)
+  yield vec2i(-1, 1)
+  yield vec2i(-1, 0)
+  yield vec2i(-1, -1)
+  yield vec2i(0, -1)
+  yield vec2i(1, -1)
 
 proc inside*(x, y, w, h: int): bool {.inline.} = x >= 0 and y >= 0 and x < w and y < h
 proc inside*(p: Vec2i, w, h: int): bool {.inline.} = p.x >= 0 and p.y >= 0 and p.x < w and p.y < h

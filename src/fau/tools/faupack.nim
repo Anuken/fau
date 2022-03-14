@@ -4,8 +4,29 @@ from vmath import nil
 
 proc fail(reason: string) = raise Exception.newException(reason)
 
-proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, padding = 0, bleeding = 2, verbose = false, silent = false) =
+proc outline(image: Image, color: ColorRGBA) =
+  let copy = image.copy()
+  for x in 0..<copy.width:
+    for y in 0..<copy.height:
+      if copy[x, y].a == 0:
+        var found = false
+        for (dx, dy) in [(1, 0), (0, 1), (-1, 0), (0, -1)]:
+          let 
+            wx = x + dx
+            wy = y + dy
+          
+          if wx >= 0 and wy >= 0 and wx < copy.width and wy < copy.height:
+            if copy[wx, wy].a != 0:
+              found = true
+              break
+        
+        if found:
+          image[x, y] = color
+
+
+proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, padding = 0, bleeding = 2, verbose = false, silent = false, outlineFolder = "", outlineColor = "000000") =
   let packer = newPacker(min, min)
+  let outlineRgba = outlineColor.parseHex.rgba
   var positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int]]]()
 
   let time = cpuTime()
@@ -105,7 +126,11 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
       #only save the cropped variant.
       packFile(split.name, cropped, [left, right, top, bot])
     else:
-      packFile(file, readImage(file))
+      let img = readImage(file)
+      if outlineFolder.len != 0 and file.contains(outlineFolder):
+        outline(img, outlineRgba)
+
+      packFile(file, img)
 
 
   #save a white image
