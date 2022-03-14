@@ -100,6 +100,8 @@ func emod*(a, b: int): int {.inline.} =
 
 {.push checks: off.}
 
+func round*(value, space: float32): float32 {.inline.} = round(value / space) * space
+
 ## hashes an integer to a random positive integer
 func hashInt*(value: int): int {.inline.} =
   var x = value.uint64
@@ -261,6 +263,9 @@ func rotate*(vec: Vec2, rads: float32): Vec2 =
 func len*(vec: Vec2): float32 {.inline.} = sqrt(vec.x * vec.x + vec.y * vec.y)
 func len2*(vec: Vec2): float32 {.inline.} = vec.x * vec.x + vec.y * vec.y
 func `len=`*(vec: var Vec2, b: float32) = vec *= b / vec.len
+
+func `angle=`*(vec: var Vec2, angle: float32) =
+  vec = vec2l(angle, vec.len)
 
 func angled*(vec: Vec2, angle: float32): Vec2 {.inline.} =
   vec2l(angle, vec.len)
