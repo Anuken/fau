@@ -66,8 +66,8 @@ proc draw*(region: Patch, pos: Vec2, size = region.size * fau.pixelScl,
   blend = blendNormal, shader: Shader = nil) {.inline.} =
 
   let 
-    alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
-    alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
+    alignH = (-(asLeft in align).float32 + (asRight in align).float32 + 1f) / 2f
+    alignV = (-(asBot in align).float32 + (asTop in align).float32 + 1f) / 2f
 
   fau.batch.draw(Req(
     kind: reqRect,
@@ -85,8 +85,8 @@ proc drawv*(region: Patch, pos: Vec2, corners: array[4, Vec2], z = 0f, size = re
   blend = blendNormal, shader: Shader = nil) =
 
   let
-    alignH = (-((align and daLeft) != 0).int + ((align and daRight) != 0).int + 1) / 2
-    alignV = (-((align and daBot) != 0).int + ((align and daTop) != 0).int + 1) / 2
+    alignH = (-(asLeft in align).float32 + (asRight in align).float32 + 1f) / 2f
+    alignV = (-(asBot in align).float32 + (asTop in align).float32 + 1f) / 2f
     worldOriginX: float32 = pos.x + origin.x - size.x * alignH
     worldOriginY: float32 = pos.y + origin.y - size.y * alignV
     fx: float32 = -origin.x

@@ -37,16 +37,16 @@ type
     patches: Table[Rune, Patch]
     offsets: Table[Rune, fmath.Vec2]
 
-proc toVAlign(align: int): pixie.VerticalAlignment {.inline.} =
-  return if (align and daBot) != 0 and (align and daTop) != 0: pixie.MiddleAlign
-  elif (align and daBot) != 0: pixie.BottomAlign
-  elif (align and daTop) != 0: pixie.TopAlign
+proc toVAlign(align: Align): pixie.VerticalAlignment {.inline.} =
+  return if asBot in align and asTop in align: pixie.MiddleAlign
+  elif asBot in align: pixie.BottomAlign
+  elif asTop in align: pixie.TopAlign
   else: pixie.MiddleAlign
 
-proc toHAlign(align: int): pixie.HorizontalAlignment {.inline.} =
-  return if (align and daLeft) != 0 and (align and daRight) != 0: pixie.CenterAlign
-  elif (align and daLeft) != 0: pixie.LeftAlign
-  elif (align and daRight) != 0: pixie.RightAlign
+proc toHAlign(align: Align): pixie.HorizontalAlignment {.inline.} =
+  return if asLeft in align and asRight in align: pixie.CenterAlign
+  elif asLeft in align: pixie.LeftAlign
+  elif asRight in align: pixie.RightAlign
   else: pixie.CenterAlign
 
 proc getGlyphImage(font: pixie.Font, r: Rune): (Image, fmath.Vec2) =
@@ -88,7 +88,7 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128): Fo
 
   packer.update()
 
-proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: int = daCenter, z: float32 = 0.0) =
+proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0) =
 
   let arrangement = font.font.typeset(text, hAlign = align.toHAlign, vAlign = align.toVAlign, bounds = vmath.vec2(bounds.x / scale, bounds.y / scale))
 

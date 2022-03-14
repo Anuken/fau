@@ -38,17 +38,22 @@ type Batch* = ref object
   #Whether sorting is enabled for the batch
   sort: bool
 
+type AlignSide* = enum
+  asLeft, asRight, asTop, asBot
+
+type Align* = set[AlignSide]
+
 #types of draw alignment for sprites
 const
-  daLeft* = 1
-  daRight* = 2
-  daTop* = 4
-  daBot* = 8
-  daTopLeft* = daTop or daLeft
-  daTopRight* = daTop or daRight
-  daBotLeft* = daBot or daLeft
-  daBotRight* = daBot or daRight
-  daCenter* = daLeft or daRight or daTop or daBot
+  daLeft* = {asLeft}
+  daRight* = {asRight}
+  daTop* = {asTop}
+  daBot* = {asBot}
+  daTopLeft* = {asTop, asLeft}
+  daTopRight* = {asTop, asRight}
+  daBotLeft* = {asBot, asLeft}
+  daBotRight* = {asBot, asRight}
+  daCenter* = {asLeft, asRight, asTop, asBot}
 
 proc flushInternal(batch: Batch) =
   if batch.index == 0: return
