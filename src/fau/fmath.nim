@@ -57,6 +57,10 @@ iterator signs*(): float32 =
   yield 1f
   yield -1f
 
+iterator signsi*(): int =
+  yield 1
+  yield -1
+
 ## fade in from 0 to 1
 func fin*(t: Timeable): float32 {.inline.} = t.time / t.lifetime
 
@@ -173,6 +177,8 @@ func sign*(x: bool): float32 {.inline.} =
   if x: 1 else: -1
 func signi*(x: bool): int {.inline.} = 
   if x: 1 else: -1
+func sign*(x: int): int {.inline} =
+  if x < 0: -1 else: 1
 
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
