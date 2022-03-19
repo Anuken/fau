@@ -299,9 +299,9 @@ proc `$`*(vec: Vec2i): string = $vec.x & ", " & $vec.y
 
 #TODO better impl
 const
-  d4i* = [vec2i(0, 1), vec2i(0, 1), vec2i(-1, 0), vec2i(0, -1)]
+  d4i* = [vec2i(1, 0), vec2i(0, 1), vec2i(-1, 0), vec2i(0, -1)]
   d4iedge* = [vec2i(1, 1), vec2i(-1, 1), vec2i(-1, -1), vec2i(1, -1)]
-  d4f* = [vec2(0, 1), vec2(0, 1), vec2(-1, 0), vec2(0, -1)]
+  d4f* = [vec2(1, 0), vec2(0, 1), vec2(-1, 0), vec2(0, -1)]
   d4fedge* = [vec2(1, 1), vec2(-1, 1), vec2(-1, -1), vec2(1, -1)]
 
 iterator d4*(): Vec2i =
