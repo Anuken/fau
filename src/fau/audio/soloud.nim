@@ -39,10 +39,15 @@ elif defined(Linux):
   cDefine("WITH_MINIAUDIO")
   {.compile: src & "/backend/miniaudio/soloud_miniaudio.cpp".}
 elif defined(Windows):
-  {.passC: "-msse".}
-  {.passL: "-lwinmm".}
-  cDefine("WITH_WINMM")
-  {.compile: src & "/backend/winmm/soloud_winmm.cpp".}
+  #winmm: smaller, but higher latency
+  #{.passC: "-msse".}
+  #{.passL: "-lwinmm".}
+  #cDefine("WITH_WINMM")
+  #{.compile: src & "/backend/winmm/soloud_winmm.cpp".}
+
+  #miniaudio calculates a more sane buffer size, lower latency
+  cDefine("WITH_MINIAUDIO")
+  {.compile: src & "/backend/miniaudio/soloud_miniaudio.cpp".}
 else:
   static: doAssert false
 

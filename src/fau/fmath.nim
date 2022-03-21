@@ -238,7 +238,16 @@ func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} =
   let invAlpha = 1.0f - alpha
   return vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
 
+func clamp*(vec: var Vec2, min, max: Vec2) =
+  vec.x = clamp(vec.x, min.x, max.x)
+  vec.y = clamp(vec.y, min.y, max.y)
+
+func clamp*(vec: var Vec2i, min, max: Vec2i) =
+  vec.x = clamp(vec.x, min.x, max.x)
+  vec.y = clamp(vec.y, min.y, max.y)
+
 func floor*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.floor, vec.y.floor)
+func round*(vec: Vec2, scale = 1f): Vec2 {.inline.} = vec2(vec.x.round(scale), vec.y.round(scale))
 
 func abs*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.abs, vec.y.abs)
 
@@ -371,6 +380,7 @@ proc `xy=`*(r: var Rect, pos: Vec2) {.inline.} =
   r.y = pos.y
 proc pos*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
 proc size*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
+proc wh*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
 
 proc top*(r: Rect): float32 {.inline.} = r.y + r.h
 proc right*(r: Rect): float32 {.inline.} = r.x + r.w
@@ -380,6 +390,10 @@ proc y2*(r: Rect): float32 {.inline.} = r.x + r.w
 
 proc grow*(r: var Rect, amount: float32) = r = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)
 proc grow*(r: Rect, amount: float32): Rect = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)
+
+proc wrap*(r: Rect, vec: Vec2, margin = 0f): Vec2 =
+  let grown = r.grow(margin)
+  (vec - grown.xy).emod(grown.size) + grown.xy
 
 proc centerX*(r: Rect): float32 {.inline.} = r.x + r.w/2.0
 proc centerY*(r: Rect): float32 {.inline.} = r.y + r.h/2.0

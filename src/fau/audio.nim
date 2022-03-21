@@ -39,6 +39,10 @@ proc initAudio*() =
         so.SoloudSetPauseAll(e.shown.not.cint)
     )
 
+proc getAudioBufferSize*(): int = so.SoloudGetBackendBufferSize().int
+
+proc getAudioSampleRate*(): int = so.SoloudGetBackendSampleRate().int
+
 proc setGlobalVolume*(vol: float32) =
   so.SoloudSetGlobalVolume(vol.cdouble)
 
