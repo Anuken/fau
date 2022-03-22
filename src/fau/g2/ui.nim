@@ -34,6 +34,9 @@ var
 
 proc uis*(val: float32): float32 {.inline.} = uiScale * val
 
+proc mouseUi(): Vec2 =
+  ((fau.mouse * 2f) / fau.size - 1f) * fau.batch.matInv
+
 proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f): bool =
   var 
     col = style.upColor
@@ -41,7 +44,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     patch = style.up
     font = if style.font.isNil: defaultFont else: style.font
 
-  if bounds.contains(fau.mouse):
+  if bounds.contains(mouseUi()):
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
 
@@ -73,28 +76,31 @@ proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaul
   let
     pad = style.sliderWidth.uis
     clamped = (value - min) / (max - min) * (bounds.w - pad) + bounds.x + pad/2f
+    mouse = mouseUi()
   var 
     patch = style.up
     col = style.upColor
 
-  if bounds.contains(fau.mouse):
+  if bounds.contains(mouse):
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
 
     if keyMouseLeft.down:
-      value = clamp((fau.mouse.x - (bounds.x)) / (bounds.w - pad) * (max - min) + min, min, max)
+      value = clamp((mouse.x - (bounds.x)) / (bounds.w - pad) * (max - min) + min, min, max)
       col = style.downColor
       if style.down.valid: patch = style.down
 
   if patch.valid:
     draw(patch, rect(clamped - pad/2f, bounds.y, pad, bounds.h), mixColor = col, scale = uiPatchScale)
 
-proc text*(bounds: Rect, text: string, style = defaultTextStyle, align = daCenter) =
+#TODO style is unused, remove even?
+proc text*(bounds: Rect, text: string, style = defaultTextStyle, align = daCenter, color = colorWhite) =
   var font = if style.font.isNil: defaultFont else: style.font
 
   if text.len != 0 and not font.isNil:
     font.draw(text,
       bounds.pos,
       bounds = bounds.size,
-      scale = uiFontScale, align = align
+      scale = uiFontScale, align = align,
+      color = color
     )

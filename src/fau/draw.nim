@@ -141,7 +141,7 @@ proc drawVert*(texture: Texture, vertices: array[4, Vert2], z: float32 = 0, blen
     blend: blend, shader: shader
   ))
 
-proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
+proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f, blend = blendNormal) =
   let
     midx = p.width - p.left - p.right
     midy = p.height - p.top - p.bot
@@ -151,28 +151,28 @@ proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite
     height = size.y
 
   #bot left
-  drawRect(p.patches[0], x, y, p.left * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
+  drawRect(p.patches[0], x, y, p.left * scale, p.bot * scale, z = z, color = color, mixColor = mixColor, blend = blend)
   #bot
-  drawRect(p.patches[1], x + p.left * scale, y, width - (p.right + p.left) * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
+  drawRect(p.patches[1], x + p.left * scale, y, width - (p.right + p.left) * scale, p.bot * scale, z = z, color = color, mixColor = mixColor, blend = blend)
   #bot right
-  drawRect(p.patches[2], x + p.left * scale + width - (p.right + p.left) * scale, y, p.right * scale, p.bot * scale, z = z, color = color, mixColor = mixColor)
+  drawRect(p.patches[2], x + p.left * scale + width - (p.right + p.left) * scale, y, p.right * scale, p.bot * scale, z = z, color = color, mixColor = mixColor, blend = blend)
 
   #mid left
-  drawRect(p.patches[3], x, y + p.bot * scale, p.left * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor)
+  drawRect(p.patches[3], x, y + p.bot * scale, p.left * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor, blend = blend)
   #mid
-  drawRect(p.patches[4], x + p.left * scale, y + p.bot * scale, width - (p.right + p.left) * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor)
+  drawRect(p.patches[4], x + p.left * scale, y + p.bot * scale, width - (p.right + p.left) * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor, blend = blend)
   #mid right
-  drawRect(p.patches[5], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale, p.right * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor)
+  drawRect(p.patches[5], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale, p.right * scale, height - (p.top + p.bot) * scale, z = z, color = color, mixColor = mixColor, blend = blend)
 
   #top left
-  drawRect(p.patches[6], x, y + p.bot * scale + height - (p.top + p.bot) * scale, p.left * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
+  drawRect(p.patches[6], x, y + p.bot * scale + height - (p.top + p.bot) * scale, p.left * scale, p.top * scale, z = z, color = color, mixColor = mixColor, blend = blend)
   #top
-  drawRect(p.patches[7], x + p.left * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, width - (p.right + p.left) * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
+  drawRect(p.patches[7], x + p.left * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, width - (p.right + p.left) * scale, p.top * scale, z = z, color = color, mixColor = mixColor, blend = blend)
   #top right
-  drawRect(p.patches[8], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, p.right * scale, p.top * scale, z = z, color = color, mixColor = mixColor)
+  drawRect(p.patches[8], x + p.left * scale + width - (p.right + p.left) * scale, y + p.bot * scale + height - (p.top + p.bot) * scale, p.right * scale, p.top * scale, z = z, color = color, mixColor = mixColor, blend = blend)
 
-proc draw*(p: Patch9, bounds: Rect, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f) =
-  draw(p, bounds.pos, bounds.size, z, color, mixColor, scale)
+proc draw*(p: Patch9, bounds: Rect, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f, blend = blendNormal) =
+  draw(p, bounds.pos, bounds.size, z, color, mixColor, scale, blend = blend)
 
 #TODO does not support mid != 0
 #TODO divs could just be a single float value, arrays unnecessary
@@ -226,11 +226,14 @@ proc drawBend*(p: Patch, pos: Vec2, divs: openArray[float32], mid = 0, rotation 
 proc fillQuad*(v1: Vec2, c1: Color, v2: Vec2, c2: Color, v3: Vec2, c3: Color, v4: Vec2, c4: Color, z: float32 = 0) =
   drawVert(fau.white.texture, [vert2(v1, fau.white.uv, c1), vert2(v2, fau.white.uv, c2),  vert2(v3, fau.white.uv, c3), vert2(v4, fau.white.uv, c4)], z)
 
-proc fillQuad*(v1, v2, v3, v4: Vec2, color: Color, z: float32 = 0) =
+proc fillQuad*(v1, v2, v3, v4: Vec2, color: Color, z = 0f) =
   fillQuad(v1, color, v2, color, v3, color, v4, color, z)
 
-proc fillRect*(x, y, w, h: float32, color = colorWhite, z: float32 = 0) =
+proc fillRect*(x, y, w, h: float32, color = colorWhite, z = 0f) =
   drawRect(fau.white, x, y, w, h, color = color, z = z)
+
+proc fillRect*(rect: Rect, color = colorWhite, z = 0f) =
+  fillRect(rect.x, rect.y, rect.w, rect.w, color, z)
 
 proc fillTri*(v1, v2, v3: Vec2, color: Color, z: float32 = 0) =
   fillQuad(v1, color, v2, color, v3, color, v3, color, z)

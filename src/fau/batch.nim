@@ -35,6 +35,7 @@ type Batch* = ref object
   req: seq[Req]
   #The projection matrix being used by the batch; requires flush
   mat: Mat
+  matInv*: Mat
   #Whether sorting is enabled for the batch
   sort: bool
 
@@ -227,6 +228,7 @@ proc sort*(batch: Batch, val: bool) =
 proc mat*(batch: Batch, mat: Mat) = 
   batch.flush()
   batch.mat = mat
+  batch.matInv = mat.inv
 
 #Sets the framebuffer used for rendering. This flushes the batch.
 proc buffer*(batch: Batch, buffer: Framebuffer) = 

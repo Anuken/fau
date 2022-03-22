@@ -13,8 +13,12 @@ type Patch9* = object
   patches*: array[9, Patch]
 
 #creates a patch based on pixel coordinates of a texture
+#TODO should be initPatch?
 proc newPatch*(texture: Texture, x, y, width, height: int): Patch = 
   Patch(texture: texture, u: x / texture.size.x, v: y / texture.size.y, u2: (x + width) / texture.size.x, v2: (y + height) / texture.size.y)
+
+proc initPatch*(texture: Texture, u, v, u2, v2: float32): Patch = Patch(texture: texture, u: u, v: v, u2: u2, v2: v2)
+proc initPatch*(texture: Texture, uv, uv2: Vec2): Patch = initPatch(texture, uv.x, uv.y, uv2.x, uv2.y)
 
 #properties that calculate size of a patch in pixels
 proc x*(patch: Patch): int {.inline.} = (patch.u * patch.texture.size.x.float32).int
@@ -25,6 +29,7 @@ proc widthf*(patch: Patch): float32 {.inline.} = ((patch.u2 - patch.u) * patch.t
 proc heightf*(patch: Patch): float32 {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32)
 proc size*(patch: Patch): Vec2 {.inline.} = vec2((patch.u2 - patch.u) * patch.texture.size.x.float32, (patch.v2 - patch.v) * patch.texture.size.y.float32)
 proc uv*(patch: Patch): Vec2 {.inline.} = vec2(patch.u, patch.v)
+proc uv2*(patch: Patch): Vec2 {.inline.} = vec2(patch.u2, patch.v2)
 template exists*(patch: Patch): bool = patch != fau.atlas.error
 proc valid*(patch: Patch): bool {.inline.} = not patch.texture.isNil
 

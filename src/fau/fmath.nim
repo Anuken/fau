@@ -373,6 +373,7 @@ proc rect*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w:
 proc rect*(xy: Vec2, size: Vec2): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: size.x, h: size.y)
 proc rectCenter*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x - w/2.0, y: y - h/2.0, w: w, h: h)
 proc rectCenter*(x, y, s: float32): Rect {.inline.} = Rect(x: x - s/2.0, y: y - s/2.0, w: s, h: s)
+proc rectCenter*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x - w/2.0, y: xy.y - h/2.0, w: w, h: h)
 
 proc xy*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
 proc `xy=`*(r: var Rect, pos: Vec2) {.inline.} =
@@ -382,6 +383,11 @@ proc pos*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
 proc size*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
 proc wh*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
 
+proc botLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
+proc topLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y + r.h)
+proc topRight*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y + r.h)
+proc botRight*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y)
+
 proc top*(r: Rect): float32 {.inline.} = r.y + r.h
 proc right*(r: Rect): float32 {.inline.} = r.x + r.w
 
@@ -390,6 +396,7 @@ proc y2*(r: Rect): float32 {.inline.} = r.x + r.w
 
 proc grow*(r: var Rect, amount: float32) = r = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)
 proc grow*(r: Rect, amount: float32): Rect = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)
+proc grow*(r: Rect, amount: Vec2): Rect = rect(r.x - amount.x/2f, r.y - amount.y/2f, r.w + amount.x, r.h + amount.y)
 
 proc wrap*(r: Rect, vec: Vec2, margin = 0f): Vec2 =
   let grown = r.grow(margin)
@@ -398,6 +405,9 @@ proc wrap*(r: Rect, vec: Vec2, margin = 0f): Vec2 =
 proc centerX*(r: Rect): float32 {.inline.} = r.x + r.w/2.0
 proc centerY*(r: Rect): float32 {.inline.} = r.y + r.h/2.0
 proc center*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w/2.0, r.y + r.h/2.0)
+
+proc `-`*(r: Rect, other: Rect): Rect {.inline.} = rect(r.xy - other.xy, r.wh - other.wh)
+proc `+`*(r: Rect, other: Rect): Rect {.inline.} = rect(r.xy + other.xy, r.wh + other.wh)
 
 proc merge*(r: Rect, other: Rect): Rect =
   result.x = min(r.x, other.x)
