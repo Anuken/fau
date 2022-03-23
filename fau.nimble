@@ -3,7 +3,7 @@ author        = "Anuken"
 description   = "WIP Nim game framework"
 license       = "MIT"
 srcDir        = "src"
-bin           = @["fau/tools/faupack", "fau/tools/antialias", "fau/tools/fauproject"]
+bin           = @["fau/tools/faupack", "fau/tools/antialias", "fau/tools/fauproject", "fau/tools/bleed"]
 binDir        = "build"
 
 requires "nim >= 1.4.8"

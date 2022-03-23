@@ -4,9 +4,10 @@ import ../draw, ../globals, ../color, ../patch, ../fmath, ../input, font
 
 type 
   ButtonStyle* = object
-    downColor*, upColor*, overColor*: Color
+    downColor*, upColor*, overColor*, disabledColor*: Color
     iconUpColor*, iconDownColor*: Color
     up*, down*, over*: Patch9
+    textUpColor*, textDisabledColor*: Color
     font*: Font
   TextStyle* = object
     font*: Font
@@ -28,7 +29,7 @@ var
   uiScale* = 1f
 
   defaultFont*: Font
-  defaultButtonStyle* = ButtonStyle()
+  defaultButtonStyle* = ButtonStyle(textUpColor: colorWhite, textDisabledColor: colorWhite)
   defaultTextStyle* = TextStyle()
   defaultSliderStyle* = SliderStyle(sliderWidth: 20f)
 
@@ -37,14 +38,20 @@ proc uis*(val: float32): float32 {.inline.} = uiScale * val
 proc mouseUi(): Vec2 =
   ((fau.mouse * 2f) / fau.size - 1f) * fau.batch.matInv
 
-proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f): bool =
+proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f): bool =
   var 
     col = style.upColor
+    textCol = style.textUpColor
     down = toggled
     patch = style.up
+    over = bounds.contains(mouseUi()) and not disabled
     font = if style.font.isNil: defaultFont else: style.font
+  
+  if disabled:
+    col = style.disabledColor
+    textCol = style.textDisabledColor
 
-  if bounds.contains(mouseUi()):
+  if over:
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
 
@@ -62,7 +69,8 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     font.draw(text,
       vec2(bounds.x, bounds.y) + vec2(patch.left.float32, patch.bot.float32) * uiPatchScale,
       bounds = vec2(bounds.w, bounds.h) - vec2(patch.left.float32 + patch.right.float32, patch.bot.float32 - patch.top.float32) * uiPatchScale,
-      scale = uiFontScale, align = daCenter
+      scale = uiFontScale, align = daCenter,
+      color = textCol
     )
 
   if icon.valid:
@@ -94,13 +102,13 @@ proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaul
     draw(patch, rect(clamped - pad/2f, bounds.y, pad, bounds.h), mixColor = col, scale = uiPatchScale)
 
 #TODO style is unused, remove even?
-proc text*(bounds: Rect, text: string, style = defaultTextStyle, align = daCenter, color = colorWhite) =
+proc text*(bounds: Rect, text: string, style = defaultTextStyle, align = daCenter, color = colorWhite, scale = 1f) =
   var font = if style.font.isNil: defaultFont else: style.font
 
   if text.len != 0 and not font.isNil:
     font.draw(text,
       bounds.pos,
       bounds = bounds.size,
-      scale = uiFontScale, align = align,
+      scale = uiFontScale * scale, align = align,
       color = color
     )

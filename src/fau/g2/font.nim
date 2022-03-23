@@ -2,7 +2,7 @@ import tables, unicode, packer
 import math
 import ../texture, ../patch, ../color, ../globals, ../batch, ../util/util, ../draw, ../assets
 
-from ../fmath import `+`
+from ../fmath import `+`, xy, wh
 from pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`
 from vmath import x, y, `*`, `-`, `+`, isNaN, translate
 from bumpy import xy
@@ -31,10 +31,12 @@ proc pack*(packer: TexturePacker, image: Image): Patch =
 proc update*(packer: TexturePacker) =
   packer.texture.load(fmath.vec2i(packer.image.width, packer.image.height), addr packer.image.data[0])
 
-type Font* = ref object
-  font: pixie.Font
-  patches: Table[Rune, Patch]
-  offsets: Table[Rune, fmath.Vec2]
+type 
+  Font* = ref object
+    font: pixie.Font
+    patches: Table[Rune, Patch]
+    offsets: Table[Rune, fmath.Vec2]
+  GlyphProc = proc(index: int, offset: var fmath.Vec2, color: var Color, draw: var bool)
 
 proc toVAlign(align: Align): pixie.VerticalAlignment {.inline.} =
   return if asBot in align and asTop in align: pixie.MiddleAlign
@@ -81,12 +83,12 @@ proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color
   #no path found
   if bounds.w < 1 or bounds.h < 1: return
   let bxy = -bounds.xy
-  let sizeOffset = if outline: 2 else: 0
+  let sizeOffset = if outline: 4 else: 0
   result[0] = newImage(bounds.w.int + sizeOffset, bounds.h.int + sizeOffset)
-  result[0].fillPath(path, chroma.rgba(255, 255, 255, 255), pixie.translate(bxy + vmath.vec2(if outline: 1f else: 0f)))
+  result[0].fillPath(path, chroma.rgba(255, 255, 255, 255), pixie.translate(bxy + vmath.vec2(if outline: sizeOffset / 2f else: 0f)))
   #TODO this method of outlining only works for pixel fonts. there's almost certainly a better way
   if outline: result[0].outline(cast[chroma.ColorRGBA](outlineColor), diagonalOutline)
-  result[1] = fmath.vec2(bounds.xy) + fmath.vec2(if outline: -1f else: 0f)
+  result[1] = fmath.vec2(bounds.xy) + fmath.vec2(if outline: -(sizeOffset.float32 / 2f) else: 0f)
 
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 
@@ -116,8 +118,7 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128, out
 
   packer.update()
 
-proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0) =
-
+proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil) =
   let arrangement = font.font.typeset(text, hAlign = align.toHAlign, vAlign = align.toVAlign, bounds = vmath.vec2(bounds.x / scale, bounds.y / scale))
 
   for i, rune in arrangement.runes:
@@ -127,8 +128,22 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
     if font.patches.hasKey(rune):
       let offset = font.offsets[rune]
       let patch = font.patches[rune]
-      drawRect(patch,
-        (p.x + offset.x) * scale + pos.x,
-        (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y,
-        patch.widthf*scale, patch.heightf*scale, color = color, z = z
-      )
+
+      var
+        glyphIndex = i
+        glyphOffset = fmath.vec2()
+        glyphColor = color
+        glyphDraw = true
+
+      if modifier != nil:
+        modifier(glyphIndex, glyphOffset, glyphColor, glyphDraw)
+
+      if glyphDraw:
+        drawRect(patch,
+          (p.x + offset.x) * scale + pos.x + glyphOffset.x,
+          (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y,
+          patch.widthf*scale, patch.heightf*scale, color = glyphColor, z = z
+        )
+
+proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil) =
+  draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier)

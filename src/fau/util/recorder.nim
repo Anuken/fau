@@ -14,6 +14,7 @@ var
   recordOffset* = vec2(0f)
   recording = false
   open = false
+  mp4 = true
   ftime = 0f
   frames: seq[pointer]
 
@@ -42,11 +43,13 @@ proc record*() =
         dateStr = now().format("yyyy-MM-dd-hh-mm-ss")
         w = recordSize.x.int
         h = recordSize.y.int
+        ext = if mp4: "mp4" else: "gif"
+        filters = if mp4: "" else: ",split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
         len = w * h * 4
 
       var
         p = startProcess(
-          &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" {gifOutDir}/{dateStr}.gif",
+          &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip{filters}\" {gifOutDir}/{dateStr}.{ext}",
           options = {poEvalCommand, poStdErrToStdOut}
         )
         stream = p.inputStream

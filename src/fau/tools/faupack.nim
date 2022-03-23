@@ -16,7 +16,8 @@ proc outline(image: Image, color: ColorRGBA) =
             wy = y + dy
           
           if wx >= 0 and wy >= 0 and wx < copy.width and wy < copy.height:
-            if copy[wx, wy].a != 0:
+            let other = copy[wx, wy]
+            if other.a != 0 and other != color:
               found = true
               break
         
