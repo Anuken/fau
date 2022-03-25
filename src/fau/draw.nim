@@ -297,10 +297,10 @@ proc line*(p1, p2: Vec2, stroke: float32 = 1.px, color = colorWhite, square = tr
     color, z
   )
 
-proc lineAngle*(p: Vec2, angle, len: float32, stroke: float32 = 1.px, color = colorWhite, square = true, z: float32 = 0) =
+proc lineAngle*(p: Vec2, angle, len: float32, stroke: float32 = 1.px, color = colorWhite, square = true, z = 0f) =
   line(p, p + vec2l(angle, len), stroke, color, square, z)
 
-proc lineAngleCenter*(p: Vec2, angle, len: float32, stroke: float32 = 1.px, color = colorWhite, square = true, z: float32 = 0) =
+proc lineAngleCenter*(p: Vec2, angle, len: float32, stroke: float32 = 1.px, color = colorWhite, square = true, z = 0f) =
   let v = vec2l(angle, len)
   line(p - v/2f, p + v/2f, stroke, color, square, z)
 
@@ -317,7 +317,12 @@ proc lineRect*(rect: Rect, stroke: float32 = 1.px, color = colorWhite, z: float3
 proc lineSquare*(pos: Vec2, rad: float32, stroke: float32 = 1f, color = colorWhite, z = 0f) =
   lineRect(pos - rad, vec2(rad * 2f), stroke, color, z)
 
-proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f, color = colorWhite, z: float32 = 0) =
+proc spikes*(pos: Vec2, sides: int, radius: float32, len: float32, stroke = 1f, rotation = 0f, color = colorWhite, z = 0f) =
+  for i in 0..<sides:
+    let ang = i / sides * 360f.rad + rotation
+    lineAngle(pos + vec2l(ang, radius), ang, len, stroke, color, z = z)
+
+proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f, color = colorWhite, z = 0f) =
   let 
     space = PI*2 / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)

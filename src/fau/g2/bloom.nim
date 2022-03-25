@@ -27,11 +27,12 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false): Bloom =
   result.thresh = newShader(screenspace,
   """ 
   uniform lowp sampler2D u_texture;
+  uniform float u_threshold;
   varying vec2 v_uv;
 
   void main(){
     vec4 color = texture2D(u_texture, v_uv);
-    if(color.r + color.g + color.b > 0.5 * 3.0){
+    if(color.r + color.g + color.b > u_threshold * 3.0){
       gl_FragColor = color;
     }else{
       gl_FragColor = vec4(0.0);
@@ -78,7 +79,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false): Bloom =
     vec2 c = closer*sizeAndDir;
     
     v_texCoords0 = a_uv - f;
-    v_texCoords1 = a_uv - c;	
+    v_texCoords1 = a_uv - c;
     v_texCoords2 = a_uv;
     v_texCoords3 = a_uv + c;
     v_texCoords4 = a_uv + f;
@@ -119,9 +120,12 @@ proc buffer*(bloom: Bloom, clearColor = colorClear): Framebuffer =
   bloom.buffer.clear(clearColor)
   return bloom.buffer
 
-proc blit*(bloom: Bloom, params = meshParams()) =
+proc blit*(bloom: Bloom, params = meshParams(), intensity = 2.5f, threshold = 0.5f) =
   #no texture
   if bloom.buffer.texture.isNil: return
+
+  bloom.thresh.uniforms:
+    threshold = threshold
   
   bloom.buffer.blit(bloom.thresh, meshParams(buffer = bloom.p1))
 
@@ -142,6 +146,6 @@ proc blit*(bloom: Bloom, params = meshParams()) =
   blit(bloom.bloom, params):
     texture0 = bloom.buffer.sampler(0)
     texture1 = bloom.p1.sampler(1)
-    bloomIntensity = 2.5f
+    bloomIntensity = intensity
     originalIntensity = 1f
   

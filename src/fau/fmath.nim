@@ -183,8 +183,8 @@ func sign*(x: int): int {.inline} =
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
 
-func absin*(x, scl, mag: float32): float32 {.inline} = (sin(x / scl) * mag).abs
-func abcos*(x, scl, mag: float32): float32 {.inline} = (cos(x / scl) * mag).abs
+func absin*(x, scl, mag: float32): float32 {.inline} = ((sin(x / scl) + 1f) / 2f) * mag
+func abcos*(x, scl, mag: float32): float32 {.inline} = ((cos(x / scl) + 1f) / 2f) * mag
 
 template vec2*(cx, cy: float32): Vec2 = Vec2(x: cx, y: cy)
 proc vec2*(xy: float32): Vec2 {.inline.} = Vec2(x: xy, y: xy)
@@ -701,3 +701,5 @@ proc newCam*(size: Vec2 = vec2(0f, 0f)): Cam =
   result.update()
 
 proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)
+#alias
+proc view*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)

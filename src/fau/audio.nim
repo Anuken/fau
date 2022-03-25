@@ -7,6 +7,7 @@ var so: ptr Soloud
 type
   Sound* = ref object
     handle: ptr AudioSource
+    stream: bool
     protect: bool
   Voice* = distinct cuint
   AudioFilter* = ptr Filter
@@ -60,12 +61,12 @@ proc loadMusicStatic*(path: static[string]): Sound =
   let handle = WavStreamCreate()
   checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   
-  return Sound(handle: handle, protect: true)
+  return Sound(handle: handle, protect: true, stream: true)
 
 proc loadMusicFile*(path: string): Sound =
   let handle = WavStreamCreate()
   checkErr(path): handle.WavStreamLoad(path)
-  return Sound(handle: handle)
+  return Sound(handle: handle, stream: true)
 
 proc loadMusic*(path: static[string]): Sound =
   ## Loads music from the assets folder, or statically.
@@ -103,6 +104,12 @@ proc play*(sound: Sound, pitch = 1.0f, volume = 1.0f, pan = 0f, loop = false): V
   if loop: so.SoloudSetLooping(id, 1)
   if sound.protect: so.SoloudSetProtectVoice(id, 1)
   return id.Voice
+
+proc length*(sound: Sound): float =
+  if sound.stream:
+    return WavStreamGetLength(cast[ptr WavStream](sound.handle)).float
+  else:
+    return WavGetLength(cast[ptr Wav](sound.handle)).float
 
 proc stop*(v: Voice) {.inline.} = so.SoloudStop(v.cuint)
 proc pause*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 1)
