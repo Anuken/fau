@@ -212,11 +212,19 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   discard window.setMouseButtonCallback(proc(window: Window, button: cint, action: cint, modifiers: cint) {.cdecl.} = 
     let code = mapMouseCode(button)
 
+    var 
+      mouseX: cdouble = 0
+      mouseY: cdouble = 0
+
+    window.getCursorPos(addr mouseX, addr mouseY)
+
+    let pos = vec2(mouseX.float32, fau.size.y - 1f - mouseY.float32)
+
     case action:
       of PRESS:
-        fireFauEvent FauEvent(kind: feTouch, touchPos: fau.mouse, touchDown: true, touchButton: code)
+        fireFauEvent FauEvent(kind: feTouch, touchPos: pos, touchDown: true, touchButton: code)
       of RELEASE:
-        fireFauEvent FauEvent(kind: feTouch, touchPos: fau.mouse, touchDown: false, touchButton: code)
+        fireFauEvent FauEvent(kind: feTouch, touchPos: pos, touchDown: false, touchButton: code)
       else: discard
   )
 
@@ -252,6 +260,15 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 #set window title
 proc `windowTitle=`*(title: string) =
   window.setWindowTitle(title)
+
+proc rawCursorPos*(): Vec2 =
+  var 
+    mouseX: cdouble = 0
+    mouseY: cdouble = 0
+
+  getGlfwWindow().getCursorPos(addr mouseX, addr mouseY)
+
+  return vec2(mouseX.float32, fau.size.y - 1f - mouseY.float32)
 
 proc setWindowPos*(pos: Vec2i) =
   window.setWindowPos(pos.x.cint, pos.y.cint)
