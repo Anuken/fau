@@ -253,6 +253,16 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 proc `windowTitle=`*(title: string) =
   window.setWindowTitle(title)
 
+proc setWindowPos*(pos: Vec2i) =
+  window.setWindowPos(pos.x.cint, pos.y.cint)
+
+proc getWindowPos*(): Vec2i =
+  var 
+    w: cint
+    h: cint
+  window.getWindowPos(addr w, addr h)
+  return vec2i(w.int, h.int)
+
 proc setVsync*(on: bool) =
   swapInterval(on.cint)
 
