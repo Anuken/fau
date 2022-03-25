@@ -261,7 +261,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 proc `windowTitle=`*(title: string) =
   window.setWindowTitle(title)
 
-proc rawCursorPos*(): Vec2 =
+proc getCursorPos*(): Vec2 =
   var 
     mouseX: cdouble = 0
     mouseY: cdouble = 0
