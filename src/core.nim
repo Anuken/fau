@@ -25,10 +25,9 @@ var
   startTime: Time
 
 #TODO all of these should be struct parameters!
-proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, 
-  depth = false, clearColor = colorClear) =
+proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params: FauInitParams = initParams()) =
 
-  fau.clearColor = clearColor
+  fau.clearColor = params.clearColor
 
   #handle & update input based on events
   addFauListener(proc(e: FauEvent) =
@@ -141,7 +140,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     #assume window starts out shown
     fau.shown = true
 
-    screen = newDefaultFramebuffer(depth)
+    screen = newDefaultFramebuffer(params.depth)
     
     #create and use batch
     fau.batch = newBatch()
@@ -174,5 +173,6 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWid
     let avg = ((fau.white.u + fau.white.u2) / 2.0, (fau.white.v + fau.white.v2) / 2.0)
     (fau.white.u, fau.white.v, fau.white.u2, fau.white.v2) = (avg[0], avg[1], avg[0], avg[1])
     
-    initProc()
-  ), windowWidth = windowWidth, windowHeight = windowHeight, windowTitle = windowTitle, maximize = maximize, depth = depth)
+    if initProc != nil:
+      initProc()
+  ), params)

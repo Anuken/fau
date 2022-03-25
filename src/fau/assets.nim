@@ -15,9 +15,10 @@ macro preloadFolder*(path: static[string]): untyped =
   result = newStmtList()
 
   when staticAssets:
-    for e in walkDir("assets" / path):
+    #can't use / because it fails with cross compilation
+    for e in walkDir("assets/" & path):
       let file = e.path.substr("assets/".len)
-      let path = rootDir / e.path
+      let path = rootDir  & "/" & e.path
       result.add quote do:
         const data = staticRead(`path`)
         preloadedAssets[`file`] = data

@@ -13,6 +13,6 @@ macro whenComp*(entity: EntityRef, t: typedesc, body: untyped) =
       if `varName`.valid:
         `body`
 
-template launchFau*(title: string) =
+template launchFau*(params = initParams()) =
   makeEcsCommit("run")
-  initFau(run, windowTitle = `title`)
+  initFau(run, (proc() = discard), params)

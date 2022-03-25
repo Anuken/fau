@@ -93,7 +93,7 @@ var
 type jint = int32
 
 #most parameters are ignored here, unnecessary
-proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depth = false) =
+proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: FauInitParams) =
   cloopProc = loopProc
   cinitProc = initProc
 

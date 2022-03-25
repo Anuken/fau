@@ -57,6 +57,26 @@ type Touch* = object
   pos*, delta*, last*: Vec2
   down*: bool
 
+#Paramters for initialization of Fau across many backends.
+type FauInitParams* = object
+  #size of window
+  size*: Vec2i
+  #title of window
+  title*: string
+  #whether to maximize window at start
+  maximize*: bool
+  #whether to use a depth buffer
+  depth*: bool
+  #whether the window has no border
+  undecorated*: bool
+  #whether the window has a transparent framebuffer
+  transparent*: bool
+  #default background clear color
+  clearColor*: Color
+
+proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, depth = false, undecorated = false, transparent = false, clearColor = colorClear): FauInitParams =
+  FauInitParams(size: size, title: title, maximize: maximize, depth: depth, undecorated: undecorated, transparent: transparent, clearColor: clearColor)
+
 #Hold all the graphics state.
 type FauState* = object
   #Screen clear color

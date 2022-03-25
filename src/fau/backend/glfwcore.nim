@@ -143,7 +143,7 @@ proc mainLoop(target: proc()) =
     while window.windowShouldClose() == 0 and running:
       target()
 
-proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWidth = 800, windowHeight = 600, windowTitle = "Unknown", maximize = true, depth = false) =
+proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: FauInitParams) =
   
   discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
     raise Exception.newException("Error initializing GLFW: " & $desc & " (error code: " & $code & ")")
@@ -156,15 +156,21 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
   defaultWindowHints()
   windowHint(CONTEXT_VERSION_MINOR, 0)
   windowHint(CONTEXT_VERSION_MAJOR, 2)
-  if depth: windowHint(DEPTH_BITS, 16.cint)
+  if params.depth: windowHint(DEPTH_BITS, 16.cint)
   windowHint(DOUBLEBUFFER, 1)
-  windowHint(MAXIMIZED, maximize.cint)
+  windowHint(MAXIMIZED, params.maximize.cint)
+  if params.transparent:
+    #GLFW_TRANSPARENT_FRAMEBUFFER
+    windowHint(0x0002000A.cint, 1.cint)
+  
+  if params.undecorated:
+    windowHint(DECORATED, 0.cint)
 
-  window = createWindow(windowWidth.cint, windowHeight.cint, windowTitle, nil, nil)
+  window = createWindow(params.size.x.cint, params.size.y.cint, params.title, nil, nil)
   window.makeContextCurrent()
 
   #center window on primary monitor if it's not maximized
-  if not maximize:
+  if not params.maximize:
     let 
       monitor = getPrimaryMonitor()
       mode = monitor.getVideoMode()
@@ -172,7 +178,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), windowWi
     if mode != nil:
       var mx, my: cint
       getMonitorPos(monitor, mx.addr, my.addr)
-      window.setWindowPos(mx + (mode.width - windowWidth.cint) div 2, my + (mode.height - windowHeight.cint) div 2)
+      window.setWindowPos(mx + (mode.width - params.size.x.cint) div 2, my + (mode.height - params.size.y.cint) div 2)
 
   if not loadGl(getProcAddress):
     raise Exception.newException("Failed to load OpenGL.")
