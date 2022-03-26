@@ -37,6 +37,10 @@ macro defineEffects*(body: untyped) =
   result.add quote do:
     proc rendererNone*(e: EffectState) {.inject.} = discard
 
+    onEcsBuilt:
+      proc createEffect*(eid: EffectId, pos: Vec2, rot: float32 = 0, col: Color = colorWhite, life: float32 = 0.2) =
+        discard newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rot, color: col))
+
   let brackets = newNimNode(nnkBracket)
   
   brackets.add quote do:
@@ -72,8 +76,9 @@ macro defineEffects*(body: untyped) =
       proc `procName`(e {.inject.}: EffectState) =
         `effectBody`
       
-      template `templName`*(pos: Vec2, rot: float32 = 0, col: Color = colorWhite, life: float32 = `lifeVal`) =
-        discard newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: `id`.EffectId, rotation: rot, color: col))
+      onEcsBuilt:
+        template `templName`*(pos: Vec2, rot: float32 = 0, col: Color = colorWhite, life: float32 = `lifeVal`) =
+          createEffect(`id`.EffectId, pos, rot, col, life)
     
     brackets.add quote do:
       `procName`.EffectProc
@@ -82,9 +87,6 @@ macro defineEffects*(body: untyped) =
   
   result.add quote do:
     const allEffects* {.inject.}: array[`count`, EffectProc] = `brackets`
-
-    template createEffect*(eid: EffectId, pos: Vec2, rot: float32 = 0, col: Color = colorWhite, life: float32 = 0.2) =
-      discard newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(id: eid, rotation: rot, color: col))
 
 ## Creates the effect entity system for rendering.
 template makeEffectsSystem*() =

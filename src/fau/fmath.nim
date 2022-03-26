@@ -310,10 +310,18 @@ proc `$`*(vec: Vec2i): string = $vec.x & ", " & $vec.y
 const
   d4i* = [vec2i(1, 0), vec2i(0, 1), vec2i(-1, 0), vec2i(0, -1)]
   d4iedge* = [vec2i(1, 1), vec2i(-1, 1), vec2i(-1, -1), vec2i(1, -1)]
+  d8i* = [vec2i(1, 0), vec2i(1, 1), vec2i(0, 1), vec2i(-1, 1), vec2i(-1, 0), vec2i(-1, -1), vec2i(0, -1), vec2i(1, -1)]
   d4f* = [vec2(1, 0), vec2(0, 1), vec2(-1, 0), vec2(0, -1)]
   d4fedge* = [vec2(1, 1), vec2(-1, 1), vec2(-1, -1), vec2(1, -1)]
 
 iterator d4*(): Vec2i =
+  yield vec2i(1, 0)
+  yield vec2i(0, 1)
+  yield vec2i(-1, 0)
+  yield vec2i(0, -1)
+
+iterator d4mid*(): Vec2i =
+  yield vec2i(0, 0)
   yield vec2i(1, 0)
   yield vec2i(0, 1)
   yield vec2i(-1, 0)
@@ -326,6 +334,17 @@ iterator d4edge*(): Vec2i =
   yield vec2i(1, -1)
 
 iterator d8*(): Vec2i =
+  yield vec2i(1, 0)
+  yield vec2i(1, 1)
+  yield vec2i(0, 1)
+  yield vec2i(-1, 1)
+  yield vec2i(-1, 0)
+  yield vec2i(-1, -1)
+  yield vec2i(0, -1)
+  yield vec2i(1, -1)
+
+iterator d8mid*(): Vec2i =
+  yield vec2i(0, 0)
   yield vec2i(1, 0)
   yield vec2i(1, 1)
   yield vec2i(0, 1)
@@ -656,10 +675,10 @@ template particlesLife*(seed: int, amount: int, ppos: Vec2, basefin: float32, ra
   for i in 0..<amount:
     let
       lscl = r.rand(0.1f..1f)
-      fin {.inject.} = basefin / lscl
-      fout {.inject.} = 1f - fin
-      rot {.inject.} = r.rand(360f.rad).float32
-      count {.inject.} = i
+      fin {.inject, used.} = basefin / lscl
+      fout {.inject, used.} = 1f - fin
+      rot {.inject, used.} = r.rand(360f.rad).float32
+      count {.inject, used.} = i
       v = vec2l(rot, r.rand(radius * fin))
       pos {.inject.} = ppos + v
     if fin <= 1f:
