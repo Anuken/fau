@@ -2,9 +2,22 @@ import pixie, os, math, vmath
 
 proc resize(file: string) =
   let 
+    padding = 2
     img = readImage(file)
-    target = newImage(img.width.nextPowerOfTwo, img.height.nextPowerOfTwo)
   
+  var
+    absx = 0
+    absy = 0
+  
+  for x in 0..<img.width:
+    for y in 0..<img.height:
+      let col = img[x, y]
+      if col.a > 0:
+        absx = max(absx, abs(x - img.width div 2) + padding)
+        absy = max(absy, abs(y - img.height div 2) + padding)
+  
+  let target = newImage((absx * 2).nextPowerOfTwo, (absy * 2).nextPowerOfTwo)
+
   target.draw(img, translate(vec2((target.width - img.width)/2, (target.height - img.height)/2)))
   target.writeFile(file)
 
