@@ -262,6 +262,10 @@ func angle*(vec: Vec2): float32 {.inline.} =
   let res = arctan2(vec.y, vec.x)
   return if res < 0: res + PI*2.0 else: res
 
+func angle*(vec: Vec2i): float32 {.inline.} =
+  if vec.x == 0 and vec.y == 0: return 0f
+  vec.vec2.angle
+
 func angle*(x, y: float32): float32 {.inline.} =
   let res = arctan2(y, x)
   return if res < 0: res + PI*2.0 else: res
@@ -385,14 +389,13 @@ iterator line*(p1, p2: Vec2i): Vec2i =
       err += dx
       startY += sy
       
-#rectangle utility class
-
 proc rect*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x, y: y, w: w, h: h)
 proc rect*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: w, h: h)
 proc rect*(xy: Vec2, size: Vec2): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: size.x, h: size.y)
 proc rectCenter*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x - w/2.0, y: y - h/2.0, w: w, h: h)
 proc rectCenter*(x, y, s: float32): Rect {.inline.} = Rect(x: x - s/2.0, y: y - s/2.0, w: s, h: s)
-proc rectCenter*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x - w/2.0, y: xy.y - h/2.0, w: w, h: h)
+proc rectCenter*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x - w/2f, y: xy.y - h/2f, w: w, h: h)
+proc rectCenter*(xy: Vec2, wh: Vec2): Rect {.inline.} = rectCenter(xy, wh.x, wh.y)
 
 proc xy*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
 proc `xy=`*(r: var Rect, pos: Vec2) {.inline.} =

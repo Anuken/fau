@@ -235,4 +235,6 @@ proc buffer*(batch: Batch, buffer: Framebuffer) =
   batch.flush()
   batch.buffer = buffer
 
+proc buffer*(batch: Batch): Framebuffer = batch.buffer
+
 #TODO set dest buffer

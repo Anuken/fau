@@ -76,6 +76,7 @@ const
   colorGray* = rgb(0.5f, 0.5f, 0.5f)
   colorRoyal* = %"4169e1"
   colorCoral* = %"ff7f50"
+  colorOrange* = %"ffa500"
   colorRed* = rgb(1, 0, 0)
   colorGreen* = rgb(0, 1, 0)
   colorBlue* = rgb(0, 0, 1)
