@@ -27,7 +27,6 @@ when defined(emscripten):
   {.compile: src & "/backend/sdl2_static/soloud_sdl2_static.cpp".}
 elif defined(osx):
   cDefine("WITH_COREAUDIO")
-  {.passC: "-std=c++11".}
   {.passL: "-framework CoreAudio -framework AudioToolbox".}
   {.compile: src & "/backend/coreaudio/soloud_coreaudio.cpp".}
 elif defined(Android):
