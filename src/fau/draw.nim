@@ -238,6 +238,9 @@ proc fillRect*(rect: Rect, color = colorWhite, z = 0f) =
 proc fillTri*(v1, v2, v3: Vec2, color: Color, z: float32 = 0) =
   fillQuad(v1, color, v2, color, v3, color, v3, color, z)
 
+proc fillTri*(v1, v2, v3: Vec2, c1, c2, c3: Color, z: float32 = 0) =
+  fillQuad(v1, c1, v2, c2, v3, c3, v3, c3, z)
+
 proc fillCircle*(pos: Vec2, rad: float32, color: Color = colorWhite, z: float32 = 0) =
   draw(fau.circle, pos, size = vec2(rad*2f), color = color, z = z)
 

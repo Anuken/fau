@@ -279,6 +279,15 @@ func rotate*(vec: Vec2, rads: float32): Vec2 =
   let si = sin(rads)
   return vec2(vec.x * co - vec.y * si, vec.x * si + vec.y * co)
 
+func rotate*(vec: Vec2i, steps: int): Vec2i =
+  ## Rotates in 90 degree increments.
+  let amount = steps.emod 4
+  result = vec
+  for i in 0..<amount:
+    let x = result.x
+    result.x = -result.y
+    result.y = x
+
 func len*(vec: Vec2): float32 {.inline.} = sqrt(vec.x * vec.x + vec.y * vec.y)
 func len2*(vec: Vec2): float32 {.inline.} = vec.x * vec.x + vec.y * vec.y
 func `len=`*(vec: var Vec2, b: float32) = vec *= b / vec.len
