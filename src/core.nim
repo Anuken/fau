@@ -149,9 +149,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params: F
 
     fau.maxDelta = 1f / 60f
 
-    #TODO is this necessary on emscripten?
-    when not defined(emscripten):
-      fau.targetFps = 60
+    #TODO is this necessary on emscripten? or at all?
+    #when not defined(emscripten):
+    #  fau.targetFps = 60
 
     #set matrix to ortho
     screenMat()
