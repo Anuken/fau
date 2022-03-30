@@ -43,6 +43,10 @@ template assetReadStatic*(filename: string): string =
   const str = staticRead(realDir)
   str
 
+proc assetExistsStatic*(filename: static string): bool =
+  const realDir = rootDir & "/assets/" & filename
+  return fileExists(realDir)
+
 template staticReadStream*(filename: string): StringStream =
   newStringStream(assetReadStatic(filename))
 

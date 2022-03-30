@@ -1,4 +1,4 @@
-import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath
+import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, stb_image/read as stbi
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 
@@ -184,6 +184,19 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
     raise Exception.newException("Failed to load OpenGL.")
 
   echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
+
+  #load window icon if possible
+  when assetExistsStatic("icon.png"):
+    let textureBytes = assetReadStatic("icon.png")
+
+    var
+      width, height, channels: int
+      data: seq[uint8]
+    
+    data = stbi.loadFromMemory(cast[seq[byte]](textureBytes), width, height, channels, 4)
+
+    var image = GlfwImage(width: width.cint, height: height.cint, pixels: cstring(cast[string](data)))
+    window.setWindowIcon(1, addr image)
 
   #listen to window size changes and relevant events.
 
