@@ -160,8 +160,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   windowHint(DOUBLEBUFFER, 1)
   windowHint(MAXIMIZED, params.maximize.cint)
   if params.transparent:
-    #GLFW_TRANSPARENT_FRAMEBUFFER
-    windowHint(0x0002000A.cint, 1.cint)
+    windowHint(TRANSPARENT_FRAMEBUFFER, 1.cint)
   
   if params.undecorated:
     windowHint(DECORATED, 0.cint)

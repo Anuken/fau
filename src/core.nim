@@ -1,9 +1,7 @@
 import fau/[fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer, input]
 import os, times, random
 
-when defined(javaBackend):
-  include fau/backend/javacore
-elif defined(Android):
+when defined(Android):
   include fau/backend/glfmcore
 else:
   include fau/backend/glfwcore
