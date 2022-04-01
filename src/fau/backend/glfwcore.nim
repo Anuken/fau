@@ -270,8 +270,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   window.destroyWindow()
   terminate()
 
-#set window title
-proc `windowTitle=`*(title: string) =
+proc setWindowTitle*(title: string) =
   window.setWindowTitle(title)
 
 proc getCursorPos*(): Vec2 =
