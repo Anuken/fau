@@ -30,9 +30,8 @@ elif defined(osx):
   {.passL: "-framework CoreAudio -framework AudioToolbox".}
   {.compile: src & "/backend/coreaudio/soloud_coreaudio.cpp".}
 elif defined(Android):
-  {.passL: "-lOpenSLES".}
-  cDefine("WITH_OPENSLES")
-  {.compile: src & "/backend/opensles/soloud_opensles.cpp".}
+  cDefine("WITH_MINIAUDIO")
+  {.compile: src & "/backend/miniaudio/soloud_miniaudio.cpp".}
 elif defined(Linux):
   {.passL: "-lpthread".}
   cDefine("WITH_MINIAUDIO")
