@@ -185,7 +185,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
 
   #load window icon if possible
-  when assetExistsStatic("icon.png"):
+  when assetExistsStatic("icon.png") and not defined(macosx):
     let textureBytes = assetReadStatic("icon.png")
 
     var
