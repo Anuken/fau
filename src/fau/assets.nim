@@ -1,8 +1,12 @@
 import os, streams, macros, strutils, tables
 
+#for asset reading
+when defined(Android):
+  import glfm
+
 ## if true, assets are loaded statically instead of from a local folder
 ## this is always true by default on emscripten
-const staticAssets* = not defined(localAssets) and not defined(emscripten)
+const staticAssets* = not defined(localAssets) and not defined(emscripten) and not defined(Android)
 ## project root directory
 const rootDir = if getProjectPath().endsWith("src"): getProjectPath()[0..^5] else: getProjectPath()
 ## maps asset names relative to the asset folder to static string data
@@ -28,11 +32,24 @@ proc assetFile*(name: string): string =
   assetFolder / name
 
 proc assetRead*(filename: string): string =
+
   ## Non-static version of asset reading; uses the preloaded assets table if static, filesystem if not.
   when staticAssets:
     if filename notin preloadedAssets:
       raise newException(IOError, "Asset not found (did you forget to pre-load it?): " & filename)
     return preloadedAssets[filename]
+  elif defined(Android):
+    let size = glfmReadFileSize(filename)
+
+    var 
+      assetData = cast[cstring](alloc(size))
+      outString = newString(size)
+    
+    discard glfmReadFileBuffer(filename, assetData)
+    copyMem(addr outString[0], assetData, size)
+    dealloc(assetData)
+
+    return outString
   else:
     #standard asset reading
     return readFile(filename.assetFile)
@@ -53,4 +70,5 @@ template staticReadStream*(filename: string): StringStream =
 proc assetStaticStream*(path: static[string]): StringStream =
   ## Fetches a stream from an asset path.
   when staticAssets: staticReadStream(path)
+  elif defined(Android): newStringStream(assetRead(path))
   else: newStringStream(readFile(path.assetFile))

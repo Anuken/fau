@@ -38,7 +38,7 @@ proc uis*(val: float32): float32 {.inline.} = uiScale * val
 proc mouseUi(): Vec2 =
   ((fau.mouse * 2f) / fau.size - 1f) * fau.batch.matInv
 
-proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f): bool =
+proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f, rotation = 0f): bool =
   var 
     col = style.upColor
     textCol = style.textUpColor
@@ -74,7 +74,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     )
 
   if icon.valid:
-    draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor)
+    draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor, rotation = rotation)
 
 proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle) =
   #TODO vertical padding would be nice?

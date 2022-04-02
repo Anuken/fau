@@ -9,6 +9,11 @@ var
   cloopProc: proc()
   cinitProc: proc()
 
+proc toKeyCode(code: GLFMKey): Keycode =
+  return case code:
+  of GLFMKeyNavBack, GLFMKeyEscape: keyEscape
+  else: keyUnknown
+
 proc updateInsets(display: ptr GLFMDisplay) =
   var
     top: cdouble
@@ -57,21 +62,21 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     return true
   )
 
-  #[
-  display.glfmSetKeyFunc(proc(display: ptr GLFMDisplay, keyCode: GLFMKey, action: GLFMKeyAction, modifiers: cint): bool = 
-    let code = toKeyCode(key)
+  
+  display.glfmSetKeyFunc(proc(display: ptr GLFMDisplay, keyCode: GLFMKey, action: GLFMKeyAction, modifiers: cint): bool {.cdecl.} = 
+    let code = toKeyCode(keyCode)
     
     case action:
-      of GLFMKeyActionPressed: 
-
+      of GLFMKeyActionPressed:
+        fireFauEvent FauEvent(kind: feKey, key: code, keyDown: true)
         return true
       of GLFMKeyActionReleased: 
-
+        fireFauEvent FauEvent(kind: feKey, key: code, keyDown: false)
         return true
       else: discard
 
-      return false
-  )]#
+    return false
+  )
 
   display.glfmSetSurfaceCreatedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
 

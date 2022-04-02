@@ -93,11 +93,11 @@ proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 
 proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
-  when not defined(emscripten):
+  when not defined(emscripten) and not defined(Android):
     const str = assetReadStatic(path)
     var font = pixie.newFont(pixie.parseTtf(str))
   else:
-    var font = pixie.newFont(pixie.parseTtf(readFile("assets/" & path)))
+    var font = pixie.newFont(pixie.parseTtf(assetRead(path)))
 
   font.size = size
 

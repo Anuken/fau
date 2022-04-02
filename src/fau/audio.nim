@@ -56,12 +56,13 @@ proc getFft*(): array[256, float32] =
   for i in 0..<256:
     result[i] = dataArr[i].float32
 
-proc loadMusicStatic*(path: static[string]): Sound =
-  const data = assetReadStatic(path)
+proc loadMusicBytes*(path: string, data: string): Sound =
   let handle = WavStreamCreate()
   checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
-  
   return Sound(handle: handle, protect: true, stream: true)
+
+proc loadMusicStatic*(path: static[string]): Sound =
+  return loadMusicBytes(path, assetReadStatic(path))
 
 proc loadMusicFile*(path: string): Sound =
   let handle = WavStreamCreate()
@@ -72,14 +73,19 @@ proc loadMusic*(path: static[string]): Sound =
   ## Loads music from the assets folder, or statically.
   when staticAssets:
     return loadMusicStatic(path)
+  elif defined(Android):
+    #android needs to use assetRead, which gets files from the APK
+    return loadMusicBytes(path, assetRead(path))
   else: #load from filesystem
     return loadMusicFile(path.assetFile)
 
-proc loadSoundStatic*(path: static[string]): Sound =
-  const data = assetReadStatic(path)
+proc loadSoundBytes*(path: string, data: string): Sound =
   let handle = WavCreate()
   checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   return Sound(handle: handle)
+
+proc loadSoundStatic*(path: static[string]): Sound =
+  return loadSoundBytes(path, assetReadStatic(path))
 
 proc loadSoundFile*(path: string): Sound =
   let handle = WavCreate()
@@ -90,6 +96,9 @@ proc loadSound*(path: static[string]): Sound =
   ## Loads a sound from the assets folder, or statically.
   when staticAssets:
     return loadSoundStatic(path)
+  elif defined(Android):
+    #android needs to use assetRead, which gets files from the APK
+    return loadSoundBytes(path, assetRead(path))
   else: #load from filesystem
     return loadSoundFile(path.assetFile)
 
