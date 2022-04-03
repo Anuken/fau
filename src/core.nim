@@ -122,8 +122,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params: F
   ), 
   (proc() =
 
-    #randomize so it doesn't have to be done somewhere else
-    randomize()
+    #standard random init does not work on Android, use time - I don't care about security
+    let now = times.getTime()
+    randomize(now.toUnix * 1_000_000_000 + now.nanosecond)
 
     #initialize audio
     when not defined(noAudio):
