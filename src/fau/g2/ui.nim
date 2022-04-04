@@ -18,7 +18,7 @@ type
     sliderWidth*: float32
 
 #hover styles only work on PC, disable them on mobile
-when defined(Android):
+when isMobile:
   const canHover = false
 else:
   const canHover = true

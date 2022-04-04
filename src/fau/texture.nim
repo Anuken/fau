@@ -133,7 +133,6 @@ proc loadTexture*(path: static[string]): Texture =
   when staticAssets:
     loadTextureBytes(assetReadStatic(path))
   elif defined(Android): #android -> load asset
-    echo "ATTEMPT LOAD TEXTURE BYTES FOR ATLAS PATH: ", path
     loadTextureBytes(assetRead(path))
   else: #load from filesystem
     loadTextureFile(path.assetFile)

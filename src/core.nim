@@ -1,7 +1,7 @@
 import fau/[fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer, input]
 import os, times, random
 
-when defined(Android):
+when isMobile:
   include fau/backend/glfmcore
 else:
   include fau/backend/glfwcore
