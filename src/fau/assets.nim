@@ -14,6 +14,12 @@ let preloadedAssets* = newTable[string, string]()
 ## if staticAssets is false, assets are loaded from this directory relative to the executable.
 var assetFolder* = "assets/"
 
+proc getSaveDir*(app: string): string =
+  when defined(Android):
+    return $glfmFilesDir()
+  else: 
+    getConfigDir() / app
+
 macro preloadFolder*(path: static[string]): untyped =
   ## Non-recursively preloads all files in a directory into the static assets table. This embeds them into the executable for use in assetRead.
   result = newStmtList()
