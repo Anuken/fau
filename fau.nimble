@@ -8,6 +8,7 @@ binDir        = "build"
 
 requires "nim >= 1.4.8"
 requires "https://github.com/Anuken/staticglfw#26bdc433a3b8d493bbdb6fef94d0de56a49b6942"
+requires "https://github.com/Anuken/glfm#be73f6862533c4cccedfac512d7766c8a30f3122"
 requires "polymorph >= 0.3.0"
 requires "cligen >= 1.5.19"
 requires "chroma >= 0.2.5"

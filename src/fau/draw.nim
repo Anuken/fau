@@ -44,8 +44,8 @@ proc screenMat*() =
   drawMat(ortho(vec2(), fau.size))
 
 #Activates a camera.
-proc use*(cam: Cam) =
-  cam.update()
+proc use*(cam: Cam, size = cam.size, pos = cam.pos) =
+  cam.update(size, pos)
   drawMat cam.mat
 
 #Draws something custom at a specific Z layer
