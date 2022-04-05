@@ -143,6 +143,22 @@ proc mainLoop(target: proc()) =
     while window.windowShouldClose() == 0 and running:
       target()
 
+proc fixMouse(x, y: cdouble): Vec2 =
+  var
+    fwidth: cint
+    fheight: cint
+  
+  window.getFramebufferSize(addr fwidth, addr fheight)
+
+  let
+    sclx = fwidth.float32 / fau.size.x
+    scly = fheight.float32 / fau.size.y
+
+  #scale mouse position by framebuffer size
+  let pos = vec2((x / sclx).float32, fau.size.y - 1f - (y / scly).float32)
+
+  return pos
+
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: FauInitParams) =
   
   discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
@@ -204,7 +220,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   )
 
   discard window.setCursorPosCallback(proc(window: Window, x: cdouble, y: cdouble) {.cdecl.} = 
-    fireFauEvent FauEvent(kind: feDrag, dragPos: vec2(x.float32, fau.size.y - 1f - y.float32))
+    fireFauEvent FauEvent(kind: feDrag, dragPos: fixMouse(x, y))
   )
 
   discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} = 
@@ -230,7 +246,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
     window.getCursorPos(addr mouseX, addr mouseY)
 
-    let pos = vec2(mouseX.float32, fau.size.y - 1f - mouseY.float32)
+    let pos = fixMouse(mouseX, mouseY)
 
     case action:
       of PRESS:
@@ -253,8 +269,10 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   window.getCursorPos(addr inMouseX, addr inMouseY)
   window.getFramebufferSize(addr inWidth, addr inHeight)
-  fau.mouse = vec2(inHeight.float32 - 1 - inMouseX.float32, inMouseY.float32)
+  
   fau.sizei = vec2i(inWidth.int, inHeight.int)
+  fau.size = fau.sizei.vec2
+  fau.mouse = fixMouse(inMouseX, inMouseY)
 
   glInitialized = true
   initProc()
@@ -279,7 +297,7 @@ proc getCursorPos*(): Vec2 =
 
   getGlfwWindow().getCursorPos(addr mouseX, addr mouseY)
 
-  return vec2(mouseX.float32, fau.size.y - 1f - mouseY.float32)
+  return fixMouse(mouseX, mouseY)
 
 proc setWindowPos*(pos: Vec2i) =
   window.setWindowPos(pos.x.cint, pos.y.cint)
