@@ -12,6 +12,10 @@ var
 proc toKeyCode(code: GLFMKey): Keycode =
   return case code:
   of GLFMKeyNavBack, GLFMKeyEscape: keyEscape
+  of GLFMKeyLeft: keyLeft
+  of GLFMKeyRight: keyRight
+  of GLFMKeyUp: keyUp
+  of GLFMKeyDown: keyDown
   else: keyUnknown
 
 proc updateInsets(display: ptr GLFMDisplay) =
