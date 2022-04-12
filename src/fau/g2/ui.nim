@@ -76,14 +76,15 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
   if icon.valid:
     draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor, rotation = rotation)
 
-proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle) =
+proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle, text = "") =
   #TODO vertical padding would be nice?
   if style.back.valid:
     draw(style.back, bounds, scale = uiPatchScale, mixColor = style.backColor)
   
   let
     pad = style.sliderWidth.uis
-    clamped = (value - min) / (max - min) * (bounds.w - pad) + bounds.x + pad/2f
+    clamped = (value - min) / (max - min)
+    sliderx = clamped * (bounds.w - pad) + bounds.x + pad/2f
     mouse = mouseUi()
   var 
     patch = style.up
@@ -94,12 +95,15 @@ proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaul
     if canHover: col = style.overColor
 
     if keyMouseLeft.down:
-      value = clamp((mouse.x - (bounds.x)) / (bounds.w - pad) * (max - min) + min, min, max)
+      value = clamp((mouse.x - (bounds.x + pad/2f)) / (bounds.w - pad) * (max - min) + min, min, max)
       col = style.downColor
       if style.down.valid: patch = style.down
 
   if patch.valid:
-    draw(patch, rect(clamped - pad/2f, bounds.y, pad, bounds.h), mixColor = col, scale = uiPatchScale)
+    draw(patch, rect(sliderx - pad/2f, bounds.y, pad, bounds.h), mixColor = col, scale = uiPatchScale)
+  
+  if text.len > 0:
+    defaultFont.draw(text, bounds)
 
 #TODO style is unused, remove even?
 proc text*(bounds: Rect, text: string, style = defaultTextStyle, align = daCenter, color = colorWhite, scale = 1f) =

@@ -17,9 +17,9 @@ proc resize(file: string) =
         absy = max(absy, abs(y - img.height div 2) + padding)
   
   let target = newImage((absx * 2).nextPowerOfTwo, (absy * 2).nextPowerOfTwo)
-
-  target.draw(img, translate(vec2((target.width - img.width)/2, (target.height - img.height)/2)))
-  target.writeFile(file)
+  if target.width != img.width or target.height != img.height:
+    target.draw(img, translate(vec2((target.width - img.width)/2, (target.height - img.height)/2)))
+    target.writeFile(file)
 
 let params = commandLineParams()
 if params.len == 0:

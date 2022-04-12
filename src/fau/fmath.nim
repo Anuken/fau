@@ -149,6 +149,16 @@ func aapproach*(a, b, amount: float32): float32 =
   elif (a > b) == (back > forw): (a - amount).emod 360.rad
   else: (a + amount).emod 360.rad
 
+## angle sign diff
+func asign*(a, b: float32): int =
+  let 
+    forw = abs(a - b)
+    back = 360.0.rad - forw
+    diff = adist(a, b)
+  
+  return if (a > b) == (back > forw): -1
+  else: 1
+
 ## angle clamp
 func aclamp*(angle, dest, dst: float32): float32 =
   let diff = adist(angle, dest)
@@ -179,6 +189,8 @@ func signi*(x: bool): int {.inline.} =
   if x: 1 else: -1
 func sign*(x: int): int {.inline} =
   if x < 0: -1 else: 1
+func signi*(x: float32): int {.inline} =
+  if x < 0f: -1 else: 1
 
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
