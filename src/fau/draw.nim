@@ -34,6 +34,17 @@ proc drawSort*(sort: bool) =
 proc drawMat*(mat: Mat) =
   fau.batch.mat(mat)
 
+proc drawClip*(clipped = rect()) =
+  if clipped.w.int > 0 and clipped.h.int > 0:
+    #transform clipped rectangle from world into screen space
+    let
+      topRight = project(fau.batch.mat, clipped.topRight)
+      botLeft = project(fau.batch.mat, clipped.botLeft)
+
+    fau.batch.clip(rect(botLeft, topRight - botLeft))
+  else:
+    fau.batch.clip(rect())
+
 proc drawBuffer*(buffer: Framebuffer) =
   fau.batch.buffer(buffer)
 
@@ -233,7 +244,7 @@ proc fillRect*(x, y, w, h: float32, color = colorWhite, z = 0f) =
   drawRect(fau.white, x, y, w, h, color = color, z = z)
 
 proc fillRect*(rect: Rect, color = colorWhite, z = 0f) =
-  fillRect(rect.x, rect.y, rect.w, rect.w, color, z)
+  fillRect(rect.x, rect.y, rect.w, rect.h, color, z)
 
 proc fillTri*(v1, v2, v3: Vec2, color: Color, z: float32 = 0) =
   fillQuad(v1, color, v2, color, v3, color, v3, color, z)

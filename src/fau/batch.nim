@@ -30,12 +30,13 @@ type Batch* = ref object
   lastTexture: Texture
   lastBlend: Blending
   buffer: Framebuffer
+  clip: Rect
   index: int
   size: int
   req: seq[Req]
   #The projection matrix being used by the batch; requires flush
   mat: Mat
-  matInv*: Mat
+  matInv: Mat
   #Whether sorting is enabled for the batch
   sort: bool
 
@@ -64,7 +65,7 @@ proc flushInternal(batch: Batch) =
 
   batch.mesh.updateVertices(0..<batch.index)
   
-  batch.mesh.render(shader, meshParams(batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend)):
+  batch.mesh.render(shader, meshParams(batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend, clip = batch.clip)):
     texture = batch.lastTexture.sampler
     proj = batch.mat
 
@@ -224,11 +225,18 @@ proc sort*(batch: Batch, val: bool) =
     batch.flush()
     batch.sort = val
 
+proc mat*(batch: Batch): Mat {.inline.} = batch.mat
+proc matInv*(batch: Batch): Mat {.inline.} = batch.matInv
+
 #Sets the matrix used for rendering. This flushes the batch.
 proc mat*(batch: Batch, mat: Mat) = 
   batch.flush()
   batch.mat = mat
   batch.matInv = mat.inv
+
+proc clip*(batch: Batch, rect: Rect) =
+  batch.flush()
+  batch.clip = rect
 
 #Sets the framebuffer used for rendering. This flushes the batch.
 proc buffer*(batch: Batch, buffer: Framebuffer) = 

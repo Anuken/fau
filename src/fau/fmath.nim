@@ -409,7 +409,8 @@ iterator line*(p1, p2: Vec2i): Vec2i =
     if e2 < dx:
       err += dx
       startY += sy
-      
+
+proc rect*(): Rect {.inline.} = Rect()
 proc rect*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x, y: y, w: w, h: h)
 proc rect*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: w, h: h)
 proc rect*(xy: Vec2, size: Vec2): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: size.x, h: size.y)
@@ -670,6 +671,10 @@ proc inv*(self: Mat): Mat =
   ]
 
 proc `*`*(self: Vec2, mat: Mat): Vec2 = vec2(self.x * mat[0] + self.y * mat[3] + mat[6], self.x * mat[1] + self.y * mat[4] + mat[7])
+
+proc scl*(mat: Mat): Vec2 {.inline.} = vec2(mat[M00], mat[M11])
+
+proc trans*(mat: Mat): Vec2 {.inline.} = vec2(mat[M02], mat[M12])
 
 #PARTICLES
 
