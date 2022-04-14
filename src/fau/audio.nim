@@ -5,10 +5,11 @@ import soloud, os, macros, strutils, assets, globals
 var so: ptr Soloud
 
 type
-  Sound* = ref object
+  SoundObj* = object
     handle: ptr AudioSource
     stream: bool
     protect: bool
+  Sound* = ref SoundObj
   Voice* = distinct cuint
   AudioFilter* = ptr Filter
   #EchoFilter* = ptr EchoFilter #TODO how to resolve name conflict?
@@ -22,6 +23,13 @@ const
   fEchoDelay* = 1.FilterParam
   fEchoDecay* = 2.FilterParam
   fEchoFilter* = 3.FilterParam
+
+proc `=destroy`*(sound: var SoundObj) =
+  if sound.handle != nil:
+    if sound.stream:
+      WavStreamDestroy(cast[ptr WavStream](sound.handle))
+    else:
+      WavDestroy(cast[ptr Wav](sound.handle))
 
 template checkErr(details: string, body: untyped) =
   let err = body
