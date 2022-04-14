@@ -513,6 +513,7 @@ proc glGetActiveAttrib*(program: GLuint, index: GLuint, length: var GLsizei, siz
   size = asize
   `type` = atype
   name = $aname
+  dealloc aname
 
 proc glGetActiveUniform*(program: GLuint, index: GLuint, length: var GLsizei, size: var GLint, `type`: var GLenum, name: var string) = 
   var alen: GLsizei
@@ -524,6 +525,7 @@ proc glGetActiveUniform*(program: GLuint, index: GLuint, length: var GLsizei, si
   size = asize
   `type` = atype
   name = $aname
+  dealloc aname
 
 proc glVertexAttrib1fv*(index: GLuint, v: openArray[GLfloat]) = glVertexAttrib1fvBASE(index, cast[ptr GLfloat](unsafeAddr v))
 proc glVertexAttrib2fv*(index: GLuint, v: openArray[GLfloat]) = glVertexAttrib2fvBASE(index, cast[ptr GLfloat](unsafeAddr v))

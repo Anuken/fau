@@ -11,6 +11,9 @@ type FramebufferObj* = object
 type Framebuffer* = ref FramebufferObj
 
 proc `=destroy`*(buffer: var FramebufferObj) =
+  if buffer.texture != nil:
+    `=destroy`(buffer.texture)
+
   if buffer.handle != 0 and glInitialized:
     glDeleteFramebuffer(buffer.handle)
     buffer.handle = 0

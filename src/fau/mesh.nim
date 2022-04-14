@@ -67,6 +67,9 @@ const
   blendDisabled* = Blending(src: GlZero, dst: GlZero)
 
 proc `=destroy`*[T](mesh: var MeshObj[T]) =
+  `=destroy`(mesh.vertices)
+  `=destroy`(mesh.indices)
+
   if mesh.vertexBuffer != 0 and glInitialized:
     glDeleteBuffer(mesh.vertexBuffer)
     mesh.vertexBuffer = 0
