@@ -12,7 +12,7 @@ const rootDir = if getProjectPath().endsWith("src"): getProjectPath()[0..^5] els
 ## maps asset names relative to the asset folder to static string data
 let preloadedAssets* = newTable[string, string]()
 ## if staticAssets is false, assets are loaded from this directory relative to the executable.
-var assetFolder* = "assets/"
+var assetFolder* = when defined(Android): "" else: "assets/"
 
 proc getSaveDir*(app: string): string =
   when defined(Android):

@@ -191,6 +191,7 @@ macro defineAudio*() =
       discard
   let loadBody = loadProc.last
 
+  #TODO this can be slow, parallelize or use more streams if possible
   for folder in walkDir("assets"):
     if folder.kind == pcDir:
       for f in walkDir(folder.path):
