@@ -43,13 +43,11 @@ void main(){
 """
 
 proc `=destroy`*(shader: var ShaderObj) =
-  #TODO is this necessary?
   `=destroy`(shader.compileLog)
   `=destroy`(shader.uniforms)
   `=destroy`(shader.attributes)
 
   if shader.handle != 0 and glInitialized:
-    echo "delete shader ", shader.handle
     glDeleteProgram(shader.handle)
     if shader.vertHandle != 0: glDeleteShader(shader.vertHandle)
     if shader.fragHandle != 0: glDeleteShader(shader.fragHandle)
