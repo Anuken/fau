@@ -199,6 +199,7 @@ func absin*(x, scl, mag: float32): float32 {.inline} = ((sin(x / scl) + 1f) / 2f
 func abcos*(x, scl, mag: float32): float32 {.inline} = ((cos(x / scl) + 1f) / 2f) * mag
 
 template vec2*(cx, cy: float32): Vec2 = Vec2(x: cx, y: cy)
+template vec2*(cx, cy: int): Vec2 = Vec2(x: cx.float32, y: cy.float32)
 proc vec2*(xy: float32): Vec2 {.inline.} = Vec2(x: xy, y: xy)
 proc vec2*(pos: AnyVec2): Vec2 {.inline.} = Vec2(x: pos.x, y: pos.y)
 template vec2*(): Vec2 = Vec2()

@@ -85,7 +85,7 @@ proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color
   let bxy = -bounds.xy
   let sizeOffset = if outline: 4 else: 0
   result[0] = newImage(bounds.w.int + sizeOffset, bounds.h.int + sizeOffset)
-  result[0].fillPath(path, chroma.rgba(255, 255, 255, 255), pixie.translate(bxy + vmath.vec2(if outline: sizeOffset / 2f else: 0f)))
+  result[0].fillPath(path, chroma.rgba(255, 255, 255, 255), pixie.translate(bxy + vmath.vec2(if outline: sizeOffset.float32 / 2f else: 0f)))
   #TODO this method of outlining only works for pixel fonts. there's almost certainly a better way
   if outline: result[0].outline(cast[chroma.ColorRGBA](outlineColor), diagonalOutline)
   result[1] = fmath.vec2(bounds.xy) + fmath.vec2(if outline: -(sizeOffset.float32 / 2f) else: 0f)
