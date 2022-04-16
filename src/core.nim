@@ -23,7 +23,7 @@ var
   startTime: Time
 
 #TODO all of these should be struct parameters!
-proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params: FauInitParams = initParams()) =
+proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = initParams()) =
 
   fau.clearColor = params.clearColor
 
