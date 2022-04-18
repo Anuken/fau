@@ -50,7 +50,7 @@ template makeGif*(frames: int, fps: int, bounds: Rect, path: string, background 
   ## Screen is automatically cleared.
 
   for i {.inject.} in 0..<frames:
-    let fin {.inject.} = i.float32 / (frames.float32)
+    let fin {.inject, used.} = i.float32 / (frames.float32)
     screen.clear(background)
     body
     addGifFrame(bounds)

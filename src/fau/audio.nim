@@ -77,15 +77,20 @@ proc loadMusicFile*(path: string): Sound =
   checkErr(path): handle.WavStreamLoad(path)
   return Sound(handle: handle, stream: true)
 
+proc loadMusicAsset*(path: string): Sound =
+  ## Loads music from the assets folder - non-static parameter version. Uses preloaded asset directory if static.
+  when staticAssets or defined(Android):
+    #on desktop, this uses the pre-loaded path; on Android, this reads from the APK
+    return loadMusicBytes(path, assetRead(path))
+  else: #load from filesystem
+    return loadMusicFile(path.assetFile)
+
 proc loadMusic*(path: static[string]): Sound =
   ## Loads music from the assets folder, or statically.
   when staticAssets:
     return loadMusicStatic(path)
-  elif defined(Android):
-    #android needs to use assetRead, which gets files from the APK
-    return loadMusicBytes(path, assetRead(path))
-  else: #load from filesystem
-    return loadMusicFile(path.assetFile)
+  else:
+    return loadMusicAsset(path)
 
 proc loadSoundBytes*(path: string, data: string): Sound =
   let handle = WavCreate()
