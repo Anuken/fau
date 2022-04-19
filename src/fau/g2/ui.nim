@@ -9,9 +9,6 @@ type
     up*, down*, over*: Patch9
     textUpColor*, textDisabledColor*: Color
     font*: Font
-  TextStyle* = object
-    font*: Font
-    upColor*, overColor*, downColor*: Color
   SliderStyle* = object
     back*, up*, over*, down*: Patch9
     backColor*, upColor*, overColor*, downColor*: Color
@@ -30,7 +27,6 @@ var
 
   defaultFont*: Font
   defaultButtonStyle* = ButtonStyle(textUpColor: colorWhite, textDisabledColor: colorWhite)
-  defaultTextStyle* = TextStyle()
   defaultSliderStyle* = SliderStyle(sliderWidth: 20f)
 
 proc uis*(val: float32): float32 {.inline.} = uiScale * val
@@ -38,6 +34,7 @@ proc uis*(val: float32): float32 {.inline.} = uiScale * val
 proc mouseUi(): Vec2 =
   ((fau.mouse * 2f) / fau.size - 1f) * fau.batch.matInv
 
+#TODO: inject some state for better button press handling.
 proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f, rotation = 0f): bool =
   var 
     col = style.upColor
@@ -76,7 +73,12 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
   if icon.valid:
     draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor, rotation = rotation)
 
-proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle, text = "") =
+template slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle, text = "") =
+  ## Special slider template with automatic state injection.
+  var down {.global.}: bool
+  slider(bounds, min, max, down, value, style, text)
+
+proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var float32, style = defaultSliderStyle, text = "") =
   #TODO vertical padding would be nice?
   if style.back.valid:
     draw(style.back, bounds, scale = uiPatchScale, mixColor = style.backColor)
@@ -90,14 +92,18 @@ proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaul
     patch = style.up
     col = style.upColor
 
-  if bounds.contains(mouse):
+  if bounds.contains(mouse) or wasDown:
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
 
-    if keyMouseLeft.down:
+    if keyMouseLeft.tapped or wasDown:
+      wasDown = true
       value = clamp((mouse.x - (bounds.x + pad/2f)) / (bounds.w - pad) * (max - min) + min, min, max)
       col = style.downColor
       if style.down.valid: patch = style.down
+
+  if keyMouseLeft.down.not:
+    wasDown = false
 
   if patch.valid:
     draw(patch, rect(sliderx - pad/2f, bounds.y, pad, bounds.h), mixColor = col, scale = uiPatchScale)
@@ -105,14 +111,10 @@ proc slider*(bounds: Rect, min, max: float32, value: var float32, style = defaul
   if text.len > 0:
     defaultFont.draw(text, bounds)
 
-#TODO style is unused, remove even?
-proc text*(bounds: Rect, text: string, style = defaultTextStyle, align = daCenter, color = colorWhite, scale = 1f) =
-  var font = if style.font.isNil: defaultFont else: style.font
-
-  if text.len != 0 and not font.isNil:
-    font.draw(text,
-      bounds.pos,
-      bounds = bounds.size,
-      scale = uiFontScale * scale, align = align,
-      color = color
-    )
+#TODO remove? this is striclty less useful
+proc text*(bounds: Rect, text: string, align = daCenter, color = colorWhite, scale = 1f) =
+  defaultFont.draw(text,
+    bounds,
+    scale = uiFontScale * scale, align = align,
+    color = color
+  )
