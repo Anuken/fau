@@ -2,7 +2,9 @@ import soloud, os, macros, strutils, assets, globals
 
 # High-level soloud wrapper.
 
-var so: ptr Soloud
+var 
+  so: ptr Soloud
+  initialized: bool
 
 type
   SoundObj* = object
@@ -38,15 +40,19 @@ template checkErr(details: string, body: untyped) =
 
 proc initAudio*() =
   so = SoloudCreate()
-  checkErr("Failed to initialize"): so.SoloudInit()
-  echo "Initialized SoLoud v" & $so.SoloudGetVersion() & " w/ " & $so.SoloudGetBackendString()
+  let err = so.SoloudInit()
+  if err != 0:
+    echo "[Audio] Failed to initialize: ", so.SoloudGetErrorString(err), " (", err, ")"
+  else:
+    initialized = true
+    echo "Initialized SoLoud v" & $so.SoloudGetVersion() & " w/ " & $so.SoloudGetBackendString()
 
-  #on Android, audio is not paused in the background, so that needs to be handled manually
-  when defined(Android):
-    addFauListener(proc(e: FauEvent) =
-      if e.kind == feVisible:
-        so.SoloudSetPauseAll(e.shown.not.cint)
-    )
+    #on Android, audio is not paused in the background, so that needs to be handled manually
+    when defined(Android):
+      addFauListener(proc(e: FauEvent) =
+        if e.kind == feVisible:
+          so.SoloudSetPauseAll(e.shown.not.cint)
+      )
 
 proc getAudioBufferSize*(): int = so.SoloudGetBackendBufferSize().int
 
@@ -117,7 +123,7 @@ proc loadSound*(path: static[string]): Sound =
 
 proc play*(sound: Sound, pitch = 1.0f, volume = 1.0f, pan = 0f, loop = false): Voice {.discardable.} =
   #handle may not exist due to failed loading
-  if sound.handle.isNil: return
+  if sound.handle.isNil or not initialized: return
 
   let id = so.SoloudPlay(sound.handle)
   if volume != 1.0: so.SoloudSetVolume(id, volume)
@@ -133,7 +139,8 @@ proc length*(sound: Sound): float =
   else:
     return WavGetLength(cast[ptr Wav](sound.handle)).float
 
-proc stop*(v: Voice) {.inline.} = so.SoloudStop(v.cuint)
+proc stop*(v: Voice) {.inline.} = 
+  if initialized: so.SoloudStop(v.cuint)
 proc pause*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 1)
 proc resume*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 0)
 proc seek*(v: Voice, pos: float) {.inline.} = discard so.SoloudSeek(v.cuint, pos.cdouble)

@@ -154,6 +154,8 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
           glDisableVertexAttribArray(activeAttribs[i].GLuint)
           activeAttribs[i] = -1
 
+  var resultBody = result[0][0][1]
+
   for identDefs in getImpl(vertexType)[2][2]:
     let t = identDefs[^2]
     let fieldType = t.getType()
@@ -192,7 +194,7 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
         normalized = true
       else: error("Unknown vertex component type: " & $typeName)
 
-      result.add quote do:
+      resultBody.add quote do:
         let loc = shader.getAttributeLoc(`alias`)
         if loc != -1:
           activeAttribs[`attribIndex`] = loc
@@ -203,7 +205,7 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
       
       attribIndex.inc
   
-  result.add quote do:
+  resultBody.add quote do:
     totalActive = `attribIndex`
     lastVertexType = `typeHash`
 

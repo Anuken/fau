@@ -198,7 +198,7 @@ const
   ]
 
 task pack, "Pack textures":
-  shell &"faupack -p:{getCurrentDir()}/assets-raw/sprites -o:{getCurrentDir()}/assets/atlas"
+  shell &"faupack -p:\"{getCurrentDir()}/assets-raw/sprites\" -o:\"{getCurrentDir()}/assets/atlas\""
 
 task debug, "Debug build":
   shell &"nim r -d:debug src/{app}"
