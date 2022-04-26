@@ -53,7 +53,9 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false): Bloom =
   void main(){
     vec4 original = texture2D(u_texture0, v_uv) * u_originalIntensity;
     vec4 bloom = texture2D(u_texture1, v_uv) * u_bloomIntensity;
-    gl_FragColor = original * (vec4(1.0) - bloom) + bloom;
+    vec4 combined = original * (vec4(1.0) - bloom) + bloom;
+    float mx = min(max(combined.r, max(combined.g, combined.b)), 1.0);
+    gl_FragColor = vec4(combined.rgb / mx, mx);
   }
 
   """
