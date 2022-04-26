@@ -152,7 +152,7 @@ proc addFauListener*(ev: FauListener) =
 #Turns pixel units into world units
 proc px*(val: float32): float32 {.inline.} = val * fau.pixelScl
 
-proc unproject*(matInv: Mat, vec: Vec2): Vec2 = ((vec * 2f) / fau.size - 1f) * matInv
+proc unproject*(matInv: Mat, vec: Vec2): Vec2 = ((vec * 2f) / max(fau.size, vec2(1f)) - 1f) * matInv
 proc project*(mat: Mat, vec: Vec2): Vec2 = fau.size * (vec * mat + 1f) / 2f
 
 proc unproject*(cam: Cam, vec: Vec2): Vec2 {.inline.} = unproject(cam.inv, vec)

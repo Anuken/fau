@@ -218,6 +218,9 @@ proc vec2i*(pos: AnyVec2i): Vec2i {.inline.} = Vec2i(x: pos.x, y: pos.y)
 
 #vector-vector operations
 
+template opFunc(td: typedesc, op: untyped): untyped =
+  func op*(vec: td, other: td): td {.inline.} = vec2(vec.x.op other.x, vec.y.op other.y)
+
 template op(td: typedesc, comp: typedesc, cons: typed, op1, op2: untyped): untyped =
   func op1*(vec: td, other: td): td {.inline.} = cons(op1(vec.x, other.x), op1(vec.y, other.y))
   func op1*(vec: td, other: comp): td {.inline.} = cons(op1(vec.x, other), op1(vec.y, other))
@@ -231,8 +234,10 @@ op(Vec2, float32, vec2, `/`, `/=`)
 
 func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
 
-func `mod`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x mod other.x, vec.y mod other.y)
-func `emod`*(vec: Vec2, other: Vec2): Vec2 {.inline.} = vec2(vec.x.emod other.x, vec.y.emod other.y)
+opFunc(Vec2, `mod`)
+opFunc(Vec2, emod)
+opFunc(Vec2, max)
+opFunc(Vec2, min)
 
 op(Vec2i, int, vec2i, `+`, `+=`)
 op(Vec2i, int, vec2i, `-`, `-=`)
@@ -740,7 +745,7 @@ proc width*(cam: Cam): float32 {.inline.} = cam.size.x
 proc height*(cam: Cam): float32 {.inline.} = cam.size.y
 
 proc update*(cam: Cam, size: Vec2 = cam.size, pos = cam.pos) = 
-  cam.size = size
+  cam.size = size.max(vec2(0.000001f))
   cam.pos = pos
   cam.mat = ortho(cam.pos - cam.size/2f, cam.size)
   cam.inv = cam.mat.inv()
