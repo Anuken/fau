@@ -206,6 +206,7 @@ template vec2*(): Vec2 = Vec2()
 func vec2l*(angle, mag: float32): Vec2 {.inline.} = vec2(mag * cos(angle), mag * sin(angle))
 proc randVec*(len: float32): Vec2 {.inline.} = vec2l(rand(0f..(PI.float32 * 2f)), rand(0f..len))
 proc randRangeVec*(r: float32): Vec2 {.inline.} = vec2(rand(-r..r), rand(-r..r))
+proc randRangeVec*(r: Vec2): Vec2 {.inline.} = vec2(rand(-r.x..r.x), rand(-r.y..r.y))
 
 #vec2i stuff
 
