@@ -236,17 +236,15 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
 
   let vsize = mesh.vertexSize
 
+  #NOTE: apparently glBufferSubData is really slow for sprite batching applications. locks. brilliant.
+
   #update vertices if modified
-  if mesh.modifiedVert:
+  if mesh.modifiedVert or mesh.vertSlice.b != 0:
     glBufferData(GlArrayBuffer, mesh.vertices.len * vsize, mesh.vertices[0].addr, usage)
-  elif mesh.vertSlice.b != 0:
-    glBufferSubData(GlArrayBuffer, mesh.vertSlice.a * vsize, mesh.vertSlice.len * vsize, mesh.vertices[mesh.vertSlice.a].addr)
   
   #update indices if relevant and modified
-  if mesh.modifiedInd and mesh.indices.len > 0:
+  if (mesh.modifiedInd or mesh.indSlice.b != 0) and mesh.indices.len > 0:
     glBufferData(GlElementArrayBuffer, mesh.indices.len * 2, mesh.indices[0].addr, usage)
-  elif mesh.indSlice.b != 0 and mesh.indices.len > 0:
-    glBufferSubData(GlElementArrayBuffer, mesh.indSlice.a * 2, mesh.indSlice.len * 2, mesh.indices[mesh.indSlice.a].addr)
   
   mesh.vertSlice = 0..0
   mesh.indSlice = 0..0
