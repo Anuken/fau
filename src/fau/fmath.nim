@@ -77,6 +77,31 @@ func powout*(a, power: float32): float32 {.inline.} =
   result = pow(a - 1, power) * (if power mod 2 == 0: -1 else: 1) + 1
   if isNan(result): result = 0f
 
+func elasticDouble*(alpha: float32, value = 2f, power = 10f, scale = 1f, bounceCount = 7): float32 =
+  var a = alpha
+  let bounces = bounceCount * PI * (if bounceCount mod 2 == 0: 1f else: -1f)
+
+  if a <= 0.5f:
+    a *= 2
+    return pow(value, power * (a - 1f)) * sin(a * bounces.float32) * scale / 2;
+  
+  a = 1f - a
+  a *= 2f;
+  return 1f - pow(value, power * (a - 1f)) * sin((a) * bounces.float32) * scale / 2;
+
+func elasticIn*(alpha: float32, value = 2f, power = 10f, scale = 1f, bounceCount = 6): float32 =
+  let bounces = bounceCount * PI * (if bounceCount mod 2 == 0: 1f else: -1f)
+
+  if alpha >= 0.99f: return 1f
+  return pow(value, power * (alpha - 1)) * sin(alpha * bounces.float32) * scale;
+
+func elasticOut*(alpha: float32, value = 2f, power = 10f, scale = 1f, bounceCount = 7): float32 =
+  var a = alpha
+  let bounces = bounceCount * PI * (if bounceCount mod 2 == 0: 1f else: -1f)
+  if a == 0f: return 0f
+  a = 1f - a
+  return (1f - pow(value, power * (a - 1f)) * sin(a * bounces.float32) * scale);
+
 #utility functions
 
 func zero*(val: float32, margin: float32 = 0.0001f): bool {.inline.} = abs(val) <= margin

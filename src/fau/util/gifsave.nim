@@ -44,15 +44,27 @@ proc finishGif*(path: string, fps = 30) =
     f.dealloc
   frames.setLen(0)
 
-template makeGif*(frames: int, fps: int, bounds: Rect, path: string, background = colorClear, body: untyped) =
+template makeGifBase*(frameCount: int, fps: int, bounds: Rect, path: string, background = colorClear, pingPong = false, body: untyped) =
   ## Compiles a gif with the specified amount of frames into a file. 
   ## Body should draw each frame. i is injected as the frame index.
   ## Screen is automatically cleared.
 
-  for i {.inject.} in 0..<frames:
-    let fin {.inject, used.} = i.float32 / (frames.float32)
+  for i {.inject.} in 0..<frameCount:
+    let fin {.inject, used.} = i.float32 / (frameCount.float32)
     screen.clear(background)
     body
     addGifFrame(bounds)
   
+  if pingPong:
+    let top = frames.high
+
+    for i {.inject.} in countdown(top - 1, 0):
+      frames.add frames[i]
+  
   finishGif(path, fps)
+
+template makeGif*(frames: int, fps: int, bounds: Rect, path: string, background = colorClear, body: untyped) =
+  makeGifBase(frames, fps, bounds, path, background, false, body)
+
+template makeGifPong*(frames: int, fps: int, bounds: Rect, path: string, background = colorClear, body: untyped) =
+  makeGifBase(frames, fps, bounds, path, background, true, body)
