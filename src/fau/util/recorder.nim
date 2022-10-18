@@ -14,7 +14,7 @@ var
   recordOffset* = vec2(0f)
   recording = false
   open = false
-  mp4 = true
+  mp4 = false
   ftime = 0f
   frames: seq[pointer]
 
