@@ -14,6 +14,8 @@ template blit*(shader: Shader, params = meshParams(), body: untyped) =
 
 proc patch*(name: string): Patch {.inline.} = fau.atlas[name]
 
+proc patch*(name: string, notFound: string): Patch {.inline.} = fau.atlas.patches.getOrDefault(name, fau.atlas[notFound])
+
 proc patch9*(name: string): Patch9 {.inline.} = fau.atlas.patches9.getOrDefault(name, fau.atlas.error9)
 
 template patchConst*(name: string): Patch =

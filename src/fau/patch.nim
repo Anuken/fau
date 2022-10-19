@@ -23,15 +23,17 @@ proc initPatch*(texture: Texture, uv, uv2: Vec2): Patch = initPatch(texture, uv.
 #properties that calculate size of a patch in pixels
 proc x*(patch: Patch): int {.inline.} = (patch.u * patch.texture.size.x.float32).int
 proc y*(patch: Patch): int {.inline.} = (patch.v * patch.texture.size.y.float32).int
-proc width*(patch: Patch): int {.inline.} = ((patch.u2 - patch.u) * patch.texture.size.x.float32).int
-proc height*(patch: Patch): int {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32).int
-proc widthf*(patch: Patch): float32 {.inline.} = ((patch.u2 - patch.u) * patch.texture.size.x.float32)
-proc heightf*(patch: Patch): float32 {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32)
-proc size*(patch: Patch): Vec2 {.inline.} = vec2((patch.u2 - patch.u) * patch.texture.size.x.float32, (patch.v2 - patch.v) * patch.texture.size.y.float32)
+proc width*(patch: Patch): int {.inline.} = ((patch.u2 - patch.u) * patch.texture.size.x.float32).int.abs
+proc height*(patch: Patch): int {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32).int.abs
+proc widthf*(patch: Patch): float32 {.inline.} = ((patch.u2 - patch.u) * patch.texture.size.x.float32).abs
+proc heightf*(patch: Patch): float32 {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32).abs
+proc size*(patch: Patch): Vec2 {.inline.} = vec2(patch.widthf, patch.heightf)
 proc uv*(patch: Patch): Vec2 {.inline.} = vec2(patch.u, patch.v)
 proc uv2*(patch: Patch): Vec2 {.inline.} = vec2(patch.u2, patch.v2)
 template exists*(patch: Patch): bool = patch != fau.atlas.error
 proc valid*(patch: Patch): bool {.inline.} = not patch.texture.isNil
+
+proc flipped*(patch: Patch): Patch = Patch(texture: patch.texture, u: patch.u, v: patch.v2, u2: patch.u2, v2: patch.v)
 
 proc scroll*(patch: var Patch, u, v: float32) =
   patch.u += u
