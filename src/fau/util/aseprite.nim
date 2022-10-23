@@ -1,4 +1,4 @@
-import os, streams, zippy
+import streams, zippy
 
 ## Utility for reading Aseprite files - https://github.com/aseprite/aseprite/blob/main/docs/ase-file-specs.md
 ## Does not support any advanced features whatoever, only the very basics.
@@ -28,15 +28,12 @@ type
     colorDepth*: int
 
 proc readAseStream*(s: Stream): AseImage =
-
-  let 
-    fileSize = s.readUint32()
-    magicNumber = s.readUint16()
-
   template error(msg: string) = raise newException(IOError, msg)
   template skip(len: int) = s.setPosition(s.getPosition() + len)
 
-  if magicNumber != 0xA5E0'u16:
+  discard s.readUint32() #file size
+
+  if s.readUint16() != 0xA5E0'u16:
     error("Invalid header, not an ASE file?")
   
   let 
@@ -69,17 +66,17 @@ proc readAseStream*(s: Stream): AseImage =
   var layerData: seq[AseLayer]
 
   for frameid in 0..<frames.int:
-    let 
-      frameBytes = s.readUint32()
-      frameMagic = s.readUint16()
+    discard s.readUint32() #frame total bytes
+
+    if s.readUint16() != 0xF1FA'u16:
+      error("Invalid frame magic (corrupt file?)")
+
+    let
       chunksOld = s.readUint16()
       durationMs = s.readUint16()
     
     #unused
     discard s.readUint16()
-
-    if frameMagic != 0xF1FA'u16:
-      error("Invalid frame magic (corrupt file?): " & $frameMagic)
 
     let 
       chunksNew = s.readUint32()
@@ -94,18 +91,17 @@ proc readAseStream*(s: Stream): AseImage =
         let
           flags = s.readUint16()
           layerType = s.readUint16()
-          childLevel = s.readUint16() #ignored, not useful
         
-        discard s.readUint32() #ignored, width/height
+        discard s.readUint16() #child level, ignored
+        discard s.readUint32() #width/height, ignored
+        discard s.readUint16() #blend mode, ignored
 
-        let 
-          blendMode = s.readUint16()
-          opacity = s.readUint8()
+        let opacity = s.readUint8()
 
         #skip 3 bytes, unused
         skip(3)
 
-        #NAME
+        #name
         let nameLen = s.readUint16().int
         var name = newString(nameLen)
         discard s.readData(addr name[0], nameLen)
@@ -114,15 +110,16 @@ proc readAseStream*(s: Stream): AseImage =
           #tileset index, don't care
           discard s.readUint32()
         
-        layerData.add AseLayer(opacity: opacity, name: name, flags: cast[set[AseLayerFlags]](flags), kind: layerType.AseLayerType)
+        layerData.add AseLayer(opacity: if validOpacity: opacity else: 255'u8, name: name, flags: cast[set[AseLayerFlags]](flags), kind: layerType.AseLayerType)
       elif chunkType == 0x2005'u16: #cel (image data)
         let 
           layerIndex = s.readUint16()
           x = s.readInt16()
           y = s.readInt16()
-          #what's difference between this and layer opacity???
-          opacity = s.readUInt8()
-          celType = s.readUint16()
+          
+        discard s.readUInt8() #what's the difference between this and layer opacity???
+          
+        let celType = s.readUint16()
         
         skip(7) #reserved
         
@@ -140,7 +137,8 @@ proc readAseStream*(s: Stream): AseImage =
           var compressedData = newSeqUninitialized[uint8](compressedLength)
 
           discard s.readData(addr compressedData[0], compressedLength.int)
-
+          
+          #instead of frames containing layers, it's layers containing frames (more intuitive to me)
           var layer = layerData[layerIndex]
           layer.x = x.int
           layer.y = y.int
@@ -149,7 +147,7 @@ proc readAseStream*(s: Stream): AseImage =
 
           layer.frames.add AseFrame(data: uncompress(addr compressedData[0], compressedLength.int, dataFormat = dfZlib), duration: durationMs.int)
 
-      else: #unknown chunk, skipping
+      else: #unknown chunk, skipping - I don't support indexed colors, so palettes do not matter
         skip(chunkSize.int - 6)
     
   return AseImage(layers: layerData, width: width.int, height: height.int, colorDepth: colorDepth.int)
