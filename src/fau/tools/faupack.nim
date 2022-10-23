@@ -144,15 +144,24 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
       for layer in aseFile.layers:
         #skip locked layers; I do not want to skip 'invisible' layers for convenience, so locked is used as the flag here instead
         if layer.kind == alImage and layer.frames.len > 0 and afEditable in layer.flags:
-          let name = layer.name
+          let name = if aseFile.layers.len == 1: "" else: layer.name
           let imageName = 
             if name.len == 0: split.name
-            elif name[0] == '#' or name[0] == '@': layer.name
-            else: split.name & "" & layer.name.capitalizeAscii
+            elif name[0] == '#' or name[0] == '@': layer.name[1..^1] #prefix layer name with @ or # to name it 'raw' without prefix
+            else: split.name & "" & layer.name.capitalizeAscii #otherwise, use camel case concatenation
 
-          let image = newImage(layer.width, layer.height)
-          copyMem(addr image.data[0], addr layer.frames[0].data[0], layer.width * layer.height * 4)
-          packFile(file / imageName, image)
+          for i, frame in layer.frames:
+            let frameName = if layer.frames.len == 1: imageName else: imageName & $i
+
+            #copy layer RGBA data into new image
+            let image = newImage(layer.width, layer.height)
+            copyMem(addr image.data[0], addr frame.data[0], layer.width * layer.height * 4)
+            
+            #aseprite layers are "cropped", so each layer needs to have a new image made with the uncropped version
+            let full = newImage(aseFile.width, aseFile.height)
+            full.draw(image, translate(vec2(layer.x.float32, layer.y.float32)))
+
+            packFile(file / frameName, full)
 
     else:
       let img = readImage(file)

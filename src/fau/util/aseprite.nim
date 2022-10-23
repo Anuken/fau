@@ -1,12 +1,12 @@
 import streams, zippy
 
 ## Utility for reading Aseprite files - https://github.com/aseprite/aseprite/blob/main/docs/ase-file-specs.md
-## Does not support any advanced features whatoever, only the very basics.
+## Does not support any advanced features whatsoever, only the very basics. Indexed colors, palettes and tilemaps are not supported.
 
 type
   AseLayerFlags* = enum
-    afVisible, afEditable, afLockMovement, afBackground, afPreferLinkedCels,
-    afCollapsed, afReference
+    afVisible, afEditable, afLockMovement, afBackground, 
+    afPreferLinkedCels, afCollapsed, afReference
   AseLayerType* = enum
     alImage, alGroup, alTilemap
   #TODO ref, or not?
@@ -130,11 +130,9 @@ proc readAseStream*(s: Stream): AseImage =
           let
             pixWidth = s.readUint16()
             pixHeight = s.readUint16()
-
-          #base size - 6 byte header - 2 byte index - 4 bytes xy - 1 byte opacity - 2 bytes type - 4 bytes size - 7 bytes padding
-          var compressedLength = chunkSize.int - 6 - 2 - 4 - 1 - 2 - 4 - 7
-
-          var compressedData = newSeqUninitialized[uint8](compressedLength)
+            #base size - 6 byte header - 2 byte index - 4 bytes xy - 1 byte opacity - 2 bytes type - 4 bytes size - 7 bytes padding
+            compressedLength = chunkSize.int - 6 - 2 - 4 - 1 - 2 - 4 - 7
+            compressedData = newSeqUninitialized[uint8](compressedLength)
 
           discard s.readData(addr compressedData[0], compressedLength.int)
           
