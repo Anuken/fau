@@ -140,6 +140,8 @@ func slope*(value: float32): float32 = 1f - abs(value - 0.5f) * 2f
 
 func inv*(f: float32): float32 {.inline.} = 1f / f
 
+func rev*(f: float32): float32 {.inline.} = 1f - f
+
 ## euclid mod functions (equivalent versions are coming in a future Nim release)
 func emod*(a, b: float32): float32 {.inline.} =
   result = a mod b
