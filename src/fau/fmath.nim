@@ -318,6 +318,8 @@ func clamp*(vec: var Vec2i, min, max: Vec2i) =
   vec.x = clamp(vec.x, min.x, max.x)
   vec.y = clamp(vec.y, min.y, max.y)
 
+func dot*(vec, other: Vec2): float32 {.inline.} = vec.x * other.x + vec.y * other.y
+
 func floor*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.floor, vec.y.floor)
 func round*(vec: Vec2, scale = 1f): Vec2 {.inline.} = vec2(vec.x.round(scale), vec.y.round(scale))
 

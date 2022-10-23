@@ -10,6 +10,31 @@ template incTimer*(value: untyped, increment: float32, body: untyped): untyped =
     `value` = 0f
     `body`
 
+template iterTest*[T](list: iterable[T], body: untyped) =
+  for it {.inject.} in list:
+    body
+
+template findMin*[T](list: seq[T], op: untyped): untyped =
+  var minValue = float32.high
+  var result: T
+  for it {.inject.} in list:
+    let newMin = op
+    if newMin < minValue:
+      minValue = newMin
+      result = it
+  result
+
+template findMin*[T](list: seq[T], op: untyped, predicate: untyped): untyped =
+  var minValue = float32.high
+  var result: T
+  for it {.inject.} in list:
+    if predicate:
+      let newMin = op
+      if newMin < minValue:
+        minValue = newMin
+        result = it
+  result
+
 ## copies an array into a seq, element by element.
 macro minsert*(dest: untyped, index: int, data: untyped): untyped =
   result = newStmtList()

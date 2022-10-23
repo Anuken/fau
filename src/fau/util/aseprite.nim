@@ -13,13 +13,12 @@ type
   AseFrame* = ref object
     duration*: int
     data*: string
+    width*, height*: int
+    x*, y*: int
   AseLayer* = ref object
-    #I don't care about most layer info, just the name
     flags*: set[AseLayerFlags]
     name*: string
     opacity*: uint8
-    width*, height*: int
-    x*, y*: int
     frames*: seq[AseFrame]
     kind*: AseLayerType
   AseImage* = ref object
@@ -137,13 +136,15 @@ proc readAseStream*(s: Stream): AseImage =
           discard s.readData(addr compressedData[0], compressedLength.int)
           
           #instead of frames containing layers, it's layers containing frames (more intuitive to me)
-          var layer = layerData[layerIndex]
-          layer.x = x.int
-          layer.y = y.int
-          layer.width = pixWidth.int
-          layer.height = pixHeight.int
 
-          layer.frames.add AseFrame(data: uncompress(addr compressedData[0], compressedLength.int, dataFormat = dfZlib), duration: durationMs.int)
+          layerData[layerIndex].frames.add AseFrame(
+            data: uncompress(addr compressedData[0], compressedLength.int, dataFormat = dfZlib), 
+            duration: durationMs.int,
+            x: x.int,
+            y: y.int,
+            width: pixWidth.int,
+            height: pixHeight.int
+          )
 
       else: #unknown chunk, skipping - I don't support indexed colors, so palettes do not matter
         skip(chunkSize.int - 6)
