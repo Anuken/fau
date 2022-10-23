@@ -10,10 +10,6 @@ template incTimer*(value: untyped, increment: float32, body: untyped): untyped =
     `value` = 0f
     `body`
 
-template iterTest*[T](list: iterable[T], body: untyped) =
-  for it {.inject.} in list:
-    body
-
 template findMin*[T](list: seq[T], op: untyped): untyped =
   var minValue = float32.high
   var result: T

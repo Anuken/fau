@@ -21,6 +21,8 @@ type
     opacity*: uint8
     frames*: seq[AseFrame]
     kind*: AseLayerType
+    userData*: string
+    userColor*: uint32 #RGBA8888
   AseImage* = ref object
     layers*: seq[AseLayer]
     width*, height*: int
@@ -29,6 +31,14 @@ type
 proc readAseStream*(s: Stream): AseImage =
   template error(msg: string) = raise newException(IOError, msg)
   template skip(len: int) = s.setPosition(s.getPosition() + len)
+  template readString(): string =
+    let slen = s.readUint16().int
+    if slen == 0:
+      ""
+    else:
+      var str = newString(slen)
+      discard s.readData(addr str[0], slen)
+      str
 
   discard s.readUint32() #file size
 
@@ -100,16 +110,23 @@ proc readAseStream*(s: Stream): AseImage =
         #skip 3 bytes, unused
         skip(3)
 
-        #name
-        let nameLen = s.readUint16().int
-        var name = newString(nameLen)
-        discard s.readData(addr name[0], nameLen)
+        let name = readString()
 
         if layerType == 2:
           #tileset index, don't care
           discard s.readUint32()
         
         layerData.add AseLayer(opacity: if validOpacity: opacity else: 255'u8, name: name, flags: cast[set[AseLayerFlags]](flags), kind: layerType.AseLayerType)
+      elif chunkType == 0x2020'u16:
+        let flags = s.readUint32()
+
+        if (flags and 1) == 1: #text
+          let text = readString()
+          layerData[^1].userData = text
+
+        if (flags and 2) == 2: #color
+          layerData[^1].userColor = s.readUint32()
+
       elif chunkType == 0x2005'u16: #cel (image data)
         let 
           layerIndex = s.readUint16()

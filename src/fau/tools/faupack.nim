@@ -49,9 +49,9 @@ proc getImageSize(file: string): tuple[w: int, h: int] =
     return (w.int, h.int)
 
 
-proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, padding = 0, bleeding = 2, verbose = false, silent = false, outlineFolder = "", outlineColor = "000000") =
+proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, padding = 0, bleeding = 2, verbose = false, silent = false) =
   let packer = newPacker(min, min)
-  let outlineRgba = outlineColor.parseHex.rgba
+  let blackRgba = rgba(0, 0, 0, 255)
   var positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int]]]()
 
   let time = cpuTime()
@@ -164,14 +164,13 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
             let full = newImage(aseFile.width, aseFile.height)
             full.draw(image, translate(vec2(frame.x.float32, frame.y.float32)))
 
+            if layer.userData == "outline" or layer.userData == "outlined":
+              outline(full, if layer.userColor == 0'u32: blackRgba else: cast[ColorRGBA](layer.userColor))
+
             packFile(file / frameName, full)
 
     else:
-      let img = readImage(file)
-      if outlineFolder.len != 0 and file.contains(outlineFolder):
-        outline(img, outlineRgba)
-
-      packFile(file, img)
+      packFile(file, readImage(file))
 
 
   #save a white image
