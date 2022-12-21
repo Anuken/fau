@@ -69,6 +69,15 @@ template `%`*(str: static[string]): Color =
   const ret = Color(rv: str[0..1].parseHexInt.uint8, gv: str[2..3].parseHexInt.uint8, bv: str[4..5].parseHexInt.uint8, av: if str.len > 6: str[6..7].parseHexInt.uint8 else: 255'u8)
   ret
 
+proc parseColor*(str: string): Color =
+  let offset = if str[0] == '#': 1 else: 0
+  Color(
+    rv: str[(0+offset)..(1+offset)].parseHexInt.uint8, 
+    gv: str[(2+offset)..(3+offset)].parseHexInt.uint8, 
+    bv: str[(4+offset)..(5+offset)].parseHexInt.uint8, 
+    av: if str.len > 6 + offset: str[(6+offset)..(7+offset)].parseHexInt.uint8 else: 255'u8
+  )
+
 const
   colorClear* = rgba(0, 0, 0, 0)
   colorWhite* = rgb(1, 1, 1)

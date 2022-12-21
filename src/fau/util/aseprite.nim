@@ -169,6 +169,3 @@ proc readAseStream*(s: Stream): AseImage =
   return AseImage(layers: layerData, width: width.int, height: height.int, colorDepth: colorDepth.int)
 
 proc readAseFile*(path: string): AseImage = readAseStream(newFileStream(path, bufSize = 512))   
-
-when isMainModule:
-  discard readAseFile("/home/anuke/Projects/Eterne/assets-raw/sprites/characters/makiru/makiru.aseprite")
