@@ -156,8 +156,6 @@ proc drawVert*(texture: Texture, vertices: array[4, Vert2], z: float32 = 0, blen
 
 proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f, blend = blendNormal) =
   let
-    midx = p.width - p.left - p.right
-    midy = p.height - p.top - p.bot
     x = pos.x
     y = pos.y
     width = size.x

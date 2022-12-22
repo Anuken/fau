@@ -1,4 +1,4 @@
-import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, stb_image/read as stbi
+import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 
@@ -184,7 +184,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if params.undecorated:
     windowHint(DECORATED, 0.cint)
 
-  window = createWindow(params.size.x.cint, params.size.y.cint, params.title, nil, nil)
+  window = createWindow(params.size.x.cint, params.size.y.cint, params.title.cstring, nil, nil)
   window.makeContextCurrent()
 
   #center window on primary monitor if it's not maximized

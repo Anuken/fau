@@ -207,7 +207,6 @@ func asign*(a, b: float32): int =
   let 
     forw = abs(a - b)
     back = 360.0.rad - forw
-    diff = adist(a, b)
   
   return if (a > b) == (back > forw): -1
   else: 1
@@ -539,7 +538,7 @@ proc contains*(r: Rect, pos: Vec2): bool {.inline.} = r.contains(pos.x, pos.y)
 
 proc overlaps*(a, b: Rect): bool = a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
 
-proc overlaps(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
+proc overlaps*(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
   let vel = v1 - v2
 
   var invEntry, invExit: Vec2

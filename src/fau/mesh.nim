@@ -158,7 +158,6 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
 
   for identDefs in getImpl(vertexType)[2][2]:
     let t = identDefs[^2]
-    let fieldType = t.getType()
     let typeName = $t
 
     for i in 0 .. identDefs.len - 3:

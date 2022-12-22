@@ -20,12 +20,14 @@ type
     id*: int #an ID of 0 indicates an empty tile
     imagewidth*, imageheight*: int
     x*, y*, width*, height*: int
+    empty*: bool
     image*: string
     properties*: TiledProps
   TiledObject* = ref object
     class*, name*: string
     id*: int
-    x*, y*, width*, height*, rotation*: float
+    rotation*: float32
+    pos*, size*: Vec2
     visible*: bool
     ellipse*, point*: bool
     polygon*, polyline*: seq[Vec2]
@@ -34,6 +36,7 @@ type
 
     #internal
     gid: int
+    x, y, width, height: float32
   Tileset* = ref object
     image*: string
     imagewidth*, imageheight*: string
@@ -47,6 +50,7 @@ type
     name*: string
     properties*: TiledProps
     width*, height*: int
+    hasTiles*: bool
     tiles*: seq[TiledTile]
     objects*: seq[TiledObject]
 
@@ -56,10 +60,12 @@ type
     compression: string
   Tilemap* = ref object
     width*, height*: int
+    tilewidth*, tileheight*: int
     layers*: seq[TileLayer]
     tilesets*: seq[Tileset]
     properties*: TiledProps
 
+#internal type for parsing property entries, as they are in a list, not a map
 type TilePropEntry = object
   name: string
   `type`: string
@@ -94,7 +100,7 @@ proc postHook*(map: var Tilemap) =
   var gidToTile = initTable[int, TiledTile]()
 
   #empty tile
-  gidToTile[0] = TiledTile()
+  gidToTile[0] = TiledTile(empty: true)
 
   for tileset in map.tilesets:
     for tile in tileset.tiles:
@@ -104,6 +110,8 @@ proc postHook*(map: var Tilemap) =
   for layer in map.layers:
     for obj in layer.objects:
       obj.tile = gidToTile[obj.gid]
+      obj.pos = vec2(obj.x, map.height * map.tileheight - obj.y)
+      obj.size = vec2(obj.width, obj.height)
 
     if layer.data != "":
 
@@ -121,13 +129,17 @@ proc postHook*(map: var Tilemap) =
 
       for i in 0..<numTiles:
         let packedGid = intData[i] and (not 0xf0000000'u32)
+        let 
+          x = i mod layer.width
+          y = i div layer.width
 
-        layer.tiles[i] = gidToTile[packedGid.int]
+        layer.tiles[x + (layer.height - 1 - y) * layer.width] = gidToTile[packedGid.int]
 
       #dealloc useless data
       layer.data = ""
+    
+    layer.hasTiles = layer.tiles.len > 0
 
-  discard
 
 proc `[]`*(layer: TileLayer, x, y: int): TiledTile =
   if x < 0 or y < 0 or x >= layer.width or y >= layer.height:

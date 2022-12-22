@@ -1,4 +1,4 @@
-import macros, tables, streams, strutils
+import macros, tables, strutils
 
 # Utility macros, templates & sugar.
 
