@@ -2,7 +2,7 @@ import jsony, tables, ../color, parseutils, zippy, base64, ../fmath
 
 type
   TilePropKind* = enum
-    tpString, tpInt, tpFloat, tpBool, tpColor#, tpFile, tpObject, tpClass
+    tpString, tpInt, tpFloat, tpBool, tpColor
   TileProp* = object
     case kind: TilePropKind
     of tpString: 
@@ -125,21 +125,18 @@ proc postHook*(map: var Tilemap) =
         decoded = decode(layer.data)
         decompressed = if layer.compression == "": decoded else: uncompress(decoded)
         numTiles = decompressed.len div 4
+        intData = cast[ptr UncheckedArray[uint32]](addr decompressed[0])
       
       layer.tiles = newSeq[TileCell](numTiles)
 
-      let intData = cast[ptr UncheckedArray[uint32]](addr decompressed[0])
-
-
       for i in 0..<numTiles:
-        #TODO store flip data and such
         let 
           packedGid = intData[i]
           flipHorizontal = (packedGid and 0x80000000'u32) != 0
           flipVertical = (packedGid and 0x40000000'u32) != 0
           flipDiag = (packedGid and 0x20000000'u32) != 0
-
           tileId = packedGid and (not 0xf0000000'u32)
+
           x = i mod layer.width
           y = i div layer.width
 
@@ -155,6 +152,21 @@ proc postHook*(map: var Tilemap) =
     
     layer.hasTiles = layer.tiles.len > 0
 
+proc getInt*(props: TiledProps, name: string): int =
+  let p = props.getOrDefault(name, TileProp())
+  if p.kind == tpInt: return p.intVal
+
+proc getFloat*(props: TiledProps, name: string): float =
+  let p = props.getOrDefault(name, TileProp())
+  if p.kind == tpFloat: return p.floatVal
+
+proc getString*(props: TiledProps, name: string): string =
+  let p = props.getOrDefault(name, TileProp())
+  if p.kind == tpString: return p.strVal
+
+proc getBool*(props: TiledProps, name: string): bool =
+  let p = props.getOrDefault(name, TileProp())
+  if p.kind == tpBool: return p.boolVal
 
 proc `[]`*(layer: TileLayer, x, y: int): TileCell =
   if x < 0 or y < 0 or x >= layer.width or y >= layer.height:
