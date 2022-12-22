@@ -35,8 +35,8 @@ proc run =
       for x in 0..<map.width:
         for y in 0..<map.height:
           let tile = layer[x, y]
-          if not tile.empty:
-            draw(tile.img, vec2(x, y) * size, size = size)
+          if not tile.tile.empty:
+            draw(tile.tile.img, vec2(x, y) * size, size = size * -vec2(tile.flipx.sign, tile.flipy.sign), rotation = 90f.rad * tile.flipDiag.float32)
 
     for obj in layer.objects:
       if not obj.tile.empty:

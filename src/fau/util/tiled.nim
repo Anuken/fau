@@ -23,6 +23,9 @@ type
     empty*: bool
     image*: string
     properties*: TiledProps
+  TileCell* = object
+    tile*: TiledTile
+    flipx*, flipy*, flipdiag*: bool
   TiledObject* = ref object
     class*, name*: string
     id*: int
@@ -51,7 +54,7 @@ type
     properties*: TiledProps
     width*, height*: int
     hasTiles*: bool
-    tiles*: seq[TiledTile]
+    tiles*: seq[TileCell]
     objects*: seq[TiledObject]
 
     #internal
@@ -123,17 +126,29 @@ proc postHook*(map: var Tilemap) =
         decompressed = if layer.compression == "": decoded else: uncompress(decoded)
         numTiles = decompressed.len div 4
       
-      layer.tiles = newSeq[TiledTile](numTiles)
+      layer.tiles = newSeq[TileCell](numTiles)
 
       let intData = cast[ptr UncheckedArray[uint32]](addr decompressed[0])
 
+
       for i in 0..<numTiles:
-        let packedGid = intData[i] and (not 0xf0000000'u32)
+        #TODO store flip data and such
         let 
+          packedGid = intData[i]
+          flipHorizontal = (packedGid and 0x80000000'u32) != 0
+          flipVertical = (packedGid and 0x40000000'u32) != 0
+          flipDiag = (packedGid and 0x20000000'u32) != 0
+
+          tileId = packedGid and (not 0xf0000000'u32)
           x = i mod layer.width
           y = i div layer.width
 
-        layer.tiles[x + (layer.height - 1 - y) * layer.width] = gidToTile[packedGid.int]
+        layer.tiles[x + (layer.height - 1 - y) * layer.width] = TileCell(
+          tile: gidToTile[tileId.int],
+          flipx: flipHorizontal,
+          flipy: flipVertical,
+          flipdiag: flipDiag
+        )
 
       #dealloc useless data
       layer.data = ""
@@ -141,7 +156,7 @@ proc postHook*(map: var Tilemap) =
     layer.hasTiles = layer.tiles.len > 0
 
 
-proc `[]`*(layer: TileLayer, x, y: int): TiledTile =
+proc `[]`*(layer: TileLayer, x, y: int): TileCell =
   if x < 0 or y < 0 or x >= layer.width or y >= layer.height:
     raise IndexDefect.newException("Out of tile map bounds: " & $x & ", " & $y)
 
