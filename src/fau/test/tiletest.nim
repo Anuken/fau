@@ -9,7 +9,7 @@ var
   zoom = 2f
   realZoom = zoom
   images: Table[string, Patch]
-  path = "/home/anuke/Projects/Inferno/core/assets/maps"
+  path = if paramCount() == 0: "/home/anuke/Projects/Inferno/core/assets/maps" else: paramStr(1)
 
 proc img(tile: TiledTile): Patch = images[tile.image]
 
@@ -33,10 +33,11 @@ proc run =
   for layer in map.layers:
     if layer.hasTiles:
       for x in 0..<map.width:
-        for y in 0..<map.height:
+        for y in countdown(map.height - 1, 0):
           let tile = layer[x, y]
           if not tile.tile.empty:
-            draw(tile.tile.img, vec2(x, y) * size, size = size * -vec2(tile.flipx.sign, tile.flipy.sign), rotation = 90f.rad * tile.flipDiag.float32)
+            let img = tile.tile.img
+            draw(img, vec2(x, y) * size, size = size * -vec2(tile.flipx.sign, tile.flipy.sign) * vec2(1f, img.height / img.width), rotation = 90f.rad * tile.flipDiag.float32)
 
     for obj in layer.objects:
       if not obj.tile.empty:

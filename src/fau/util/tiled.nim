@@ -3,6 +3,7 @@ import jsony, tables, ../color, parseutils, zippy, base64, ../fmath
 type
   TilePropKind* = enum
     tpString, tpInt, tpFloat, tpBool, tpColor
+
   TileProp* = object
     case kind: TilePropKind
     of tpString: 
@@ -15,7 +16,9 @@ type
       boolVal*: bool
     of tpColor:
       colorVal*: Color
+      
   TiledProps* = Table[string, TileProp]
+
   TiledTile* = ref object
     id*: int #an ID of 0 indicates an empty tile
     imagewidth*, imageheight*: int
@@ -23,9 +26,11 @@ type
     empty*: bool
     image*: string
     properties*: TiledProps
+
   TileCell* = object
     tile*: TiledTile
     flipx*, flipy*, flipdiag*: bool
+
   TiledObject* = ref object
     class*, name*: string
     id*: int
@@ -36,19 +41,19 @@ type
     polygon*, polyline*: seq[Vec2]
     properties*: TiledProps
     tile*: TiledTile
-
     #internal
     gid: int
     x, y, width, height: float32
+
   Tileset* = ref object
     image*: string
     imagewidth*, imageheight*: string
     source*: string
     tiles*: seq[TiledTile]
     properties*: TiledProps
-
     #internal
     firstgid: int
+
   TileLayer* = ref object
     name*: string
     properties*: TiledProps
@@ -56,11 +61,11 @@ type
     hasTiles*: bool
     tiles*: seq[TileCell]
     objects*: seq[TiledObject]
-
     #internal
     data: string
     encoding: string
     compression: string
+
   Tilemap* = ref object
     width*, height*: int
     tilewidth*, tileheight*: int
