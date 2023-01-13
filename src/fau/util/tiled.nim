@@ -1,4 +1,4 @@
-import jsony, tables, ../color, parseutils, zippy, base64, ../fmath
+import jsony, parseutils, tables, zippy, base64, ../fmath, ../assets, ../color
 
 type
   TilePropKind* = enum
@@ -48,11 +48,11 @@ type
   Tileset* = ref object
     image*: string
     imagewidth*, imageheight*: string
-    source*: string
     tiles*: seq[TiledTile]
     properties*: TiledProps
     #internal
     firstgid: int
+    source: string
 
   TileLayer* = ref object
     name*: string
@@ -111,6 +111,9 @@ proc postHook*(map: var Tilemap) =
   gidToTile[0] = TiledTile(empty: true)
 
   for tileset in map.tilesets:
+    if tileset.source != "":
+      raise Exception.newException("Tilesets must be embedded in the file, not external (" & tileset.source & ")")
+      
     for tile in tileset.tiles:
       gidToTile[tile.id + tileset.firstgid] = tile
 
@@ -179,9 +182,11 @@ proc `[]`*(layer: TileLayer, x, y: int): TileCell =
 
   layer.tiles[x + y * layer.width]
 
-proc readTilemapFile*(file: string): Tilemap = file.readFile().fromJson(Tilemap)
-
 proc readTilemapString*(str: string): Tilemap = str.fromJson(Tilemap)
+
+proc readTilemapFile*(file: string): Tilemap = file.readFile().readTilemapString()
+
+proc readTilemapAsset*(file: static string): Tilemap = assetReadStatic(file).readTilemapString()
 
 when isMainModule:
   import print
