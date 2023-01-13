@@ -9,9 +9,9 @@ var
   zoom = 2f
   realZoom = zoom
   images: Table[string, Patch]
-  path = if paramCount() == 0: "/home/anuke/Projects/Inferno/core/assets/maps" else: paramStr(1)
+  path = if paramCount() == 0: "/home/anuke/Projects/Inferno/core/assets/maps/map.tmj" else: paramStr(1)
 
-proc img(tile: TiledTile): Patch = images[tile.image]
+proc img(tile: TiledTile): Patch = newPatch(images[tile.image].texture, tile.x, tile.y, tile.width, tile.height)
 
 proc run =
   if keyEscape.tapped:
@@ -44,10 +44,10 @@ proc run =
         draw(obj.tile.img, obj.pos + obj.size/2f, size = obj.size)
 
 proc init =
-  map = readTilemapFile(path / "map.tmj")
+  map = readTilemapFile(path)
   for tileset in map.tilesets:
     for tile in tileset.tiles:
       if not images.hasKey(tile.image):
-        images[tile.image] = loadTextureFile(path / tile.image)
+        images[tile.image] = loadTextureFile(path / "../" / tile.image)
 
 initFau(run, init, initParams(title = "Tiled Test"))

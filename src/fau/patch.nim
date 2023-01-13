@@ -1,4 +1,4 @@
-import texture, fmath
+import texture, fmath, math
 
 #region of a texture
 type Patch* = object
@@ -23,10 +23,10 @@ proc initPatch*(texture: Texture, uv, uv2: Vec2): Patch = initPatch(texture, uv.
 #properties that calculate size of a patch in pixels
 proc x*(patch: Patch): int {.inline.} = (patch.u * patch.texture.size.x.float32).int
 proc y*(patch: Patch): int {.inline.} = (patch.v * patch.texture.size.y.float32).int
-proc width*(patch: Patch): int {.inline.} = ((patch.u2 - patch.u) * patch.texture.size.x.float32).int.abs
-proc height*(patch: Patch): int {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32).int.abs
-proc widthf*(patch: Patch): float32 {.inline.} = ((patch.u2 - patch.u) * patch.texture.size.x.float32).abs
-proc heightf*(patch: Patch): float32 {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32).abs
+proc width*(patch: Patch): int {.inline.} = ((patch.u2 - patch.u) * patch.texture.size.x.float32).round.abs.int
+proc height*(patch: Patch): int {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32).round.abs.int
+proc widthf*(patch: Patch): float32 {.inline.} = ((patch.u2 - patch.u) * patch.texture.size.x.float32).round.abs
+proc heightf*(patch: Patch): float32 {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32).round.abs
 proc size*(patch: Patch): Vec2 {.inline.} = vec2(patch.widthf, patch.heightf)
 proc uv*(patch: Patch): Vec2 {.inline.} = vec2(patch.u, patch.v)
 proc uv2*(patch: Patch): Vec2 {.inline.} = vec2(patch.u2, patch.v2)

@@ -1,4 +1,4 @@
-import stb_image/read as stbi, gl/[glproc, gltypes], fmath, assets
+import stb_image/read as stbi, gl/[glproc, gltypes], fmath, assets, os
 
 type TextureFilter* = enum
   tfNearest,
@@ -122,8 +122,12 @@ proc loadTextureFile*(path: string, filter = tfNearest, wrap = twClamp): Texture
   var
     width, height, channels: int
     data: seq[uint8]
+  
+  try:
+    data = stbi.load(path, width, height, channels, 4)
+  except STBIException:
+    raise Exception.newException("Failed to load image '" & path & "': " & $getCurrentExceptionMsg())
 
-  data = stbi.load(path, width, height, channels, 4)
   result.load(vec2i(width, height), addr data[0])
 
 proc loadTextureAsset*(path: string, filter = tfNearest, wrap = twClamp): Texture =

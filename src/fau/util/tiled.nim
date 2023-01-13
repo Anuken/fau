@@ -46,13 +46,15 @@ type
     x, y, width, height: float32
 
   Tileset* = ref object
-    image*: string
-    imagewidth*, imageheight*: string
+    image*, name*: string
+    imagewidth*, imageheight*: int
+    tilewidth*, tileheight*, columns*, margin*, spacing*: int
     tiles*: seq[TiledTile]
     properties*: TiledProps
     #internal
     firstgid: int
     source: string
+    tilecount: int
 
   TileLayer* = ref object
     name*: string
@@ -113,7 +115,31 @@ proc postHook*(map: var Tilemap) =
   for tileset in map.tilesets:
     if tileset.source != "":
       raise Exception.newException("Tilesets must be embedded in the file, not external (" & tileset.source & ")")
+    
+    #import tiles by splitting image
+    if tileset.columns > 0 and tileset.imagewidth > 0:
+      var curId = 0
+      let tilesY = (tileset.imageheight - tileset.margin * 2) div (tileset.tileheight + tileset.spacing)
+
       
+      for gridY in 0..<tilesY:
+        for gridX in 0..<tileset.columns:
+
+          var tile = TiledTile(
+            id: curId,
+            imagewidth: tileset.imagewidth,
+            imageheight: tileset.imageheight,
+            x: gridX * (tileset.tilewidth + tileset.spacing),
+            y: gridY * (tileset.tileheight + tileset.spacing),
+            width: tileset.tilewidth,
+            height: tileset.tileheight,
+            image: tileset.image #TODO is this necessary...?
+          )
+
+          tileset.tiles.add(tile)
+
+          curId.inc
+    
     for tile in tileset.tiles:
       gidToTile[tile.id + tileset.firstgid] = tile
 
