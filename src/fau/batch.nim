@@ -167,7 +167,7 @@ proc newBatch*(size: int = 4092): Batch =
   var i = 0
   
   while i < len:
-    indices.minsert(i, [j.GLushort, (j+1).GLushort, (j+2).GLushort, (j+2).GLushort, (j+3).GLushort, (j).GLushort])
+    indices.minsert(i, [j.Index, (j+1).Index, (j+2).Index, (j+2).Index, (j+3).Index, (j).Index])
     i += 6
     j += 4
   
@@ -244,5 +244,3 @@ proc buffer*(batch: Batch, buffer: Framebuffer) =
   batch.buffer = buffer
 
 proc buffer*(batch: Batch): Framebuffer = batch.buffer
-
-#TODO set dest buffer

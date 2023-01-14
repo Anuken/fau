@@ -32,7 +32,7 @@ type SVert2* = object
 #Generic mesh, optionally indexed.
 type MeshObj*[V] = object
   vertices*: seq[V]
-  indices*: seq[Glushort]
+  indices*: seq[Index]
   vertexBuffer: GLuint
   indexBuffer: GLuint
   isStatic: bool
@@ -272,7 +272,7 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
     glDrawArrays(mesh.primitiveType, args.offset.GLint, pcount.GLsizei)
   else:
     let pcount = if args.count < 0: mesh.indices.len else: args.count
-    glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](args.offset * Glushort.sizeof))
+    glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](args.offset * Index.sizeof))
 
 template render*[T](mesh: Mesh[T], shader: Shader, args: MeshParam, uniformList: untyped) =
   shader.uniforms(uniformList)
