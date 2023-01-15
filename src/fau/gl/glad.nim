@@ -178,9 +178,18 @@ var
   glVertexAttribPointer*: proc (index: GLuint, size: GLint, `type`: GLenum, normalized: GLboolean, stride: GLsizei, pointer: pointer) {.cdecl, gcsafe.}
   glViewport*: proc (x: GLint, y: GLint, width: GLsizei, height: GLsizei) {.cdecl, gcsafe.}
 
+  #ext / GL3
+  glBindVertexArray*: proc (array: GLuint) {.cdecl, gcsafe.}
+  glDeleteVertexArrays*: proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsafe.}
+  glGenVertexArrays*: proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsafe.}
+  glIsVertexArray*: proc (array: GLuint): GLboolean {.cdecl, gcsafe.}
+
 
 # Extensions
-var GLAD_GL_EXT_framebuffer_object*: bool
+var 
+  GLAD_GL_EXT_framebuffer_object*: bool
+  GLAD_GL_ARB_vertex_array_object*: bool
+  GLAD_GL_OES_vertex_array_object*: bool
 
 proc hasExt(extname: string): bool =
   if extname.len == 0:
@@ -262,11 +271,6 @@ proc load_GL_VERSION_1_1(load: proc) =
   glDeleteTextures = cast[proc (n: GLsizei, textures: ptr GLuint) {.cdecl, gcsafe.}](load("glDeleteTextures"))
   glGenTextures = cast[proc (n: GLsizei, textures: ptr GLuint) {.cdecl, gcsafe.}](load("glGenTextures"))
   glIsTexture = cast[proc (texture: GLuint): GLboolean {.cdecl, gcsafe.}](load("glIsTexture"))
-
-
-proc load_GL_VERSION_1_2(load: proc) =
-  if not GLAD_GL_VERSION_1_2: return
-
 
 
 proc load_GL_VERSION_1_3(load: proc) =
@@ -401,6 +405,15 @@ proc load_GL_framebuffer_object(load: proc) =
   glGetFramebufferAttachmentParameteriv = cast[proc (target: GLenum, attachment: GLenum, pname: GLenum, params: ptr GLint) {.cdecl, gcsafe.}](load("glGetFramebufferAttachmentParameteriv"))
   glGenerateMipmap = cast[proc (target: GLenum) {.cdecl, gcsafe.}](load("glGenerateMipmap"))
 
+#load vertex array as extension (standard GL < 3.0)
+proc load_GL_vertex_array_object(load: proc, checkExtension: bool) =
+  #if glVersion < 3, check extension to make sure this is loadable; for >=3, it is part of the core profile
+  if checkExtension and not GLAD_GL_ARB_vertex_array_object: return
+
+  glBindVertexArray = cast[proc (array: GLuint) {.cdecl, gcsafe.}](load("glBindVertexArray"))
+  glDeleteVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsafe.}](load("glDeleteVertexArrays"))
+  glGenVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsafe.}](load("glGenVertexArrays"))
+  glIsVertexArray = cast[proc (array: GLuint): GLboolean {.cdecl, gcsafe.}](load("glIsVertexArray"))
 
 #er procs to satisfy the gl interface
 
@@ -413,6 +426,10 @@ proc glDeleteBuffer*(buffer: GLuint) =
 proc glDeleteFramebuffer*(framebuffer: GLuint) = 
   var value = framebuffer
   glDeleteFramebuffers(1, addr value)
+
+proc glDeleteVertexArray*(varray: GLuint) = 
+  var value = varray
+  glDeleteVertexArrays(1, addr varray)
 
 proc glDeleteRenderbuffer*(renderbuffer: GLuint) = 
   var value = renderbuffer
@@ -432,6 +449,11 @@ proc glGenBuffer*(): GLuint =
 proc glGenFramebuffer*(): GLuint = 
   var resultVal: GLuint
   glGenFramebuffers(1, addr resultVal)
+  return resultVal
+
+proc glGenVertexArray*(): GLuint = 
+  var resultVal: GLuint
+  glGenVertexArrays(1, addr resultVal)
   return resultVal
 
 proc glGenRenderbuffer*(): GLuint = 
@@ -595,19 +617,22 @@ proc gladLoadGL(load: proc): bool =
 
   load_GL_VERSION_1_0(load)
   load_GL_VERSION_1_1(load)
-  load_GL_VERSION_1_2(load)
   load_GL_VERSION_1_3(load)
   load_GL_VERSION_1_4(load)
   load_GL_VERSION_1_5(load)
   load_GL_VERSION_2_0(load)
 
   GLAD_GL_EXT_framebuffer_object = hasExt("GL_EXT_framebuffer_object")
+  GLAD_GL_ARB_vertex_array_object = hasExt("GL_ARB_vertex_array_object")
 
   #load fbo extension if not using 3.0
   if glVersionMajor < 3:
     load_GL_EXT_framebuffer_object(load)
   else:
     load_GL_framebuffer_object(load)
+  
+  #load and check for extension if gl version < 3
+  load_GL_vertex_array_object(load, glVersionMajor < 3)
 
   return glVersionMajor != 0 or glVersionMinor != 0
 
@@ -757,6 +782,13 @@ proc load_GL_ES_VERSION_2_0(load: proc) =
   glVertexAttribPointer = cast[proc (index: GLuint, size: GLint, `type`: GLenum, normalized: GLboolean, stride: GLsizei, pointer: pointer) {.cdecl, gcsafe.}](load("glVertexAttribPointer"))
   glViewport = cast[proc (x: GLint, y: GLint, width: GLsizei, height: GLsizei) {.cdecl, gcsafe.}](load("glViewport"))
 
+proc load_GL_OES_vertex_array_object(load: proc) =
+  if not GLAD_GL_OES_vertex_array_object: return
+  glBindVertexArray = cast[proc (array: GLuint) {.cdecl, gcsaf.}](load("glBindVertexArrayOES"))
+  glDeleteVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsaf.}](load("glDeleteVertexArraysOES"))
+  glGenVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsaf.}](load("glGenVertexArraysOES"))
+  glIsVertexArray = cast[proc (array: GLuint): GLboolean {.cdecl, gcsaf.}](load("glIsVertexArrayOES"))
+
 proc findCoreGLES2(glVersion: string) =
   var prefixes = ["OpenGL ES-CM ", "OpenGL ES-CL ", "OpenGL ES "]
 
@@ -784,6 +816,14 @@ proc gladLoadGLES2(load: proc): bool =
   findCoreGLES2($glVersion)
 
   load_GL_ES_VERSION_2_0(load)
+
+  GLAD_GL_OES_vertex_array_object = hasExt("GL_OES_vertex_array_object")
+
+  if glVersionMajor < 3:
+    #load extension for GLES < 3.0
+    load_GL_OES_vertex_array_object(load);
+  else:
+    load_GL_vertex_array_object(load, false)
 
   return glVersionMajor != 0 or glVersionMinor != 0
 

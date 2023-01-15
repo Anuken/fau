@@ -294,3 +294,7 @@ proc glViewport*(x: GLint, y: GLint, width: GLsizei, height: GLsizei) {.inline.}
   glCheck(): wrap.glViewport(x, y, width, height)
 
   (lastViewX, lastViewY, lastViewW, lastViewH) = (x, y, width, height)
+
+proc glGenVertexArray*(): GLuint {.inline.} = glCheck(): result = wrap.glGenVertexArray()
+proc glDeleteVertexArray*(varray: GLuint) {.inline.} = glCheck(): wrap.glDeleteVertexArray(varray)
+proc glBindVertexArray*(varray: GLuint) {.inline.} = glCheck(): wrap.glBindVertexArray(varray)

@@ -341,3 +341,4 @@ const
   GlRenderbufferBinding*: GLenum = GLenum(0x8CA7)
   GlMaxRenderbufferSize*: GLenum = GLenum(0x84E8)
   GlInvalidFramebufferOperation*: GLenum = GLenum(0x0506)
+  GlVertexArrayBinding* = 0x85B5.GLenum

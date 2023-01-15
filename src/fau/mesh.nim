@@ -148,7 +148,8 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
 
   #disable older attributes
   result.add quote do:
-    if lastVertexType != `typeHash`:
+    #TODO this is broken with multiple meshes, I have no idea why, I hate it
+    if lastVertexType != `typeHash` or true:
       for i in 0..<totalActive:
         if activeAttribs[i] != -1:
           glDisableVertexAttribArray(activeAttribs[i].GLuint)

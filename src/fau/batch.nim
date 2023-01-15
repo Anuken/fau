@@ -23,6 +23,16 @@ type
     of reqProc:
       draw*: proc()
 
+type CacheMesh = object
+  mesh: Mesh2
+  texture: Texture
+  shader: Shader
+  clip: Rect
+  blend: Blending
+
+type SpriteCache* = ref object
+  meshes: seq[CacheMesh]
+
 type Batch* = ref object
   mesh: Mesh2
   defaultShader: Shader
@@ -39,6 +49,10 @@ type Batch* = ref object
   matInv: Mat
   #Whether sorting is enabled for the batch
   sort: bool
+
+  #caching-specific state
+  caching: bool
+  caches: seq[CacheMesh]
 
 type AlignSide* = enum
   asLeft, asRight, asTop, asBot
@@ -63,11 +77,26 @@ proc flushInternal(batch: Batch) =
   #use global shader if there is one set
   let shader = if batch.lastShader.isNil: batch.defaultShader else: batch.lastShader
 
-  batch.mesh.updateVertices(0..<batch.index)
-  
-  batch.mesh.render(shader, meshParams(batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend, clip = batch.clip)):
-    texture = batch.lastTexture.sampler
-    proj = batch.mat
+  if batch.caching:
+    #add a new mesh to the cache
+    batch.caches.add(CacheMesh(
+      mesh: newMesh(
+        vertices = batch.mesh.vertices[0..<batch.index],
+        indices = batch.mesh.indices[0..<(batch.index div 4 * 6)],
+        isStatic = true
+      ),
+      blend: batch.lastBlend,
+      clip: batch.clip,
+      shader: shader,
+      texture: batch.lastTexture
+    ))
+
+  else:
+    batch.mesh.updateVertices(0..<batch.index)
+    
+    batch.mesh.render(shader, meshParams(batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend, clip = batch.clip)):
+      texture = batch.lastTexture.sampler
+      proj = batch.mat
 
   batch.index = 0
 
@@ -149,7 +178,7 @@ proc draw*(batch: Batch, req: Req) =
     of reqProc:
       req.draw()
 
-proc newBatch*(size: int = 4092): Batch = 
+proc newBatch*(size: int = 16380): Batch = 
   let batch = Batch(
     mesh: newMesh(
       vertices = newSeq[Vert2](size * 4),
@@ -244,3 +273,26 @@ proc buffer*(batch: Batch, buffer: Framebuffer) =
   batch.buffer = buffer
 
 proc buffer*(batch: Batch): Framebuffer = batch.buffer
+
+#draw a pre-cached mesh
+proc draw*(batch: Batch, cache: SpriteCache) =
+  batch.flush()
+
+  for mesh in cache.meshes:
+    mesh.mesh.render(mesh.shader, meshParams(batch.buffer, 0, mesh.mesh.indices.len, blend = mesh.blend, clip = mesh.clip)):
+      texture = mesh.texture.sampler
+      proj = batch.mat
+
+proc beginCache*(batch: Batch) =
+  if not batch.caching:
+    batch.flush()
+    batch.caching = true
+
+proc endCache*(batch: Batch): SpriteCache =
+  batch.flush()
+  batch.caching = false
+  result = SpriteCache(meshes: batch.caches)
+  batch.caches = @[]
+
+#for debugging
+proc len*(cache: SpriteCache): int = cache.meshes.len

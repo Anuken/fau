@@ -53,6 +53,12 @@ proc drawBuffer*(buffer: Framebuffer) =
 proc drawBufferScreen*() =
   fau.batch.buffer(screen)
 
+proc beginCache*() =
+  fau.batch.beginCache()
+
+proc endCache*(): SpriteCache =
+  fau.batch.endCache()
+
 proc screenMat*() =
   drawMat(ortho(vec2(), fau.size))
 
@@ -60,6 +66,10 @@ proc screenMat*() =
 proc use*(cam: Cam, size = cam.size, pos = cam.pos) =
   cam.update(size, pos)
   drawMat cam.mat
+
+proc draw*(cache: SpriteCache) =
+  ## Draws pre-cached sprite data.
+  fau.batch.draw(cache)
 
 #Draws something custom at a specific Z layer
 proc draw*(z: float32, value: proc(), blend = blendNormal, shader: Shader = nil) =
