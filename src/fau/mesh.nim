@@ -35,6 +35,7 @@ type MeshObj*[V] = object
   indices*: seq[Index]
   vertexBuffer: GLuint
   indexBuffer: GLuint
+  vertexArray: GLuint
   isStatic: bool
   modifiedVert: bool
   modifiedInd: bool
@@ -76,6 +77,9 @@ proc `=destroy`*[T](mesh: var MeshObj[T]) =
   if mesh.indexBuffer != 0 and glInitialized:
     glDeleteBuffer(mesh.indexBuffer)
     mesh.indexBuffer = 0
+  if mesh.vertexArray != 0 and glInitialized:
+    glDeleteVertexArray(mesh.vertexArray)
+    mesh.vertexArray = 0
 
 proc toGlEnum(face: CullFace): GlEnum {.inline.} =
   case face
@@ -123,7 +127,9 @@ proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, ve
     modifiedVert: true,
     modifiedInd: true,
     vertexBuffer: glGenBuffer(),
-    indexBuffer: glGenBuffer()
+    indexBuffer: glGenBuffer(),
+    #TODO: not used or bound - rewrite everything to NOT use the global vertex array object.
+    #vertexArray: glGenVertexArray()
   )
 
 proc newMesh2*(isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[Vert2] = @[], indices: seq[Index] = @[]): Mesh =
