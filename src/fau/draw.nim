@@ -53,11 +53,13 @@ proc drawBuffer*(buffer: Framebuffer) =
 proc drawBufferScreen*() =
   fau.batch.buffer(screen)
 
-proc beginCache*() =
+proc beginCache*(sort = true) =
+  drawSort(sort)
   fau.batch.beginCache()
 
 proc endCache*(): SpriteCache =
-  fau.batch.endCache()
+  result = fau.batch.endCache()
+  drawSort(true)
 
 proc screenMat*() =
   drawMat(ortho(vec2(), fau.size))
