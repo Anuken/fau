@@ -324,8 +324,8 @@ func round*(vec: Vec2, scale = 1f): Vec2 {.inline.} = vec2(vec.x.round(scale), v
 
 func abs*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.abs, vec.y.abs)
 
-#returns this vector's x/y aspect ratio
-func ratio*(vec: Vec2): float32 {.inline.} = vec.x / vec.y
+func xyratio*(vec: Vec2): float32 {.inline.} = vec.x / vec.y
+func yxratio*(vec: Vec2): float32 {.inline.} = vec.y / vec.x
 
 func zero*(vec: Vec2): bool {.inline.} = vec.x == 0f and vec.y == 0f
 
