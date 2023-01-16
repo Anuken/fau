@@ -154,9 +154,12 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
               if not images.hasKey(tile.image):
                 images[tile.image] = readImage(realPath / "../" / tile.image)
               
-              let 
+              var 
                 tileImageName = tileset.name & $tile.id
-                cropped = images[tile.image].subImage(tile.x, tile.y, tile.width, tile.height)
+                cropped = images[tile.image]
+              
+              if tile.width > 0 and tile.height > 0:
+                cropped = cropped.subImage(tile.x, tile.y, tile.width, tile.height)
               
               if not cropped.isTransparent:
                 packFile(realPath / tileImageName, cropped)

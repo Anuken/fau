@@ -141,7 +141,8 @@ proc postHook*(map: var Tilemap) =
           curId.inc
     
     for tile in tileset.tiles:
-      gidToTile[tile.id + tileset.firstgid] = tile
+      tile.id += tileset.firstgid
+      gidToTile[tile.id] = tile
 
   #actually load tile data from layers in post
   for layer in map.layers:
