@@ -208,6 +208,13 @@ proc `[]`*(layer: TileLayer, x, y: int): TileCell =
 
   layer.tiles[x + y * layer.width]
 
+proc findLayer*(map: Tilemap, name: string): TileLayer =
+  for layer in map.layers:
+    if layer.name == name:
+      return layer
+  #TODO how
+  raise Defect.newException("Layer not found: " & $name)
+
 proc readTilemapString*(str: string): Tilemap = str.fromJson(Tilemap)
 
 proc readTilemapFile*(file: string): Tilemap = file.readFile().readTilemapString()
