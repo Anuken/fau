@@ -258,6 +258,9 @@ proc fillQuad*(v1, v2, v3, v4: Vec2, color: Color, z = 0f) =
 proc fillRect*(x, y, w, h: float32, color = colorWhite, z = 0f) =
   drawRect(fau.white, x, y, w, h, color = color, z = z)
 
+proc fillSquare*(pos: Vec2, radius: float32, color = colorWhite, z = 0f) =
+  draw(fau.white, pos, size = vec2(radius * 2f), color = color, z = z)
+
 proc fillRect*(rect: Rect, color = colorWhite, z = 0f) =
   fillRect(rect.x, rect.y, rect.w, rect.h, color, z)
 

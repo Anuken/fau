@@ -28,7 +28,7 @@ proc use*(texture: Texture, unit: int = 0) =
   glActiveTexture((GlTexture0.int + unit).GLenum)
   glBindTexture(texture.target, texture.handle)
 
-proc toGlEnum(filter: TextureFilter): GLenum {.inline.} =
+proc toGlEnum*(filter: TextureFilter): GLenum {.inline.} =
   case filter
   of tfNearest: GlNearest
   of tfLinear: GlLinear

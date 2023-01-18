@@ -206,11 +206,13 @@ proc getBool*(props: TiledProps, name: string): bool =
 proc contains*(layer: TileLayer, x, y: int): bool =
   return not(x < 0 or y < 0 or x >= layer.width or y >= layer.height)
 
-proc `[]`*(layer: TileLayer, x, y: int): TileCell =
+proc `[]`*(layer: TileLayer, x, y: int): TileCell {.inline.} =
   if not layer.contains(x, y):
     raise IndexDefect.newException("Out of tile map bounds: " & $x & ", " & $y)
 
   layer.tiles[x + y * layer.width]
+
+proc `[]`*(layer: TileLayer, pos: Vec2i): TileCell {.inline.} = layer[pos.x, pos.y]
 
 proc findLayer*(map: Tilemap, name: string): TileLayer =
   for layer in map.layers:
@@ -218,6 +220,8 @@ proc findLayer*(map: Tilemap, name: string): TileLayer =
       return layer
   #TODO how
   raise Defect.newException("Layer not found: " & $name)
+
+proc size*(map: Tilemap): Vec2i = vec2i(map.width, map.height)
 
 proc readTilemapString*(str: string): Tilemap = str.fromJson(Tilemap)
 
