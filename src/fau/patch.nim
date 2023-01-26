@@ -31,6 +31,7 @@ proc size*(patch: Patch): Vec2 {.inline.} = vec2(patch.widthf, patch.heightf)
 proc uv*(patch: Patch): Vec2 {.inline.} = vec2(patch.u, patch.v)
 proc uv2*(patch: Patch): Vec2 {.inline.} = vec2(patch.u2, patch.v2)
 template exists*(patch: Patch): bool = patch != fau.atlas.error
+template found*(patch: Patch): bool = patch != fau.atlas.error
 proc valid*(patch: Patch): bool {.inline.} = not patch.texture.isNil
 
 proc flipped*(patch: Patch): Patch = Patch(texture: patch.texture, u: patch.u, v: patch.v2, u2: patch.u2, v2: patch.v)

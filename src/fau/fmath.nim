@@ -243,6 +243,8 @@ func sign*(x: int): int {.inline} =
   if x < 0: -1 else: 1
 func signi*(x: float32): int {.inline} =
   if x < 0f: -1 else: 1
+func signodd*(x: int): float32 {.inline.} = 
+  if x mod 2 == 0: 1 else: -1
 
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag

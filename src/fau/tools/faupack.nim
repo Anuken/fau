@@ -52,12 +52,12 @@ proc getImageSize(file: string): tuple[w: int, h: int] =
 proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, padding = 0, bleeding = 2, verbose = false, silent = false) =
   let packer = newPacker(min, min)
   let blackRgba = rgba(0, 0, 0, 255)
-  var positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int]]]()
+  var positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int], duration: int]]()
 
   let time = cpuTime()
   let totalPad = padding + bleeding
 
-  proc packFile(file: string, image: Image, splits = [-1, -1, -1, -1]) =
+  proc packFile(file: string, image: Image, splits = [-1, -1, -1, -1], duration = 0) =
     let name = file.splitFile.name
 
     if verbose: echo &"Packing image {name}..."
@@ -84,7 +84,7 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
         else:
           packer.resize(packer.w, (packer.h + 1).nextPowerOfTwo)
     
-    positions[name] = (image, file, pos, splits)
+    positions[name] = (image, file, pos, splits, duration)
 
   type PackEntry = tuple[file: string, size: int]
   var toPack: seq[PackEntry]
@@ -192,7 +192,7 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
               if layer.userData == "outline" or layer.userData == "outlined":
                 outline(full, if layer.userColor == 0'u32: blackRgba else: cast[ColorRGBA](layer.userColor))
 
-              packFile(file / frameName, full)
+              packFile(file / frameName, full, duration = frame.duration)
 
     else:
       packFile(file, readImage(file))
@@ -260,6 +260,8 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, pa
         stream.write val.int16
     else:
       stream.write false
+    
+    stream.write region.duration.uint16
   
   stream.close()
   image.writeFile(&"{output}.png")

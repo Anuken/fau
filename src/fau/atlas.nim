@@ -5,6 +5,7 @@ import strformat, tables, texture, patch, assets, streams
 type Atlas* = ref object
   patches*: Table[string, Patch]
   patches9*: Table[string, Patch9]
+  durations*: Table[string, int]
   texture*: Texture
   error*: Patch
   error9*: Patch9
@@ -36,6 +37,11 @@ proc loadAtlas*(path: static[string]): Atlas =
         bot = stream.readInt16()
 
       result.patches9[name] = newPatch9(patch, left, right, top, bot)
+    
+    let duration = stream.readUint16()
+
+    if duration != 0'u16:
+      result.durations[name] = duration.int
 
     result.patches[name] = patch
 
@@ -46,3 +52,6 @@ proc loadAtlas*(path: static[string]): Atlas =
 
 # accesses a region from an atlas
 proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDefault(name, atlas.error)
+
+# get frame duration in ms
+proc getDuration*(atlas: Atlas, name: string): int {.inline.} = atlas.durations.getOrDefault(name, 0)
