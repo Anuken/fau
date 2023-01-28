@@ -299,6 +299,7 @@ op(Vec2i, int, vec2i, `-`, `-=`)
 op(Vec2i, int, vec2i, `*`, `*=`)
 op(Vec2i, int, vec2i, `div`, `div=`)
 
+func `/`*(vec: Vec2i, value: float32): Vec2 {.inline.} = vec2(vec.x / value, vec.y / value)
 func `-`*(vec: Vec2i): Vec2i {.inline.} = vec2i(-vec.x, -vec.y)
 
 #utility methods

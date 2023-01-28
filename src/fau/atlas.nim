@@ -55,3 +55,4 @@ proc `[]`*(atlas: Atlas, name: string): Patch {.inline.} = atlas.patches.getOrDe
 
 # get frame duration in ms
 proc getDuration*(atlas: Atlas, name: string): int {.inline.} = atlas.durations.getOrDefault(name, 0)
+
