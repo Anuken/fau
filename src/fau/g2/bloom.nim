@@ -17,10 +17,10 @@ type Bloom* = object
   blurPasses*: int
   scaling*: int
 
-proc newBloom*(scaling: int = 4, passes: int = 1, depth = false): Bloom =
-  result.buffer = newFramebuffer(depth = depth)
-  result.p1 = newFramebuffer()
-  result.p2 = newFramebuffer()
+proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true): Bloom =
+  result.buffer = newFramebuffer(depth = depth, filter = tfLinear)
+  result.p1 = newFramebuffer(filter = tfLinear)
+  result.p2 = newFramebuffer(filter = tfLinear)
   result.scaling = scaling
   result.blurPasses = passes
 
@@ -42,6 +42,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false): Bloom =
   )
 
   result.bloom = newShader(screenspace,
+  (if alpha: "#define ALPHA_BLEND\n" else: "") &
   """ 
   uniform lowp sampler2D u_texture0;
   uniform lowp sampler2D u_texture1;
@@ -54,7 +55,11 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false): Bloom =
     vec4 original = texture2D(u_texture0, v_uv) * u_originalIntensity;
     vec4 bloom = texture2D(u_texture1, v_uv) * u_bloomIntensity;
     vec4 combined = original * (vec4(1.0) - bloom) + bloom;
+    #ifdef ALPHA_BLEND
     float mx = min(max(combined.r, max(combined.g, combined.b)), 1.0);
+    #else
+    float mx = 1.0;
+    #endif
     gl_FragColor = vec4(combined.rgb / mx, mx);
   }
 
@@ -114,10 +119,6 @@ proc buffer*(bloom: Bloom, clearColor = colorClear): Framebuffer =
   bloom.buffer.resize(fau.sizei)
   bloom.p1.resize(fau.sizei div bloom.scaling)
   bloom.p2.resize(fau.sizei div bloom.scaling)
-  #TODO would be nice if buffer resizes preserved filters...
-  bloom.buffer.texture.filter = tfLinear
-  bloom.p1.texture.filter = tfLinear
-  bloom.p2.texture.filter = tfLinear
 
   bloom.buffer.clear(clearColor)
   return bloom.buffer
