@@ -48,6 +48,9 @@ proc loadAnimation*(atlas: Atlas, name: string, delay = 0f): Animation =
   #all durations are the same
   if delay <= 0f and allSame:
     result.delay = lastDelay / 1000f
+  
+  if result.frames.len == 0:
+    result.delay = 1f
 
   if i == 0:
     result.frames.add(atlas[name])

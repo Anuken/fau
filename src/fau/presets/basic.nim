@@ -9,6 +9,9 @@ register(defaultComponentOptions):
     Timed* = object
       time*, lifetime*: float32
 
+onEcsBuilt:
+  converter toVec*(pos: PosInstance): Vec2 {.inline} = pos.vec
+
 template makeTimedSystem*() =
   makeSystem("timed", [Timed]):
     all:
