@@ -71,6 +71,23 @@ const
   daBotRight* = {asBot, asRight}
   daCenter* = {asLeft, asRight, asTop, asBot}
 
+const defaultVertShader* = """
+attribute vec4 a_pos;
+attribute vec4 a_color;
+attribute vec2 a_uv;
+attribute vec4 a_mixcolor;
+uniform mat4 u_proj;
+varying vec4 v_color;
+varying vec4 v_mixcolor;
+varying vec2 v_uv;
+void main(){
+  v_color = a_color;
+  v_mixcolor = a_mixcolor;
+  v_uv = a_uv;
+  gl_Position = u_proj * a_pos;
+  }
+"""
+
 proc flushInternal(batch: Batch) =
   if batch.index == 0: return
 
@@ -201,23 +218,7 @@ proc newBatch*(size: int = 16380): Batch =
     j += 4
   
   #create default shader
-  batch.defaultShader = newShader(
-  """
-  attribute vec4 a_pos;
-  attribute vec4 a_color;
-  attribute vec2 a_uv;
-  attribute vec4 a_mixcolor;
-  uniform mat4 u_proj;
-  varying vec4 v_color;
-  varying vec4 v_mixcolor;
-  varying vec2 v_uv;
-  void main(){
-    v_color = a_color;
-    v_mixcolor = a_mixcolor;
-    v_uv = a_uv;
-    gl_Position = u_proj * a_pos;
-  }
-  """,
+  batch.defaultShader = newShader(defaultVertShader,
 
   """
   varying lowp vec4 v_color;
