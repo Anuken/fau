@@ -198,8 +198,8 @@ proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite
 proc draw*(p: Patch9, bounds: Rect, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f, blend = blendNormal) =
   draw(p, bounds.pos, bounds.size, z, color, mixColor, scale, blend = blend)
 
-proc drawBlit*(buffer: Framebuffer, color = colorWhite, blend = blendNormal, z = 0f) =
-  draw(buffer.texture, fau.cam.pos, fau.cam.size * vec2(1f, -1f), color = color, blend = blend, z = z)
+proc drawBlit*(buffer: Framebuffer, color = colorWhite, blend = blendNormal, z = 0f, shader: Shader = nil) =
+  draw(buffer.texture, fau.cam.pos, fau.cam.size * vec2(1f, -1f), color = color, blend = blend, z = z, shader = shader)
 
 #TODO does not support mid != 0
 #TODO divs could just be a single float value, arrays unnecessary
