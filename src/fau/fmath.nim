@@ -585,32 +585,39 @@ proc penetrationY*(a, b: Rect): float32 {.inline.} =
 proc penetration*(a, b: Rect): Vec2 = vec2(penetrationX(a, b), penetrationY(a, b))
 
 #moves a hitbox; may be removed later
-proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(x, y: int): bool): Vec2 = 
+proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(x, y: int): bool, seg = 0.1f): Vec2 = 
   let
     left = (box.x + 0.5).int - 1
     bottom = (box.y + 0.5).int - 1
     right = (box.x + 0.5 + box.w).int + 1
     top = (box.y + 0.5 + box.h).int + 1
   
-  var hitbox = box
-  
-  hitbox.x += vel.x
+  var 
+    hitbox = box
+    segx = vel.x.abs
+    segy = vel.y.abs
 
-  for dx in left..right:
-    for dy in bottom..top:
-      if solidity(dx, dy):
-        let tile = rect((dx).float32 - 0.5f, (dy).float32 - 0.5f, 1, 1)
-        if hitbox.overlaps(tile):
-          hitbox.x -= tile.penetrationX(hitbox)
-  
-  hitbox.y += vel.y
+  while segx > 0f:
+    hitbox.x += min(seg, segx) * vel.x.sign
+    segx -= seg
 
-  for dx in left..right:
-    for dy in bottom..top:
-      if solidity(dx, dy):
-        let tile = rect((dx).float32 - 0.5f, (dy).float32 - 0.5f, 1, 1)
-        if hitbox.overlaps(tile):
-          hitbox.y -= tile.penetrationY(hitbox)
+    for dx in left..right:
+      for dy in bottom..top:
+        if solidity(dx, dy):
+          let tile = rect((dx).float32 - 0.5f, (dy).float32 - 0.5f, 1, 1)
+          if hitbox.overlaps(tile):
+            hitbox.x -= tile.penetrationX(hitbox)
+  
+  while segy > 0f:
+    hitbox.y += min(seg, segy) * vel.y.sign
+    segy -= seg
+
+    for dx in left..right:
+      for dy in bottom..top:
+        if solidity(dx, dy):
+          let tile = rect((dx).float32 - 0.5f, (dy).float32 - 0.5f, 1, 1)
+          if hitbox.overlaps(tile):
+            hitbox.y -= tile.penetrationY(hitbox)
   
   return vec2(hitbox.x - box.x, hitbox.y - box.y)
 
