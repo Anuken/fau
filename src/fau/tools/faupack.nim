@@ -49,7 +49,7 @@ proc getImageSize(file: string): tuple[w: int, h: int] =
     return (w.int, h.int)
 
 
-proc packImages(path: string, output: string = "atlas", min = 64, max = 1024, padding = 0, bleeding = 2, verbose = false, silent = false) =
+proc packImages(path: string, output: string = "atlas", min = 64, max = 2048, padding = 0, bleeding = 2, verbose = false, silent = false) =
   let packer = newPacker(min, min)
   let blackRgba = rgba(0, 0, 0, 255)
   var positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int], duration: int]]()
