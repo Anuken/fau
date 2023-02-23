@@ -542,18 +542,21 @@ proc contains*(r: Rect, pos: Vec2): bool {.inline.} = r.contains(pos.x, pos.y)
 proc overlaps*(a, b: Rect): bool = a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
 
 proc overlaps*(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
-  let vel = v1 - v2
+  let 
+    vel = v1 - v2
+    #prevent inf
+    rv = vec2(if vel.x == 0f: 0.000001f else: vel.x, if vel.y == 0f: 0.000001f else: vel.y)
 
   var invEntry, invExit: Vec2
 
-  if vel.x > 0.0:
+  if rv.x > 0.0:
     invEntry.x = r2.x - (r1.x + r1.w)
     invExit.x = (r2.x + r2.w) - r1.x
   else:
     invEntry.x = (r2.x + r2.w) - r1.x
     invExit.x = r2.x - (r1.x + r1.w)
 
-  if vel.y > 0.0:
+  if rv.y > 0.0:
     invEntry.y = r2.y - (r1.y + r1.h)
     invExit.y = (r2.y + r2.h) - r1.y
   else:
@@ -561,12 +564,17 @@ proc overlaps*(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
     invExit.y = r2.y - (r1.y + r1.h)
 
   let 
-    entry = invEntry / vel
-    exit = invExit / vel
+    entry = invEntry / rv
+    exit = invExit / rv
     entryTime = max(entry.x, entry.y)
     exitTime = min(exit.x, exit.y)
 
   if entryTime > exitTime or exit.x < 0.0 or exit.y < 0.0 or entry.x > 1.0 or entry.y > 1.0:
+    #edge case?
+    #if r1.overlaps r2:
+    #  hitpos = (r1.center + r2.center) / 2f
+    #  return true
+  
     return false
   else:
     hitPos = vec2(r1.x + r1.w / 2f + v1.x * entryTime, r1.y + r1.h / 2f + v1.y * entryTime)
