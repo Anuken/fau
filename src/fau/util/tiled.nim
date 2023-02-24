@@ -74,14 +74,14 @@ type
     layers*: seq[TileLayer]
     tilesets*: seq[Tileset]
     properties*: TiledProps
-
-#internal type for parsing property entries, as they are in a list, not a map
-type TilePropEntry = object
-  name: string
-  `type`: string
-  value: string
-
+  
 proc parseHook*(s: string, i: var int, v: var TiledProps) =
+  #internal type for parsing property entries, as they are in a list, not a map
+  type TilePropEntry = object
+    name: string
+    `type`: string
+    value: RawJson
+
   v = initTable[string, TileProp]()
 
   var entries: seq[TilePropEntry]
@@ -90,21 +90,12 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
 
   for entry in entries:
     v[entry.name] = case entry.`type`:
-    of "string", "": TileProp(kind: tpString, strVal: entry.value)
-    of "int":
-      var res = 0
-      discard parseInt(entry.value, res)
-      TileProp(kind: tpInt, intVal: res)
-    of "float": 
-      var res: float = 0f
-      discard parseFloat(entry.value, res)
-      TileProp(kind: tpFloat, floatVal: res)
-    of "bool": 
-      TileProp(kind: tpBool, boolVal: entry.value == "true")
-    of "color":
-      TileProp(kind: tpColor, colorVal: entry.value.parseColor)
-    else:
-      TileProp()
+    of "string", "file", "": TileProp(kind: tpString, strVal: fromJson(entry.value.string, string))
+    of "int": TileProp(kind: tpInt, intVal: fromJson(entry.value.string, int))
+    of "float": TileProp(kind: tpFloat, floatVal: fromJson(entry.value.string, float32))
+    of "bool": TileProp(kind: tpBool, boolVal: fromJson(entry.value.string, bool))
+    of "color": TileProp(kind: tpColor, colorVal: fromJson(entry.value.string, string).parseColor)
+    else: TileProp()
 
 proc postHook*(map: var Tilemap) =
   var gidToTile = initTable[int, TiledTile]()
