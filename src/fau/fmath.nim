@@ -155,6 +155,8 @@ func emod*(a, b: int): int {.inline.} =
   elif b > 0: result += b
   else: result -= b
 
+func map*(value, min, max, resmin, resmax: float32): float32 = ((value - min) / (max - min)) * (resmax - resmin) + resmin
+
 {.push checks: off.}
 
 func round*(value, space: float32): float32 {.inline.} = round(value / space) * space
@@ -331,6 +333,7 @@ func xyratio*(vec: Vec2): float32 {.inline.} = vec.x / vec.y
 func yxratio*(vec: Vec2): float32 {.inline.} = vec.y / vec.x
 
 func zero*(vec: Vec2): bool {.inline.} = vec.x == 0f and vec.y == 0f
+func zero*(vec: Vec2, margin: float32): bool {.inline.} = abs(vec.x) <= margin and abs(vec.y) <= margin
 
 #all angles are in radians
 
@@ -801,7 +804,7 @@ template circlev*(amount: int, len: float32, body: untyped) =
   for i in 0..<amount:
     let
       angle {.inject.} = (i.float32 / amount.float32 * 360f).degToRad
-      v = vec2l(angle, len)
+      v {.inject.} = vec2l(angle, len)
       x {.inject.} = v.x
       y {.inject.} = v.y
     body
