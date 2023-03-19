@@ -197,6 +197,14 @@ proc getBool*(props: TiledProps, name: string): bool =
 proc contains*(layer: TileLayer, x, y: int): bool =
   return not(x < 0 or y < 0 or x >= layer.width or y >= layer.height)
 
+proc `[]=`*(layer: TileLayer, x, y: int, tile: TiledTile) {.inline.} =
+  if not layer.contains(x, y): return
+
+  layer.tiles[x + y * layer.width].tile = tile
+
+proc `[]=`*(layer: TileLayer, pos: Vec2i, tile: TiledTile) {.inline.} =
+  layer[pos.x, pos.y] = tile
+
 proc `[]`*(layer: TileLayer, x, y: int): TileCell {.inline.} =
   if not layer.contains(x, y):
     raise IndexDefect.newException("Out of tile map bounds: " & $x & ", " & $y)

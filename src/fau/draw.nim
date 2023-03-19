@@ -377,3 +377,75 @@ proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f, c
       pos + vec2(cosf, sinf) * r2,
       color, z
     )
+
+#TODO untested probably broken
+proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f, color = colorWhite, z = 0f) =
+  if points.len < 2: return
+
+  proc prepareFlatEndpoint(path, endpoint: Vec2, hstroke: float32): (Vec2, Vec2) =
+    let v = (endpoint - path).setLen(hstroke)
+    return (vec2(v.y, -v.x) + endpoint, vec2(-v.y, v.x) + endpoint)
+
+  proc prepareStraightJoin(b: Vec2, ab: Vec2, hstroke: float32): (Vec2, Vec2) =
+    let r = ab.setLen(hstroke)
+    return (vec2(-r.y, r.x) + b, vec2(r.y, -r.x) + b)
+
+  proc preparePointyJoin(a, b, c: Vec2, hstroke: float32): (Vec2, Vec2) =
+    var 
+      ab = b - a
+      bc = c - b
+      angle = ab.angle(bc)
+    
+    if angle.almostEqual(0f) or angle.almostEqual(pi2):
+      return prepareStraightJoin(b, ab, hstroke)
+      
+    let 
+      len = hstroke / sin(angle)
+      bendsLeft = angle < 0
+    
+    ab.len = len
+    bc.len = len
+
+    let 
+      p1 = b - ab + bc
+      p2 = b + ab - bc
+    
+    return if bendsLeft: (p1, p2) else: (p2, p1)
+
+  let hstroke = stroke * 0.5f
+
+  var
+    q1: Vec2
+    q2: Vec2
+    lq1: Vec2
+    lq2: Vec2
+
+  for i in 1..<(points.len - 1):
+    let 
+      a = points[i - 1]
+      b = points[i]
+      c = points[i + 1]
+    
+    let (q3, q4) = preparePointyJoin(a, b, c, hstroke)
+
+    if i == 1:
+      if wrap:
+        (q2, q1) = preparePointyJoin(points[^1], a, b, hstroke)
+
+        (lq1, lq2) = (q1, q2)
+      else:
+        (q2, q1) = prepareFlatEndpoint(points[1], points[0], hstroke)
+    
+    fillQuad(q1, q2, q3, q4, color = color, z = z)
+    q1 = q4
+    q2 = q3
+
+  if wrap:
+    let (q3, q4) = preparePointyJoin(points[^2], points[^1], points[0], hstroke)
+
+    fillQuad(q1, q2, q3, q4, color = color, z = z)
+    fillQuad(q3, q4, lq2, lq1, color = color, z = z)
+  else:
+    let (q4, q3) = prepareFlatEndpoint(points[^2], points[^1], hstroke)
+    fillQuad(q1, q2, q3, q4, color = color, z = z)
+    

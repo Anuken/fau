@@ -381,6 +381,8 @@ func nor*(vec: Vec2): Vec2 {.inline.} =
   let len = vec.len
   return if len == 0f: vec else: vec / len
 
+func setLen*(vec: Vec2, b: float32): Vec2 = vec.nor * b
+
 func lim*(vec: Vec2, limit: float32): Vec2 = 
   let l2 = vec.len2
   let limit2 = limit*limit
@@ -449,6 +451,32 @@ iterator d8mid*(): Vec2i =
 proc inside*(x, y, w, h: int): bool {.inline.} = x >= 0 and y >= 0 and x < w and y < h
 proc inside*(p: Vec2i, w, h: int): bool {.inline.} = p.x >= 0 and p.y >= 0 and p.x < w and p.y < h
 proc inside*(p: Vec2i, size: Vec2i): bool {.inline.} = p.x >= 0 and p.y >= 0 and p.x < size.x and p.y < size.y
+
+proc raycast*(a, b: Vec2i, checker: proc(pos: Vec2i): bool): bool =
+  var
+    x = a.x
+    y = a.y
+    dx = abs(b.x - a.x)
+    dy = abs(b.y - a.y)
+    sx = if a.x < b.x: 1 else: -1
+    sy = if a.y < b.y: 1 else: -1
+    e2 = 0
+    err = dx - dy
+  
+  while true:
+    if checker(vec2i(x, y)): return true
+    if x == b.x and y == b.y: return false
+    e2 = 2 * err
+
+    if e2 > -dy:
+      err -= dy
+      x += sx
+    
+    if e2 < dx:
+      err += dx
+      y += sy
+
+  return false
 
 #Implementation of bresenham's line algorithm; iterates through a line connecting the two points.
 iterator line*(p1, p2: Vec2i): Vec2i =
@@ -762,7 +790,7 @@ proc trans*(mat: Mat): Vec2 {.inline.} = vec2(mat[M02], mat[M12])
 
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particles*(seed: int, amount: int, ppos: Vec2, radius: float32, body: untyped) =
-  var r {.inject.} = initRand(seed)
+  var r = initRand(seed)
   for i in 0..<amount:
     let 
       rot {.inject.} = r.rand(360f.rad).float32
@@ -772,7 +800,7 @@ template particles*(seed: int, amount: int, ppos: Vec2, radius: float32, body: u
 
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particlesAngle*(seed: int, amount: int, ppos: Vec2, radius: float32, rotation, spread: float32, body: untyped) =
-  var r {.inject.} = initRand(seed)
+  var r = initRand(seed)
   for i in 0..<amount:
     let
       rot {.inject.} = rotation + r.rand(-spread..spread).float32
@@ -782,7 +810,7 @@ template particlesAngle*(seed: int, amount: int, ppos: Vec2, radius: float32, ro
 
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particlesLife*(seed: int, amount: int, ppos: Vec2, basefin: float32, radius: float32, body: untyped) =
-  var r {.inject.} = initRand(seed)
+  var r = initRand(seed)
   for i in 0..<amount:
     let
       lscl = r.rand(0.1f..1f)
@@ -797,7 +825,7 @@ template particlesLife*(seed: int, amount: int, ppos: Vec2, basefin: float32, ra
 
 template circle*(amount: int, body: untyped) =
   for i in 0..<amount:
-    let angle {.inject.} = (i.float32 / amount.float32 * 360f).degToRad
+    let angleOffset {.inject.} = (i.float32 / amount.float32 * 360f).degToRad
     body
 
 template circlev*(amount: int, len: float32, body: untyped) =
