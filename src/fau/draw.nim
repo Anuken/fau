@@ -390,11 +390,14 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f, color = colorWhit
     let r = ab.setLen(hstroke)
     return (vec2(-r.y, r.x) + b, vec2(r.y, -r.x) + b)
 
+  proc angleRef(v, reference: Vec2): float32 =
+    arctan2(reference.x * v.y - reference.y * v.x, v.x * reference.x + v.y * reference.y).float32
+
   proc preparePointyJoin(a, b, c: Vec2, hstroke: float32): (Vec2, Vec2) =
     var 
       ab = b - a
       bc = c - b
-      angle = ab.angle(bc)
+      angle = ab.angleRef(bc)
     
     if angle.almostEqual(0f) or angle.almostEqual(pi2):
       return prepareStraightJoin(b, ab, hstroke)
