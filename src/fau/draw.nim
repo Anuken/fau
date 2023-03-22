@@ -378,7 +378,6 @@ proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f, c
       color, z
     )
 
-#TODO untested probably broken
 proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f, color = colorWhite, z = 0f) =
   if points.len < 2: return
 
@@ -434,7 +433,6 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f, color = colorWhit
     if i == 1:
       if wrap:
         (q2, q1) = preparePointyJoin(points[^1], a, b, hstroke)
-
         (lq1, lq2) = (q1, q2)
       else:
         (q2, q1) = prepareFlatEndpoint(points[1], points[0], hstroke)

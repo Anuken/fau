@@ -1,25 +1,26 @@
 import ../draw, ../globals, ../fmath, ../screenbuffer, ../color, os, strformat, times, osproc, math, streams, strutils
+from pixie import Image, newImage, writeFile, flipVertical
+
+export Image, newImage, writeFile, flipVertical
+export os
+
 
 ## Tiny utility functions for saving a gif animation. Require ffmpeg.
 
-var 
-  frames: seq[pointer]
-  gifSize: Rect
-  useGifPalette* = true
+const useGifPalette = defined(useGifPalette)
 
-
-proc addGifFrame*(bounds: Rect) =
-  gifSize = bounds
+proc addGifFrame*(frames: var seq[pointer], bounds: Rect): pointer {.discardable.} =
   drawFlush()
-  frames.add screen.read(
+  result = screen.read(
     bounds.xy.vec2i,
     bounds.size.vec2i
   )
+  frames.add(result)
 
-proc finishGif*(path: string, fps = 30) =
+proc finishGif*(frames: seq[pointer], path: string, bounds: Rect, fps = 30) =
   let
-    w = gifSize.w.int
-    h = gifSize.h.int
+    w = bounds.w.int
+    h = bounds.h.int
     len = w * h * 4
     filters = if not useGifPalette: "" else: ",split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
   
@@ -42,18 +43,43 @@ proc finishGif*(path: string, fps = 30) =
 
   for f in frames:
     f.dealloc
-  frames.setLen(0)
+
+template makeAnimation*(frameCount: int, fps: int, bounds: Rect, path: string, background = colorClear, body: untyped) =
+  ## Compiles a gif with the specified amount of frames into a file. 
+  ## Body should draw each frame. i is injected as the frame index.
+  ## Screen is automatically cleared.
+
+  discard path.existsOrCreateDir()
+
+  var frames: seq[pointer]
+
+  for i {.inject.} in 0..<frameCount:
+    let fin {.inject, used.} = i.float32 / (frameCount.float32)
+    screen.clear(background)
+    body
+
+    let 
+      rawData = addGifFrame(frames, bounds)
+      img = newImage(bounds.w.int, bounds.h.int)
+    copyMem(addr img.data[0], rawData, img.data.len * 4)
+    img.flipVertical()
+    img.writeFile(path / $i  & ".png")
+  
+  finishGif(frames, path / "out.gif", bounds, fps)
+
 
 template makeGifBase*(frameCount: int, fps: int, bounds: Rect, path: string, background = colorClear, pingPong = false, body: untyped) =
   ## Compiles a gif with the specified amount of frames into a file. 
   ## Body should draw each frame. i is injected as the frame index.
   ## Screen is automatically cleared.
 
+  var frames: seq[pointer]
+
   for i {.inject.} in 0..<frameCount:
     let fin {.inject, used.} = i.float32 / (frameCount.float32)
     screen.clear(background)
     body
-    addGifFrame(bounds)
+    addGifFrame(frames.bounds)
   
   if pingPong:
     let top = frames.high
@@ -61,7 +87,7 @@ template makeGifBase*(frameCount: int, fps: int, bounds: Rect, path: string, bac
     for i {.inject.} in countdown(top - 1, 0):
       frames.add frames[i]
   
-  finishGif(path, fps)
+  finishGif(frames, path, bounds, fps)
 
 template makeGif*(frames: int, fps: int, bounds: Rect, path: string, background = colorClear, body: untyped) =
   makeGifBase(frames, fps, bounds, path, background, false, body)
