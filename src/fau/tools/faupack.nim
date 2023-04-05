@@ -139,63 +139,67 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 2048, pa
       #only save the cropped variant.
       packFile(split.name, cropped, [left, right, top, bot])
     elif split.ext == ".aseprite":
-      let aseFile = readAseFile(file)
+      try:
+        let aseFile = readAseFile(file)
 
-      #special case: layer with tilemap user data and path as layer name (yes very hacky but I don't know of a better way)
-      if aseFile.layers.len >= 1 and aseFile.layers[0].userData == "tilemap":
-        let realPath = file / "../" / aseFile.layers[0].name
-        
-        #read files from a tileset and use those if necessary
-        if realPath.fileExists:
-          let tilemap = readTilemapFile(realPath)
-          for tileset in tilemap.tilesets:
-            var images: Table[string, Image]
-            for tile in tileset.tiles:
-              var tileImageName = tileset.name & $tile.id
-              
-              #some maps share tilesets.
-              if not positions.hasKey(tileImageName):
-                if not images.hasKey(tile.image):
-                  images[tile.image] = readImage(realPath / "../" / tile.image)
+        #special case: layer with tilemap user data and path as layer name (yes very hacky but I don't know of a better way)
+        if aseFile.layers.len >= 1 and aseFile.layers[0].userData == "tilemap":
+          let realPath = file / "../" / aseFile.layers[0].name
+          
+          #read files from a tileset and use those if necessary
+          if realPath.fileExists:
+            let tilemap = readTilemapFile(realPath)
+            for tileset in tilemap.tilesets:
+              var images: Table[string, Image]
+              for tile in tileset.tiles:
+                var tileImageName = tileset.name & $tile.id
                 
-                var 
-                  cropped = images[tile.image]
+                #some maps share tilesets.
+                if not positions.hasKey(tileImageName):
+                  if not images.hasKey(tile.image):
+                    images[tile.image] = readImage(realPath / "../" / tile.image)
+                  
+                  var 
+                    cropped = images[tile.image]
+                  
+                  if tile.width > 0 and tile.height > 0:
+                    cropped = cropped.subImage(tile.x, tile.y, tile.width, tile.height)
+                  
+                  if not cropped.isTransparent:
+                    packFile(realPath / tileImageName, cropped)
+        else:
+
+          #standard ase file
+          for layer in aseFile.layers:
+            #skip locked layers; I do not want to skip 'invisible' layers for convenience, so locked is used as the flag here instead
+            if layer.kind == alImage and layer.frames.len > 0 and afEditable in layer.flags:
+              #single-layer aseprite files default to file name only
+              let name = if aseFile.layers.len == 1: "" else: layer.name
+
+              let imageName = 
+                if name.len == 0: split.name
+                elif name[0] == '#' or name[0] == '@': layer.name[1..^1] #prefix layer name with @ or # to name it 'raw' without prefix
+                else: split.name & "" & layer.name.capitalizeAscii #otherwise, use camel case concatenation
+
+              for i, frame in layer.frames:
+                #if there is 1 frame, don't add a suffix, otherwise use 0-indexing
+                let frameName = if layer.frames.len == 1: imageName else: imageName & $i
+
+                #copy layer RGBA data into new image
+                let image = newImage(frame.width, frame.height)
+                copyMem(addr image.data[0], addr frame.data[0], frame.width * frame.height * 4)
                 
-                if tile.width > 0 and tile.height > 0:
-                  cropped = cropped.subImage(tile.x, tile.y, tile.width, tile.height)
-                
-                if not cropped.isTransparent:
-                  packFile(realPath / tileImageName, cropped)
-      else:
+                #aseprite layers are "cropped", so each layer needs to have a new image made with the uncropped version
+                let full = newImage(aseFile.width, aseFile.height)
+                full.draw(image, translate(vec2(frame.x.float32, frame.y.float32)))
 
-        #standard ase file
-        for layer in aseFile.layers:
-          #skip locked layers; I do not want to skip 'invisible' layers for convenience, so locked is used as the flag here instead
-          if layer.kind == alImage and layer.frames.len > 0 and afEditable in layer.flags:
-            #single-layer aseprite files default to file name only
-            let name = if aseFile.layers.len == 1: "" else: layer.name
+                if layer.userData == "outline" or layer.userData == "outlined":
+                  outline(full, if layer.userColor == 0'u32: blackRgba else: cast[ColorRGBA](layer.userColor))
 
-            let imageName = 
-              if name.len == 0: split.name
-              elif name[0] == '#' or name[0] == '@': layer.name[1..^1] #prefix layer name with @ or # to name it 'raw' without prefix
-              else: split.name & "" & layer.name.capitalizeAscii #otherwise, use camel case concatenation
-
-            for i, frame in layer.frames:
-              #if there is 1 frame, don't add a suffix, otherwise use 0-indexing
-              let frameName = if layer.frames.len == 1: imageName else: imageName & $i
-
-              #copy layer RGBA data into new image
-              let image = newImage(frame.width, frame.height)
-              copyMem(addr image.data[0], addr frame.data[0], frame.width * frame.height * 4)
-              
-              #aseprite layers are "cropped", so each layer needs to have a new image made with the uncropped version
-              let full = newImage(aseFile.width, aseFile.height)
-              full.draw(image, translate(vec2(frame.x.float32, frame.y.float32)))
-
-              if layer.userData == "outline" or layer.userData == "outlined":
-                outline(full, if layer.userColor == 0'u32: blackRgba else: cast[ColorRGBA](layer.userColor))
-
-              packFile(file / frameName, full, duration = frame.duration)
+                packFile(file / frameName, full, duration = frame.duration)
+      
+      except CatchableError:
+        echo "Failed to read file ", file, ": ", getCurrentExceptionMsg()
 
     else:
       packFile(file, readImage(file))

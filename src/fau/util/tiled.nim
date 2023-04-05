@@ -178,24 +178,30 @@ proc postHook*(map: var Tilemap) =
     
     layer.hasTiles = layer.tiles.len > 0
 
-proc getInt*(props: TiledProps, name: string): int =
-  let p = props.getOrDefault(name, TileProp())
+proc getInt*(props: TiledProps, name: string, def = 0): int =
+  let p = props.getOrDefault(name, TileProp(kind: tpInt, intVal: def))
+  result = def
   if p.kind == tpInt: return p.intVal
 
-proc getFloat*(props: TiledProps, name: string): float =
-  let p = props.getOrDefault(name, TileProp())
+proc getFloat*(props: TiledProps, name: string, def = 0f): float =
+  let p = props.getOrDefault(name, TileProp(kind: tpFloat, floatVal: def))
+  result = def
   if p.kind == tpFloat: return p.floatVal
 
-proc getString*(props: TiledProps, name: string): string =
-  let p = props.getOrDefault(name, TileProp())
+proc getString*(props: TiledProps, name: string, def = ""): string =
+  let p = props.getOrDefault(name, TileProp(kind: tpString, strVal: def))
+  result = def
   if p.kind == tpString: return p.strVal
 
-proc getBool*(props: TiledProps, name: string): bool =
-  let p = props.getOrDefault(name, TileProp())
+proc getBool*(props: TiledProps, name: string, def = false): bool =
+  let p = props.getOrDefault(name, TileProp(kind: tpBool, boolVal: def))
+  result = def
   if p.kind == tpBool: return p.boolVal
 
 proc contains*(layer: TileLayer, x, y: int): bool =
   return not(x < 0 or y < 0 or x >= layer.width or y >= layer.height)
+
+proc contains*(layer: TileLayer, xy: Vec2i): bool {.inline.} = contains(layer, xy.x, xy.y)
 
 proc `[]=`*(layer: TileLayer, x, y: int, tile: TiledTile) {.inline.} =
   if not layer.contains(x, y): return

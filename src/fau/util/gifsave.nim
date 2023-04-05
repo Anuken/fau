@@ -44,7 +44,7 @@ proc finishGif*(frames: seq[pointer], path: string, bounds: Rect, fps = 30) =
   for f in frames:
     f.dealloc
 
-template makeAnimation*(frameCount: int, fps: int, bounds: Rect, path: string, background = colorClear, body: untyped) =
+template makeAnimation*(frameCount: int, fps: int, bounds: Rect, path: string, prefix: string, background = colorClear, body: untyped) =
   ## Compiles a gif with the specified amount of frames into a file. 
   ## Body should draw each frame. i is injected as the frame index.
   ## Screen is automatically cleared.
@@ -63,9 +63,9 @@ template makeAnimation*(frameCount: int, fps: int, bounds: Rect, path: string, b
       img = newImage(bounds.w.int, bounds.h.int)
     copyMem(addr img.data[0], rawData, img.data.len * 4)
     img.flipVertical()
-    img.writeFile(path / $i  & ".png")
+    img.writeFile(path / prefix & $i & ".png")
   
-  finishGif(frames, path / "out.gif", bounds, fps)
+  finishGif(frames, path / prefix & "out.gif", bounds, fps)
 
 
 template makeGifBase*(frameCount: int, fps: int, bounds: Rect, path: string, background = colorClear, pingPong = false, body: untyped) =
