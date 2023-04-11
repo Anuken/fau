@@ -832,7 +832,7 @@ template circlev*(amount: int, len: float32, body: untyped) =
   for i in 0..<amount:
     let
       circleAngle {.inject.} = (i.float32 / amount.float32 * pi2)
-      v {.inject.} = vec2l(angle, len)
+      v {.inject.} = vec2l(circleAngle, len)
     body
 
 template shotgun*(amount: int, spacing: float32, body: untyped) =

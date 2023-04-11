@@ -219,6 +219,12 @@ proc `[]`*(layer: TileLayer, x, y: int): TileCell {.inline.} =
 
 proc `[]`*(layer: TileLayer, pos: Vec2i): TileCell {.inline.} = layer[pos.x, pos.y]
 
+proc hasLayer*(map: Tilemap, name: string): bool =
+  for layer in map.layers:
+    if layer.name == name:
+      return true
+  return false
+
 proc findLayer*(map: Tilemap, name: string): TileLayer =
   for layer in map.layers:
     if layer.name == name:
