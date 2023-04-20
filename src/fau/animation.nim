@@ -6,13 +6,15 @@ type Animation* = object
   delay: float32
   duration*: float32
 
-proc frame*(anim: Animation, time = fau.time): Patch = 
+proc frame*(anim: Animation, time = fau.time, loop = false): Patch =
+  let realTime = if loop: time mod anim.duration else: time
+
   if anim.frames.len == 0: #you messed up
     fau.atlas.error
   elif anim.delay > 0f: #easy, optimized case - all frames same length, just divide to get it
-    anim.frames[(time / anim.delay).int.mod(anim.frames.len)]
+    anim.frames[(realTime / anim.delay).int.mod(anim.frames.len)]
   else: #slow case: iterate through frames and find one based on duration
-    let real = time mod anim.duration
+    let real = realTime mod anim.duration
     var counter = 0f
     for i in 0..<anim.frames.len:
       counter += anim.durations[i]

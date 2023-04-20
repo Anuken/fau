@@ -1,4 +1,4 @@
-import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../globals, ../draw
+import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../globals, ../draw, strutils
 
 const screenspace = """
 attribute vec4 a_pos;
@@ -17,7 +17,8 @@ type Bloom* = object
   blurPasses*: int
   scaling*: int
 
-proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true): Bloom =
+#note: the colorBlacklist parameter is injected straight into the if-statement for the threshold check.
+proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, colorBlacklist = ""): Bloom =
   result.buffer = newFramebuffer(depth = depth, filter = tfLinear)
   result.p1 = newFramebuffer(filter = tfLinear)
   result.p2 = newFramebuffer(filter = tfLinear)
@@ -30,15 +31,20 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true): 
   uniform float u_threshold;
   varying vec2 v_uv;
 
+  bool checkeq(vec3 a, vec3 b){
+    vec3 test = abs(a - b);
+    return (test.r + test.g + test.b) < 0.001;
+  }
+
   void main(){
     vec4 color = texture2D(u_texture, v_uv);
-    if(color.r + color.g + color.b > u_threshold * 3.0){
+    if(color.r + color.g + color.b > u_threshold * 3.0$BLACKLIST$){
       gl_FragColor = color;
     }else{
       gl_FragColor = vec4(0.0);
     }
   }
-  """
+  """.replace("$BLACKLIST$", colorBlacklist)
   )
 
   result.bloom = newShader(screenspace,

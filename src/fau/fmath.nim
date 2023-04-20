@@ -306,14 +306,6 @@ func `-`*(vec: Vec2i): Vec2i {.inline.} = vec2i(-vec.x, -vec.y)
 
 #utility methods
 
-func `lerp`*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} = 
-  let invAlpha = 1.0f - alpha
-  vec = vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
-
-func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} = 
-  let invAlpha = 1.0f - alpha
-  return vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
-
 func clamp*(vec: var Vec2, min, max: Vec2) =
   vec.x = clamp(vec.x, min.x, max.x)
   vec.y = clamp(vec.y, min.y, max.y)
@@ -399,6 +391,25 @@ func within*(vec: Vec2, other: Vec2, distance: float32): bool {.inline.} = vec.d
 
 proc `$`*(vec: Vec2): string = $vec.x & ", " & $vec.y
 proc `$`*(vec: Vec2i): string = $vec.x & ", " & $vec.y
+
+func `lerp`*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} = 
+  let invAlpha = 1.0f - alpha
+  vec = vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
+
+func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} = 
+  let invAlpha = 1.0f - alpha
+  return vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
+
+func approach*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} = 
+  let 
+    d = vec - other
+    alpha2 = alpha*alpha
+    len2 = d.len2
+
+  if len2 > alpha2:
+    vec -= d * sqrt(alpha2 / len2)
+  else:
+    vec = other
 
 #TODO better impl
 const
