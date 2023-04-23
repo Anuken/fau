@@ -83,7 +83,9 @@ proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
   draw(z - spread, layerBegin)
   draw(z + spread, layerEnd)
 
-proc draw*(region: Patch, pos: Vec2, size = region.size * fau.pixelScl,
+proc draw*(
+  region: Patch, pos: Vec2, 
+  size = region.size * fau.pixelScl,
   z = 0f,
   scl = vec2(1f),
   origin = size * 0.5f * scl, 
@@ -347,15 +349,15 @@ proc lineRect*(pos: Vec2, size: Vec2, stroke: float32 = 1.px, color = colorWhite
 proc lineRect*(rect: Rect, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0, margin = 0f) =
   lineRect(rect.pos, rect.size, stroke, color, z, margin)
 
-proc lineSquare*(pos: Vec2, rad: float32, stroke: float32 = 1f, color = colorWhite, z = 0f) =
+proc lineSquare*(pos: Vec2, rad: float32, stroke: float32 = 1f.px, color = colorWhite, z = 0f) =
   lineRect(pos - rad, vec2(rad * 2f), stroke, color, z)
 
-proc spikes*(pos: Vec2, sides: int, radius: float32, len: float32, stroke = 1f, rotation = 0f, color = colorWhite, z = 0f) =
+proc spikes*(pos: Vec2, sides: int, radius: float32, len: float32, stroke = 1f.px, rotation = 0f, color = colorWhite, z = 0f) =
   for i in 0..<sides:
     let ang = i / sides * 360f.rad + rotation
     lineAngle(pos + vec2l(ang, radius), ang, len, stroke, color, z = z)
 
-proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f, color = colorWhite, z = 0f) =
+proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
   let 
     space = PI*2 / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)
@@ -378,7 +380,7 @@ proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f, c
       color, z
     )
 
-proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f, color = colorWhite, z = 0f) =
+proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorWhite, z = 0f) =
   if points.len < 2: return
 
   proc prepareFlatEndpoint(path, endpoint: Vec2, hstroke: float32): (Vec2, Vec2) =

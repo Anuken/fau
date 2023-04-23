@@ -134,7 +134,10 @@ func zero*(val: float32, margin: float32 = 0.0001f): bool {.inline.} = abs(val) 
 func clamp*(val: float32): float32 {.inline.} = clamp(val, 0f, 1f)
 
 func lerp*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * progress
-func approach*(a, b, progress: float32): float32 {.inline.} = a + (b - a) * clamp(progress)
+func approach*(a, b, progress: float32): float32 {.inline.} = a + (b - a).clamp(-progress, progress)
+
+func lerp*(a: var float32; b, progress: float32) {.inline.} = a += (b - a) * progress
+func approach*(a: var float32; b, progress: float32) {.inline.} = a += (b - a).clamp(-progress, progress)
 
 func slope*(value: float32): float32 = 1f - abs(value - 0.5f) * 2f
 
