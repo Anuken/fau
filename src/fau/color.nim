@@ -87,6 +87,8 @@ const
   colorCoral* = %"ff7f50"
   colorOrange* = %"ffa500"
   colorRed* = rgb(1, 0, 0)
+  colorMagenta* = rgb(1, 0, 1)
+  colorPurple* = %"a020f0"
   colorGreen* = rgb(0, 1, 0)
   colorBlue* = rgb(0, 0, 1)
   colorPink* = %"ff69b4"

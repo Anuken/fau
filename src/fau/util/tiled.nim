@@ -74,6 +74,7 @@ type
     layers*: seq[TileLayer]
     tilesets*: seq[Tileset]
     properties*: TiledProps
+    emptyTile*: TiledTile
   
 proc parseHook*(s: string, i: var int, v: var TiledProps) =
   #internal type for parsing property entries, as they are in a list, not a map
@@ -102,6 +103,7 @@ proc postHook*(map: var Tilemap) =
 
   #empty tile
   gidToTile[0] = TiledTile(empty: true)
+  map.emptyTile = gidToTile[0]
 
   for tileset in map.tilesets:
     if tileset.source != "":
