@@ -79,7 +79,7 @@ func fouts*(t: Scaleable): float32 {.inline.} = 2.0 * abs(t.fin - 0.5)
 func fins*(t: Scaleable): float32 {.inline.} = 1.0 - t.fouts
 
 func powout*(a, power: float32): float32 {.inline.} = 
-  result = pow(a - 1, power) * (if power mod 2 == 0: -1 else: 1) + 1
+  result = -pow(abs(a - 1), power) + 1
   if isNan(result): result = 0f
 
 func elasticDouble*(alpha: float32, value = 2f, power = 10f, scale = 1f, bounceCount = 7): float32 =
@@ -568,6 +568,8 @@ proc merge*(r: Rect, other: Rect): Rect =
   result.w = max(r.right, other.right) - result.x
   result.h = max(r.top, other.top) - result.y
 
+#collision stuff
+
 proc intersect*(r1: Rect, r2: Rect): Rect =
   var
     x1 = max(r1.x, r2.x)
@@ -578,8 +580,6 @@ proc intersect*(r1: Rect, r2: Rect): Rect =
   if x2 < x1: x2 = x1
   if y2 < y1: y2 = y1
   return rect(x1, y1, x2 - x1, y2 - y1)
-
-#collision stuff
 
 proc contains*(r: Rect, x, y: float32): bool {.inline.} = r.x <= x and r.x + r.w >= x and r.y <= y and r.y + r.h >= y
 proc contains*(r: Rect, pos: Vec2): bool {.inline.} = r.contains(pos.x, pos.y)
@@ -624,6 +624,28 @@ proc overlaps*(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
   else:
     hitPos = vec2(r1.x + r1.w / 2f + v1.x * entryTime, r1.y + r1.h / 2f + v1.y * entryTime)
     return true
+
+proc intersectSegments(p1, p2, p3, p4: Vec2): bool =
+  let d = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y)
+  if d == 0f: return false
+  let 
+    yd = p1.y - p3.y
+    xd = p1.x - p3.x
+    ua = ((p4.x - p3.x) * yd - (p4.y - p3.y) * xd) / d
+  if ua < 0 or ua > 1: return false
+
+  let ub = ((p2.x - p1.x) * yd - (p2.y - p1.y) * xd) / d
+  if ub < 0 or ub > 1: return false
+
+  return true #intersection: (x1 + (x2 - x1) * ua, y1 + (y2 - y1) * ua);
+
+proc intersectSegment*(rect: Rect, p1, p2: Vec2): bool =
+  return
+    rect.contains(p1) or
+    intersectSegments(p1, p2, rect.botLeft, rect.botRight) or
+    intersectSegments(p1, p2, rect.botRight, rect.topRight) or
+    intersectSegments(p1, p2, rect.topRight, rect.topLeft) or
+    intersectSegments(p1, p2, rect.topLeft, rect.botLeft)
 
 proc penetrationX*(a, b: Rect): float32 {.inline.} =
   let nx = a.centerX - b.centerX

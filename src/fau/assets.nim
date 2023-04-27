@@ -5,7 +5,7 @@ when defined(Android):
   import glfm
 
 ## if true, assets are loaded statically instead of from a local folder
-## this is always true by default on emscripten
+## this is always false by default on emscripten
 const staticAssets* = not defined(localAssets) and not defined(emscripten) and not defined(Android)
 ## project root directory
 const rootDir = if getProjectPath().endsWith("src"): getProjectPath()[0..^5] else: getProjectPath()
