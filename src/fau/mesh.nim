@@ -205,7 +205,7 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
         if loc != -1:
           activeAttribs[`attribIndex`] = loc
           glEnableVertexAttribArray(loc.GLuint)
-          glVertexAttribPointer(loc.GLuint, `components`, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
+          glVertexAttribPointer(loc.GLuint, `components`.GLint, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
         else:
           activeAttribs[`attribIndex`] = -1
       

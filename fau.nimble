@@ -11,7 +11,7 @@ requires "https://github.com/Anuken/staticglfw#35ec546322abe76b69c53baeb4d2a5f3f
 requires "https://github.com/Anuken/glfm#be73f6862533c4cccedfac512d7766c8a30f3122"
 requires "https://github.com/Anuken/nimsoloud#c74878dcb60fd2e2af84f894a8a8ffe901aecd51"
 requires "polymorph >= 0.3.1"
-requires "cligen >= 1.5.37"
+requires "cligen >= 1.6.1"
 requires "chroma >= 0.2.5"
 requires "pixie >= 4.0.1"
 requires "vmath >= 1.0.8"
