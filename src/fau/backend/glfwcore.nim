@@ -147,18 +147,21 @@ proc fixMouse(x, y: cdouble): Vec2 =
   var
     fwidth: cint
     fheight: cint
+    winwidth: cint
+    winheight: cint
   
   window.getFramebufferSize(addr fwidth, addr fheight)
+  window.getWindowSize(addr winwidth, addr winheight)
 
-  if fau.size.zero or fwidth == 0 or fheight == 0:
+  if winwidth == 0 or winheight == 0 or fwidth == 0 or fheight == 0:
     return vec2()
 
   let
-    sclx = fwidth.float32 / fau.size.x
-    scly = fheight.float32 / fau.size.y
+    sclx = fwidth.float32 / winwidth.float32
+    scly = fheight.float32 / winheight.float32
 
   #scale mouse position by framebuffer size
-  let pos = vec2((x / max(sclx, 1f)).float32, fau.size.y - 1f - (y / max(scly, 1f)).float32)
+  let pos = vec2((x * max(sclx, 1f)).float32, fau.size.y - 1f - (y * max(scly, 1f)).float32)
 
   return pos
 
