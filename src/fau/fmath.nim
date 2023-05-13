@@ -182,13 +182,15 @@ proc range*[T](r: var Rand, value: T): T = r.rand((-value)..value)
 
 #angle/degree functions; all are in radians
 
-const pi2* = PI * 2.0
+const 
+  pi2* = PI * 2.0
+  pi* = PI
 
 func rad*(val: float32): float32 {.inline.} = val * PI / 180.0
 func deg*(val: float32): float32 {.inline.} = val / (PI / 180.0)
 
 ## angle lerp
-func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + 360.rad + 180.rad) mod 360.rad) - 180.rad) * progress + 360.0.rad)) mod 360.rad
+func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + pi2 + pi) mod pi2) - pi) * progress + pi2)) mod pi2
 
 ## angle dist
 func adist*(a, b: float32): float32 {.inline.} = min(if a - b < 0: a - b + 360.0.rad else: a - b, if b - a < 0: b - a + 360.0.rad else: b - a)
@@ -521,6 +523,7 @@ iterator line*(p1, p2: Vec2i): Vec2i =
 
 proc rect*(): Rect {.inline.} = Rect()
 proc rect*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x, y: y, w: w, h: h)
+proc rect*(x, y: float32, size: Vec2): Rect {.inline.} = Rect(x: x, y: y, w: size.x, h: size.y)
 proc rect*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: w, h: h)
 proc rect*(xy: Vec2, size: Vec2): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: size.x, h: size.y)
 proc rectCenter*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x - w/2.0, y: y - h/2.0, w: w, h: h)
