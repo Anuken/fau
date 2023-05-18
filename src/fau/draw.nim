@@ -106,6 +106,14 @@ proc draw*(
     blend: blend, shader: shader
   ))
 
+proc draw*(
+  region: Patch, bounds: Rect,
+  z = 0f,
+  origin = bounds.center, 
+  rotation = 0f, align = daCenter,
+  color = colorWhite, mixColor = colorClear, 
+  blend = blendNormal, shader: Shader = nil) {.inline.} = draw(region, bounds.xy, bounds.size, 0f, vec2(1f), origin, rotation, daBotLeft, color, mixColor, blend, shader)
+
 #draws a region with rotated bits
 proc drawv*(region: Patch, pos: Vec2, corners: array[4, Vec2], z = 0f, size = region.size * fau.pixelScl,
   origin = size * 0.5f, rotation = 0f, align = daCenter,

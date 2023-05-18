@@ -112,9 +112,9 @@ proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var floa
     defaultFont.draw(text, bounds)
 
 #TODO remove? this is striclty less useful
-proc text*(bounds: Rect, text: string, align = daCenter, color = colorWhite, scale = 1f) =
+proc text*(bounds: Rect, text: string, align = daCenter, color = colorWhite, scale = 1f, modifier: GlyphProc = nil) =
   defaultFont.draw(text,
     bounds,
     scale = uiFontScale * scale, align = align,
-    color = color
+    color = color, modifier = modifier
   )

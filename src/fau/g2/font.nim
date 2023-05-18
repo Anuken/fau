@@ -1,8 +1,8 @@
 import tables, unicode, packer
 import math
-import ../texture, ../patch, ../color, ../globals, ../batch, ../util/util, ../draw, ../assets
+import ../texture, ../patch, ../color, ../globals, ../util/util, ../draw, ../assets
 
-from ../fmath import `+`, xy, wh
+from ../fmath import `+`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter
 from pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`
 from vmath import x, y, `*`, `-`, `+`, isNaN, translate
 from bumpy import xy
@@ -36,7 +36,7 @@ type
     font: pixie.Font
     patches: Table[Rune, Patch]
     offsets: Table[Rune, fmath.Vec2]
-  GlyphProc = proc(index: int, offset: var fmath.Vec2, color: var Color, draw: var bool)
+  GlyphProc* = proc(index: int, offset: var fmath.Vec2, color: var Color, draw: var bool)
 
 proc toVAlign(align: Align): pixie.VerticalAlignment {.inline.} =
   return if asBot in align and asTop in align: pixie.MiddleAlign

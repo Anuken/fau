@@ -10,6 +10,23 @@ converter toFloat32*(i: int): float32 {.inline.} = i.float32
 #template rad*(v: float32) = v.Radians
 #converter toFloat(r: Radians): float32 {.inline.} = r.float32
 
+type AlignSide* = enum
+  asLeft, asRight, asTop, asBot
+
+type Align* = set[AlignSide]
+
+#types of draw alignment for sprites
+const
+  daLeft* = {asLeft}
+  daRight* = {asRight}
+  daTop* = {asTop}
+  daBot* = {asBot}
+  daTopLeft* = {asTop, asLeft}
+  daTopRight* = {asTop, asRight}
+  daBotLeft* = {asBot, asLeft}
+  daBotRight* = {asBot, asRight}
+  daCenter* = {asLeft, asRight, asTop, asBot}
+
 ## any type that has a time and lifetime
 type Timeable* = concept t
   t.time is float32
@@ -564,12 +581,22 @@ proc center*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w/2.0, r.y + r.h/2.0)
 
 proc `-`*(r: Rect, other: Rect): Rect {.inline.} = rect(r.xy - other.xy, r.wh - other.wh)
 proc `+`*(r: Rect, other: Rect): Rect {.inline.} = rect(r.xy + other.xy, r.wh + other.wh)
+proc `+`*(r: Rect, pos: Vec2): Rect {.inline.} = rect(r.xy + pos, r.wh)
 
 proc merge*(r: Rect, other: Rect): Rect =
   result.x = min(r.x, other.x)
   result.y = min(r.y, other.y)
   result.w = max(r.right, other.right) - result.x
   result.h = max(r.top, other.top) - result.y
+
+proc align*(bounds: Vec2, target: Vec2, align: Align, margin = 0f): Rect =
+  let 
+    alignH = (-(asLeft in align).float32 + (asRight in align).float32) / 2f
+    alignV = (-(asBot in align).float32 + (asTop in align).float32) / 2f
+  
+  return rectCenter(bounds / 2f + (bounds - target - vec2(margin)) * vec2(alignH, alignV), target)
+
+proc align*(rect: Rect, target: Vec2, align: Align, margin = 0f): Rect = align(rect.size, target, align, margin) + rect.xy
 
 #collision stuff
 

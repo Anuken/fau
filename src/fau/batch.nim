@@ -54,23 +54,6 @@ type Batch* = ref object
   caching: bool
   caches: seq[CacheMesh]
 
-type AlignSide* = enum
-  asLeft, asRight, asTop, asBot
-
-type Align* = set[AlignSide]
-
-#types of draw alignment for sprites
-const
-  daLeft* = {asLeft}
-  daRight* = {asRight}
-  daTop* = {asTop}
-  daBot* = {asBot}
-  daTopLeft* = {asTop, asLeft}
-  daTopRight* = {asTop, asRight}
-  daBotLeft* = {asBot, asLeft}
-  daBotRight* = {asBot, asRight}
-  daCenter* = {asLeft, asRight, asTop, asBot}
-
 const defaultVertShader* = """
 attribute vec4 a_pos;
 attribute vec4 a_color;
