@@ -7,7 +7,7 @@ type Animation* = object
   duration*: float32
 
 proc frame*(anim: Animation, time = fau.time, loop = false): Patch =
-  let realTime = if loop: time mod anim.duration else: time
+  let realTime = if loop: time else: time.min(anim.duration - 0.001f)
 
   if anim.frames.len == 0: #you messed up
     fau.atlas.error
