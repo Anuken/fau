@@ -2,8 +2,10 @@ import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../asset
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 
-var running: bool = true
-var window: Window
+var 
+  running: bool = true
+  window: Window
+  windowedRect: (cint, cint, cint, cint) = (0, 0, 480, 320)
 
 proc getGlfwWindow*(): Window = window
 
@@ -317,8 +319,39 @@ proc getWindowPos*(): Vec2i =
   window.getWindowPos(addr w, addr h)
   return vec2i(w.int, h.int)
 
+proc getWindowSize*(): Vec2i =
+  var 
+    w: cint
+    h: cint
+  window.getWindowSize(addr w, addr h)
+  return vec2i(w.int, h.int)
+
 proc setVsync*(on: bool) =
   swapInterval(on.cint)
+
+proc setFullscreen*(on: bool) = 
+  let mode = getVideoMode(getPrimaryMonitor())
+  if on:
+    var
+      x: cint
+      y: cint
+      w: cint
+      h: cint
+
+    #save fullscreen rectangle
+    window.getWindowPos(addr x, addr y)
+    window.getWindowSize(addr w, addr h)
+    windowedRect = (x, y, w, h)
+
+    window.setWindowMonitor(getPrimaryMonitor(), 0, 0, mode.width, mode.height, mode.refreshRate)
+  else:
+    window.setWindowMonitor(nil, windowedRect[0], windowedRect[1], windowedRect[2], windowedRect[3], 0)
+
+proc isFullscreen*(): bool =
+  return window.getWindowMonitor() != nil
+
+proc toggleFullscreen*() =
+  setFullscreen(not isFullscreen())
 
 #stops the game, does not quit immediately
 proc quitApp*() = running = false
