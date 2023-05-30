@@ -329,26 +329,23 @@ proc getWindowSize*(): Vec2i =
 proc setVsync*(on: bool) =
   swapInterval(on.cint)
 
-proc setFullscreen*(on: bool) = 
+proc isFullscreen*(): bool =
+  return window.getWindowMonitor() != nil
+
+proc setFullscreen*(on: bool) =
+  #pointless
+  if isFullscreen() == on:
+    return
+
   let mode = getVideoMode(getPrimaryMonitor())
   if on:
-    var
-      x: cint
-      y: cint
-      w: cint
-      h: cint
-
     #save fullscreen rectangle
-    window.getWindowPos(addr x, addr y)
-    window.getWindowSize(addr w, addr h)
-    windowedRect = (x, y, w, h)
+    window.getWindowPos(addr windowedRect[0], addr windowedRect[1])
+    window.getWindowSize(addr windowedRect[2], addr windowedRect[3])
 
     window.setWindowMonitor(getPrimaryMonitor(), 0, 0, mode.width, mode.height, mode.refreshRate)
   else:
     window.setWindowMonitor(nil, windowedRect[0], windowedRect[1], windowedRect[2], windowedRect[3], 0)
-
-proc isFullscreen*(): bool =
-  return window.getWindowMonitor() != nil
 
 proc toggleFullscreen*() =
   setFullscreen(not isFullscreen())

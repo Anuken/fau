@@ -328,6 +328,8 @@ func `-`*(vec: Vec2i): Vec2i {.inline.} = vec2i(-vec.x, -vec.y)
 
 #utility methods
 
+func clamp*(vec: Vec2, min, max: Vec2): Vec2 = vec2(clamp(vec.x, min.x, max.x), clamp(vec.y, min.y, max.y))
+
 func clamp*(vec: var Vec2, min, max: Vec2) =
   vec.x = clamp(vec.x, min.x, max.x)
   vec.y = clamp(vec.y, min.y, max.y)

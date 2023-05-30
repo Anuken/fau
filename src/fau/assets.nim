@@ -61,10 +61,13 @@ proc assetRead*(filename: string): string =
     return readFile(filename.assetFile)
 
 template assetReadStatic*(filename: string): string =
-  ## Reads a static-only asset
-  const realDir = rootDir & "/assets/" & filename
-  const str = staticRead(realDir)
-  str
+  when not staticAssets:
+    assetRead(filename)
+  else:
+    ## Reads a static-only asset
+    const realDir = rootDir & "/assets/" & filename
+    const str = staticRead(realDir)
+    str
 
 proc assetExistsStatic*(filename: static string): bool =
   const realDir = rootDir & "/assets/" & filename

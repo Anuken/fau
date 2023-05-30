@@ -77,27 +77,39 @@ type
     emptyTile*: TiledTile
   
 proc parseHook*(s: string, i: var int, v: var TiledProps) =
+
   #internal type for parsing property entries, as they are in a list, not a map
   type TilePropEntry = object
     name: string
     `type`: string
     value: RawJson
 
-  v = initTable[string, TileProp]()
-
   var entries: seq[TilePropEntry]
 
   parseHook(s, i, entries)
 
-  for entry in entries:
-    v[entry.name] = case entry.`type`:
-    of "string", "file", "": TileProp(kind: tpString, strVal: fromJson(entry.value.string, string))
-    of "int": TileProp(kind: tpInt, intVal: fromJson(entry.value.string, int))
-    of "float": TileProp(kind: tpFloat, floatVal: fromJson(entry.value.string, float32))
-    of "bool": TileProp(kind: tpBool, boolVal: fromJson(entry.value.string, bool))
-    of "color": TileProp(kind: tpColor, colorVal: fromJson(entry.value.string, string).parseColor)
-    else: TileProp()
+  proc parseInt(s: string): int =
+    var i: int
+    discard parseInt(s, i)
+    return i
 
+  proc parseFloat(s: string): float =
+    var i: float
+    discard parseFloat(s, i)
+    return i
+  
+  #TODO crashes in emscripten.
+  for i, entry in entries:
+    let str = entry.value.string
+    
+    v[entry.name] = case entry.`type`:
+    of "string", "file", "": TileProp(kind: tpString, strVal: str[1..^2])
+    of "int": TileProp(kind: tpInt, intVal: str.parseInt())
+    of "float": TileProp(kind: tpFloat, floatVal: str.parseFloat())
+    of "bool": TileProp(kind: tpBool, boolVal: str == "true")
+    of "color": TileProp(kind: tpColor, colorVal: str[1..^2].parseColor)
+    else: TileProp()
+  
 proc postHook*(map: var Tilemap) =
   var gidToTile = initTable[int, TiledTile]()
 
@@ -114,7 +126,6 @@ proc postHook*(map: var Tilemap) =
       var curId = 0
       let tilesY = (tileset.imageheight - tileset.margin * 2) div (tileset.tileheight + tileset.spacing)
 
-      
       for gridY in 0..<tilesY:
         for gridX in 0..<tileset.columns:
 
