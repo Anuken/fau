@@ -36,7 +36,8 @@ proc drawSort*(sort: bool) =
 proc drawMat*(mat: Mat) =
   fau.batch.mat(mat)
 
-proc drawClip*(clipped = rect()) =
+#TODO should use a stack.
+proc drawClip*(clipped = rect()): bool {.discardable.} =
   if clipped.w.int > 0 and clipped.h.int > 0:
     #transform clipped rectangle from world into screen space
     let
@@ -44,8 +45,15 @@ proc drawClip*(clipped = rect()) =
       botLeft = project(fau.batch.mat, clipped.botLeft)
 
     fau.batch.clip(rect(botLeft, topRight - botLeft))
+    return true
   else:
     fau.batch.clip(rect())
+    return false
+
+template drawClipped*(clip: Rect, body: untyped) =
+  if drawClip(clip):
+    body
+    drawClip()
 
 proc drawBuffer*(buffer: Framebuffer) =
   fau.batch.buffer(buffer)

@@ -190,6 +190,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   window = createWindow(params.size.x.cint, params.size.y.cint, params.title.cstring, nil, nil)
   window.makeContextCurrent()
 
+  swapInterval(1)
+
   #center window on primary monitor if it's not maximized
   if not params.maximize:
     let 
