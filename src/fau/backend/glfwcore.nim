@@ -2,10 +2,29 @@ import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../asset
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 
+type 
+  CursorObj = object
+    handle: CursorHandle
+  Cursor* = ref CursorObj
+
 var 
   running: bool = true
   window: Window
   windowedRect: (cint, cint, cint, cint) = (0, 0, 480, 320)
+
+proc `=destroy`(cursor: var CursorObj) =
+  if cursor.handle != nil and glInitialized:
+    destroyCursor(cursor.handle)
+    cursor.handle = nil
+
+proc toGLfwImage(img: Img): GlfwImage = GlfwImage(width: img.width.cint, height: img.height.cint, pixels: cstring(cast[string](img.data)))
+
+proc newCursor*(path: static string): Cursor =
+  let 
+    img = loadImg(path)
+    glfwImage = toGlfwImage(img)
+    handle = createCursor(addr glfwImage, (img.width div 2).cint, (img.height div 2).cint)
+  return Cursor(handle: handle)
 
 proc getGlfwWindow*(): Window = window
 
@@ -300,6 +319,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 proc setWindowTitle*(title: string) =
   window.setWindowTitle(title)
 
+proc setCursor*(cursor: Cursor) =
+  window.setCursor(cursor.handle)
+
 proc getCursorPos*(): Vec2 =
   var 
     mouseX: cdouble = 0
@@ -334,7 +356,7 @@ proc isFullscreen*(): bool =
 
 proc setFullscreen*(on: bool) =
   #pointless
-  if isFullscreen() == on:
+  if isFullscreen() == on or defined(emscripten):
     return
 
   let mode = getVideoMode(getPrimaryMonitor())

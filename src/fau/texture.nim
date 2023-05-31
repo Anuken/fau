@@ -17,6 +17,10 @@ type TextureObj = object
   size*: Vec2i
 type Texture* = ref TextureObj
 
+type Img* = object
+  width*, height*: int
+  data*: seq[uint8]
+
 proc `=destroy`*(texture: var TextureObj) =
   if texture.handle != 0 and glInitialized:
     glDeleteTexture(texture.handle)
@@ -140,3 +144,15 @@ proc loadTexture*(path: static[string], filter = tfNearest, wrap = twClamp): Tex
     loadTextureBytes(assetRead(path), filter, wrap)
   else: #load from filesystem
     loadTextureFile(path.assetFile, filter, wrap)
+
+proc loadImgBytes*(textureBytes: string): Img =
+  var
+    width, height, channels: int
+    data: seq[uint8]
+  
+  data = stbi.loadFromMemory(cast[seq[byte]](textureBytes), width, height, channels, 4)
+
+  return Img(data: data, width: width, height: height)
+
+proc loadImg*(path: static[string]): Img =
+  return loadImgBytes(assetReadStatic(path))
