@@ -5,7 +5,7 @@ import fmath, math, strutils
 type Color* = object
   rv*, gv*, bv*, av*: uint8
 
-#just incase something gets messed up somewhere
+#just in case something gets messed up somewhere
 static: assert sizeof(Color) == 4, "Size of Color must be 4 bytes, but is " & $sizeof(Color)
 
 #float accessors for colors
@@ -31,6 +31,8 @@ func rgb*(r: float32, g: float32, b: float32): Color {.inline.} = rgba(r, g, b, 
 func rgb*(rgba: float32): Color {.inline.} = rgb(rgba, rgba, rgba)
 
 func alpha*(a: float32): Color {.inline.} = rgba(1.0, 1.0, 1.0, a)
+
+func gray*(g: float32): Color {.inline.} = rgb(g, g, g)
 
 #H, S, V are all floats from 0 to 1
 func hsv*(h, s, v: float32, a = 1f): Color =

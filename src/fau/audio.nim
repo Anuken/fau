@@ -121,7 +121,7 @@ proc loadSound*(path: static[string]): Sound =
   else: #load from filesystem
     return loadSoundFile(path.assetFile)
 
-proc play*(sound: Sound, pitch = 1.0f, volume = 1.0f, pan = 0f, loop = false): Voice {.discardable.} =
+proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false): Voice {.discardable.} =
   #handle may not exist due to failed loading
   if sound.handle.isNil or not initialized: return
 
@@ -145,7 +145,7 @@ proc pause*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 1)
 proc resume*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 0)
 proc seek*(v: Voice, pos: float) {.inline.} = discard so.SoloudSeek(v.cuint, pos.cdouble)
 
-proc valid*(v: Voice): bool {.inline.} = so.SoloudIsValidVoiceHandle(v.cuint).bool
+proc valid*(v: Voice): bool {.inline.} = v.int > 0 and so.SoloudIsValidVoiceHandle(v.cuint).bool
 proc paused*(v: Voice): bool {.inline.} = so.SoloudGetPause(v.cuint).bool
 proc playing*(v: Voice): bool {.inline.} = not v.paused
 proc volume*(v: Voice): float32 {.inline.} = so.SoloudGetVolume(v.cuint).float32
