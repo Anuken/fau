@@ -65,6 +65,10 @@ proc mix*(color: Color, other: Color, alpha: float32): Color =
   let inv = 1.0 - alpha
   return rgba(color.r*inv + other.r*alpha, color.g*inv + other.g*alpha, color.b*inv + other.b*alpha, color.a*inv + other.a*alpha)
 
+proc mix*(color: var Color, other: Color, alpha: float32) = 
+  let inv = 1.0 - alpha
+  color = rgba(color.r*inv + other.r*alpha, color.g*inv + other.g*alpha, color.b*inv + other.b*alpha, color.a*inv + other.a*alpha)
+
 #converts a hex string to a color at compile-time; no overhead
 export parseHexInt
 template `%`*(str: static[string]): Color =
