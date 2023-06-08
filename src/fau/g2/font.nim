@@ -3,7 +3,7 @@ import math
 import ../texture, ../patch, ../color, ../globals, ../util/util, ../draw, ../assets
 
 from ../fmath import `+`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter
-from pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`
+from pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`, dataIndex
 from vmath import x, y, `*`, `-`, `+`, isNaN, translate
 from bumpy import xy
 from chroma import nil
