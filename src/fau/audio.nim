@@ -128,7 +128,7 @@ proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false): V
   let id = so.SoloudPlay(sound.handle)
   if volume != 1.0: so.SoloudSetVolume(id, volume)
   if pan != 0f: so.SoloudSetPan(id, pan)
-  if pitch != 1.0: discard so.SoloudSetRelativePlaySpeed(id, pitch)
+  if pitch != 1.0f: discard so.SoloudSetRelativePlaySpeed(id, pitch)
   if loop: so.SoloudSetLooping(id, 1)
   if sound.protect: so.SoloudSetProtectVoice(id, 1)
   return id.Voice

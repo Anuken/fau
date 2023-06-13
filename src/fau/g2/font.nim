@@ -1,4 +1,4 @@
-import tables, unicode, packer
+import tables, unicode, packer, bitops
 import math
 import ../texture, ../patch, ../color, ../globals, ../util/util, ../draw, ../assets
 
@@ -114,9 +114,91 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128, out
 
   packer.update()
 
-proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil) =
-  let arrangement = font.font.typeset(text, hAlign = align.toHAlign, vAlign = align.toVAlign, bounds = vmath.vec2(bounds.x / scale, bounds.y / scale))
+#return (color, length)
+proc parseTag(text: string, start: int): (Color, int) =
+  case text[start]:
+  of ']': return (colorWhite, 1) #this means '[]', or the white color
+  of '#': #color tag
+    {.push checks: off}
+    
+    # Parse hex color RRGGBBAA where AA is optional and defaults to 0xFF if less than 6 chars are used.
+    var colorInt = 0'u32;
+    for i in (start + 1)..<text.len:
+      let ch = text[i]
 
+      if ch == ']':
+        if i < start + 2 or i > start + 9 or i == start + 8: 
+          break
+
+        if i - start <= 7: # RRGGBB or fewer chars.
+          var 
+            ii = 0
+            nn = 9 - (i - start)
+          while ii < nn:
+            colorInt = colorInt shl 4
+            ii.inc
+
+          colorInt = colorInt or 0xff
+        
+        return (cast[Color](colorInt.reverseBits), i - start + 1)
+      
+      if ch >= '0' and ch <= '9': colorInt = colorInt * 16 + (ch.uint32 - '0'.uint32)
+      elif ch >= 'a' and ch <= 'f': colorInt = colorInt * 16 + (ch.uint32 - ('a'.uint32 - 10))
+      elif ch >= 'A' and ch <= 'F': colorInt = colorInt * 16 + (ch.uint32 - ('A'.uint32 - 10))
+      else: break #Unexpected character in hex color.
+    
+    return (colorWhite, -1)
+
+    {.pop.}
+  #invalid (custom color names not supported)
+  else: return (colorWhite, -1)
+
+#returns (displayed string, seq[(color, startPos)])
+proc parseMarkup(text: string): (string, seq[(Color, int)]) =
+  var 
+    i = 0
+    builder = newStringOfCap(text.len)
+    tags: seq[(Color, int)]
+    lastPos = -1
+
+  while i < text.len - 1:
+    #parse tag
+    if text[i] == '[' and text[i + 1] != '[' and (i == 0 or text[i - 1] != '['):
+      let (color, len) = parseTag(text, i + 1)
+
+      if len > 0:
+        i += len + 1
+        if lastPos != builder.len:
+          tags.add (color, builder.len)
+          lastPos = builder.len
+        else:
+          #special case: there are two tags right next to each other with no spacing, overwrite the head tag
+          tags[^1] = (color, builder.len)
+        continue
+    
+    builder &= text[i]
+    i.inc
+  
+  return (builder, tags)
+
+proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false) =
+  var 
+    plainText: string
+    colors: seq[(Color, int)]
+
+  if markup:
+    (plainText, colors) = parseMarkup(text)
+  else:
+    (plainText, colors) = (text, @[(colorWhite, 0)])
+  
+  let arrangement = font.font.typeset(plainText, hAlign = align.toHAlign, vAlign = align.toVAlign, bounds = vmath.vec2(bounds.x / scale, bounds.y / scale))
+
+  #for markup state
+  var 
+    currentColor = colorWhite
+    markupIndex = 0
+
+  #TODO this will break with non-ASCII text immediately due to the markup parsing using byte indices
   for i, rune in arrangement.runes:
     let ch = arrangement.selectionRects[i]
     let p = arrangement.positions[i]
@@ -125,10 +207,17 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
       let offset = font.offsets[rune]
       let patch = font.patches[rune]
 
+      if colors.len > 0 and markupIndex < colors.len:
+        let next = colors[markupIndex]
+        #encountered the next color
+        if i >= next[1]:
+          currentColor = next[0]
+          markupIndex.inc
+
       var
         glyphIndex = i
         glyphOffset = fmath.vec2()
-        glyphColor = color
+        glyphColor = color * currentColor
         glyphDraw = true
 
       if modifier != nil:
@@ -141,5 +230,5 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
           patch.widthf*scale, patch.heightf*scale, color = glyphColor, z = z
         )
 
-proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil) =
-  draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier)
+proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false) =
+  draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier, markup)
