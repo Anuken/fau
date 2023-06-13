@@ -1,5 +1,5 @@
 
-import fmath, math, strutils, bitops
+import fmath, math, strutils
 
 #defines a RGBA color
 type Color* = object
@@ -84,7 +84,7 @@ proc parseColor*(str: string): Color =
     av: if str.len > 6 + offset: str[(6+offset)..(7+offset)].parseHexInt.uint8 else: 255'u8
   )
 
-proc `$`*(color: Color): string = toHex(cast[uint32](color).reverseBits)
+proc `$`*(color: Color): string = toHex(cast[uint32]((color.rv.uint32 shl 24) or (color.gv.uint32 shl 16) or (color.bv.uint32 shl 8) or color.av))
 
 const
   colorClear* = rgba(0, 0, 0, 0)

@@ -1,4 +1,4 @@
-import tables, unicode, packer, bitops
+import tables, unicode, packer, bitops, endians
 import math
 import ../texture, ../patch, ../color, ../globals, ../util/util, ../draw, ../assets
 
@@ -140,7 +140,9 @@ proc parseTag(text: string, start: int): (Color, int) =
 
           colorInt = colorInt or 0xff
         
-        return (cast[Color](colorInt.reverseBits), i - start + 1)
+        var reversed = colorInt
+        swapEndian32(addr reversed, addr colorInt)
+        return (cast[Color](reversed), i - start + 1)
       
       if ch >= '0' and ch <= '9': colorInt = colorInt * 16 + (ch.uint32 - '0'.uint32)
       elif ch >= 'a' and ch <= 'f': colorInt = colorInt * 16 + (ch.uint32 - ('a'.uint32 - 10))
@@ -161,9 +163,9 @@ proc parseMarkup(text: string): (string, seq[(Color, int)]) =
     tags: seq[(Color, int)]
     lastPos = -1
 
-  while i < text.len - 1:
+  while i < text.len:
     #parse tag
-    if text[i] == '[' and text[i + 1] != '[' and (i == 0 or text[i - 1] != '['):
+    if i < text.len - 1 and text[i] == '[' and text[i + 1] != '[' and (i == 0 or text[i - 1] != '['):
       let (color, len) = parseTag(text, i + 1)
 
       if len > 0:

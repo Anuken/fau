@@ -542,6 +542,7 @@ iterator line*(p1, p2: Vec2i): Vec2i =
 
 proc rect*(): Rect {.inline.} = Rect()
 proc rect*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x, y: y, w: w, h: h)
+proc rect*(size: Vec2): Rect {.inline.} = Rect(w: size.x, h: size.y)
 proc rect*(x, y: float32, size: Vec2): Rect {.inline.} = Rect(x: x, y: y, w: size.x, h: size.y)
 proc rect*(xy: Vec2, w, h: float32): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: w, h: h)
 proc rect*(xy: Vec2, size: Vec2): Rect {.inline.} = Rect(x: xy.x, y: xy.y, w: size.x, h: size.y)
