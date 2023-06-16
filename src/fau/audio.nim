@@ -2,10 +2,6 @@ import soloud, os, macros, strutils, assets, globals
 
 # High-level soloud wrapper.
 
-var 
-  so: ptr Soloud
-  initialized: bool
-
 type
   SoundObj* = object
     handle: ptr AudioSource
@@ -13,6 +9,10 @@ type
     protect: bool
   Sound* = ref SoundObj
   Voice* = distinct cuint
+  AudioBusObj* = object
+    handle: ptr Bus
+    voice: Voice
+  AudioBus* = ref AudioBusObj
   AudioFilter* = ptr Filter
   #EchoFilter* = ptr EchoFilter #TODO how to resolve name conflict?
   BiquadFilter* = ptr BiquadResonantFilter
@@ -26,17 +26,64 @@ const
   fEchoDecay* = 2.FilterParam
   fEchoFilter* = 3.FilterParam
 
+var 
+  so: ptr Soloud
+  initialized: bool
+  soundBus*: AudioBus
+
 proc `=destroy`*(sound: var SoundObj) =
   if sound.handle != nil:
     if sound.stream:
       WavStreamDestroy(cast[ptr WavStream](sound.handle))
     else:
       WavDestroy(cast[ptr Wav](sound.handle))
+    
+    sound.handle = nil
+
+proc `=destroy`*(bus: var AudioBusObj) =
+  if bus.handle != nil:
+    BusDestroy(bus.handle)
+    bus.handle = nil
 
 template checkErr(details: string, body: untyped) =
   let err = body
   #the game shouldn't crash when an audio error happens, but it would be nice to log to stderr
   if err != 0: echo "[Audio] ", details, ": ", so.SoloudGetErrorString(err)
+
+proc stop*(v: Voice) {.inline.} = 
+  if initialized: so.SoloudStop(v.cuint)
+proc pause*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 1)
+proc resume*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 0)
+proc seek*(v: Voice, pos: float) {.inline.} = discard so.SoloudSeek(v.cuint, pos.cdouble)
+
+proc valid*(v: Voice): bool {.inline.} = v.int > 0 and so.SoloudIsValidVoiceHandle(v.cuint).bool
+proc paused*(v: Voice): bool {.inline.} = so.SoloudGetPause(v.cuint).bool
+proc playing*(v: Voice): bool {.inline.} = not v.paused
+proc volume*(v: Voice): float32 {.inline.} = so.SoloudGetVolume(v.cuint).float32
+proc pitch*(v: Voice): float32 {.inline.} = discard so.SoloudGetRelativePlaySpeed(v.cuint).float32
+proc loopCount*(v: Voice): int {.inline.} = so.SoloudGetLoopCount(v.cuint).int
+proc streamTime*(v: Voice): float {.inline.} = so.SoloudGetStreamTime(v.cuint).float
+#TODO what is the difference?
+proc streamPos*(v: Voice): float {.inline.} = so.SoloudGetStreamPosition(v.cuint).float
+
+proc `paused=`*(v: Voice, value: bool) {.inline.} = so.SoloudSetPause(v.cuint, value.cint)
+proc `volume=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetVolume(v.cuint, value)
+proc `pitch=`*(v: Voice, value: float32) {.inline.} = discard so.SoloudSetRelativePlaySpeed(v.cuint, value)
+proc `pan=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetPan(v.cuint, value)
+
+proc newAudioBus*(): AudioBus =
+  AudioBus(handle: BusCreate())
+
+proc play*(bus: AudioBus) =
+  if not bus.voice.valid: 
+    bus.voice = so.SoloudPlay(bus.handle).Voice
+
+proc stop*(bus: AudioBus) =
+  bus.voice.stop()
+  bus.voice = 0.Voice
+
+proc `paused=`*(bus: AudioBus, value: bool) {.inline.} =
+  bus.voice.paused = value
 
 proc initAudio*() =
   so = SoloudCreate()
@@ -44,6 +91,9 @@ proc initAudio*() =
   if err != 0:
     echo "[Audio] Failed to initialize: ", so.SoloudGetErrorString(err), " (", err, ")"
   else:
+    soundBus = newAudioBus()
+    soundBus.play()
+
     initialized = true
     echo "Initialized SoLoud v" & $so.SoloudGetVersion() & " w/ " & $so.SoloudGetBackendString()
 
@@ -121,13 +171,14 @@ proc loadSound*(path: static[string]): Sound =
   else: #load from filesystem
     return loadSoundFile(path.assetFile)
 
-proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false): Voice {.discardable.} =
+proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, paused = false, bus = if sound.stream: nil else: soundBus): Voice {.discardable.} =
   #handle may not exist due to failed loading
   if sound.handle.isNil or not initialized: return
 
-  let id = so.SoloudPlay(sound.handle)
-  if volume != 1.0: so.SoloudSetVolume(id, volume)
-  if pan != 0f: so.SoloudSetPan(id, pan)
+  let id = if bus == nil: 
+    so.SoloudPlayEx(sound.handle, volume, pan, paused.cint, 0)
+  else:
+    BusPlayEx(bus.handle, sound.handle, volume, pan, paused.cint)
   if pitch != 1.0f: discard so.SoloudSetRelativePlaySpeed(id, pitch)
   if loop: so.SoloudSetLooping(id, 1)
   if sound.protect: so.SoloudSetProtectVoice(id, 1)
@@ -138,27 +189,6 @@ proc length*(sound: Sound): float =
     return WavStreamGetLength(cast[ptr WavStream](sound.handle)).float
   else:
     return WavGetLength(cast[ptr Wav](sound.handle)).float
-
-proc stop*(v: Voice) {.inline.} = 
-  if initialized: so.SoloudStop(v.cuint)
-proc pause*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 1)
-proc resume*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 0)
-proc seek*(v: Voice, pos: float) {.inline.} = discard so.SoloudSeek(v.cuint, pos.cdouble)
-
-proc valid*(v: Voice): bool {.inline.} = v.int > 0 and so.SoloudIsValidVoiceHandle(v.cuint).bool
-proc paused*(v: Voice): bool {.inline.} = so.SoloudGetPause(v.cuint).bool
-proc playing*(v: Voice): bool {.inline.} = not v.paused
-proc volume*(v: Voice): float32 {.inline.} = so.SoloudGetVolume(v.cuint).float32
-proc pitch*(v: Voice): float32 {.inline.} = discard so.SoloudGetRelativePlaySpeed(v.cuint).float32
-proc loopCount*(v: Voice): int {.inline.} = so.SoloudGetLoopCount(v.cuint).int
-proc streamTime*(v: Voice): float {.inline.} = so.SoloudGetStreamTime(v.cuint).float
-#TODO what is the difference?
-proc streamPos*(v: Voice): float {.inline.} = so.SoloudGetStreamPosition(v.cuint).float
-
-proc `paused=`*(v: Voice, value: bool) {.inline.} = so.SoloudSetPause(v.cuint, value.cint)
-proc `volume=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetVolume(v.cuint, value)
-proc `pitch=`*(v: Voice, value: float32) {.inline.} = discard so.SoloudSetRelativePlaySpeed(v.cuint, value)
-proc `pan=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetPan(v.cuint, value)
 
 #TODO only works with wavs, not streams
 proc setFilter*(sound: Sound, index: int, filter: AudioFilter) =

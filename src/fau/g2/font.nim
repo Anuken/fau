@@ -1,4 +1,4 @@
-import tables, unicode, packer, bitops, endians
+import tables, unicode, packer, bitops
 import math
 import ../texture, ../patch, ../color, ../globals, ../util/util, ../draw, ../assets
 
@@ -140,9 +140,7 @@ proc parseTag(text: string, start: int): (Color, int) =
 
           colorInt = colorInt or 0xff
         
-        var reversed = colorInt
-        swapEndian32(addr reversed, addr colorInt)
-        return (cast[Color](reversed), i - start + 1)
+        return (colorInt.rgbaToColor, i - start + 1)
       
       if ch >= '0' and ch <= '9': colorInt = colorInt * 16 + (ch.uint32 - '0'.uint32)
       elif ch >= 'a' and ch <= 'f': colorInt = colorInt * 16 + (ch.uint32 - ('a'.uint32 - 10))

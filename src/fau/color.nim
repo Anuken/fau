@@ -1,5 +1,5 @@
 
-import fmath, math, strutils
+import fmath, math, strutils, endians
 
 #defines a RGBA color
 type Color* = object
@@ -60,6 +60,11 @@ func `*`*(a: Color, b: float32): Color {.inline.} = rgba(a.r * b, a.g * b, a.b *
 
 func `+`*(a, b: Color): Color {.inline.} = rgba(a.r + b.r, a.g + b.g, a.b + b.b, a.a + b.a)
 func `+`*(a: Color, b: float32): Color {.inline.} = rgba(a.r + b, a.g + b, a.b + b, a.a)
+
+proc rgbaToColor*(val: uint32): Color =
+  var reversed = val
+  swapEndian32(addr reversed, addr val)
+  return cast[Color](reversed)
 
 proc mix*(color: Color, other: Color, alpha: float32): Color =
   let inv = 1.0 - alpha
