@@ -85,6 +85,9 @@ proc stop*(bus: AudioBus) =
 proc `paused=`*(bus: AudioBus, value: bool) {.inline.} =
   bus.voice.paused = value
 
+proc `volume=`*(bus: AudioBus, value: float32) {.inline.} =
+  bus.voice.volume = value
+
 proc initAudio*() =
   so = SoloudCreate()
   let err = so.SoloudInit()

@@ -126,7 +126,7 @@ const
   CP_VERSION_MAJOR* = 7
   CP_VERSION_MINOR* = 0
   CP_VERSION_RELEASE* = 3
-  CP_USE_DOUBLES* = defined(rapidChipmunkUseFloat64)
+  CP_USE_DOUBLES* = defined(chipmunkUseFloat64)
 ## Most of these types can be configured at compile time.
 
 when CP_USE_DOUBLES:

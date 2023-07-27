@@ -7,7 +7,7 @@ type
     downColor*, upColor*, overColor*, disabledColor*: Color
     iconUpColor*, iconDownColor*: Color
     up*, down*, over*: Patch9
-    textUpColor*, textDisabledColor*: Color
+    textUpColor*, textDisabledColor*, textOverColor*: Color = colorWhite
     font*: Font
   SliderStyle* = object
     back*, up*, over*, down*: Patch9
@@ -51,6 +51,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
   if over:
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
+    textCol = style.textOverColor
 
     if keyMouseLeft.down:
       down = true
@@ -65,7 +66,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
   if text.len != 0 and not font.isNil:
     font.draw(text,
       vec2(bounds.x, bounds.y) + vec2(patch.left.float32, patch.bot.float32) * uiPatchScale,
-      bounds = vec2(bounds.w, bounds.h) - vec2(patch.left.float32 + patch.right.float32, patch.bot.float32 - patch.top.float32) * uiPatchScale,
+      bounds = vec2(bounds.w, bounds.h) - vec2(patch.left.float32 + patch.right.float32, patch.bot.float32 + patch.top.float32) * uiPatchScale,
       scale = uiFontScale, align = daCenter,
       color = textCol
     )
@@ -78,7 +79,7 @@ template slider*(bounds: Rect, min, max: float32, value: var float32, style = de
   var down {.global.}: bool
   slider(bounds, min, max, down, value, style, text)
 
-proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var float32, style = defaultSliderStyle, text = "") =
+proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var float32, style = defaultSliderStyle, text = "", textScale = 1f) =
   #TODO vertical padding would be nice?
   if style.back.valid:
     draw(style.back, bounds, scale = uiPatchScale, mixColor = style.backColor)
@@ -109,7 +110,7 @@ proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var floa
     draw(patch, rect(sliderx - pad/2f, bounds.y, pad, bounds.h), mixColor = col, scale = uiPatchScale)
   
   if text.len > 0:
-    defaultFont.draw(text, bounds)
+    defaultFont.draw(text, bounds, scale = uiFontScale * textScale)
 
 #TODO remove? this is striclty less useful
 proc text*(bounds: Rect, text: string, align = daCenter, color = colorWhite, scale = 1f, modifier: GlyphProc = nil, markup = false) =
