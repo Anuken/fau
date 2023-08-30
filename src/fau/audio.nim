@@ -7,6 +7,7 @@ type
     handle: ptr AudioSource
     stream: bool
     protect: bool
+    voice*: Voice
   Sound* = ref SoundObj
   Voice* = distinct cuint
   AudioBusObj* = object
@@ -71,6 +72,12 @@ proc `volume=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetVolume(v.cuin
 proc `pitch=`*(v: Voice, value: float32) {.inline.} = discard so.SoloudSetRelativePlaySpeed(v.cuint, value)
 proc `pan=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetPan(v.cuint, value)
 
+proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
+  if sound.stream:
+    WavStreamSetLoopPoint(cast[ptr WavStream](sound.handle), value.cdouble)
+  else:
+    WavSetLoopPoint(cast[ptr Wav](sound.handle), value.cdouble)
+
 proc newAudioBus*(): AudioBus =
   AudioBus(handle: BusCreate())
 
@@ -134,7 +141,7 @@ proc loadMusicStatic*(path: static[string]): Sound =
 proc loadMusicFile*(path: string): Sound =
   let handle = WavStreamCreate()
   checkErr(path): handle.WavStreamLoad(path)
-  return Sound(handle: handle, stream: true)
+  return Sound(handle: handle, protect: true, stream: true)
 
 proc loadMusicAsset*(path: string): Sound =
   ## Loads music from the assets folder - non-static parameter version. Uses preloaded asset directory if static.
@@ -185,6 +192,7 @@ proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, pa
   if pitch != 1.0f: discard so.SoloudSetRelativePlaySpeed(id, pitch)
   if loop: so.SoloudSetLooping(id, 1)
   if sound.protect: so.SoloudSetProtectVoice(id, 1)
+  sound.voice = id.Voice
   return id.Voice
 
 proc length*(sound: Sound): float =
