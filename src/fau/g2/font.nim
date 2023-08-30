@@ -189,13 +189,13 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
   if markup:
     (plainText, colors) = parseMarkup(text)
   else:
-    (plainText, colors) = (text, @[(colorWhite, 0)])
+    plainText = text
   
   let arrangement = font.font.typeset(plainText, hAlign = align.toHAlign, vAlign = align.toVAlign, bounds = vmath.vec2(bounds.x / scale, bounds.y / scale))
 
   #for markup state
   var 
-    currentColor = colorWhite
+    currentColor = color
     markupIndex = 0
 
   #TODO this will break with non-ASCII text immediately due to the markup parsing using byte indices
@@ -212,12 +212,13 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
         #encountered the next color
         if i >= next[1]:
           currentColor = next[0]
+          currentColor.a = color.a * currentColor.a
           markupIndex.inc
 
       var
         glyphIndex = i
         glyphOffset = fmath.vec2()
-        glyphColor = color * currentColor
+        glyphColor = currentColor
         glyphDraw = true
 
       if modifier != nil:

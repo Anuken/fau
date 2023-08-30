@@ -1,16 +1,5 @@
 import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../globals, ../draw, strutils
 
-const screenspace = """
-attribute vec4 a_pos;
-attribute vec2 a_uv; 
-varying vec2 v_uv;
-
-void main(){
-	v_uv = a_uv;
-	gl_Position = a_pos;
-}
-"""
-
 type Blur* = object
   p1, p2: Framebuffer
   shader: Shader

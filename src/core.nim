@@ -1,6 +1,8 @@
 import fau/[fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer, input]
 import os, times, random
 
+const isDebug* = defined(debug)
+
 when isMobile:
   include fau/backend/glfmcore
 else:
