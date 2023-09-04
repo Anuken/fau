@@ -128,9 +128,10 @@ proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, ve
     modifiedInd: true,
     vertexBuffer: glGenBuffer(),
     indexBuffer: glGenBuffer(),
-    #TODO: not used or bound - rewrite everything to NOT use the global vertex array object.
-    #vertexArray: glGenVertexArray()
   )
+
+  if supportsVertexArrays:
+    result.vertexArray = glGenVertexArray()
 
 proc newMesh2*(isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[Vert2] = @[], indices: seq[Index] = @[]): Mesh =
   newMesh[Vert2](isStatic, primitiveType, vertices, indices)
@@ -233,6 +234,10 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   #draw usage
   let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
 
+  #bind VAO if possible??
+  if supportsVertexArrays:
+    glBindVertexArray(mesh.vertexArray)
+
   #bind the vertex buffer
   glBindBuffer(GlArrayBuffer, mesh.vertexBuffer)
 
@@ -256,7 +261,7 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   mesh.indSlice = 0..0
   mesh.modifiedVert = false
   mesh.modifiedInd = false
-
+  
   enableAttributes(shader, T)
 
   #set up depth buffer info

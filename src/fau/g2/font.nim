@@ -61,7 +61,7 @@ proc outline(image: Image, color: chroma.ColorRGBA, diagonal: bool) =
   let copy = image.copy()
   for x in 0..<copy.width:
     for y in 0..<copy.height:
-      if copy[x, y].a == 0:
+      if copy[x, y].a < 128:
         var found = false
         for (dx, dy) in par:
           let 
@@ -69,7 +69,7 @@ proc outline(image: Image, color: chroma.ColorRGBA, diagonal: bool) =
             wy = y + dy
           
           if wx >= 0 and wy >= 0 and wx < copy.width and wy < copy.height:
-            if copy[wx, wy].a != 0:
+            if copy[wx, wy].a > 128:
               found = true
               break
         
@@ -92,7 +92,7 @@ proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color
 
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 
-proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 128, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
+proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
   var font = pixie.newFont(pixie.parseTtf(assetReadStatic(path)))
 
   font.size = size

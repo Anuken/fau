@@ -4,6 +4,7 @@ import gltypes
 export gltypes
 
 import glad as wrap
+export wrap.supportsVertexArrays
 
 #Thrown when something goes wrong with openGL
 type

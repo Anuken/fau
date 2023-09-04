@@ -35,7 +35,7 @@ proc mouseUi(): Vec2 =
   ((fau.mouse * 2f) / fau.size - 1f) * fau.batch.matInv
 
 #TODO: inject some state for better button press handling.
-proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f, rotation = 0f): bool =
+proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f, rotation = 0f, markup = false): bool =
   var 
     col = style.upColor
     textCol = style.textUpColor
@@ -68,7 +68,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
       vec2(bounds.x, bounds.y) + vec2(patch.left.float32, patch.bot.float32) * uiPatchScale,
       bounds = vec2(bounds.w, bounds.h) - vec2(patch.left.float32 + patch.right.float32, patch.bot.float32 + patch.top.float32) * uiPatchScale,
       scale = uiFontScale, align = daCenter,
-      color = textCol
+      color = textCol, markup = markup
     )
 
   if icon.valid:
@@ -113,8 +113,8 @@ proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var floa
     defaultFont.draw(text, bounds, scale = uiFontScale * textScale)
 
 #TODO remove? this is striclty less useful
-proc text*(bounds: Rect, text: string, align = daCenter, color = colorWhite, scale = 1f, modifier: GlyphProc = nil, markup = false) =
-  defaultFont.draw(text,
+proc text*(bounds: Rect, text: string, align = daCenter, color = colorWhite, scale = 1f, modifier: GlyphProc = nil, markup = false, font = defaultFont) =
+  font.draw(text,
     bounds,
     scale = uiFontScale * scale, align = align,
     color = color, modifier = modifier,

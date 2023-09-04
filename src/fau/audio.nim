@@ -72,6 +72,8 @@ proc `volume=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetVolume(v.cuin
 proc `pitch=`*(v: Voice, value: float32) {.inline.} = discard so.SoloudSetRelativePlaySpeed(v.cuint, value)
 proc `pan=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetPan(v.cuint, value)
 
+proc fadeVolume*(v: Voice, value: float32, time: float) {.inline.} = so.SoloudFadeVolume(v.cuint, value, time)
+
 proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
   if sound.stream:
     WavStreamSetLoopPoint(cast[ptr WavStream](sound.handle), value.cdouble)
