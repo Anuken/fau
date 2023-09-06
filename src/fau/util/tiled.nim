@@ -5,17 +5,12 @@ type
     tpString, tpInt, tpFloat, tpBool, tpColor
 
   TileProp* = object
-    case kind*: TilePropKind
-    of tpString: 
-      strVal*: string
-    of tpInt: 
-      intVal*: int
-    of tpFloat: 
-      floatVal*: float
-    of tpBool: 
-      boolVal*: bool
-    of tpColor:
-      colorVal*: Color
+    kind*: TilePropKind
+    strVal*: string
+    intVal*: int
+    floatVal*: float
+    boolVal*: bool
+    colorVal*: Color
       
   TiledProps* = TableRef[string, TileProp]
 
@@ -76,10 +71,6 @@ type
     properties*: TiledProps
     emptyTile*: TiledTile
 
-proc postHook*(tile: var TiledTile) =
-  if tile.properties.isNil:
-    tile.properties = newTable[string, TileProp]()
-
 proc parseHook*(s: string, i: var int, v: var TiledProps) =
   #internal type for parsing property entries, as they are in a list, not a map
   type TilePropEntry = object
@@ -118,11 +109,8 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
 proc postHook*(map: var Tilemap) =
   var gidToTile = initTable[int, TiledTile]()
 
-  if map.properties.isNil:
-    map.properties = newTable[string, TileProp]()
-
   #empty tile
-  gidToTile[0] = TiledTile(empty: true, properties: newTable[string, TileProp]())
+  gidToTile[0] = TiledTile(empty: true)
   map.emptyTile = gidToTile[0]
 
   for tileset in map.tilesets:
@@ -146,7 +134,6 @@ proc postHook*(map: var Tilemap) =
             width: tileset.tilewidth,
             height: tileset.tileheight,
             image: tileset.image, #TODO is this necessary...?
-            properties: newTable[string, TileProp]()
           )
 
           tileset.tiles.add(tile)
@@ -200,22 +187,30 @@ proc postHook*(map: var Tilemap) =
     
     layer.hasTiles = layer.tiles.len > 0
 
+# TiledProps CAN BE NIL. Why? Because ensuring that it isn't, or making it a Table (non-ref) crashes emscripten.
+
+proc contains*(props: TiledProps, key: string): bool = not props.isNil and props.hasKey(key)
+
 proc getInt*(props: TiledProps, name: string, def = 0): int =
+  if props.isNil: return def
   let p = props.getOrDefault(name, TileProp(kind: tpInt, intVal: def))
   result = def
   if p.kind == tpInt: return p.intVal
 
 proc getFloat*(props: TiledProps, name: string, def = 0f): float =
+  if props.isNil: return def
   let p = props.getOrDefault(name, TileProp(kind: tpFloat, floatVal: def))
   result = def
   if p.kind == tpFloat: return p.floatVal
 
 proc getString*(props: TiledProps, name: string, def = ""): string =
+  if props.isNil: return def
   let p = props.getOrDefault(name, TileProp(kind: tpString, strVal: def))
   result = def
   if p.kind == tpString: return p.strVal
 
 proc getBool*(props: TiledProps, name: string, def = false): bool =
+  if props.isNil: return def
   let p = props.getOrDefault(name, TileProp(kind: tpBool, boolVal: def))
   result = def
   if p.kind == tpBool: return p.boolVal
