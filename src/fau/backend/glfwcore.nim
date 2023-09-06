@@ -232,6 +232,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if not loadGl(getProcAddress, extensionSupported):
     raise Exception.newException("Failed to load OpenGL.")
 
+  echo "VAO support: ", supportsVertexArrays
+
   echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
 
   checkGlError()

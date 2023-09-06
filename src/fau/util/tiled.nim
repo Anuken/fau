@@ -5,7 +5,7 @@ type
     tpString, tpInt, tpFloat, tpBool, tpColor
 
   TileProp* = object
-    case kind: TilePropKind
+    case kind*: TilePropKind
     of tpString: 
       strVal*: string
     of tpInt: 
@@ -17,7 +17,7 @@ type
     of tpColor:
       colorVal*: Color
       
-  TiledProps* = Table[string, TileProp]
+  TiledProps* = TableRef[string, TileProp]
 
   TiledTile* = ref object
     id*: int #an ID of 0 indicates an empty tile
@@ -75,9 +75,12 @@ type
     tilesets*: seq[Tileset]
     properties*: TiledProps
     emptyTile*: TiledTile
-  
-proc parseHook*(s: string, i: var int, v: var TiledProps) =
 
+proc postHook*(tile: var TiledTile) =
+  if tile.properties.isNil:
+    tile.properties = newTable[string, TileProp]()
+
+proc parseHook*(s: string, i: var int, v: var TiledProps) =
   #internal type for parsing property entries, as they are in a list, not a map
   type TilePropEntry = object
     name: string
@@ -87,6 +90,8 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
   var entries: seq[TilePropEntry]
 
   parseHook(s, i, entries)
+
+  v = newTable[string, TileProp]()
 
   proc parseInt(s: string): int =
     var i: int
@@ -113,8 +118,11 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
 proc postHook*(map: var Tilemap) =
   var gidToTile = initTable[int, TiledTile]()
 
+  if map.properties.isNil:
+    map.properties = newTable[string, TileProp]()
+
   #empty tile
-  gidToTile[0] = TiledTile(empty: true)
+  gidToTile[0] = TiledTile(empty: true, properties: newTable[string, TileProp]())
   map.emptyTile = gidToTile[0]
 
   for tileset in map.tilesets:
@@ -137,7 +145,8 @@ proc postHook*(map: var Tilemap) =
             y: gridY * (tileset.tileheight + tileset.spacing),
             width: tileset.tilewidth,
             height: tileset.tileheight,
-            image: tileset.image #TODO is this necessary...?
+            image: tileset.image, #TODO is this necessary...?
+            properties: newTable[string, TileProp]()
           )
 
           tileset.tiles.add(tile)
