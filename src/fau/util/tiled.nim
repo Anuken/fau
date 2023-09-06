@@ -5,12 +5,17 @@ type
     tpString, tpInt, tpFloat, tpBool, tpColor
 
   TileProp* = object
-    kind*: TilePropKind
-    strVal*: string
-    intVal*: int
-    floatVal*: float
-    boolVal*: bool
-    colorVal*: Color
+    case kind*: TilePropKind
+    of tpString: 
+      strVal*: string
+    of tpInt: 
+      intVal*: int
+    of tpFloat: 
+      floatVal*: float
+    of tpBool: 
+      boolVal*: bool
+    of tpColor:
+      colorVal*: Color
       
   TiledProps* = TableRef[string, TileProp]
 
