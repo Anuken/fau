@@ -208,6 +208,11 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if params.undecorated:
     windowHint(DECORATED, 0.cint)
 
+  if (paramCount() > 0 and paramStr(1) == "-coreProfile"):
+    windowHint(CONTEXT_VERSION_MAJOR, 3)
+    windowHint(CONTEXT_VERSION_MINOR, 2)
+    windowHint(OPENGL_PROFILE, OPENGL_CORE_PROFILE)
+
   window = createWindow(params.size.x.cint, params.size.y.cint, params.title.cstring, nil, nil)
   window.makeContextCurrent()
 
@@ -224,10 +229,12 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
       getMonitorPos(monitor, mx.addr, my.addr)
       window.setWindowPos(mx + (mode.width - params.size.x.cint) div 2, my + (mode.height - params.size.y.cint) div 2)
 
-  if not loadGl(getProcAddress):
+  if not loadGl(getProcAddress, extensionSupported):
     raise Exception.newException("Failed to load OpenGL.")
 
   echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
+
+  checkGlError()
 
   #load window icon if possible
   when assetExistsStatic("icon.png") and not defined(macosx):

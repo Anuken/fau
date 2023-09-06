@@ -32,6 +32,9 @@ template glCheck(body: untyped) =
   else:
     body
 
+proc checkGlError*() =
+  glCheck: discard
+
 #global variable for storing openGL initialization state
 #this is far from a clean solution but I'm not sure where else to put this
 var glInitialized* = false

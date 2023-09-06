@@ -42,6 +42,9 @@ type MeshObj*[V] = object
   vertSlice: Slice[int]
   indSlice: Slice[int]
   primitiveType*: GLenum
+
+  activeAttribs: array[12, int]
+  totalActive: int
 #Generic mesh
 type Mesh*[T] = ref MeshObj[T]
 #Basic 2D mesh
@@ -141,22 +144,49 @@ proc newMesh2*(isStatic: bool = false, primitiveType: Glenum = GlTriangles, vert
 var activeAttribs: array[32, int]
 #total active attributes in activeAttribs
 var totalActive = 0
-#last vertex type used as a string hash (yes, collisions are possible here, but unlikely)
-var lastVertexType: int64
 #fill with -1s
 for i in 0..<activeAttribs.len:
   activeAttribs[i] = -1
 
+proc getVertType(typeName: string): tuple[components: int, componentType: GLenum, normalized: bool] =
+  var components = 1
+  var componentType = cGlFloat
+  var normalized = false
+
+  if typeName == "Vec2":
+    components = 2
+  elif typeName == "Vec3":
+    components = 3
+  elif typeName == "Color":
+    components = 4
+    normalized = true
+    componentType = GlUnsignedByte
+  elif typeName == "float32": discard #nothing different here
+  elif typeName == "uint16": 
+    componentType = GlUnsignedShort
+    normalized = true
+  elif typeName == "int16": 
+    componentType = cGlShort
+    normalized = true
+  elif typeName == "uint8": 
+    componentType = GlUnsignedByte
+    normalized = true
+  elif typeName == "int8": 
+    componentType = cGlByte
+    normalized = true
+  else: error("Unknown vertex component type: " & $typeName)
+
+  return (components, componentType, normalized)
+
 macro enableAttributes(shader: Shader, vert: typed): untyped =
   let vertexType = vert.getType()[1]
   result = newStmtList()
-  let typeHash = vertexType.repr.hash
   var attribIndex = 0
 
   #disable older attributes
   result.add quote do:
-    #TODO this is broken with multiple meshes, I have no idea why, I hate it
-    if lastVertexType != `typeHash` or true:
+    if true:
+      #Optimization DOES NOT WORK, because when you call glVertexAttribPointer, that's relative to the currently bound VBO.
       for i in 0..<totalActive:
         if activeAttribs[i] != -1:
           glDisableVertexAttribArray(activeAttribs[i].GLuint)
@@ -173,33 +203,7 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
       let name = $field
       let alias = "a_" & name
       
-      var components = 1
-      var componentType = cGlFloat
-      var normalized = false
-
-      #using string comparisons here because Vec3 isn't imported; otherwise I would use 'is'
-      if typeName == "Vec2":
-        components = 2
-      elif typeName == "Vec3":
-        components = 3
-      elif typeName == "Color":
-        components = 4
-        normalized = true
-        componentType = GlUnsignedByte
-      elif typeName == "float32": discard #nothing different here
-      elif typeName == "uint16": 
-        componentType = GlUnsignedShort
-        normalized = true
-      elif typeName == "int16": 
-        componentType = cGlShort
-        normalized = true
-      elif typeName == "uint8": 
-        componentType = GlUnsignedByte
-        normalized = true
-      elif typeName == "int8": 
-        componentType = cGlByte
-        normalized = true
-      else: error("Unknown vertex component type: " & $typeName)
+      var (components, componentType, normalized) = getVertType(typeName)
 
       resultBody.add quote do:
         let loc = shader.getAttributeLoc(`alias`)
@@ -214,7 +218,41 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
   
   resultBody.add quote do:
     totalActive = `attribIndex`
-    lastVertexType = `typeHash`
+
+macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
+  let vertexType = vert.getType()[1]
+  result = newStmtList()
+  var attribIndex = 0
+
+  var resultBody = result
+
+  for identDefs in getImpl(vertexType)[2][2]:
+    let t = identDefs[^2]
+    let typeName = $t
+
+    for i in 0 .. identDefs.len - 3:
+      let field = if identDefs[i].kind == nnkPostfix: identDefs[i][1] else: identDefs[i]
+      let name = $field
+      let alias = "a_" & name
+      
+      var (components, componentType, normalized) = getVertType(typeName)
+
+      resultBody.add quote do:
+        let loc = shader.getAttributeLoc(`alias`)
+
+        if `mesh`.activeAttribs[`attribIndex`] != loc + 1:
+          if loc != -1: #attribute enabled and wasn't before
+            `mesh`.activeAttribs[`attribIndex`] = loc + 1
+            glEnableVertexAttribArray(loc.GLuint)
+            glVertexAttribPointer(loc.GLuint, `components`.GLint, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
+          elif `mesh`.activeAttribs[`attribIndex`] != 0 and false: #attribute disabled, and it used to be - TODO - buggy?
+            glDisableVertexAttribArray(`mesh`.activeAttribs[`attribIndex`].GLuint)
+            `mesh`.activeAttribs[`attribIndex`] = 0
+      
+      attribIndex.inc
+  
+  resultBody.add quote do:
+    `mesh`.totalActive = `attribIndex`
 
 #offset and count are in vertices, not floats!
 proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
@@ -231,39 +269,6 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
 
   glCullFace(args.cullFace.toGlEnum)
 
-  #draw usage
-  let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
-
-  #bind VAO if possible??
-  if supportsVertexArrays:
-    glBindVertexArray(mesh.vertexArray)
-
-  #bind the vertex buffer
-  glBindBuffer(GlArrayBuffer, mesh.vertexBuffer)
-
-  #bind indices if there are any
-  if mesh.indices.len > 0:
-    glBindBuffer(GlElementArrayBuffer, mesh.indexBuffer)
-
-  let vsize = mesh.vertexSize
-
-  #NOTE: apparently glBufferSubData is really slow for sprite batching applications. locks. brilliant.
-
-  #update vertices if modified
-  if mesh.modifiedVert or mesh.vertSlice.b != 0:
-    glBufferData(GlArrayBuffer, mesh.vertices.len * vsize, mesh.vertices[0].addr, usage)
-  
-  #update indices if relevant and modified
-  if (mesh.modifiedInd or mesh.indSlice.b != 0) and mesh.indices.len > 0:
-    glBufferData(GlElementArrayBuffer, mesh.indices.len * 2, mesh.indices[0].addr, usage)
-  
-  mesh.vertSlice = 0..0
-  mesh.indSlice = 0..0
-  mesh.modifiedVert = false
-  mesh.modifiedInd = false
-  
-  enableAttributes(shader, T)
-
   #set up depth buffer info
   if args.depth:
     glEnable(GlDepthTest)
@@ -279,12 +284,58 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
     glEnable(GlBlend)
     glBlendFunc(args.blend.src, args.blend.dst)
 
+  #draw usage
+  let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
+
+  #bind VAO if possible??
+  if supportsVertexArrays:
+    glBindVertexArray(mesh.vertexArray)
+
+  let vsize = mesh.vertexSize
+
+  #NOTE: apparently glBufferSubData is really slow for sprite batching applications. locks. brilliant.
+
+  let updateVertices = mesh.modifiedVert or mesh.vertSlice.b != 0
+
+  #bind the vertex buffer
+  #for VAOs, you only need to bind when you are setting up the VAO (totalActive == 0) or you want to update its data
+  if not supportsVertexArrays or updateVertices or mesh.totalActive == 0:
+    glBindBuffer(GlArrayBuffer, mesh.vertexBuffer)
+
+  #update vertices if modified
+  if updateVertices:
+    glBufferData(GlArrayBuffer, mesh.vertices.len * vsize, mesh.vertices[0].addr, usage)
+  
+  let updateIndices = (mesh.modifiedInd or mesh.indSlice.b != 0) and mesh.indices.len > 0
+
+  #bind indices if there are any
+  if mesh.indices.len > 0 and (not supportsVertexArrays or updateIndices or mesh.totalActive == 0):
+    glBindBuffer(GlElementArrayBuffer, mesh.indexBuffer)
+
+  #update indices if relevant and modified
+  if (mesh.modifiedInd or mesh.indSlice.b != 0) and mesh.indices.len > 0:
+    glBufferData(GlElementArrayBuffer, mesh.indices.len * 2, mesh.indices[0].addr, usage)
+  
+  mesh.vertSlice = 0..0
+  mesh.indSlice = 0..0
+  mesh.modifiedVert = false
+  mesh.modifiedInd = false
+  
+  if supportsVertexArrays:
+    enableAttributesVao(shader, mesh, T)
+  else:
+    enableAttributes(shader, T)
+
   if mesh.indices.len == 0:
     let pcount = if args.count < 0: mesh.vertices.len else: args.count
     glDrawArrays(mesh.primitiveType, args.offset.GLint, pcount.GLsizei)
   else:
     let pcount = if args.count < 0: mesh.indices.len else: args.count
     glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](args.offset * Index.sizeof))
+
+  #TODO horrible performance
+  if supportsVertexArrays:
+    glBindVertexArray(0)
 
 template render*[T](mesh: Mesh[T], shader: Shader, args: MeshParam, uniformList: untyped) =
   shader.uniforms(uniformList)

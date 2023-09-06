@@ -192,32 +192,7 @@ var
   GLAD_GL_ARB_vertex_array_object*: bool
   GLAD_GL_OES_vertex_array_object*: bool
 
-proc hasExt(extname: string): bool =
-  if extname.len == 0:
-    return false
-
-  var extensions = $cast[cstring](glGetStringBASE(GL_EXTENSIONS))
-  if extensions.len == 0:
-    return false
-
-  var
-    loc, terminatorLoc: int
-    terminator: char
-
-  while true:
-    loc = extensions.find(extname)
-    if loc < 0:
-      return false
-
-    terminatorLoc = loc + extname.len
-    terminator = extensions[terminatorLoc]
-
-    if (loc == 0 or extensions[loc - 1] == ' ') and
-       (terminator == ' ' or terminator == '\0'):
-      return true
-
-    extensions = extensions[terminatorLoc..^1]
-
+type ExtensionProc*  = proc(extgension: cstring): cint {.cdecl.} 
 
 proc load_GL_VERSION_1_0(load: proc) =
   if not GLAD_GL_VERSION_1_0: return
@@ -411,7 +386,7 @@ proc load_GL_vertex_array_object(load: proc, checkExtension: bool) =
   #if glVersion < 3, check extension to make sure this is loadable; for >=3, it is part of the core profile
   if checkExtension and not GLAD_GL_ARB_vertex_array_object: return
 
-  #supportsVertexArrays = true
+  supportsVertexArrays = true
 
   glBindVertexArray = cast[proc (array: GLuint) {.cdecl, gcsafe.}](load("glBindVertexArray"))
   glDeleteVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsafe.}](load("glDeleteVertexArrays"))
@@ -609,7 +584,7 @@ proc findCoreGL(glVersion: string) =
   GLAD_GL_VERSION_2_0 = (major == 2 and minor >= 0) or major > 2
 
 
-proc gladLoadGL(load: proc): bool =
+proc gladLoadGL(load: proc, extensionProc: ExtensionProc): bool =
   glGetStringBASE = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
   if glGetStringBASE == nil: return false
 
@@ -625,15 +600,15 @@ proc gladLoadGL(load: proc): bool =
   load_GL_VERSION_1_5(load)
   load_GL_VERSION_2_0(load)
 
-  GLAD_GL_EXT_framebuffer_object = hasExt("GL_EXT_framebuffer_object")
-  GLAD_GL_ARB_vertex_array_object = hasExt("GL_ARB_vertex_array_object")
+  GLAD_GL_EXT_framebuffer_object = extensionProc("GL_EXT_framebuffer_object") != 0
+  GLAD_GL_ARB_vertex_array_object = extensionProc("GL_ARB_vertex_array_object") != 0
 
   #load fbo extension if not using 3.0
   if glVersionMajor < 3:
     load_GL_EXT_framebuffer_object(load)
   else:
     load_GL_framebuffer_object(load)
-  
+
   #load and check for extension if gl version < 3
   load_GL_vertex_array_object(load, glVersionMajor < 3)
 
@@ -788,7 +763,7 @@ proc load_GL_ES_VERSION_2_0(load: proc) =
 proc load_GL_OES_vertex_array_object(load: proc) =
   if not GLAD_GL_OES_vertex_array_object: return
   
-  #supportsVertexArrays = true
+  supportsVertexArrays = true
   
   glBindVertexArray = cast[proc (array: GLuint) {.cdecl, gcsaf.}](load("glBindVertexArrayOES"))
   glDeleteVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsaf.}](load("glDeleteVertexArraysOES"))
@@ -812,7 +787,7 @@ proc findCoreGLES2(glVersion: string) =
 
   GLAD_GL_ES_VERSION_2_0 = (major == 2 and minor >= 0) or major > 2
 
-proc gladLoadGLES2(load: proc): bool =
+proc gladLoadGLES2(load: proc, extensionProc: ExtensionProc): bool =
   glGetStringBASE = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
   if glGetStringBASE == nil: return false
 
@@ -823,7 +798,7 @@ proc gladLoadGLES2(load: proc): bool =
 
   load_GL_ES_VERSION_2_0(load)
 
-  GLAD_GL_OES_vertex_array_object = hasExt("GL_OES_vertex_array_object")
+  GLAD_GL_OES_vertex_array_object = extensionProc("GL_OES_vertex_array_object") != 0
 
   if glVersionMajor < 3:
     #load extension for GLES < 3.0
@@ -834,8 +809,8 @@ proc gladLoadGLES2(load: proc): bool =
   return glVersionMajor != 0 or glVersionMinor != 0
 
 #loads the correct platform-specific version of openGL (ES 2.0 on Android / iOS, standard GL 2.0+ on desktop)
-proc loadGl*(load: proc): bool = 
+proc loadGl*(load: proc, extensionProc: ExtensionProc): bool = 
   when defined(Android) or defined(iOS):
-    return gladLoadGLES2(load)
+    return gladLoadGLES2(load, extensionProc)
   else:
-    return gladLoadGL(load)
+    return gladLoadGL(load, extensionProc)

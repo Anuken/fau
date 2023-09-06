@@ -84,7 +84,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
   display.glfmSetSurfaceCreatedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
 
-    if not loadGl(glfmGetProcAddress):
+    if not loadGl(glfmGetProcAddress, glfmExtensionSupported):
       raise Exception.newException("Failed to load OpenGL.")
 
     echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
