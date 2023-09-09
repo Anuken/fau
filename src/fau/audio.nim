@@ -102,6 +102,8 @@ proc initAudio*() =
   let err = so.SoloudInit()
   if err != 0:
     echo "[Audio] Failed to initialize: ", so.SoloudGetErrorString(err), " (", err, ")"
+    #create to prevent nil access errors...
+    soundBus = newAudioBus()
   else:
     soundBus = newAudioBus()
     soundBus.play()
