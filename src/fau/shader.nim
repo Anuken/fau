@@ -94,8 +94,8 @@ proc preprocess(source: string, fragment: bool): string =
     raise newException(GlError, "Shader contains explicit version requirement; this should be handled by the preprocessor. Code: \n" & source)
 
   #add GL_ES precision qualifiers
-  if fragment: 
-    return """
+  let pre = if fragment: 
+    """
 
     #ifdef GL_ES
     precision mediump float;
@@ -106,10 +106,10 @@ proc preprocess(source: string, fragment: bool): string =
     #define highp 
     #endif
 
-    """ & source
+    """
   else:
     #strip away precision qualifiers
-    return """
+    """
 
     #ifndef GL_ES
     #define lowp  
@@ -117,8 +117,23 @@ proc preprocess(source: string, fragment: bool): string =
     #define highp 
     #endif
 
-    """ & source
-
+    """
+  
+  if glVersionMajor >= 3:
+    let version = "#version " & (if glVersionMajor == 3 and glVersionMinor < 2: "130" else: "150")
+    result = 
+      version & "\n" &
+      pre &
+      (if fragment: "out lowp vec4 fragColor;\n" else: "") &
+      source
+      .replace("varying", if fragment: "in" else: "out")
+      .replace("attribute", "in")
+      .replace("texture2D(", "texture(")
+      .replace("textureCube(", "texture(")
+      .replace("gl_FragColor", "fragColor")
+  else:
+    result = pre & source
+    
 proc newShader*(vertexSource, fragmentSource: string): Shader =
   result = Shader()
   result.uniforms = initTable[string, int]()

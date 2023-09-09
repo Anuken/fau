@@ -383,6 +383,7 @@ proc load_GL_framebuffer_object(load: proc) =
 
 #load vertex array as extension (standard GL < 3.0)
 proc load_GL_vertex_array_object(load: proc, checkExtension: bool) =
+
   #if glVersion < 3, check extension to make sure this is loadable; for >=3, it is part of the core profile
   if checkExtension and not GLAD_GL_ARB_vertex_array_object: return
 
