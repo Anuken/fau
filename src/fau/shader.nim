@@ -119,7 +119,8 @@ proc preprocess(source: string, fragment: bool): string =
 
     """
   
-  if glVersionMajor >= 3:
+  #GL 3.x requires a version qualifier for the core profile, at least on Mac - no reason to risk issues on other platforms
+  if glVersionMajor >= 3 and defined(macosx):
     let version = "#version " & (if glVersionMajor == 3 and glVersionMinor < 2: "130" else: "150")
     result = 
       version & "\n" &
