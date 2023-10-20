@@ -28,8 +28,8 @@ proc newCursor*(path: static string): Cursor =
 
 proc getGlfwWindow*(): Window = window
 
-proc toKeyCode(scancode: cint): KeyCode = 
-  result = case scancode:
+proc toKeyCode(keycode: cint): KeyCode = 
+  result = case keycode:
     of KEY_SPACE: keySpace
     of KEY_APOSTROPHE: keyApostrophe
     of KEY_COMMA: keyComma
@@ -233,10 +233,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
     raise Exception.newException("Failed to load OpenGL.")
 
   echo "VAO support: ", supportsVertexArrays
-
   echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
-
-  checkGlError()
 
   #load window icon if possible
   when assetExistsStatic("icon.png") and not defined(macosx):
@@ -296,6 +293,10 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   discard window.setWindowIconifyCallback(proc(window: Window, iconified: cint) {.cdecl.} =
     fireFauEvent FauEvent(kind: feVisible, shown: iconified.bool)
+  )
+
+  discard window.setJoystickCallback(proc(joy: cint, event: cint) {.cdecl.} =
+    echo "connected: ", joy
   )
 
   #grab the state at application start
