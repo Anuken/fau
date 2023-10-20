@@ -1,4 +1,4 @@
-import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, stb_image/read as stbi
+import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, ../util/util, stb_image/read as stbi
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 
@@ -294,9 +294,18 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   discard window.setWindowIconifyCallback(proc(window: Window, iconified: cint) {.cdecl.} =
     fireFauEvent FauEvent(kind: feVisible, shown: iconified.bool)
   )
+  
+  discard setJoystickCallback(proc(joy: cint, event: cint) {.cdecl.} =
+    if event == Connected and joystickIsGamepad(joy) != 0:
+      let gamepad = Gamepad(index: joy.int, name: $getGamepadName(joy))
+      fau.gamepads.add(gamepad)
 
-  discard window.setJoystickCallback(proc(joy: cint, event: cint) {.cdecl.} =
-    echo "connected: ", joy
+      fireFauEvent FauEvent(kind: feGamepadChanged, connected: true, gamepad: gamepad)
+    elif event == Disconnected:
+      let index = fau.gamepads.findIt(it.index == joy.int)
+      if index != -1:
+        fireFauEvent FauEvent(kind: feGamepadChanged, connected: true, gamepad: fau.gamepads[index])
+        fau.gamepads.delete(index)
   )
 
   #grab the state at application start
@@ -316,8 +325,58 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   glInitialized = true
   initProc()
 
+  #find existing gamepads at game startup
+  for i in 0..<8:
+    if joystickPresent(i.cint) != 0 and joystickIsGamepad(i.cint) != 0:
+      let gamepad = Gamepad(index: i.int, name: $getGamepadName(i.cint))
+      fau.gamepads.add(gamepad)
+
+      fireFauEvent FauEvent(kind: feGamepadChanged, connected: true, gamepad: gamepad)
+
   mainLoop(proc() =
     pollEvents()
+
+    #update controller/gamepad state
+    for pad in fau.gamepads:
+      var state: GamepadState
+      if getGamepadState(pad.index.cint, addr state) != 0:
+        pad.axes[leftX] = state.axes[GamepadAxisLeftX]
+        pad.axes[leftY] = -state.axes[GamepadAxisLeftY]
+        pad.axes[rightX] = state.axes[GamepadAxisRightX]
+        pad.axes[rightY] = -state.axes[GamepadAxisRightY]
+        pad.axes[leftTrigger] = state.axes[GamepadAxisLeftTrigger]
+        pad.axes[rightTrigger] = state.axes[GamepadAxisRightTrigger]
+        
+        var buttons: array[GamepadButton, bool]
+
+        buttons[a] = state.buttons[GamepadButtonA].bool
+        buttons[b] = state.buttons[GamepadButtonB].bool
+        buttons[x] = state.buttons[GamepadButtonX].bool
+        buttons[y] = state.buttons[GamepadButtonY].bool
+
+        buttons[leftBumper] = state.buttons[GamepadButtonLeftBumper].bool
+        buttons[rightBumper] = state.buttons[GamepadButtonRightBumper].bool
+        buttons[back] = state.buttons[GamepadButtonBack].bool
+        buttons[start] = state.buttons[GamepadButtonStart].bool
+        buttons[guide] = state.buttons[GamepadButtonGuide].bool
+        buttons[leftThumb] = state.buttons[GamepadButtonLeftThumb].bool
+        buttons[rightThumb] = state.buttons[GamepadButtonRightThumb].bool
+        buttons[dpadUp] = state.buttons[GamepadButtonDpadUp].bool
+        buttons[dpadRight] = state.buttons[GamepadButtonDpadRight].bool
+        buttons[dpadDown] = state.buttons[GamepadButtonDpadDown].bool
+        buttons[dpadLeft] = state.buttons[GamepadButtonDpadLeft].bool
+      
+        for but in GamepadButton:
+          pad.buttonsJustDown[but] = buttons[but] and not pad.buttons[but]
+          pad.buttonsJustUp[but]= not buttons[but] and pad.buttons[but]
+        
+        #TODO debug
+        for button, val in pad.buttonsJustDown:
+          if val:
+            echo "just down: ", button
+        
+        pad.buttons = buttons
+
     loopProc()
     window.swapBuffers()
   )

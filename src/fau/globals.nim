@@ -20,6 +20,23 @@ type KeyCode* = enum
   keyRshift, keyRalt, keyRgui, keyMode, keyUnknown,
   keyMouseLeft, keyMouseMiddle, keyMouseRight
 
+type GamepadAxis* = enum
+  leftX, leftY, rightX, rightY, leftTrigger, rightTrigger
+
+type GamepadAxis2* = enum
+  left, right
+
+type GamepadButton* = enum
+  a, b, x, y, leftBumper, rightBumper, back, start, guide, 
+  leftThumb, rightThumb, dpadUp, dpadRight, dpadDown, dpadLeft
+
+#A game controller.
+type Gamepad* = ref object
+  name*: string
+  index*: int
+  buttons*, buttonsJustDown*, buttonsJustUp*: array[GamepadButton, bool]
+  axes*: array[GamepadAxis, float]
+
 #discriminator for the various types of input events
 type FauEventKind* = enum
   ## any key down/up, including mouse
@@ -33,7 +50,9 @@ type FauEventKind* = enum
   ## window resized
   feResize,
   ## visibility changed (show/hide)
-  feVisible
+  feVisible,
+  # controller connected / disconnected
+  feGamepadChanged
 
 #a generic input event
 type FauEvent* = object
@@ -55,9 +74,12 @@ type FauEvent* = object
     size*: Vec2i
   of feVisible:
     shown*: bool
+  of feGamepadChanged:
+    connected*: bool
+    gamepad*: Gamepad
 
 type FauListener* = proc(e: FauEvent)
-  
+
 #A touch position.
 type Touch* = object
   pos*, delta*, last*: Vec2
@@ -119,6 +141,8 @@ type FauState* = object
   time*: float32
   #All input listeners
   listeners*: seq[FauListener]
+  #All currently plugged-in gamepads.
+  gamepads*: seq[Gamepad]
 
   #Game window size
   sizei*: Vec2i

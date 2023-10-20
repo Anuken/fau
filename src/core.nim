@@ -68,6 +68,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
         t.pos = e.dragPos
     of feVisible:
       fau.shown = e.shown
+    else: discard
   )
 
   initCore(

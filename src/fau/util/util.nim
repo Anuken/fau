@@ -4,6 +4,15 @@ import macros, tables, strutils
 
 var eventHandlers* {.compileTime} = newTable[string, seq[NimNode]]()
 
+template findIt*[T](list: seq[T], body: untyped): int =
+  var result = -1
+  for i, it {.inject.} in list:
+    if body:
+      result = i
+      break
+  
+  result
+
 template incTimer*(value: untyped, increment: float32, body: untyped): untyped =
   `value` += `increment`
   if `value` >= 1f:
