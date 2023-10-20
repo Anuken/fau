@@ -183,5 +183,6 @@ proc unproject*(cam: Cam, vec: Vec2): Vec2 {.inline.} = unproject(cam.inv, vec)
 proc project*(cam: Cam, vec: Vec2): Vec2 {.inline.} = project(cam.mat, vec)
 
 proc mouseWorld*(fau: FauState): Vec2 {.inline.} = fau.cam.unproject(fau.mouse)
+proc mouseDelta*(fau: FauState): Vec2 {.inline.} = fau.touches[0].delta
 
 proc bounds*(fau: FauState): Rect {.inline.} = rect(0f, 0f, fau.size)

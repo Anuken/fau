@@ -370,11 +370,6 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
           pad.buttonsJustDown[but] = buttons[but] and not pad.buttons[but]
           pad.buttonsJustUp[but]= not buttons[but] and pad.buttons[but]
         
-        #TODO debug
-        for button, val in pad.buttonsJustDown:
-          if val:
-            echo "just down: ", button
-        
         pad.buttons = buttons
 
     loopProc()
@@ -440,6 +435,9 @@ proc setFullscreen*(on: bool) =
 
 proc toggleFullscreen*() =
   setFullscreen(not isFullscreen())
+
+proc setCursorHidden*(hidden: bool) =
+  window.setInputMode(staticglfw.CURSOR, if hidden: CursorHidden.cint else: CursorNormal.cint)
 
 #stops the game, does not quit immediately
 proc quitApp*() = running = false
