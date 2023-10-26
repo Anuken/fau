@@ -46,6 +46,11 @@ proc gamepadTapped*(button: GamepadButton): bool =
   for pad in fau.gamepads:
     if pad.tapped(button): return true
 
+proc gamepadTapped*(buttons: varargs[GamepadButton]): bool =
+  for button in buttons:
+    if gamepadTapped(button):
+      return true
+
 proc gamepadReleased*(button: GamepadButton): bool =
   for pad in fau.gamepads:
     if pad.released(button): return true
