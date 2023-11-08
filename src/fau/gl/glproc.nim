@@ -57,6 +57,7 @@ var
   lastViewY = -1
   lastViewW = -1
   lastViewH = -1
+  lastClearColor = [0f, 0f, 0f, 0f]
   #enabled state: 0 = unknown, 1 = off 2 = on TODO might be better as a bitset.
   lastEnabled: array[36349, byte]
   #blending S/D factor, set to false (invalid)
@@ -127,7 +128,14 @@ proc glBufferData*(target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenu
 proc glBufferSubData*(target: GLenum, offset: GLintptr, size: GLsizeiptr, data: pointer) {.inline.} = glCheck(): wrap.glBufferSubData(target, offset, size, data)
 proc glCheckFramebufferStatus*(target: GLenum): GLenum {.inline.} = glCheck(): result = wrap.glCheckFramebufferStatus(target)
 proc glClear*(mask: GLbitfield) {.inline.} = glCheck(): wrap.glClear(mask)
-proc glClearColor*(red: GLfloat, green: GLfloat, blue: GLfloat, alpha: GLfloat) {.inline.} = glCheck(): wrap.glClearColor(red, green, blue, alpha)
+
+proc glClearColor*(red: GLfloat, green: GLfloat, blue: GLfloat, alpha: GLfloat) {.inline.} = 
+  if red == lastClearColor[0] and green == lastClearColor[1] and blue == lastClearColor[2] and alpha == lastClearColor[3]: return
+
+  glCheck(): wrap.glClearColor(red, green, blue, alpha)
+
+  lastClearColor = [red, green, blue, alpha]
+
 proc glClearDepthf*(d: GLfloat) {.inline.} = glCheck(): wrap.glClearDepthf(d)
 proc glClearStencil*(s: GLint) {.inline.} = glCheck(): wrap.glClearStencil(s)
 proc glColorMask*(red: GLboolean, green: GLboolean, blue: GLboolean, alpha: GLboolean) {.inline.} = glCheck(): wrap.glColorMask(red, green, blue, alpha)
