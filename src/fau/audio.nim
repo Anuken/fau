@@ -6,6 +6,7 @@ type
   SoundObj* = object
     handle: ptr AudioSource
     stream: bool
+    loaded: bool
     protect: bool
     voice*: Voice
   Sound* = ref SoundObj
@@ -46,10 +47,14 @@ proc `=destroy`*(bus: var AudioBusObj) =
     BusDestroy(bus.handle)
     bus.handle = nil
 
-template checkErr(details: string, body: untyped) =
+template checkErr(details: string, body: untyped): bool =
   let err = body
   #the game shouldn't crash when an audio error happens, but it would be nice to log to stderr
-  if err != 0: echo "[Audio] ", details, ": ", so.SoloudGetErrorString(err)
+  var success = true
+  if err != 0: 
+    echo "[Audio] ", details, ": ", so.SoloudGetErrorString(err)
+    success = false
+  success
 
 proc stop*(v: Voice) {.inline.} = 
   if initialized: so.SoloudStop(v.cuint)
@@ -136,16 +141,20 @@ proc getFft*(): array[256, float32] =
 
 proc loadMusicBytes*(path: string, data: string): Sound =
   let handle = WavStreamCreate()
-  checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
-  return Sound(handle: handle, protect: true, stream: true)
+  var loaded = false
+  when not defined(skipSoundLoad):
+    loaded = checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+  return Sound(handle: handle, protect: true, stream: true, loaded: loaded)
 
 proc loadMusicStatic*(path: static[string]): Sound =
   return loadMusicBytes(path, assetReadStatic(path))
 
 proc loadMusicFile*(path: string): Sound =
   let handle = WavStreamCreate()
-  checkErr(path): handle.WavStreamLoad(path)
-  return Sound(handle: handle, protect: true, stream: true)
+  var loaded = false
+  when not defined(skipSoundLoad):
+    loaded = checkErr(path): handle.WavStreamLoad(path)
+  return Sound(handle: handle, protect: true, stream: true, loaded: loaded)
 
 proc loadMusicAsset*(path: string): Sound =
   ## Loads music from the assets folder - non-static parameter version. Uses preloaded asset directory if static.
@@ -164,16 +173,20 @@ proc loadMusic*(path: static[string]): Sound =
 
 proc loadSoundBytes*(path: string, data: string): Sound =
   let handle = WavCreate()
-  checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
-  return Sound(handle: handle)
+  var loaded = false
+  when not defined(skipSoundLoad):
+    loaded = checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+  return Sound(handle: handle, loaded: loaded)
 
 proc loadSoundStatic*(path: static[string]): Sound =
   return loadSoundBytes(path, assetReadStatic(path))
 
 proc loadSoundFile*(path: string): Sound =
   let handle = WavCreate()
-  checkErr(path): handle.WavLoad(path)
-  return Sound(handle: handle)
+  var loaded = false
+  when not defined(skipSoundLoad):
+    loaded = checkErr(path): handle.WavLoad(path)
+  return Sound(handle: handle, loaded: loaded)
 
 proc loadSound*(path: static[string]): Sound =
   ## Loads a sound from the assets folder, or statically.
@@ -187,7 +200,7 @@ proc loadSound*(path: static[string]): Sound =
 
 proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, paused = false, bus = if sound.stream: nil else: soundBus): Voice {.discardable.} =
   #handle may not exist due to failed loading
-  if sound.handle.isNil or not initialized: return
+  if sound.handle.isNil or not initialized or not sound.loaded: return
 
   let id = if bus == nil: 
     so.SoloudPlayEx(sound.handle, volume, pan, paused.cint, 0)
@@ -207,7 +220,8 @@ proc length*(sound: Sound): float =
 
 #TODO only works with wavs, not streams
 proc setFilter*(sound: Sound, index: int, filter: AudioFilter) =
-  cast[ptr Wav](sound.handle).WavSetFilter(index.cuint, cast[ptr Filter](filter))
+  if sound.loaded and initialized:
+    cast[ptr Wav](sound.handle).WavSetFilter(index.cuint, cast[ptr Filter](filter))
 
 proc fadeFilter*(voice: Voice, index: int, attribute: FilterParam, value, timeSec: float32) =
   so.SoloudFadeFilterParameter(voice.cuint, index.cuint, attribute.cuint, value.float32, timeSec.float32)
