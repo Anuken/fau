@@ -99,7 +99,6 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
     discard parseFloat(s, i)
     return i
   
-  #TODO crashes in emscripten.
   for i, entry in entries:
     let str = entry.value.string
     
@@ -124,6 +123,14 @@ proc postHook*(map: var Tilemap) =
     
     #import tiles by splitting image
     if tileset.columns > 0 and tileset.imagewidth > 0:
+      var idToTile = initTable[int, TiledTile]()
+
+      for prevTile in tileset.tiles:
+        idToTile[prevTile.id] = prevTile
+      
+      #clear old tiles (parsed with properties)
+      tileset.tiles.setLen(0)
+
       var curId = 0
       let tilesY = (tileset.imageheight - tileset.margin * 2) div (tileset.tileheight + tileset.spacing)
 
@@ -140,6 +147,10 @@ proc postHook*(map: var Tilemap) =
             height: tileset.tileheight,
             image: tileset.image, #TODO is this necessary...?
           )
+
+          #inherit properties
+          idToTile.withValue(curId, oldTile):
+            tile.properties = oldTile.properties
 
           tileset.tiles.add(tile)
 
