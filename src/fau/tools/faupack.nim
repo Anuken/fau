@@ -167,6 +167,8 @@ proc packImages(path: string, output: string = "atlas", min = 64, max = 2048, pa
                   
                   if not cropped.isTransparent:
                     packFile(realPath / tileImageName, cropped)
+          else:
+            echo "Could not find tilemap file: ", realpath, " (", file, ")"
         else:
 
           #standard ase file
