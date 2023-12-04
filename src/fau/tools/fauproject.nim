@@ -29,7 +29,8 @@ sys("init", [Main]):
   finish:
     discard
 
-launchFau("{{APP_NAME}}")
+makeEcsCommit("run")
+ initFau(run, params = initParams(name = "{{APP_NAME}}"))
 """,
 
   "simple": """
@@ -50,7 +51,7 @@ proc run() =
 
   fillPoly(0, 0, 6, 30)
 
-initFau(run, init, windowTitle = "{{APP_NAME}}")
+initFau(run, init, params = initParams(name = "{{APP_NAME}}"))
 """
 }.toTable
 

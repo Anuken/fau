@@ -1,6 +1,8 @@
 ## components for rendering effects
 
-import ../../ecs, ../util/util, strutils, basic
+import ../../core, ../util/util, basic
+import std/strutils
+import pkg/polymorph
 
 type
   EffectId* = distinct int

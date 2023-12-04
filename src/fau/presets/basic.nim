@@ -1,6 +1,7 @@
 ## basic components, such as position
 
-import ../../ecs
+import ../../core
+import pkg/polymorph
 
 register(defaultComponentOptions):
   type

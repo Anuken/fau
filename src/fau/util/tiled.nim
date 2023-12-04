@@ -107,7 +107,12 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
     of "int": TileProp(kind: tpInt, intVal: str.parseInt())
     of "float": TileProp(kind: tpFloat, floatVal: str.parseFloat())
     of "bool": TileProp(kind: tpBool, boolVal: str == "true")
-    of "color": TileProp(kind: tpColor, colorVal: str[1..^2].parseColor)
+    of "color":
+      var color = str[1..^2].parseColor
+      #what the hell, tiled? who stores hex colors in #AABBGGRR format?
+      swap(color.av, color.rv)
+      swap(color.gv, color.bv)
+      TileProp(kind: tpColor, colorVal: color)
     else: TileProp()
   
 proc postHook*(map: var Tilemap) =
@@ -230,6 +235,12 @@ proc getBool*(props: TiledProps, name: string, def = false): bool =
   let p = props.getOrDefault(name, TileProp(kind: tpBool, boolVal: def))
   result = def
   if p.kind == tpBool: return p.boolVal
+
+proc getColor*(props: TiledProps, name: string, def = colorWhite): Color =
+  if props.isNil: return def
+  let p = props.getOrDefault(name, TileProp(kind: tpColor, colorVal: def))
+  result = def
+  if p.kind == tpColor: return p.colorVal
 
 proc contains*(layer: TileLayer, x, y: int): bool =
   return not(x < 0 or y < 0 or x >= layer.width or y >= layer.height)

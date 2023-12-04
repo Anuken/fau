@@ -1,4 +1,4 @@
-import atlas, patch, globals, math
+import ../[atlas, patch, globals], math
 
 type Animation* = object
   frames: seq[Patch]
