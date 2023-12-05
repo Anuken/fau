@@ -193,6 +193,8 @@ func hashInt*(value: int): int {.inline.} =
 
 proc chance*(c: float): bool = rand(0.0..1.0) < c
 proc randRange*[T](value: T): T = rand((-value)..value)
+proc randSign*(): int = 
+  if rand(0f..1f) < 0.5f: 1 else: -1 #rand(bool) doesn't work
 proc range*[T](r: var Rand, value: T): T = r.rand((-value)..value)
 
 {.pop.}
@@ -906,7 +908,7 @@ template circlev*(amount: int, len: float32, body: untyped) =
 
 template shotgun*(amount: int, spacing: float32, body: untyped) =
   for i in 0..<amount:
-    let angle {.inject.} = ((i - (amount div 2).float32) * spacing).degToRad
+    let angle {.inject.} = ((i - (amount div 2).float32) * spacing)
     body
 
 
