@@ -921,6 +921,13 @@ template shotgun*(amount: int, spacing: float32, body: untyped) =
     let angle {.inject.} = ((i - (amount div 2).float32) * spacing)
     body
 
+#TODO remove one of these
+template spread*(shots: int, spread: float32, body: untyped) =
+  for i in 0..<shots:
+    let 
+      angleOffset {.inject.} = (i - ((shots - 1f) / 2f).float32) * spread
+      spreadIndex {.inject, used.} = i
+    body
 
 #CAMERA
 
