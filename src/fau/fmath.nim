@@ -353,6 +353,16 @@ func yxratio*(vec: Vec2): float32 {.inline.} = vec.y / vec.x
 func zero*(vec: Vec2): bool {.inline.} = vec.x == 0f and vec.y == 0f
 func zero*(vec: Vec2, margin: float32): bool {.inline.} = abs(vec.x) <= margin and abs(vec.y) <= margin
 
+func scaleFit*(source, target: Vec2): Vec2 =
+  ## Scales the source to fit the target while keeping the same aspect ratio. This may cause the source to be smaller than the target in one direction.
+  let scale = if target.yxratio > source.yxratio: target.x / source.x else: target.y / source.y
+  return source * scale
+
+func scaleFill*(source, target: Vec2): Vec2 =
+  ## Scales the source to fill the target while keeping the same aspect ratio. This may cause the source to be larger than the target in one direction.
+  let scale = if target.yxratio < source.yxratio: target.x / source.x else: target.y / source.y
+  return source * scale
+
 #all angles are in radians
 
 func angle*(vec: Vec2): float32 {.inline.} = 
