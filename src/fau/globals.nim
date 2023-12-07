@@ -176,13 +176,13 @@ proc addFauListener*(ev: FauListener) =
 #Turns pixel units into world units
 proc px*(val: float32): float32 {.inline.} = val * fau.pixelScl
 
-proc unproject*(matInv: Mat, vec: Vec2): Vec2 = ((vec * 2f) / max(fau.size, vec2(1f)) - 1f) * matInv
-proc project*(mat: Mat, vec: Vec2): Vec2 = fau.size * (vec * mat + 1f) / 2f
+proc unproject*(matInv: Mat, vec: Vec2, viewRect = rect(vec2(), fau.size)): Vec2 = (((vec - viewRect.xy) * 2f) / max(viewRect.size, vec2(1f)) - 1f) * matInv
+proc project*(mat: Mat, vec: Vec2, viewRect = rect(vec2(), fau.size)): Vec2 = viewRect.size * (vec * mat + 1f) / 2f + viewRect.xy
 
-proc unproject*(cam: Cam, vec: Vec2): Vec2 {.inline.} = unproject(cam.inv, vec)
-proc project*(cam: Cam, vec: Vec2): Vec2 {.inline.} = project(cam.mat, vec)
+proc unproject*(cam: Cam, vec: Vec2, viewRect = rect(vec2(), fau.size)): Vec2 {.inline.} = unproject(cam.inv, vec, viewRect)
+proc project*(cam: Cam, vec: Vec2, viewRect = rect(vec2(), fau.size)): Vec2 {.inline.} = project(cam.mat, vec, viewRect)
 
-proc mouseWorld*(fau: FauState): Vec2 {.inline.} = fau.cam.unproject(fau.mouse)
+proc mouseWorld*(fau: FauState): Vec2 {.inline.} = fau.cam.unproject(fau.mouse, fau.cam.screenBounds)
 proc mouseDelta*(fau: FauState): Vec2 {.inline.} = fau.touches[0].delta
 
 proc bounds*(fau: FauState): Rect {.inline.} = rect(0f, 0f, fau.size)

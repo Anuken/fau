@@ -72,6 +72,8 @@ type Cam* = ref object
   pos*: Vec2
   #viewport size
   size*: Vec2
+  #target bounds for screen, used for mouse projection
+  screenBounds*: Rect
   #projection and inverse projection matrix
   mat*, inv*: Mat
 
@@ -934,15 +936,16 @@ template spread*(shots: int, spread: float32, body: untyped) =
 proc width*(cam: Cam): float32 {.inline.} = cam.size.x
 proc height*(cam: Cam): float32 {.inline.} = cam.size.y
 
-proc update*(cam: Cam, size: Vec2 = cam.size, pos = cam.pos) = 
+proc update*(cam: Cam, screenBounds: Rect, size: Vec2 = cam.size, pos = cam.pos) = 
   cam.size = size.max(vec2(0.000001f))
   cam.pos = pos
   cam.mat = ortho(cam.pos - cam.size/2f, cam.size)
   cam.inv = cam.mat.inv()
+  cam.screenBounds = screenBounds
 
 proc newCam*(size: Vec2 = vec2(0f, 0f)): Cam = 
   result = Cam(pos: vec2(0.0, 0.0), size: size)
-  result.update()
+  result.update(rect(vec2(), size))
 
 proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)
 #alias

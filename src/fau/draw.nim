@@ -73,8 +73,8 @@ proc screenMat*() =
   drawMat(ortho(vec2(), fau.size))
 
 #Activates a camera.
-proc use*(cam: Cam, size = cam.size, pos = cam.pos) =
-  cam.update(size, pos)
+proc use*(cam: Cam, size = cam.size, pos = cam.pos, screenBounds = rect(vec2(), fau.size)) =
+  cam.update(screenBounds, size, pos)
   drawMat cam.mat
 
 proc draw*(cache: SpriteCache) =
