@@ -74,7 +74,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
   initCore(
   (proc() =
     var time = (times.getTime() - startTime).inNanoseconds
-    if lastFrameTime == -1: lastFrameTime = time
+    #at the start of the game, delta is assumed to be 1/60
+    if lastFrameTime == -1: lastFrameTime = time - 16666666
 
     if fau.targetFps != 0:
       #expected ns between frames
