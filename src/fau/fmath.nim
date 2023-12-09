@@ -346,6 +346,7 @@ func dot*(vec, other: Vec2): float32 {.inline.} = vec.x * other.x + vec.y * othe
 
 func floor*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.floor, vec.y.floor)
 func round*(vec: Vec2, scale = 1f): Vec2 {.inline.} = vec2(vec.x.round(scale), vec.y.round(scale))
+func roundi*(vec: Vec2): Vec2i {.inline.} = vec2i(vec.x.round.int, vec.y.round.int)
 
 func abs*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.abs, vec.y.abs)
 

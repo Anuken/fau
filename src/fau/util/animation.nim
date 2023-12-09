@@ -27,23 +27,23 @@ proc empty*(anim: Animation): bool = anim.frames.len == 0
 
 proc `[]`*(anim: Animation, time = fau.time): Patch = anim.frame(time)
 
-proc loadAnimation*(atlas: Atlas, name: string, delay = 0f): Animation =
+proc loadAnimation*(atlas: Atlas, name: string, delay = 0f, startFrame = 0): Animation =
   result.delay = delay
   var 
-    i = 0
+    i = startFrame
     lastDelay = -1
     allSame = true
   
   while atlas[name & $i].found:
-    let delay = atlas.getDuration(name & $i)
+    let fdelay = if delay != 0f: int(delay * 1000f) else: atlas.getDuration(name & $i)
 
-    if lastDelay != -1 and lastDelay != delay:
+    if lastDelay != -1 and lastDelay != fdelay:
       allSame = false
 
     result.frames.add(atlas[name & $i])
-    result.duration += delay
-    result.durations.add delay / 1000f
-    lastDelay = delay
+    result.duration += fdelay
+    result.durations.add fdelay / 1000f
+    lastDelay = fdelay
     i.inc
   
   #since it's in milliseconds...
