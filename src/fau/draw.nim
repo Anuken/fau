@@ -478,7 +478,7 @@ proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, r
   
   for i in 0..<sides:
     let 
-      a = space * i.float32 + rotation
+      a = space * i.float32 + rotation + angleFrom
       cosf = cos(a)
       sinf = sin(a)
       cos2f = cos(a + space)
