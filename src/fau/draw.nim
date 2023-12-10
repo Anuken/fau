@@ -469,3 +469,25 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
     let (q4, q3) = prepareFlatEndpoint(points[^2], points[^1], hstroke)
     fillQuad(q1, q2, q3, q4, color = color, z = z)
     
+proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
+  let 
+    space = (angleTo - angleFrom) / sides.float32
+    hstep = stroke / 2.0 / cos(space / 2.0)
+    r1 = radius - hstep
+    r2 = radius + hstep
+  
+  for i in 0..<sides:
+    let 
+      a = space * i.float32 + rotation
+      cosf = cos(a)
+      sinf = sin(a)
+      cos2f = cos(a + space)
+      sin2f = sin(a + space)
+
+    fillQuad(
+      pos + vec2(cosf, sinf) * r1,
+      pos + vec2(cos2f, sin2f) * r1,
+      pos + vec2(cos2f, sin2f) * r2,
+      pos + vec2(cosf, sinf) * r2,
+      color, z
+    )
