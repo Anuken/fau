@@ -9,6 +9,15 @@ type
     afPreferLinkedCels, afCollapsed, afReference
   AseLayerType* = enum
     alImage, alGroup, alTilemap
+  AseLoopDirection* = enum
+    alForward, alReverse, alPingPong, alPingPongReverse
+  AseTag* = object
+    frameFrom*, frameTo*: int
+    direction*: AseLoopDirection
+    repeat*: int
+    name*: string
+    userData*: string
+    userColor*: uint32 #RGBA8888
   #TODO ref, or not?
   AseFrame* = ref object
     duration*: int
@@ -25,6 +34,7 @@ type
     userColor*: uint32 #RGBA8888
   AseImage* = ref object
     layers*: seq[AseLayer]
+    tags*: seq[AseTag]
     width*, height*: int
     colorDepth*: int
 
@@ -72,7 +82,11 @@ proc readAseStream*(s: Stream): AseImage =
   #header padding
   skip(84)
 
-  var layerData: seq[AseLayer]
+  var 
+    layerData: seq[AseLayer]
+    tags: seq[AseTag]
+    justReadTags = false
+    readTagIndex = 0
 
   for frameid in 0..<frames.int:
     discard s.readUint32() #frame total bytes
@@ -97,6 +111,8 @@ proc readAseStream*(s: Stream): AseImage =
         chunkType = s.readUint16()
       
       if chunkType == 0x2004'u16: #layer
+        justReadTags = false
+
         let
           flags = s.readUint16()
           layerType = s.readUint16()
@@ -117,17 +133,50 @@ proc readAseStream*(s: Stream): AseImage =
           discard s.readUint32()
         
         layerData.add AseLayer(opacity: if validOpacity: opacity else: 255'u8, name: name, flags: cast[set[AseLayerFlags]](flags), kind: layerType.AseLayerType)
-      elif chunkType == 0x2020'u16:
+      
+      elif chunkType == 0x2018'u16: #tags
+        justReadTags = true
+
+        let count = s.readUint16().int
+        skip(8)
+        for i in 0..<count:
+
+          let 
+            fromFrame = s.readUint16()
+            toFrame = s.readUint16()
+            loopDirection = s.readUint8()
+            repeat = s.readUint16()
+          
+          skip(10) #unused
+
+          let name = readString()
+
+          tags.add(AseTag(frameFrom: fromFrame.int, frameTo: toFrame.int, direction: loopDirection.AseLoopDirection, repeat: repeat.int, name: name))
+      elif chunkType == 0x2020'u16 and (layerData.len > 0 or justReadTags): #user data (horrible implementation)
         let flags = s.readUint32()
 
         if (flags and 1) == 1: #text
           let text = readString()
-          layerData[^1].userData = text
+          if not justReadTags:
+            layerData[^1].userData = text
+          else:
+            tags[readTagIndex].userData = text
 
         if (flags and 2) == 2: #color
-          layerData[^1].userColor = s.readUint32()
+          let color = s.readUint32()
+          if not justReadTags:
+            layerData[^1].userColor = color
+          else:
+            tags[readTagIndex].userColor = color
+        
+        #other flags not supported! will crash!
+        
+        if justReadTags:
+          readTagIndex.inc
 
       elif chunkType == 0x2005'u16: #cel (image data)
+        justReadTags = false
+
         let 
           layerIndex = s.readUint16()
           x = s.readInt16()
@@ -166,6 +215,6 @@ proc readAseStream*(s: Stream): AseImage =
       else: #unknown chunk, skipping - I don't support indexed colors, so palettes do not matter
         skip(chunkSize.int - 6)
     
-  return AseImage(layers: layerData, width: width.int, height: height.int, colorDepth: colorDepth.int)
+  return AseImage(layers: layerData, width: width.int, height: height.int, colorDepth: colorDepth.int, tags: tags)
 
-proc readAseFile*(path: string): AseImage = readAseStream(newFileStream(path, bufSize = 512))   
+proc readAseFile*(path: string): AseImage = readAseStream(newFileStream(path, bufSize = 512))
