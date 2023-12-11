@@ -468,13 +468,12 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
   else:
     let (q4, q3) = prepareFlatEndpoint(points[^2], points[^1], hstroke)
     fillQuad(q1, q2, q3, q4, color = color, z = z)
-    
-proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
+
+proc arcRadius*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radiusFrom, radiusTo: float32, rotation = 0f, color = colorWhite, z = 0f) =
   let 
     space = (angleTo - angleFrom) / sides.float32
-    hstep = stroke / 2.0 / cos(space / 2.0)
-    r1 = radius - hstep
-    r2 = radius + hstep
+    r1 = radiusFrom
+    r2 = radiusTo
   
   for i in 0..<sides:
     let 
@@ -492,6 +491,15 @@ proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, r
       color, z
     )
 
+
+proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
+  let 
+    space = (angleTo - angleFrom) / sides.float32
+    hstep = stroke / 2.0 / cos(space / 2.0)
+    r1 = radius - hstep
+    r2 = radius + hstep
+  
+  arcRadius(pos, sides, angleFrom, angleTo, r1, r2, rotation, color, z)
 
 proc crescent*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
   let 

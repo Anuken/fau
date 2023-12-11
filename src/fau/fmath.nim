@@ -214,7 +214,11 @@ func deg*(val: float32): float32 {.inline.} = val / (PI / 180.0)
 func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + pi2 + pi) mod pi2) - pi) * progress + pi2)) mod pi2
 
 ## angle dist
-func adist*(a, b: float32): float32 {.inline.} = min(if a - b < 0: a - b + 360.0.rad else: a - b, if b - a < 0: b - a + 360.0.rad else: b - a)
+func adist*(angleA, angleB: float32): float32 {.inline.} = 
+  let
+    a = angleA.emod(pi2)
+    b = angleB.emod(pi2)
+  min(if a - b < 0: a - b + 360.0.rad else: a - b, if b - a < 0: b - a + 360.0.rad else: b - a)
 
 ## angle within other angle
 func awithin*(a, b: float32, tolerance = 0.01f): bool {.inline.} = adist(a, b) <= tolerance
