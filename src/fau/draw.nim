@@ -491,3 +491,28 @@ proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, r
       pos + vec2(cosf, sinf) * r2,
       color, z
     )
+
+
+proc crescent*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
+  let 
+    space = (angleTo - angleFrom) / sides.float32
+  
+  for i in 0..<sides:
+    let 
+      hstep = stroke / 2.0 / cos(space / 2.0) * (i / sides).slope
+      r1 = radius - hstep
+      r2 = radius + hstep
+
+      a = space * i.float32 + rotation + angleFrom
+      cosf = cos(a)
+      sinf = sin(a)
+      cos2f = cos(a + space)
+      sin2f = sin(a + space)
+
+    fillQuad(
+      pos + vec2(cosf, sinf) * r1,
+      pos + vec2(cos2f, sin2f) * r1,
+      pos + vec2(cos2f, sin2f) * r2,
+      pos + vec2(cosf, sinf) * r2,
+      color, z
+    )
