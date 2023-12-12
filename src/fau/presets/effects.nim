@@ -41,7 +41,7 @@ macro defineEffects*(body: untyped) =
 
     onEcsBuilt:
       proc createEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f) =
-        discard newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rotation, color: color))
+        discard newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rotation, color: color, sizef: size))
 
   let brackets = newNimNode(nnkBracket)
   
