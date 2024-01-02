@@ -104,6 +104,7 @@ proc clear*(buffer: Framebuffer, color = colorClear) =
   ## Clears the color & depth buffers.
   buffer.use()
   
+  glDisable(GlScissorTest)
   glClearColor(color.r, color.g, color.b, color.a)
 
   if buffer.hasDepth:
