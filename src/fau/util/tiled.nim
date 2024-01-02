@@ -109,9 +109,12 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
     of "bool": TileProp(kind: tpBool, boolVal: str == "true")
     of "color":
       var color = str[1..^2].parseColor
-      #what the hell, tiled? who stores hex colors in #AABBGGRR format?
-      swap(color.av, color.rv)
-      swap(color.gv, color.bv)
+      let a = color.rv
+      color.rv = color.gv
+      color.gv = color.bv
+      color.bv = color.av
+      color.av = a
+      #what the hell, tiled? who stores hex colors in #AARRGGBB format?
       TileProp(kind: tpColor, colorVal: color)
     else: TileProp()
   
