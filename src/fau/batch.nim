@@ -40,7 +40,7 @@ type Batch* = ref object
   lastTexture: Texture
   lastBlend: Blending
   buffer: Framebuffer
-  clip: Rect
+  clip, viewport: Rect
   index: int
   size: int
   req: seq[Req]
@@ -94,7 +94,7 @@ proc flushInternal(batch: Batch) =
   else:
     batch.mesh.updateVertices(0..<batch.index)
     
-    batch.mesh.render(shader, meshParams(batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend, clip = batch.clip)):
+    batch.mesh.render(shader, meshParams(batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend, clip = batch.clip, viewport = batch.viewport)):
       texture = batch.lastTexture.sampler
       proj = batch.mat
 
@@ -250,6 +250,10 @@ proc mat*(batch: Batch, mat: Mat) =
 proc clip*(batch: Batch, rect: Rect) =
   batch.flush()
   batch.clip = rect
+
+proc viewport*(batch: Batch, rect: Rect) =
+  batch.flush()
+  batch.viewport = rect
 
 #Sets the framebuffer used for rendering. This flushes the batch.
 proc buffer*(batch: Batch, buffer: Framebuffer) = 

@@ -96,9 +96,9 @@ proc newFramebuffer*(size = vec2i(2), depth = false, filter = tfNearest): Frameb
 proc newDefaultFramebuffer*(windowDepth: bool): Framebuffer = Framebuffer(handle: glGetIntegerv(GlFramebufferBinding).GLuint, isDefault: true, hasDepth: windowDepth)
 
 #Binds the framebuffer. Internal use only!
-proc use*(buffer: Framebuffer) =
+proc use*(buffer: Framebuffer, viewPos = vec2i(), viewSize = buffer.size) =
   glBindFramebuffer(GlFramebuffer, buffer.handle)
-  glViewport(0, 0, buffer.size.x.Glsizei, buffer.size.y.Glsizei)
+  glViewport(viewPos.x.Glsizei, viewPos.y.Glsizei, viewSize.x.Glsizei, viewSize.y.Glsizei)
 
 proc clear*(buffer: Framebuffer, color = colorClear) =
   ## Clears the color & depth buffers.

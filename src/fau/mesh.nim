@@ -61,6 +61,7 @@ type MeshParam* = object
   blend*: Blending
   cullFace*: CullFace
   clip*: Rect
+  viewport*: Rect #empt rectangle means use buffer bounds
 
 const
   blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
@@ -91,8 +92,8 @@ proc toGlEnum(face: CullFace): GlEnum {.inline.} =
   of cfFrontAndBack: GlFrontAndBack
 
 #creates a new set of mesh parameters
-proc meshParams*(buffer: Framebuffer = screen, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled, cullFace = cfBack, clip = rect()): MeshParam {.inline.} = 
-  MeshParam(buffer: buffer, offset: offset, count: count, depth: depth, writeDepth: writeDepth, blend: blend, cullFace: cullFace, clip: clip)
+proc meshParams*(buffer: Framebuffer = screen, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled, cullFace = cfBack, clip = rect(), viewport = rect()): MeshParam {.inline.} = 
+  MeshParam(buffer: buffer, offset: offset, count: count, depth: depth, writeDepth: writeDepth, blend: blend, cullFace: cullFace, clip: clip, viewport: viewport)
 
 #returns the unique ID of the shader - currently this is just the GL handle to the vertex buffer
 proc id*(mesh: Mesh): int {.inline.} = mesh.vertexBuffer.int
@@ -258,7 +259,12 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
 proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   #bind shader and buffer for drawing to
   shader.use()
-  args.buffer.use()
+
+  #use custom viewport if provided
+  if args.viewport.w.int > 0 and args.viewport.h.int > 0:
+    args.buffer.use(args.viewport.xy.vec2i, args.viewport.wh.vec2i)
+  else:
+    args.buffer.use()
   
   #enable clipping if necessary, disable if not.
   if args.clip.w.int > 0 and args.clip.h.int > 0:

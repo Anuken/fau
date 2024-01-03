@@ -611,6 +611,13 @@ proc merge*(r: Rect, other: Rect): Rect =
   result.w = max(r.right, other.right) - result.x
   result.h = max(r.top, other.top) - result.y
 
+proc snap*(r: Rect): Rect =
+  ## Snaps a rectangle to integer coordinates. x,y are floored; w,h are ceil-ed.
+  result.x = r.x.int
+  result.y = r.y.int
+  result.w = r.w.ceil
+  result.h = r.h.ceil
+
 proc align*(bounds: Vec2, target: Vec2, align: Align, margin = 0f): Rect =
   let 
     alignH = (-(asLeft in align).float32 + (asRight in align).float32) / 2f
@@ -834,6 +841,8 @@ proc ortho*(pos, size: Vec2): Mat {.inline.} = ortho(pos.x, pos.y, size.x, size.
 proc ortho*(size: Vec2): Mat {.inline.} = ortho(0, 0, size.x, size.y)
 
 proc ortho*(size: Vec2i): Mat {.inline.} = ortho(size.vec2)
+
+proc ortho*(bounds: Rect): Mat {.inline.} = ortho(bounds.xy, bounds.size)
 
 proc `*`*(a: Mat, b: Mat): Mat = [
     a[M00] * b[M00] + a[M01] * b[M10] + a[M02] * b[M20], 

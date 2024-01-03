@@ -36,6 +36,9 @@ proc drawSort*(sort: bool) =
 proc drawMat*(mat: Mat) =
   fau.batch.mat(mat)
 
+proc drawViewport*(rect = rect()) =
+  fau.batch.viewport(rect)
+
 #TODO should use a stack.
 proc drawClip*(clipped = rect()): bool {.discardable.} =
   if clipped.w.int > 0 and clipped.h.int > 0:
@@ -74,6 +77,7 @@ proc screenMat*() =
 
 #Activates a camera.
 proc use*(cam: Cam, size = cam.size, pos = cam.pos, screenBounds = rect(vec2(), fau.size)) =
+  drawFlush()
   cam.update(screenBounds, size, pos)
   drawMat cam.mat
 
