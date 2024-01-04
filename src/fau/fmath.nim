@@ -321,6 +321,7 @@ op(Vec2, float32, vec2, `-`, `-=`)
 op(Vec2, float32, vec2, `*`, `*=`)
 op(Vec2, float32, vec2, `/`, `/=`)
 
+func `*`*(f: float32, vec: Vec2): Vec2 {.inline.} = vec2(f * vec.x, f * vec.y)
 func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
 
 opFunc(Vec2, `mod`)
@@ -455,6 +456,17 @@ func approach*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} =
     vec -= d * sqrt(alpha2 / len2)
   else:
     vec = other
+
+func bezier*(p0, p1, p2: Vec2, t: float32): Vec2 =
+  let dt = 1f - t
+  return p0 * dt * dt + p1 * 2 * dt * t + p2 * t * t
+
+func bezier*(p0, p1, p2, p3: Vec2, t: float32): Vec2 =
+  let
+    dt = 1f - t
+    dt2 = dt * dt
+    t2 = t * t
+  return dt2 * dt * p0 + 3 * dt2 * t * p1 + 3 * dt * t2 * p2 + t2 * t * p3
 
 #TODO better impl
 const
