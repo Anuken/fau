@@ -179,6 +179,8 @@ func emod*(a, b: int): int {.inline.} =
 
 func map*(value, min, max, resmin, resmax: float32): float32 = ((value - min) / (max - min)) * (resmax - resmin) + resmin
 
+func mapClamp*(value, min, max, resmin, resmax: float32): float32 = clamp(((value - min) / (max - min)) * (resmax - resmin) + resmin, resmin, resmax)
+
 {.push checks: off.}
 
 func round*(value, space: float32): float32 {.inline.} = round(value / space) * space

@@ -32,7 +32,7 @@ var
 proc uis*(val: float32): float32 {.inline.} = uiScale * val
 
 proc mouseUi(): Vec2 =
-  ((fau.mouse * 2f) / fau.size - 1f) * fau.batch.matInv
+  fau.mouseWorld()
 
 #TODO: inject some state for better button press handling.
 proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f, rotation = 0f, markup = false): bool =
