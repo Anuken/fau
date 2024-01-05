@@ -426,6 +426,11 @@ func lim*(vec: Vec2, limit: float32): Vec2 =
   let limit2 = limit*limit
   return if l2 > limit2: vec * sqrt(limit2 / l2) else: vec
 
+func lim*(vec: var Vec2, limit: float32) =
+  let l2 = vec.len2
+  let limit2 = limit*limit
+  vec = if l2 > limit2: vec * sqrt(limit2 / l2) else: vec
+
 func dst2*(vec: Vec2, other: Vec2): float32 {.inline.} = 
   let dx = vec.x - other.x
   let dy = vec.y - other.y
