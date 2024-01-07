@@ -40,8 +40,10 @@ macro defineEffects*(body: untyped) =
     proc rendererNone*(e: EffectState) {.inject.} = discard
 
     onEcsBuilt:
-      proc createEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f) =
-        discard newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rotation, color: color, sizef: size))
+      proc createEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f, parent = NoEntityRef) =
+        let res = newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rotation, color: color, sizef: size))
+        
+        addParent(res, pos, parent)
 
   let brackets = newNimNode(nnkBracket)
   
@@ -79,8 +81,8 @@ macro defineEffects*(body: untyped) =
         `effectBody`
       
       onEcsBuilt:
-        template `templName`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f) =
-          createEffect(`id`.EffectId, pos, rotation, color, life, size)
+        template `templName`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f, parent = NoEntityRef) =
+          createEffect(`id`.EffectId, pos, rotation, color, life, size, parent)
     
     brackets.add quote do:
       `procName`.EffectProc
