@@ -41,6 +41,8 @@ macro defineEffects*(body: untyped) =
 
     onEcsBuilt:
       proc createEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f, parent = NoEntityRef) =
+        if eid.int < 0: return
+
         let res = newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rotation, color: color, sizef: size))
         
         addParent(res, pos, parent)
@@ -90,7 +92,10 @@ macro defineEffects*(body: untyped) =
   let count = newLit(1 + body.len)
   
   result.add quote do:
-    const allEffects* {.inject.}: array[`count`, EffectProc] = `brackets`
+    const 
+      allEffects* {.inject.}: array[`count`, EffectProc] = `brackets`
+      effectNone* {.inject.} = -1.EffectId
+      effectIdNone* {.inject.} = effectNone
 
 ## Creates the effect entity system for rendering.
 template makeEffectsSystem*() =
