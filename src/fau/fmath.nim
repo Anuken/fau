@@ -199,6 +199,7 @@ proc chance*(c: float): bool = rand(0.0..1.0) < c
 proc randRange*[T](value: T): T = rand((-value)..value)
 proc randSign*(): int = 
   if rand(0f..1f) < 0.5f: 1 else: -1 #rand(bool) doesn't work
+proc randAngle*(): float32 = rand(0f..(PI * 2f).float32)
 proc range*[T](r: var Rand, value: T): T = r.rand((-value)..value)
 
 {.pop.}
