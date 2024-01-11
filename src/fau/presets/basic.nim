@@ -1,6 +1,6 @@
 ## basic components, such as position
 
-import ../../core
+import ../../core, strutils
 import pkg/polymorph
 
 register(defaultComponentOptions):
@@ -12,6 +12,15 @@ register(defaultComponentOptions):
     Parent* = object
       parent*: EntityRef
       offset*: Vec2
+
+macro whenComp*(entity: EntityRef, t: typedesc, body: untyped) =
+  ## Runs the body with the specified lowerCase type when this entity has this component
+  let varName = t.repr.toLowerAscii.ident
+  result = quote do:
+    if `entity`.alive:
+      let `varName` {.inject.} = `entity`.fetch `t`
+      if `varName`.valid:
+        `body`
 
 onEcsBuilt:
   converter toVec*(pos: PosInstance): Vec2 {.inline} = pos.vec
