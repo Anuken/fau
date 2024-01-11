@@ -1,6 +1,16 @@
-import ../g2/packer, os, algorithm, pixie, strformat, tables, math, streams, times, chroma, strutils, ../util/[aseprite, tiled]
+import ../g2/packer, ../util/[aseprite, tiled]
+import std/[os, algorithm, strformat, tables, math, streams, times, strutils]
+import pkg/[pixie, jsony, chroma]
+
+type FolderSettings = object
+  outlineColor: ColorRGBA
 
 from vmath import nil
+
+proc parseHook*(s: string, i: var int, v: var ColorRGBA) =
+  var str: string
+  parseHook(s, i, str)
+  v = str.parseHex.rgba
 
 proc fail(reason: string) = raise Exception.newException(reason)
 
@@ -50,12 +60,33 @@ proc getImageSize(file: string): tuple[w: int, h: int] =
 
 
 proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min = 64, max = 2048, padding = 0, bleeding = 2, verbose = false, silent = false) =
-  let packer = newPacker(min, min)
-  let blackRgba = rgba(0, 0, 0, 255)
-  var positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int], duration: int]]()
-
-  let time = cpuTime()
-  let totalPad = padding + bleeding
+  let 
+    time = cpuTime()
+    packer = newPacker(min, min)
+    blackRgba = rgba(0, 0, 0, 255)
+    totalPad = padding + bleeding
+  
+  var 
+    positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int], duration: int]]()
+    settings = initTable[string, FolderSettings]()
+  
+  proc getSettings(file: string): FolderSettings =
+    let parent = file.parentDir
+    
+    settings.withValue(parent, value):
+      return value[]
+    do:
+      let settingsFile = parent / "folder.json"
+      if settingsFile.fileExists:
+        try:
+          let res = settingsFile.readFile.fromJson(FolderSettings)
+          settings[parent] = res
+          return res
+        except CatchableError as e:
+          echo "Error reading settings file ", settingsFile, " ", e.msg
+      
+      result = FolderSettings()
+      settings[parent] = result
 
   proc packFile(file: string, image: Image, splits = [-1, -1, -1, -1], duration = 0) =
     let name = file.splitFile.name
@@ -203,7 +234,14 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
         echo "Failed to read file ", file, ": ", getCurrentExceptionMsg()
 
     else:
-      packFile(file, readImage(file))
+      let 
+        img = readImage(file)
+        prefs = getSettings(file)
+      
+      if prefs.outlineColor.a > 0:
+        outline(img, prefs.outlineColor)
+
+      packFile(file, img)
 
 
   #save a white image
