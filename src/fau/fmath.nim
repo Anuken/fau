@@ -942,13 +942,16 @@ template particlesLife*(seed: int, amount: int, ppos: Vec2, basefin: float32, ra
 
 template circle*(amount: int, body: untyped) =
   for i in 0..<amount:
-    let circleAngle {.inject.} = (i.float32 / amount.float32 * pi2)
+    let 
+      circleAngle {.inject.} = (i.float32 / amount.float32 * pi2)
+      circleIndex {.inject, used.} = i
     body
 
 template circlev*(amount: int, len: float32, body: untyped) =
   for i in 0..<amount:
     let
       circleAngle {.inject.} = (i.float32 / amount.float32 * pi2)
+      circleIndex {.inject, used.} = i
       v {.inject.} = vec2l(circleAngle, len)
     body
 
