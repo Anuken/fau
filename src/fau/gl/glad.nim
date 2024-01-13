@@ -192,7 +192,7 @@ var
   GLAD_GL_ARB_vertex_array_object*: bool
   GLAD_GL_OES_vertex_array_object*: bool
 
-type ExtensionProc*  = proc(extgension: cstring): cint {.cdecl.} 
+type ExtensionProc*  = proc(extension: cstring): cint {.cdecl.} 
 
 proc load_GL_VERSION_1_0(load: proc) =
   if not GLAD_GL_VERSION_1_0: return
@@ -766,10 +766,10 @@ proc load_GL_OES_vertex_array_object(load: proc) =
   
   supportsVertexArrays = true
   
-  glBindVertexArray = cast[proc (array: GLuint) {.cdecl, gcsaf.}](load("glBindVertexArrayOES"))
-  glDeleteVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsaf.}](load("glDeleteVertexArraysOES"))
-  glGenVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsaf.}](load("glGenVertexArraysOES"))
-  glIsVertexArray = cast[proc (array: GLuint): GLboolean {.cdecl, gcsaf.}](load("glIsVertexArrayOES"))
+  glBindVertexArray = cast[proc (array: GLuint) {.cdecl, gcsafe.}](load("glBindVertexArrayOES"))
+  glDeleteVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsafe.}](load("glDeleteVertexArraysOES"))
+  glGenVertexArrays = cast[proc (n: GLsizei, arrays: ptr GLuint) {.cdecl, gcsafe.}](load("glGenVertexArraysOES"))
+  glIsVertexArray = cast[proc (array: GLuint): GLboolean {.cdecl, gcsafe.}](load("glIsVertexArrayOES"))
 
 proc findCoreGLES2(glVersion: string) =
   var prefixes = ["OpenGL ES-CM ", "OpenGL ES-CL ", "OpenGL ES "]

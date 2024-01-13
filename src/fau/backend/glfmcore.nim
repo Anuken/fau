@@ -31,6 +31,10 @@ proc updateInsets(display: ptr GLFMDisplay) =
   fau.insets[2] = bot.float32
   fau.insets[3] = left.float32
 
+proc glfmExtensionSupportedWrap(extension: cstring): cint {.cdecl.} =
+  let res = glfmExtensionSupported(extension)
+  return if res: 1.cint else: 0.cint
+
 proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   NimMain()
 
@@ -84,7 +88,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
   display.glfmSetSurfaceCreatedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
 
-    if not loadGl(glfmGetProcAddress, glfmExtensionSupported):
+    if not loadGl(glfmGetProcAddress, glfmExtensionSupportedWrap):
       raise Exception.newException("Failed to load OpenGL.")
 
     echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
