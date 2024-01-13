@@ -66,7 +66,7 @@ proc record*() =
 
   #grab pixels
   if recording and open:
-    ftime += fau.delta * 60.1f * speedMultiplier
+    ftime += fau.rawDelta * 60.1f * speedMultiplier
     if ftime >= 60f / recordFps:
       ftime = ftime.mod 60f / recordFps
 
