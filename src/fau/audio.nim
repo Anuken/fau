@@ -114,7 +114,7 @@ proc initAudio*() =
     soundBus.play()
 
     initialized = true
-    echo "Initialized SoLoud v" & $so.SoloudGetVersion() & " w/ " & $so.SoloudGetBackendString()
+    echo "Initialized SoLoud v", so.SoloudGetVersion(), " [", so.SoloudGetBackendString(), "]"
 
     #on Android, audio is not paused in the background, so that needs to be handled manually
     when defined(Android):

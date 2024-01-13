@@ -232,8 +232,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if not loadGl(getProcAddress, extensionSupported):
     raise Exception.newException("Failed to load OpenGL.")
 
-  echo "VAO support: ", supportsVertexArrays
-  echo "Initialized OpenGL v" & $glVersionMajor & "." & $glVersionMinor
+  echo "Initialized OpenGL v", glVersionMajor, ".", glVersionMinor, " [VAO: ", supportsVertexArrays, "]"
 
   #load window icon if possible
   when assetExistsStatic("icon.png") and not defined(macosx):
