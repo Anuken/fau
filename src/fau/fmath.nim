@@ -411,7 +411,10 @@ func rotate*(vec: Vec2i, steps: int): Vec2i =
 
 func len*(vec: Vec2): float32 {.inline.} = sqrt(vec.x * vec.x + vec.y * vec.y)
 func len2*(vec: Vec2): float32 {.inline.} = vec.x * vec.x + vec.y * vec.y
-func `len=`*(vec: var Vec2, b: float32) = vec *= b / vec.len
+func `len=`*(vec: var Vec2, b: float32) = 
+  let l = vec.len
+  if l != 0f:
+    vec *= b / l
 
 func `angle=`*(vec: var Vec2, angle: float32) =
   vec = vec2l(angle, vec.len)
