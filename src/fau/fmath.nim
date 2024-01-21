@@ -185,6 +185,8 @@ func mapClamp*(value, min, max, resmin, resmax: float32): float32 = clamp(((valu
 
 func round*(value, space: float32): float32 {.inline.} = round(value / space) * space
 
+func floor*(value, space: float32): float32 {.inline.} = floor(value / space) * space
+
 ## hashes an integer to a random positive integer
 func hashInt*(value: int): int {.inline.} =
   var x = value.uint64
