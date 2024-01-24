@@ -934,7 +934,7 @@ template particlesAngle*(seed: int, amount: int, ppos: Vec2, radius: float32, ro
     body
 
 ## Stateless particles based on RNG. x/y are injected into template body.
-template particlesLife*(seed: int, amount: int, ppos: Vec2, basefin: float32, radius: float32, body: untyped) =
+template particlesLifeOffset*(seed: int, amount: int, ppos: Vec2, basefin: float32, radiusFrom, radius: float32, body: untyped) =
   var r = initRand(seed)
   for i in 0..<amount:
     let
@@ -943,10 +943,13 @@ template particlesLife*(seed: int, amount: int, ppos: Vec2, basefin: float32, ra
       fout {.inject, used.} = 1f - fin
       rot {.inject, used.} = r.rand(360f.rad).float32
       count {.inject, used.} = i
-      v = vec2l(rot, r.rand(radius * fin))
+      v = vec2l(rot, radiusFrom + r.rand(radius * fin))
       pos {.inject.} = ppos + v
     if fin <= 1f:
       body
+
+template particlesLife*(seed: int, amount: int, ppos: Vec2, basefin: float32, radius: float32, body: untyped) =
+  particlesLifeOffset(seed, amount, ppos, basefin, 0f, radius, body)
 
 template circle*(amount: int, body: untyped) =
   for i in 0..<amount:
