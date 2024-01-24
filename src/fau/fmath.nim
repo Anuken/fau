@@ -534,7 +534,7 @@ proc inside*(x, y, w, h: int): bool {.inline.} = x >= 0 and y >= 0 and x < w and
 proc inside*(p: Vec2i, w, h: int): bool {.inline.} = p.x >= 0 and p.y >= 0 and p.x < w and p.y < h
 proc inside*(p: Vec2i, size: Vec2i): bool {.inline.} = p.x >= 0 and p.y >= 0 and p.x < size.x and p.y < size.y
 
-proc raycast*(a, b: Vec2i, checker: proc(pos: Vec2i): bool): bool =
+proc raycast*(a, b: Vec2i, checker: proc(pos: Vec2i): bool): tuple[hit: bool, pos: Vec2i] =
   var
     x = a.x
     y = a.y
@@ -546,8 +546,8 @@ proc raycast*(a, b: Vec2i, checker: proc(pos: Vec2i): bool): bool =
     err = dx - dy
   
   while true:
-    if checker(vec2i(x, y)): return true
-    if x == b.x and y == b.y: return false
+    if checker(vec2i(x, y)): return (true, vec2i(x, y))
+    if x == b.x and y == b.y: return (false, vec2i())
     e2 = 2 * err
 
     if e2 > -dy:
@@ -558,7 +558,7 @@ proc raycast*(a, b: Vec2i, checker: proc(pos: Vec2i): bool): bool =
       err += dx
       y += sy
 
-  return false
+  return (false, vec2i())
 
 #Implementation of bresenham's line algorithm; iterates through a line connecting the two points.
 iterator line*(p1, p2: Vec2i): Vec2i =
