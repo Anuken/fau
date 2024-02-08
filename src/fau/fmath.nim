@@ -631,6 +631,8 @@ proc center*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w/2.0, r.y + r.h/2.0)
 
 proc `-`*(r: Rect, other: Rect): Rect {.inline.} = rect(r.xy - other.xy, r.wh - other.wh)
 proc `+`*(r: Rect, other: Rect): Rect {.inline.} = rect(r.xy + other.xy, r.wh + other.wh)
+
+proc `-`*(r: Rect, pos: Vec2): Rect {.inline.} = rect(r.xy - pos, r.wh)
 proc `+`*(r: Rect, pos: Vec2): Rect {.inline.} = rect(r.xy + pos, r.wh)
 
 proc merge*(r: Rect, other: Rect): Rect =
