@@ -331,6 +331,7 @@ op(Vec2, float32, vec2, `*`, `*=`)
 op(Vec2, float32, vec2, `/`, `/=`)
 
 func `*`*(f: float32, vec: Vec2): Vec2 {.inline.} = vec2(f * vec.x, f * vec.y)
+func `/`*(f: float32, vec: Vec2): Vec2 {.inline.} = vec2(f / vec.x, f / vec.y)
 func `-`*(vec: Vec2): Vec2 {.inline.} = vec2(-vec.x, -vec.y)
 
 opFunc(Vec2, `mod`)
