@@ -564,8 +564,10 @@ proc raycast*(a, b: Vec2i, checker: proc(pos: Vec2i): bool): tuple[hit: bool, po
 
   return (false, vec2i())
 
-#Implementation of bresenham's line algorithm; iterates through a line connecting the two points.
+
 iterator line*(p1, p2: Vec2i): Vec2i =
+  ## Implementation of bresenham's line algorithm; iterates through a line connecting the two points.
+
   let 
     dx = abs(p2.x - p1.x)
     dy = abs(p2.y - p1.y)
@@ -590,6 +592,36 @@ iterator line*(p1, p2: Vec2i): Vec2i =
     if e2 < dx:
       err += dx
       startY += sy
+
+iterator lineNoDiagonal*(p1, p2: Vec2i): Vec2i =
+  ## Implementation of bresenham's line algorithm; iterates through a line connecting the two points. Non-diagonal version.
+  
+  let 
+    dx = abs(p2.x - p1.x)
+    dy = -abs(p2.y - p1.y)
+    sx = if p1.x < p2.x: 1 else: -1
+    sy = if p1.y < p2.y: 1 else: -1
+
+  var
+    startX = p1.x
+    startY = p1.y
+
+    err = dx + dy
+    e2 = 0
+  
+  yield vec2i(startX, startY)
+  
+  while startX != p2.x or startY != p2.y:
+    e2 = 2 * err
+    
+    if e2 - dy > dx - e2:
+      err += dy
+      startX += sx
+    else:
+      err += dx
+      startY += sy
+
+    yield vec2i(startX, startY)
 
 proc rect*(): Rect {.inline.} = Rect()
 proc rect*(x, y, w, h: float32): Rect {.inline.} = Rect(x: x, y: y, w: w, h: h)
