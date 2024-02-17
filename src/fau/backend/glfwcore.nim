@@ -386,6 +386,12 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 proc setWindowTitle*(title: string) =
   window.setWindowTitle(title)
 
+proc setClipboardString*(text: string) =
+  window.setClipboardString(text.cstring)
+
+proc getClipboardString*(): string =
+  $window.getClipboardString()
+
 proc setCursor*(cursor: Cursor) =
   window.setCursor(cursor.handle)
 
