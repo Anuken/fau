@@ -386,6 +386,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 proc setWindowTitle*(title: string) =
   window.setWindowTitle(title)
 
+proc setWindowDecorated*(decorated: bool) =
+  window.setWindowAttrib(DECORATED,  decorated.cint)
+
 proc setClipboardString*(text: string) =
   window.setClipboardString(text.cstring)
 
