@@ -424,8 +424,13 @@ proc getWindowSize*(): Vec2i =
   window.getWindowSize(addr w, addr h)
   return vec2i(w.int, h.int)
 
+proc setWindowSize*(size: Vec2i) =
+  window.setWindowSize(size.x.cint, size.y.cint)
+
 proc setVsync*(on: bool) =
   swapInterval(on.cint)
+
+proc isMaximized*(): bool = window.getWindowAttrib(MAXIMIZED).bool
 
 proc isFullscreen*(): bool =
   return window.getWindowMonitor() != nil
