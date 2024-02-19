@@ -101,6 +101,17 @@ template importAll*(): untyped =
   
   importAllDef(instantiationInfo().filename)
 
+#https://forum.nim-lang.org/t/9504
+template unroll*(iter, name0, body0: untyped): untyped =
+  macro unrollImpl(name, body) =
+    result = newStmtList()
+    for a in iter:
+      result.add(newBlockStmt(newStmtList(
+        newConstStmt(name, newLit(a)),
+        copy body
+      )))
+  unrollImpl(name0, body0)
+
 #this was kind of a bad idea...
 #[
 ## registers an event to be handled with `onEventName:`
