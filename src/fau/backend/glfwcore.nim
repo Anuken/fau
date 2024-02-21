@@ -202,6 +202,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if params.depth: windowHint(DEPTH_BITS, 16.cint)
   windowHint(DOUBLEBUFFER, 1)
   windowHint(MAXIMIZED, params.maximize.cint)
+  windowHint(FLOATING, params.floating.cint)
   if params.transparent:
     windowHint(TRANSPARENT_FRAMEBUFFER, 1.cint)
   
@@ -387,7 +388,10 @@ proc setWindowTitle*(title: string) =
   window.setWindowTitle(title)
 
 proc setWindowDecorated*(decorated: bool) =
-  window.setWindowAttrib(DECORATED,  decorated.cint)
+  window.setWindowAttrib(DECORATED, decorated.cint)
+
+proc setWindowFloating*(floating: bool) =
+  window.setWindowAttrib(FLOATING, floating.cint)
 
 proc setClipboardString*(text: string) =
   window.setClipboardString(text.cstring)

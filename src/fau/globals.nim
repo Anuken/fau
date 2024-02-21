@@ -93,6 +93,8 @@ type FauInitParams* = object
   title*: string
   #whether to maximize window at start
   maximize*: bool
+  #always on top
+  floating*: bool
   #whether to use a depth buffer
   depth*: bool
   #whether the window has no border
@@ -102,8 +104,8 @@ type FauInitParams* = object
   #default background clear color
   clearColor*: Color
 
-proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, depth = false, undecorated = false, transparent = false, clearColor = colorClear): FauInitParams =
-  FauInitParams(size: size, title: title, maximize: maximize, depth: depth, undecorated: undecorated, transparent: transparent, clearColor: clearColor)
+proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, floating = false, depth = false, undecorated = false, transparent = false, clearColor = colorClear): FauInitParams =
+  FauInitParams(size: size, title: title, maximize: maximize, depth: depth, floating: floating, undecorated: undecorated, transparent: transparent, clearColor: clearColor)
 
 #Hold all the graphics state.
 type FauState* = object
