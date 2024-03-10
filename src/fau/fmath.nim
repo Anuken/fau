@@ -295,6 +295,12 @@ func abcos*(x, scl, mag: float32): float32 {.inline} = ((cos(x / scl) + 1f) / 2f
 func absin*(x: float32): float32 {.inline} = ((sin(x) + 1f) / 2f)
 func abcos*(x: float32): float32 {.inline} = ((cos(x) + 1f) / 2f)
 
+func triangle*(x: float32, phase = 1f, mag = 1f): float32 =
+  (abs((x mod phase * 2) - phase) / phase - 0.5f) * 2f * mag
+
+func abtriangle*(x: float32, phase = 1f, mag = 1f): float32 =
+  (abs((x mod phase * 2) - phase) / phase) * mag
+
 template vec2*(cx, cy: float32): Vec2 = Vec2(x: cx, y: cy)
 template vec2*(cx, cy: int): Vec2 = Vec2(x: cx.float32, y: cy.float32)
 proc vec2*(xy: float32): Vec2 {.inline.} = Vec2(x: xy, y: xy)
@@ -785,7 +791,7 @@ proc penetrationY*(a, b: Rect): float32 {.inline.} =
 proc penetration*(a, b: Rect): Vec2 = vec2(penetrationX(a, b), penetrationY(a, b))
 
 #moves a hitbox; may be removed later
-proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(x, y: int): bool, seg = 0.1f): Vec2 = 
+proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(xy: Vec2i): bool, seg = 0.1f): Vec2 = 
   let
     left = (box.x + 0.5).int - 1
     bottom = (box.y + 0.5).int - 1
@@ -803,7 +809,7 @@ proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(x, y: int): bool, seg = 0.1
 
     for dx in left..right:
       for dy in bottom..top:
-        if solidity(dx, dy):
+        if solidity(vec2i(dx, dy)):
           let tile = rect((dx).float32 - 0.5f, (dy).float32 - 0.5f, 1, 1)
           if hitbox.overlaps(tile):
             hitbox.x -= tile.penetrationX(hitbox)
@@ -814,7 +820,7 @@ proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(x, y: int): bool, seg = 0.1
 
     for dx in left..right:
       for dy in bottom..top:
-        if solidity(dx, dy):
+        if solidity(vec2i(dx, dy)):
           let tile = rect((dx).float32 - 0.5f, (dy).float32 - 0.5f, 1, 1)
           if hitbox.overlaps(tile):
             hitbox.y -= tile.penetrationY(hitbox)
