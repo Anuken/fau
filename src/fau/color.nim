@@ -37,7 +37,7 @@ func gray*(g: float32): Color {.inline.} = rgb(g, g, g)
 #H, S, V are all floats from 0 to 1
 func hsv*(h, s, v: float32, a = 1f): Color =
   let 
-    x = (h * 60f + 6f).mod(6f)
+    x = (h * 6f + 6f).mod(6f)
     i = x.floor
     f = x - i
     p = v * (1 - s)
