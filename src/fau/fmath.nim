@@ -149,6 +149,8 @@ proc update*(spring: var Spring, delta: float32) =
 
 #utility functions
 
+func square*(val: float32): float32 {.inline.} = val * val
+
 func zero*(val: float32, margin: float32 = 0.0001f): bool {.inline.} = abs(val) <= margin
 func clamp*(val: float32): float32 {.inline.} = clamp(val, 0f, 1f)
 
