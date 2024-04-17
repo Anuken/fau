@@ -252,7 +252,7 @@ proc clip*(batch: Batch, rect: Rect) =
   batch.clip = rect
 
 proc viewport*(batch: Batch, rect: Rect) =
-  batch.flush()
+  #batch.flush()
   batch.viewport = rect
 
 #Sets the framebuffer used for rendering. This flushes the batch.
