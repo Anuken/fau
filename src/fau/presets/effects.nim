@@ -9,6 +9,7 @@ type
   EffectState* = object
     pos*: Vec2
     time*, lifetime*, rotation*, size*: float32
+    sizeVec*: Vec2
     color*: Color
     id*: int
   EffectProc* = proc(e: EffectState)
@@ -18,6 +19,7 @@ registerComponents(defaultComponentOptions):
     Effect* = object
       ide*: EffectId
       rotation*, sizef*: float32
+      sizeVec*: Vec2
       color*: Color
 
 ## Defines several effects. Requires makeEffectsSystem() to be called somewhere to function properly.
@@ -40,10 +42,10 @@ macro defineEffects*(body: untyped) =
     proc rendererNone*(e: EffectState) {.inject.} = discard
 
     onEcsBuilt:
-      proc createEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f, parent = NoEntityRef) =
+      proc createEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f, parent = NoEntityRef, sizeVec = vec2()) =
         if eid.int < 0: return
 
-        let res = newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rotation, color: color, sizef: size))
+        let res = newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rotation, color: color, sizef: size, sizeVec: sizeVec))
         
         addParent(res, pos, parent)
 
@@ -83,8 +85,8 @@ macro defineEffects*(body: untyped) =
         `effectBody`
       
       onEcsBuilt:
-        template `templName`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f, parent = NoEntityRef) =
-          createEffect(`id`.EffectId, pos, rotation, color, life, size, parent)
+        template `templName`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f, parent = NoEntityRef, sizeVec = vec2()) =
+          createEffect(`id`.EffectId, pos, rotation, color, life, size, parent, sizeVec)
     
     brackets.add quote do:
       `procName`.EffectProc
@@ -101,4 +103,4 @@ macro defineEffects*(body: untyped) =
 template makeEffectsSystem*() =
   makeSystem("drawEffects", [Pos, Effect, Timed]):
     all:
-      allEffects[effect.ide.int](EffectState(pos: item.pos.vec, time: timed.time, lifetime: timed.lifetime, color: effect.color, size: effect.sizef, rotation: effect.rotation, id: entity.entityId.int))
+      allEffects[effect.ide.int](EffectState(pos: item.pos.vec, time: timed.time, lifetime: timed.lifetime, color: effect.color, size: effect.sizef, rotation: effect.rotation, id: entity.entityId.int, sizeVec: effect.sizeVec))
