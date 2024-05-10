@@ -129,22 +129,23 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
           let tilemap = readTilemapFile(file)
           for tileset in tilemap.tilesets:
             var images: Table[string, Image]
-            for tile in tileset.tiles:
-              var tileImageName = tileset.name & $tile.id
-              
-              #some maps share tilesets.
-              if not positions.hasKey(tileImageName):
-                if not images.hasKey(tile.image):
-                  images[tile.image] = readImage(file / "../" / tile.image)
+            if tileset.properties.getBool("pack", true):
+              for tile in tileset.tiles:
+                var tileImageName = tileset.name & $tile.id
                 
-                var 
-                  cropped = images[tile.image]
-                
-                if tile.width > 0 and tile.height > 0:
-                  cropped = cropped.subImage(tile.x, tile.y, tile.width, tile.height)
-                
-                if not cropped.isTransparent:
-                  packFile(file / tileImageName, cropped)
+                #some maps share tilesets.
+                if not positions.hasKey(tileImageName):
+                  if not images.hasKey(tile.image):
+                    images[tile.image] = readImage(file / "../" / tile.image)
+                  
+                  var 
+                    cropped = images[tile.image]
+                  
+                  if tile.width > 0 and tile.height > 0:
+                    cropped = cropped.subImage(tile.x, tile.y, tile.width, tile.height)
+                  
+                  if not cropped.isTransparent:
+                    packFile(file / tileImageName, cropped)
         except:
           echo "Failed to parse tilemap file ", file, ": ", getCurrentExceptionMsg()
 
