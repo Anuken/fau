@@ -98,7 +98,7 @@ proc meshParams*(buffer: Framebuffer = screen, offset = 0, count = -1, depth = f
 #returns the unique ID of the shader - currently this is just the GL handle to the vertex buffer
 proc id*(mesh: Mesh): int {.inline.} = mesh.vertexBuffer.int
 
-#marks a mesh as modified, so its vertices get reuploaded
+#marks a mesh as modified, so ALL its vertices get reuploaded
 proc update*[T](mesh: Mesh[T]) = 
   mesh.modifiedVert = true
   mesh.modifiedInd = true
@@ -122,14 +122,14 @@ proc updateIndices*[T](mesh: Mesh[T], slice: Slice[int]) =
 proc vertexSize*[T](mesh: Mesh[T]): int = T.sizeOf
 
 #creates a mesh with a set of attributes
-proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[T] = @[], indices: seq[Index] = @[]): Mesh[T] = 
+proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[T] = @[], indices: seq[Index] = @[], update = true): Mesh[T] = 
   result = Mesh[T](
     isStatic: isStatic, 
     primitiveType: primitiveType, 
     vertices: vertices, 
     indices: indices,
-    modifiedVert: true,
-    modifiedInd: true,
+    modifiedVert: update,
+    modifiedInd: update,
     vertexBuffer: glGenBuffer(),
     indexBuffer: glGenBuffer(),
   )
@@ -301,7 +301,10 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
 
   #NOTE: apparently glBufferSubData is really slow for sprite batching applications. locks. brilliant.
 
-  let updateVertices = mesh.modifiedVert or mesh.vertSlice.b != 0
+  if mesh.modifiedVert:
+    mesh.vertSlice = 0..<mesh.vertices.len
+
+  let updateVertices = mesh.vertSlice.b != 0
 
   #bind the vertex buffer
   #for VAOs, you only need to bind when you are setting up the VAO (totalActive == 0) or you want to update its data
@@ -310,17 +313,20 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
 
   #update vertices if modified
   if updateVertices:
-    glBufferData(GlArrayBuffer, mesh.vertices.len * vsize, mesh.vertices[0].addr, usage)
+    glBufferData(GlArrayBuffer, (mesh.vertSlice.b - mesh.vertSlice.a + 1) * vsize, mesh.vertices[0].addr, usage)
   
-  let updateIndices = (mesh.modifiedInd or mesh.indSlice.b != 0) and mesh.indices.len > 0
+  if mesh.modifiedInd:
+    mesh.indSlice = 0..<mesh.indices.len
+
+  let updateIndices = mesh.indSlice.b != 0 and mesh.indices.len > 0
 
   #bind indices if there are any
   if mesh.indices.len > 0 and (not supportsVertexArrays or updateIndices or mesh.totalActive == 0):
     glBindBuffer(GlElementArrayBuffer, mesh.indexBuffer)
 
   #update indices if relevant and modified
-  if (mesh.modifiedInd or mesh.indSlice.b != 0) and mesh.indices.len > 0:
-    glBufferData(GlElementArrayBuffer, mesh.indices.len * 2, mesh.indices[0].addr, usage)
+  if updateIndices:
+    glBufferData(GlElementArrayBuffer, (mesh.indSlice.b - mesh.indSlice.a + 1) * 2, mesh.indices[mesh.indSlice.a].addr, usage)
   
   mesh.vertSlice = 0..0
   mesh.indSlice = 0..0

@@ -182,7 +182,8 @@ proc newBatch*(size: int = 16380): Batch =
   let batch = Batch(
     mesh: newMesh(
       vertices = newSeq[Vert2](size * 4),
-      indices = newSeq[Index](size * 6)
+      indices = newSeq[Index](size * 6),
+      update = false #do not upload the vertices on the first draw call, it's redundant
     ),
     buffer: screen,
     size: size * 4,
@@ -200,6 +201,7 @@ proc newBatch*(size: int = 16380): Batch =
     i += 6
     j += 4
   
+  batch.mesh.updateIndices()
   #create default shader
   batch.defaultShader = newShader(defaultVertShader,
 

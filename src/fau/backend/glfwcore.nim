@@ -209,7 +209,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if params.undecorated:
     windowHint(DECORATED, 0.cint)
 
-  if (paramCount() > 0 and paramStr(1) == "-coreProfile") or defined(macosx):
+  if (paramCount() > 0 and paramStr(1) == "-coreProfile") or defined(macosx) or defined(fauGlCoreProfile):
     windowHint(CONTEXT_VERSION_MAJOR, 3)
     windowHint(CONTEXT_VERSION_MINOR, 2)
     windowHint(OPENGL_PROFILE, OPENGL_CORE_PROFILE)
