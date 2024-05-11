@@ -1,6 +1,6 @@
 import tables, unicode, packer, bitops
 import math
-import ../texture, ../patch, ../color, ../globals, ../util/util, ../draw, ../assets
+import ../texture, ../patch, ../color, ../globals, ../util/misc, ../draw, ../assets
 
 from ../fmath import `+`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter
 from pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`, dataIndex

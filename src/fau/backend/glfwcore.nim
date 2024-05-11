@@ -1,4 +1,4 @@
-import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, ../util/util, stb_image/read as stbi
+import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, ../util/misc, stb_image/read as stbi
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 

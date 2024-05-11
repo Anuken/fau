@@ -1,6 +1,6 @@
 ## components for rendering effects
 
-import ../../core, ../util/util, basic
+import ../../core, ../util/misc, basic
 import std/strutils
 import pkg/polymorph
 
