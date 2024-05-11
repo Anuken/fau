@@ -4,6 +4,20 @@ import macros, tables, strutils
 
 var eventHandlers* {.compileTime} = newTable[string, seq[NimNode]]()
 
+proc capitalize*(str: openArray[char], spaces = false, camel = false): string =
+  ## Converts a snake_case or kebab-case string to UpperCase, optionally inserting spaces between words.
+
+  result = newStringOfCap(str.len)
+  for i in 0..<str.len:
+    let c = str[i]
+    if c in {'-', '_'}:
+      if spaces:
+        result.add(' ')
+    elif (i == 0 and not camel) or (i > 0 and str[i - 1] in {'-', '_'}):
+      result.add(c.toUpperAscii)
+    else:
+      result.add(c)
+
 template findIt*[T](list: seq[T], body: untyped): int =
   var result = -1
   for i, it {.inject.} in list:

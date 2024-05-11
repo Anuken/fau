@@ -27,11 +27,12 @@ macro preloadFolder*(path: static[string]): untyped =
   when staticAssets:
     #can't use / because it fails with cross compilation
     for e in walkDir("assets/" & path):
-      let file = e.path.substr("assets/".len)
-      let path = rootDir  & "/" & e.path
-      result.add quote do:
-        const data = staticRead(`path`)
-        preloadedAssets[`file`] = data
+      if e.kind == pcFile:
+        let file = e.path.substr("assets/".len)
+        let path = rootDir  & "/" & e.path
+        result.add quote do:
+          const data = staticRead(`path`)
+          preloadedAssets[`file`] = data
 
 #walkDirRec implementation that actually works when cross-compiling (avoid usage of the `/` proc)
 iterator walkDirRec2(dir: string,
