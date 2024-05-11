@@ -94,6 +94,7 @@ proc flushInternal(batch: Batch) =
   else:
     batch.mesh.updateVertices(0..<batch.index)
     
+    #TODO: setting up these uniforms is redundant. they're usually the same and should be cached
     batch.mesh.render(shader, meshParams(batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend, clip = batch.clip, viewport = batch.viewport)):
       texture = batch.lastTexture.sampler
       proj = batch.mat

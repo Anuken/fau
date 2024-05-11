@@ -71,6 +71,9 @@ const
   #implies glDisable(GlBlend)
   blendDisabled* = Blending(src: GlZero, dst: GlZero)
 
+#global vertex array state for optimization
+var lastVertexArray = 0
+
 proc `=destroy`*[T](mesh: var MeshObj[T]) =
   `=destroy`(mesh.vertices)
   `=destroy`(mesh.indices)
@@ -83,7 +86,11 @@ proc `=destroy`*[T](mesh: var MeshObj[T]) =
     mesh.indexBuffer = 0
   if mesh.vertexArray != 0 and glInitialized:
     glDeleteVertexArray(mesh.vertexArray)
+    if lastVertexArray == mesh.vertexArray.int:
+      glBindVertexArray(0)
+      lastVertexArray = -1
     mesh.vertexArray = 0
+    
 
 proc toGlEnum(face: CullFace): GlEnum {.inline.} =
   case face
@@ -294,8 +301,9 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
 
   #bind VAO if possible??
-  if supportsVertexArrays:
+  if supportsVertexArrays and lastVertexArray != mesh.vertexArray.int:
     glBindVertexArray(mesh.vertexArray)
+    lastVertexArray = mesh.vertexArray.int
 
   let vsize = mesh.vertexSize
 
@@ -345,9 +353,9 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
     let pcount = if args.count < 0: mesh.indices.len else: args.count
     glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](args.offset * Index.sizeof))
 
-  #TODO horrible performance
-  if supportsVertexArrays:
-    glBindVertexArray(0)
+  #TODO is this worth unbinding?
+  #if supportsVertexArrays:
+  #  glBindVertexArray(0)
 
 template render*[T](mesh: Mesh[T], shader: Shader, args: MeshParam, uniformList: untyped) =
   shader.uniforms(uniformList)
