@@ -34,24 +34,6 @@ macro preloadFolder*(path: static[string]): untyped =
           const data = staticRead(`path`)
           preloadedAssets[`file`] = data
 
-#walkDirRec implementation that actually works when cross-compiling (avoid usage of the `/` proc)
-iterator walkDirRec2(dir: string,
-                     yieldFilter = {pcFile}, followFilter = {pcDir},
-                     relative = false, checkDir = false, skipSpecial = false):
-                    string {.tags: [ReadDirEffect].} =
-  var stack = @[""]
-  var checkDir = checkDir
-  while stack.len > 0:
-    let d = stack.pop()
-    for k, p in walkDir(dir & "/" & d, relative = true, checkDir = checkDir,
-                        skipSpecial = skipSpecial):
-      let rel = d & "/" & p
-      if k in {pcDir, pcLinkToDir} and k in followFilter:
-        stack.add rel
-      if k in yieldFilter:
-        yield if relative: rel else: dir & (if rel.startsWith("/"): "" else: "/") & rel
-    checkDir = false
-
 macro preloadFolderRec*(path: static[string]): untyped =
   ## Recursively preloads all files in a directory into the static assets table. This embeds them into the executable for use in assetRead.
   result = newStmtList()
