@@ -272,6 +272,15 @@ proc drawBend*(p: Patch, pos: Vec2, divs: openArray[float32], mid = 0, rotation 
   for i in countdown(mid - 1, 0):
     drawAt(i, -1f)
 
+proc fillQuad*(texture: Texture,
+    v1: Vec2, c1: Color, uv1: Vec2,
+    v2: Vec2, c2: Color, uv2: Vec2,
+    v3: Vec2, c3: Color, uv3: Vec2,
+    v4: Vec2, c4: Color, uv4: Vec2,
+    z: float32 = 0, blend = blendNormal
+  ) =
+  drawVert(fau.white.texture, [vert2(v1, uv1, c1), vert2(v2, uv2, c2),  vert2(v3, uv3, c3), vert2(v4, uv4, c4)], z, blend = blend)
+
 proc fillQuad*(v1: Vec2, c1: Color, v2: Vec2, c2: Color, v3: Vec2, c3: Color, v4: Vec2, c4: Color, z: float32 = 0, blend = blendNormal) =
   drawVert(fau.white.texture, [vert2(v1, fau.white.uv, c1), vert2(v2, fau.white.uv, c2),  vert2(v3, fau.white.uv, c3), vert2(v4, fau.white.uv, c4)], z, blend = blend)
 
@@ -494,7 +503,6 @@ proc arcRadius*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radiusFrom, 
       pos + vec2(cosf, sinf) * r2,
       color, z
     )
-
 
 proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
   let 
