@@ -213,6 +213,8 @@ proc postHook*(map: var Tilemap) =
 
 # TiledProps CAN BE NIL. Why? Because ensuring that it isn't, or making it a Table (non-ref) crashes emscripten.
 
+proc has*(props: TiledProps, key: string): bool = not props.isNil and props.hasKey(key)
+
 proc contains*(props: TiledProps, key: string): bool = not props.isNil and props.hasKey(key)
 
 proc getInt*(props: TiledProps, name: string, def = 0): int =
