@@ -302,8 +302,8 @@ proc fillTri*(v1, v2, v3: Vec2, color: Color, z: float32 = 0) =
 proc fillTri*(v1, v2, v3: Vec2, c1, c2, c3: Color, z: float32 = 0) =
   fillQuad(v1, c1, v2, c2, v3, c3, v3, c3, z)
 
-proc fillCircle*(pos: Vec2, rad: float32, color: Color = colorWhite, z: float32 = 0) =
-  draw(fau.circle, pos, size = vec2(rad*2f), color = color, z = z)
+proc fillCircle*(pos: Vec2, rad: float32, color: Color = colorWhite, z: float32 = 0, blend = blendNormal) =
+  draw(fau.circle, pos, size = vec2(rad*2f), color = color, z = z, blend = blend)
 
 proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = colorWhite, z: float32 = 0) =
   let space = PI*2 / sides.float32

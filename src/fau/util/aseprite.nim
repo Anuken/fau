@@ -24,6 +24,7 @@ type
     data*: string
     width*, height*: int
     x*, y*: int
+    opacity*: uint8
   AseLayer* = ref object
     flags*: set[AseLayerFlags]
     name*: string
@@ -181,8 +182,7 @@ proc readAseStream*(s: Stream): AseImage =
           layerIndex = s.readUint16()
           x = s.readInt16()
           y = s.readInt16()
-          
-        discard s.readUInt8() #what's the difference between this and layer opacity???
+          opacity = s.readUInt8()
           
         let celType = s.readUint16()
         
@@ -209,7 +209,8 @@ proc readAseStream*(s: Stream): AseImage =
             x: x.int,
             y: y.int,
             width: pixWidth.int,
-            height: pixHeight.int
+            height: pixHeight.int,
+            opacity: opacity
           )
 
       else: #unknown chunk, skipping - I don't support indexed colors, so palettes do not matter

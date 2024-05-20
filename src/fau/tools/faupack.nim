@@ -226,6 +226,9 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
               let full = newImage(aseFile.width, aseFile.height)
               full.draw(image, translate(vec2(frame.x.float32, frame.y.float32)))
 
+              if frame.opacity != 255'u8 or layer.opacity != 255'u8:
+                full.applyOpacity(frame.opacity.float32 / 255f * layer.opacity.float32 / 255f)
+
               if layer.userData == "outline" or layer.userData == "outlined":
                 outline(full, if layer.userColor == 0'u32: blackRgba else: cast[ColorRGBA](layer.userColor))
 
