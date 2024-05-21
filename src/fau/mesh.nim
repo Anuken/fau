@@ -6,8 +6,10 @@ export glproc, gltypes
 
 #types of blending
 type Blending* = object
-  src*: GLenum
-  dst*: Glenum
+  src, dst: GLenum
+
+  srcAlpha = GlOne
+  dstAlpha = GlOneMinusSrcAlpha
 
 type CullFace* = enum
   cfFront,
@@ -41,7 +43,7 @@ type MeshObj*[V] = object
   modifiedInd: bool
   vertSlice: Slice[int]
   indSlice: Slice[int]
-  primitiveType*: GLenum
+  primitiveType: GLenum
 
   activeAttribs: array[12, int]
   totalActive: int
@@ -61,7 +63,7 @@ type MeshParam* = object
   blend*: Blending
   cullFace*: CullFace
   clip*: Rect
-  viewport*: Rect #empt rectangle means use buffer bounds
+  viewport*: Rect #empty rectangle means use buffer bounds
 
 const
   blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
@@ -295,7 +297,7 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
     glDisable(GLBlend)
   else:
     glEnable(GlBlend)
-    glBlendFunc(args.blend.src, args.blend.dst)
+    glBlendFuncSeparate(args.blend.src, args.blend.dst, args.blend.srcAlpha, args.blend.dstAlpha)
 
   #draw usage
   let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
