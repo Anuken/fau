@@ -13,6 +13,8 @@ register(defaultComponentOptions):
       parent*: EntityRef
       offset*: Vec2
 
+template makeEntity*(components: varargs[untyped]) = discard newEntityWith(components)
+
 macro whenComp*(entity: EntityRef, t: typedesc, body: untyped) =
   ## Runs the body with the specified lowerCase type when this entity has this component
   let varName = t.repr.toLowerAscii.ident

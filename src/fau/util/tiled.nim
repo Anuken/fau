@@ -76,6 +76,10 @@ type
     properties*: TiledProps
     emptyTile*: TiledTile
 
+proc renameHook*(v: var TiledObject, fieldName: var string) =
+  if fieldName == "type":
+    fieldName = "class"
+
 proc parseHook*(s: string, i: var int, v: var TiledProps) =
   #internal type for parsing property entries, as they are in a list, not a map
   type TilePropEntry = object
