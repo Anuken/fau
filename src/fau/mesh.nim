@@ -11,6 +11,9 @@ type Blending* = object
   srcAlpha = GlOne
   dstAlpha = GlOneMinusSrcAlpha
 
+  eqRgb = GlFuncAdd
+  eqAlpha = GlFuncAdd
+
 type CullFace* = enum
   cfFront,
   cfBack,
@@ -67,6 +70,7 @@ type MeshParam* = object
 
 const
   blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
+  blendMaxAlpha* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha, eqAlpha: GlMax)
   blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
   blendPremultiplied* = Blending(src: GlOne, dst: GlOneMinusSrcAlpha)
   blendErase* = Blending(src: GlZero, dst: GlOneMinusSrcAlpha)
@@ -298,6 +302,7 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   else:
     glEnable(GlBlend)
     glBlendFuncSeparate(args.blend.src, args.blend.dst, args.blend.srcAlpha, args.blend.dstAlpha)
+    glBlendEquationSeparate(args.blend.eqRgb, args.blend.eqAlpha)
 
   #draw usage
   let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw

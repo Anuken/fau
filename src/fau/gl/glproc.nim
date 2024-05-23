@@ -60,9 +60,17 @@ var
   lastClearColor = [0f, 0f, 0f, 0f]
   #enabled state: 0 = unknown, 1 = off 2 = on TODO might be better as a bitset.
   lastEnabled: array[36349, byte]
+
   #blending S/D factor, set to false (invalid)
-  lastSfactor: GLenum = GlFalse
-  lastDfactor: GLenum = GlFalse
+  lastSfactorRGB: GLenum = GlFalse
+  lastDfactorRGB: GLenum = GlFalse
+
+  lastSfactorAlpha: GLenum = GlFalse
+  lastDfactorAlpha: GLenum = GlFalse
+
+  lastBlendEquationRGB: GLenum = GlFuncAdd
+  lastBlendEquationAlpha: GLenum = GlFuncAdd
+
   #last glCullFace activated
   lastCullFace = GlBack
   #whether depthMask is on
@@ -112,18 +120,45 @@ proc glBindTexture*(target: GLenum, texture: GLuint) {.inline.} =
   glCheck(): wrap.glBindTexture(target, texture)
 
 proc glBlendColor*(red: GLfloat, green: GLfloat, blue: GLfloat, alpha: GLfloat) {.inline.} = glCheck(): wrap.glBlendColor(red, green, blue, alpha)
-proc glBlendEquation*(mode: GLenum) {.inline.} = glCheck(): wrap.glBlendEquation(mode)
-proc glBlendEquationSeparate*(modeRGB: GLenum, modeAlpha: GLenum) {.inline.} = glCheck(): wrap.glBlendEquationSeparate(modeRGB, modeAlpha)
+
+proc glBlendEquation*(mode: GLenum) {.inline.} = 
+  if lastBlendEquationAlpha == mode and lastBlendEquationRGB == mode: return
+
+  glCheck(): wrap.glBlendEquation(mode)
+
+  lastBlendEquationAlpha = mode
+  lastBlendEquationRGB = mode
+
+proc glBlendEquationSeparate*(modeRGB: GLenum, modeAlpha: GLenum) {.inline.} = 
+  if lastBlendEquationAlpha == modeAlpha and lastBlendEquationRGB == modeRGB: return
+
+  glCheck(): wrap.glBlendEquationSeparate(modeRGB, modeAlpha)
+
+  lastBlendEquationAlpha = modeAlpha
+  lastBlendEquationRGB = modeRGB
 
 proc glBlendFunc*(sfactor: GLenum, dfactor: GLenum) {.inline.} = 
-  if lastSfactor == sfactor and lastDfactor == dfactor: return
+  if lastSfactorRGB == sfactor and lastDfactorRGB == dfactor and lastSfactorAlpha == sfactor and lastDfactorAlpha == dfactor: return
 
   glCheck(): wrap.glBlendFunc(sfactor, dfactor)
 
-  lastSfactor = sfactor
-  lastDfactor = dfactor
+  lastSfactorRGB = sfactor
+  lastDfactorRGB = dfactor
 
-proc glBlendFuncSeparate*(sfactorRGB: GLenum, dfactorRGB: GLenum, sfactorAlpha: GLenum, dfactorAlpha: GLenum) {.inline.} = glCheck(): wrap.glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha)
+  lastSfactorAlpha = sfactor
+  lastDfactorAlpha = dfactor
+
+proc glBlendFuncSeparate*(sfactorRGB: GLenum, dfactorRGB: GLenum, sfactorAlpha: GLenum, dfactorAlpha: GLenum) {.inline.} = 
+  if lastSfactorRGB == sfactorRGB and lastDfactorRGB == dfactorRGB and lastSfactorAlpha == sfactorAlpha and lastDfactorAlpha == dfactorAlpha: return
+
+  glCheck(): wrap.glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha)
+
+  lastSfactorRGB = sfactorRGB
+  lastDfactorRGB = dfactorRGB
+
+  lastSfactorAlpha = sfactorAlpha
+  lastDfactorAlpha = dfactorAlpha
+
 proc glBufferData*(target: GLenum, size: GLsizeiptr, data: pointer, usage: GLenum) {.inline.} = glCheck(): wrap.glBufferData(target, size, data, usage)
 proc glBufferSubData*(target: GLenum, offset: GLintptr, size: GLsizeiptr, data: pointer) {.inline.} = glCheck(): wrap.glBufferSubData(target, offset, size, data)
 proc glCheckFramebufferStatus*(target: GLenum): GLenum {.inline.} = glCheck(): result = wrap.glCheckFramebufferStatus(target)
