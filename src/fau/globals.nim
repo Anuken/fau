@@ -20,6 +20,13 @@ type KeyCode* = enum
   keyRshift, keyRalt, keyRgui, keyMode, keyUnknown,
   keyMouseLeft, keyMouseMiddle, keyMouseRight
 
+const
+  allNumpadKeys* = [keyKp1, keyKp2, keyKp3, keyKp4, keyKp5, keyKp6, keyKp7, keyKp8, keyKp9]
+  allNumpadKeysWithZero* = [keyKp1, keyKp2, keyKp3, keyKp4, keyKp5, keyKp6, keyKp7, keyKp8, keyKp9, keyKp0]
+
+  allNumberKeys* = [key1, key2, key3, key4, key5, key6, key7, key8, key9]
+  allNumberKeyswithZero* = [key1, key2, key3, key4, key5, key6, key7, key8, key9, key0]
+
 type GamepadAxis* = enum
   leftX, leftY, rightX, rightY, leftTrigger, rightTrigger
 
