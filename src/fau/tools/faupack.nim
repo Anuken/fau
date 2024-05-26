@@ -4,6 +4,9 @@ import pkg/[pixie, jsony, chroma]
 
 type FolderSettings = object
   outlineColor: ColorRGBA
+  pad: int = -1
+  bleed: int = -1
+type PackEntry = tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int], duration: int, settings: FolderSettings]
 
 from vmath import nil
 
@@ -64,10 +67,9 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
     time = cpuTime()
     packer = newPacker(min, min)
     blackRgba = rgba(0, 0, 0, 255)
-    totalPad = padding + bleeding
   
   var 
-    positions = initTable[string, tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int], duration: int]]()
+    positions = initTable[string, PackEntry]()
     settings = initTable[string, FolderSettings]()
   
   proc getSettings(file: string): FolderSettings =
@@ -88,8 +90,15 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
       result = FolderSettings()
       settings[parent] = result
 
-  proc packFile(file: string, image: Image, splits = [-1, -1, -1, -1], duration = 0) =
-    let name = file.splitFile.name
+  proc packFile(file: string, image: Image, splits = [-1, -1, -1, -1], duration = 0, realFile = file) =
+    let 
+      settings = getSettings(realFile)
+      name = file.splitFile.name
+      bleed = if settings.bleed < 0: bleeding else: settings.bleed
+      pad = if settings.pad < 0: padding else: settings.pad
+
+    if settings.outlineColor.a > 0:
+      outline(image, settings.outlineColor)
 
     if verbose: echo &"Packing image {name}..."
 
@@ -103,7 +112,7 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
 
     #keep trying to pack and resize until packer runs out of space.
     while pos == (-1, -1):
-      pos = packer.pack(image.width, image.height, padding = totalPad)
+      pos = packer.pack(image.width, image.height, padding = bleed + pad)
       if pos == (-1, -1):
         let increaseWidth = packer.w <= packer.h
 
@@ -115,7 +124,7 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
         else:
           packer.resize(packer.w, (packer.h + 1).nextPowerOfTwo)
     
-    positions[name] = (image, file, pos, splits, duration)
+    positions[name] = (image, file, pos, splits, duration, settings)
 
   type PackEntry = tuple[file: string, size: int]
   var toPack: seq[PackEntry]
@@ -197,7 +206,7 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
           break
 
       #only save the cropped variant.
-      packFile(split.name, cropped, [left, right, top, bot])
+      packFile(split.name, cropped, [left, right, top, bot], realFile = file)
     elif split.ext == ".aseprite":
       try:
         let aseFile = readAseFile(file)
@@ -232,20 +241,13 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
               if layer.userData == "outline" or layer.userData == "outlined":
                 outline(full, if layer.userColor == 0'u32: blackRgba else: cast[ColorRGBA](layer.userColor))
 
-              packFile(file / frameName, full, duration = frame.duration)
+              packFile(file / frameName, full, duration = frame.duration, realFile = file)
       
       except CatchableError:
         echo "Failed to read file ", file, ": ", getCurrentExceptionMsg()
 
     else:
-      let 
-        img = readImage(file)
-        prefs = getSettings(file)
-      
-      if prefs.outlineColor.a > 0:
-        outline(img, prefs.outlineColor)
-
-      packFile(file, img)
+      packFile(file, readImage(file))
 
 
   #save a white image
@@ -274,8 +276,11 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
   for region in positions.values:
     image.draw(region.image, vmath.translate(vmath.vec2(region.pos.x.float32, region.pos.y.float32)))
 
+    let
+      bleed = if region.settings.bleed < 0: bleeding else: region.settings.bleed
+
     #apply bleeding/gutters
-    if bleeding > 0:
+    if bleed > 0:
       let
         ix = region.pos.x
         iy = region.pos.y
@@ -283,14 +288,14 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
         ih = region.image.height
       
       for i in 0..<region.image.height:
-        for s in 1..bleeding:
+        for s in 1..bleed:
           #left
           image[ix - s, iy + i] = region.image[0, i]
           #right
           image[ix + s + iw - 1, iy + i] = region.image[iw - 1, i]
       
       for i in 0..<region.image.width:
-        for s in 1..bleeding:
+        for s in 1..bleed:
           #bottom
           image[ix + i, iy - s] = region.image[i, 0]
           #top
