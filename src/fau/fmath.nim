@@ -494,6 +494,11 @@ func bezier*(p0, p1, p2, p3: Vec2, t: float32): Vec2 =
     t2 = t * t
   return dt2 * dt * p0 + 3 * dt2 * t * p1 + 3 * dt * t2 * p2 + t2 * t * p3
 
+func bezier*(p: array[4, Vec2], t: float32): Vec2 = bezier(p[0], p[1], p[2], p[3], t)
+
+func bezier*(p: array[3, Vec2], t: float32): Vec2 = bezier(p[0], p[1], p[2], t)
+
+
 #TODO better impl
 const
   d4i* = [vec2i(1, 0), vec2i(0, 1), vec2i(-1, 0), vec2i(0, -1)]
