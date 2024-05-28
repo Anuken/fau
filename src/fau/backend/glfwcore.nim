@@ -131,6 +131,8 @@ proc toKeyCode(keycode: cint): KeyCode =
     of KEY_KP_7: keyKp7
     of KEY_KP_8: keyKp8
     of KEY_KP_9: keyKp9
+    of KEY_KP_SUBTRACT: keyKpMinus
+    of KEY_KP_ADD: keyKpPlus
     of KEY_KP_DIVIDE: keyKpDivide
     of KEY_KP_MULTIPLY: keyKpMultiply
     of KEY_KP_ENTER: keyKpEnter
