@@ -18,7 +18,7 @@ type Bloom* = object
   scaling*: int
 
 #note: the colorBlacklist parameter is injected straight into the if-statement for the threshold check.
-proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, colorBlacklist = ""): Bloom =
+proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, blended = true, colorBlacklist = ""): Bloom =
   result.buffer = newFramebuffer(depth = depth, filter = tfLinear)
   result.p1 = newFramebuffer(filter = tfLinear)
   result.p2 = newFramebuffer(filter = tfLinear)
@@ -49,6 +49,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
 
   result.bloom = newShader(screenspace,
   (if alpha: "#define ALPHA_BLEND\n" else: "") &
+  (if blended: "#define BLENDED\n" else: "") &
   """ 
   uniform lowp sampler2D u_texture0;
   uniform lowp sampler2D u_texture1;
@@ -66,7 +67,12 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
     #else
     float mx = 1.0;
     #endif
+
+    #ifdef BLENDED
     gl_FragColor = vec4(combined.rgb / mx, mx);
+    #else
+    gl_FragColor = combined;
+    #endif
   }
 
   """
