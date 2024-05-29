@@ -18,10 +18,10 @@ type Bloom* = object
   scaling*: int
 
 #note: the colorBlacklist parameter is injected straight into the if-statement for the threshold check.
-proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, combined = true, colorBlacklist = ""): Bloom =
-  result.buffer = newFramebuffer(depth = depth, filter = tfLinear)
-  result.p1 = newFramebuffer(filter = tfLinear)
-  result.p2 = newFramebuffer(filter = tfLinear)
+proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, combined = true, colorBlacklist = "", filter = tfLinear): Bloom =
+  result.buffer = newFramebuffer(depth = depth, filter = filter)
+  result.p1 = newFramebuffer(filter = tFLinear)
+  result.p2 = newFramebuffer(filter = tFLinear)
   result.scaling = scaling
   result.blurPasses = passes
 
@@ -33,7 +33,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
 
   bool checkeq(vec3 a, vec3 b){
     vec3 test = abs(a - b);
-    return (test.r + test.g + test.b) < 0.001;
+    return (test.r + test.g + test.b) < 0.1;
   }
 
   void main(){
