@@ -1,5 +1,5 @@
 
-import strformat, tables, texture, patch, assets, streams
+import strformat, tables, texture, patch, assets, streams, fmath, color
 
 #A single-texture atlas.
 type Atlas* = ref object
@@ -9,6 +9,16 @@ type Atlas* = ref object
   texture*: Texture
   error*: Patch
   error9*: Patch9
+
+proc newEmptyAtlas*(): Atlas =
+  result = Atlas(texture: newTexture(vec2i(1)))
+
+  let color = colorWhite
+  result.texture.load(vec2i(1), addr color)
+  
+  result.error = newPatch(result.texture, 0, 0, 1, 1)
+  result.error9 = newPatch9(result.error, 0, 0, 0, 0)
+  result.patches["white"] = result.error
 
 #Loads an atlas from static resources.
 proc loadAtlas*(path: static[string]): Atlas =

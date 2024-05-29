@@ -162,11 +162,14 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     #create default camera
     fau.cam = newCam(fau.size)
 
-    #load sprites - always atlas.dat
-    fau.atlas = loadAtlas("atlas")
-
     fau.quad = newScreenMesh()
     fau.screenspace = newShader(screenspaceVertex, screenspaceFragment)
+
+    #load sprites - always atlas.dat
+    when assetExistsStatic("atlas.dat"):
+      fau.atlas = loadAtlas("atlas")
+    else:
+      fau.atlas = newEmptyAtlas()
 
     #load special regions
     fau.white = fau.atlas["white"]
@@ -176,6 +179,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     let avg = ((fau.white.u + fau.white.u2) / 2.0, (fau.white.v + fau.white.v2) / 2.0)
     (fau.white.u, fau.white.v, fau.white.u2, fau.white.v2) = (avg[0], avg[1], avg[0], avg[1])
     
+
     if initProc != nil:
       initProc()
   ), params)
