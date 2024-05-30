@@ -44,6 +44,7 @@ type MeshObj*[V] = object
   isStatic: bool
   modifiedVert: bool
   modifiedInd: bool
+  indexed: bool
   vertSlice: Slice[int]
   indSlice: Slice[int]
   primitiveType: GLenum
@@ -135,7 +136,7 @@ proc updateIndices*[T](mesh: Mesh[T], slice: Slice[int]) =
 proc vertexSize*[T](mesh: Mesh[T]): int = T.sizeOf
 
 #creates a mesh with a set of attributes
-proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[T] = @[], indices: seq[Index] = @[], update = true): Mesh[T] = 
+proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[T] = @[], indices: seq[Index] = @[], update = true, indexed = false): Mesh[T] = 
   result = Mesh[T](
     isStatic: isStatic, 
     primitiveType: primitiveType, 
@@ -143,6 +144,7 @@ proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, ve
     indices: indices,
     modifiedVert: update,
     modifiedInd: update,
+    indexed: indexed,
     vertexBuffer: glGenBuffer(),
     indexBuffer: glGenBuffer(),
   )
@@ -269,16 +271,16 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
     `mesh`.totalActive = `attribIndex`
 
 #this binds the VAO (if applicable)
-proc updateData[T](mesh: Mesh[T], vertSlice, indSlice: Slice[int], vertexPtr: pointer = nil, indexPtr: pointer = nil) =
+proc updateData*[T](mesh: Mesh[T], vertSlice, indSlice: Slice[int], vertexPtr: pointer = nil, indexPtr: pointer = nil) =
 
   let 
     vsize = mesh.vertexSize
     usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
 
-    updateVertices = mesh.vertSlice.b != 0
-    updateIndices = mesh.indSlice.b != 0 and (mesh.indices.len > 0 or indexPtr != nil)
+    updateVertices = vertSlice.b != 0
+    updateIndices = indSlice.b != 0 and (mesh.indices.len > 0 or indexPtr != nil)
 
-  #bind VAO if possible??
+  #bind VAO if possible
   if supportsVertexArrays and lastVertexArray != mesh.vertexArray.int:
     glBindVertexArray(mesh.vertexArray)
     lastVertexArray = mesh.vertexArray.int
@@ -292,7 +294,7 @@ proc updateData[T](mesh: Mesh[T], vertSlice, indSlice: Slice[int], vertexPtr: po
 
   #update vertices if modified
   if updateVertices:
-    glBufferData(GlArrayBuffer, (mesh.vertSlice.b - mesh.vertSlice.a + 1) * vsize, if vertexPtr != nil: vertexPtr else: mesh.vertices[0].addr, usage)
+    glBufferData(GlArrayBuffer, (vertSlice.b - vertSlice.a + 1) * vsize, if vertexPtr != nil: vertexPtr else: mesh.vertices[0].addr, usage)
 
   #bind indices if there are any
   if (mesh.indices.len > 0 or indexPtr != nil) and (not supportsVertexArrays or updateIndices or mesh.totalActive == 0):
@@ -300,13 +302,12 @@ proc updateData[T](mesh: Mesh[T], vertSlice, indSlice: Slice[int], vertexPtr: po
 
   #update indices if relevant and modified
   if updateIndices:
-    glBufferData(GlElementArrayBuffer, (mesh.indSlice.b - mesh.indSlice.a + 1) * 2, if indexPtr != nil: indexPtr else: mesh.indices[mesh.indSlice.a].addr, usage)
+    glBufferData(GlElementArrayBuffer, (indSlice.b - indSlice.a + 1) * 2, if indexPtr != nil: indexPtr else: mesh.indices[indSlice.a].addr, usage)
   
   mesh.vertSlice = 0..0
   mesh.indSlice = 0..0
   mesh.modifiedVert = false
   mesh.modifiedInd = false
-
 
 #offset and count are in vertices, not floats!
 proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
@@ -357,7 +358,7 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   else:
     enableAttributes(shader, T)
 
-  if mesh.indices.len == 0:
+  if mesh.indices.len == 0 and not mesh.indexed:
     let pcount = if args.count < 0: mesh.vertices.len else: args.count
     glDrawArrays(mesh.primitiveType, args.offset.GLint, pcount.GLsizei)
   else:

@@ -127,5 +127,7 @@ proc quitApp*() = quit(0)
 
 #dummy code for cross-platform support, does nothing
 type Cursor* = object
+
+proc newCursor*(standardType: CursorType): Cursor = Cursor()
 proc newCursor*(path: static string): Cursor = Cursor()
 proc setCursor*(cursor: Cursor) = discard

@@ -26,6 +26,24 @@ proc newCursor*(path: static string): Cursor =
     handle = createCursor(addr glfwImage, (img.width div 2).cint, (img.height div 2).cint)
   return Cursor(handle: handle)
 
+proc newCursor*(standardType: CursorType): Cursor = 
+  let mapped = case standardType:
+  of cursorArrow: ARROW_CURSOR
+  of cursorIbeam: IBEAM_CURSOR
+  of cursorCrosshair: CROSSHAIR_CURSOR
+  of cursorHand: HAND_CURSOR
+  of cursorResizeH: HRESIZE_CURSOR
+  of cursorResizeV: VRESIZE_CURSOR
+  of cursorResizeNwse: RESIZE_NWSE_CURSOR
+  of cursorResizeNesw: RESIZE_NESW_CURSOR
+  of cursorResizeAll: RESIZE_ALL_CURSOR
+  of cursorNotAllowed: NOT_ALLOWED_CURSOR
+
+  let handle = createStandardCursor(mapped.cint)
+
+  #the cursor may (?) fail to create, so use the arrow cursor
+  return if handle == nil and mapped != ARROW_CURSOR: newCursor(cursorArrow) else: Cursor(handle: handle)
+
 proc getGlfwWindow*(): Window = window
 
 proc toKeyCode(keycode: cint): KeyCode = 
@@ -262,6 +280,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
     fireFauEvent FauEvent(kind: feDrag, dragPos: fixMouse(x, y))
   )
 
+  discard window.setCharCallback(proc(window: Window, character: cuint) {.cdecl.} = 
+    fireFauEvent FauEvent(kind: feText, text: character.uint32)
+  )
   discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} = 
     let code = toKeyCode(key)
     

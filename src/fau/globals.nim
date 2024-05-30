@@ -44,10 +44,16 @@ type Gamepad* = ref object
   buttons*, buttonsJustDown*, buttonsJustUp*: array[GamepadButton, bool]
   axes*: array[GamepadAxis, float]
 
+type CursorType* = enum
+  cursorArrow, cursorIbeam, cursorCrosshair, cursorHand, cursorResizeH, 
+  cursorResizeV, cursorResizeNwse, cursorResizeNesw, cursorResizeAll, cursorNotAllowed
+
 #discriminator for the various types of input events
 type FauEventKind* = enum
   ## any key down/up, including mouse
   feKey,
+  ## character typed on keyboard
+  feText
   ## mouse/pointer moved across screen
   feDrag,
   ## finger up/down at location
@@ -67,6 +73,8 @@ type FauEvent* = object
   of feKey:
     key*: KeyCode
     keyDown*: bool
+  of feText:
+    text*: uint32
   of feDrag:
     dragId*: int
     dragPos*: Vec2
