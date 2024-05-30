@@ -109,6 +109,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
 
     screen.resize(fau.sizei)
     screen.clear(fau.clearColor)
+
+    fireFauEvent(FauEvent(kind: feFrame))
+
     loopProc()
 
     #flush any pending draw operations

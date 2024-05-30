@@ -50,6 +50,8 @@ type CursorType* = enum
 
 #discriminator for the various types of input events
 type FauEventKind* = enum
+  ## start of a new frame
+  feFrame,
   ## any key down/up, including mouse
   feKey,
   ## character typed on keyboard
@@ -70,6 +72,7 @@ type FauEventKind* = enum
 #a generic input event
 type FauEvent* = object
   case kind*: FauEventKind
+  of feFrame: discard
   of feKey:
     key*: KeyCode
     keyDown*: bool
