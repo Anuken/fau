@@ -268,10 +268,52 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
   resultBody.add quote do:
     `mesh`.totalActive = `attribIndex`
 
+#this binds the VAO (if applicable)
+proc updateData[T](mesh: Mesh[T], vertSlice, indSlice: Slice[int], vertexPtr: pointer = nil, indexPtr: pointer = nil) =
+
+  let 
+    vsize = mesh.vertexSize
+    usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
+
+    updateVertices = mesh.vertSlice.b != 0
+    updateIndices = mesh.indSlice.b != 0 and (mesh.indices.len > 0 or indexPtr != nil)
+
+  #bind VAO if possible??
+  if supportsVertexArrays and lastVertexArray != mesh.vertexArray.int:
+    glBindVertexArray(mesh.vertexArray)
+    lastVertexArray = mesh.vertexArray.int
+
+  #NOTE: apparently glBufferSubData is really slow for sprite batching applications. locks. brilliant.
+
+  #bind the vertex buffer
+  #for VAOs, you only need to bind when you are setting up the VAO (totalActive == 0) or you want to update its data
+  if not supportsVertexArrays or updateVertices or mesh.totalActive == 0:
+    glBindBuffer(GlArrayBuffer, mesh.vertexBuffer)
+
+  #update vertices if modified
+  if updateVertices:
+    glBufferData(GlArrayBuffer, (mesh.vertSlice.b - mesh.vertSlice.a + 1) * vsize, if vertexPtr != nil: vertexPtr else: mesh.vertices[0].addr, usage)
+
+  #bind indices if there are any
+  if (mesh.indices.len > 0 or indexPtr != nil) and (not supportsVertexArrays or updateIndices or mesh.totalActive == 0):
+    glBindBuffer(GlElementArrayBuffer, mesh.indexBuffer)
+
+  #update indices if relevant and modified
+  if updateIndices:
+    glBufferData(GlElementArrayBuffer, (mesh.indSlice.b - mesh.indSlice.a + 1) * 2, if indexPtr != nil: indexPtr else: mesh.indices[mesh.indSlice.a].addr, usage)
+  
+  mesh.vertSlice = 0..0
+  mesh.indSlice = 0..0
+  mesh.modifiedVert = false
+  mesh.modifiedInd = false
+
+
 #offset and count are in vertices, not floats!
 proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   #bind shader and buffer for drawing to
   shader.use()
+
+  let vsize = mesh.vertexSize
 
   #use custom viewport if provided
   if args.viewport.w.int > 0 and args.viewport.h.int > 0:
@@ -304,49 +346,11 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
     glBlendFuncSeparate(args.blend.src, args.blend.dst, args.blend.srcAlpha, args.blend.dstAlpha)
     glBlendEquationSeparate(args.blend.eqRgb, args.blend.eqAlpha)
 
-  #draw usage
-  let usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
+  if mesh.modifiedVert: mesh.vertSlice = 0..<mesh.vertices.len
+  if mesh.modifiedInd: mesh.indSlice = 0..<mesh.indices.len
 
-  #bind VAO if possible??
-  if supportsVertexArrays and lastVertexArray != mesh.vertexArray.int:
-    glBindVertexArray(mesh.vertexArray)
-    lastVertexArray = mesh.vertexArray.int
-
-  let vsize = mesh.vertexSize
-
-  #NOTE: apparently glBufferSubData is really slow for sprite batching applications. locks. brilliant.
-
-  if mesh.modifiedVert:
-    mesh.vertSlice = 0..<mesh.vertices.len
-
-  let updateVertices = mesh.vertSlice.b != 0
-
-  #bind the vertex buffer
-  #for VAOs, you only need to bind when you are setting up the VAO (totalActive == 0) or you want to update its data
-  if not supportsVertexArrays or updateVertices or mesh.totalActive == 0:
-    glBindBuffer(GlArrayBuffer, mesh.vertexBuffer)
-
-  #update vertices if modified
-  if updateVertices:
-    glBufferData(GlArrayBuffer, (mesh.vertSlice.b - mesh.vertSlice.a + 1) * vsize, mesh.vertices[0].addr, usage)
-  
-  if mesh.modifiedInd:
-    mesh.indSlice = 0..<mesh.indices.len
-
-  let updateIndices = mesh.indSlice.b != 0 and mesh.indices.len > 0
-
-  #bind indices if there are any
-  if mesh.indices.len > 0 and (not supportsVertexArrays or updateIndices or mesh.totalActive == 0):
-    glBindBuffer(GlElementArrayBuffer, mesh.indexBuffer)
-
-  #update indices if relevant and modified
-  if updateIndices:
-    glBufferData(GlElementArrayBuffer, (mesh.indSlice.b - mesh.indSlice.a + 1) * 2, mesh.indices[mesh.indSlice.a].addr, usage)
-  
-  mesh.vertSlice = 0..0
-  mesh.indSlice = 0..0
-  mesh.modifiedVert = false
-  mesh.modifiedInd = false
+  #note: this binds the VAO regardless of whether anything is actually updated
+  updateData(mesh, mesh.vertSlice, mesh.indSlice)
   
   if supportsVertexArrays:
     enableAttributesVao(shader, mesh, T)
@@ -359,10 +363,6 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
   else:
     let pcount = if args.count < 0: mesh.indices.len else: args.count
     glDrawElements(mesh.primitiveType, pcount.Glint, GlUnsignedShort, cast[pointer](args.offset * Index.sizeof))
-
-  #TODO is this worth unbinding?
-  #if supportsVertexArrays:
-  #  glBindVertexArray(0)
 
 template render*[T](mesh: Mesh[T], shader: Shader, args: MeshParam, uniformList: untyped) =
   shader.uniforms(uniformList)

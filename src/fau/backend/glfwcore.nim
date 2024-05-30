@@ -139,9 +139,11 @@ proc toKeyCode(keycode: cint): KeyCode =
     of KEY_LEFT_SHIFT: keyLshift
     of KEY_LEFT_CONTROL: keyLctrl
     of KEY_LEFT_ALT: keyLalt
+    of KEY_LEFT_SUPER: keyLsuper
     of KEY_RIGHT_SHIFT: keyRShift
     of KEY_RIGHT_CONTROL: keyRCtrl
     of KEY_RIGHT_ALT: keyRAlt
+    of KEY_RIGHT_SUPER: keyRsuper
     of KEY_MENU: keyMenu
     else: keyUnknown
 
