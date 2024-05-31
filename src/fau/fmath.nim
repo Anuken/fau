@@ -1065,4 +1065,6 @@ proc newCam*(size: Vec2 = vec2(0f, 0f)): Cam =
 
 proc viewport*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)
 #alias
-proc view*(cam: Cam): Rect {.inline.} = rect(cam.pos - cam.size/2f, cam.size)
+proc view*(cam: Cam): Rect {.inline.} = cam.viewport
+#alias
+proc bounds*(cam: Cam): Rect {.inline.} = cam.viewport

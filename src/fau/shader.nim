@@ -294,6 +294,9 @@ proc uniform*(shader: Shader, name: string, value: Vec3) =
       glUniform3f(loc.GLint, value.x, value.y, value.z)
       shader.uniforms[name] = ShaderUniform(kind: u3f, v3f: value, loc: uni.loc)
 
+proc uniform*(shader: Shader, name: string, value: array[3, float32]) =
+  uniform(shader, name, Vec3(x: value[0], y: value[1], z: value[2]))
+
 proc uniform*(shader: Shader, name: string, value: Color) =
   shader.withUniform(name): 
     if not (uni.kind == u4f and uni.v4f == value):
