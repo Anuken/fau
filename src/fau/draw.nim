@@ -413,9 +413,13 @@ proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px
 proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorWhite, z = 0f) =
   if points.len < 2: return
 
+  if points.len == 2:
+    line(points[0], points[1], stroke = stroke, color = color, z = z)
+    return
+
   proc prepareFlatEndpoint(path, endpoint: Vec2, hstroke: float32): (Vec2, Vec2) =
     let v = (endpoint - path).setLen(hstroke)
-    return (vec2(v.y, -v.x) + endpoint, vec2(-v.y, v.x) + endpoint)
+    return (vec2(-v.y, v.x) + endpoint, vec2(v.y, -v.x) + endpoint)
 
   proc prepareStraightJoin(b: Vec2, ab: Vec2, hstroke: float32): (Vec2, Vec2) =
     let r = ab.setLen(hstroke)
