@@ -168,7 +168,7 @@ proc preprocess(source: string, fragment: bool): string =
   else:
     result = pre & source
     
-proc newShader*(vertexSource, fragmentSource: string): Shader =
+proc newShader*(vertexSource, fragmentSource: string, name = "<unknown>"): Shader =
   result = Shader()
   result.uniforms = initTable[string, ShaderUniform]()
   result.compiled = true
@@ -177,7 +177,7 @@ proc newShader*(vertexSource, fragmentSource: string): Shader =
   result.fragHandle = loadSource(result, GlFragmentShader, preprocess(fragmentSource, true))
 
   if not result.compiled:
-    raise newException(GLerror, "Failed to compile shader: \n" & result.compileLog)
+    raise newException(GLerror, "Failed to compile shader (" & name & "): \n" & result.compileLog)
 
   var program = glCreateProgram()
   glAttachShader(program, result.vertHandle)
