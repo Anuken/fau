@@ -369,15 +369,30 @@ proc lineAngleCenter*(p: Vec2, angle, len: float32, stroke: float32 = 1.px, colo
   let v = vec2l(angle, len)
   line(p - v/2f, p + v/2f, stroke, color, square, z, blend = blend)
 
-#TODO bad
-proc lineRect*(pos: Vec2, size: Vec2, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0, margin = 0f) =
-  line(pos + margin, pos + vec2(size.x - margin, margin), stroke, color, z = z)
-  line(pos + vec2(size.x - margin, margin), pos + size - margin, stroke, color, z = z)
-  line(pos + size - margin, pos + vec2(margin, size.y - margin), stroke, color, z = z)
-  line(pos + vec2(margin, size.y - margin), pos + margin, stroke, color, z = z)
+proc lineRect*(bounds: Rect, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0, margin = 0f) =
+  
+  let 
+    rect = bounds.grow(margin)
 
-proc lineRect*(rect: Rect, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0, margin = 0f) =
-  lineRect(rect.pos, rect.size, stroke, color, z, margin)
+    offset = 1.414213f * stroke/2f #sqrt 2
+
+    in1 = rect.botLeft + vec2(offset)
+    in2 = rect.botRight + vec2(-offset, offset)
+    in3 = rect.topRight + vec2(-offset)
+    in4 = rect.topLeft + vec2(offset, -offset)
+
+    out1 = rect.botLeft + vec2(-offset)
+    out2 = rect.botRight + vec2(offset, -offset)
+    out3 = rect.topRight + vec2(offset)
+    out4 = rect.topLeft + vec2(-offset, offset)
+
+  fillQuad(in1, in2, out2, out1, z = z, color = color)
+  fillQuad(in2, in3, out3, out2, z = z, color = color)
+  fillQuad(in3, in4, out4, out3, z = z, color = color)
+  fillQuad(in4, in1, out1, out4, z = z, color = color)
+
+proc lineRect*(pos: Vec2, size: Vec2, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0, margin = 0f) =
+  lineRect(rect(pos, size), stroke, color, z, margin)
 
 proc lineSquare*(pos: Vec2, rad: float32, stroke: float32 = 1f.px, color = colorWhite, z = 0f) =
   lineRect(pos - rad, vec2(rad * 2f), stroke, color, z)
