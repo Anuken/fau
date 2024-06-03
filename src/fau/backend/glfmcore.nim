@@ -106,6 +106,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
   display.glfmSetSurfaceDestroyedFunc(proc(display: ptr GLFMDisplay) {.cdecl.} =
     glInitialized = false
+    fireFauEvent FauEvent(kind: feDestroy)
     #force an exit to clean up resources, ditch the Android app lifecycle
     quit(QuitSuccess)
   )

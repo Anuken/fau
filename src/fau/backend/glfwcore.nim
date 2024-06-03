@@ -406,6 +406,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   )
 
   glInitialized = false
+  fireFauEvent FauEvent(kind: feDestroy)
   window.destroyWindow()
   terminate()
 
