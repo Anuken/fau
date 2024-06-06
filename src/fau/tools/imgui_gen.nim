@@ -42,6 +42,7 @@ proc currentSourceDir(): string {.compileTime.} =
   result = result[0 ..< result.rfind("/")]
 
   echo "source path: ", currentSourcePath(), " result: ", result
+  echo currentSourcePath().fileExists
 
 {.passC: "-I" & currentSourceDir() & "/cimgui" & " -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1".}
 
