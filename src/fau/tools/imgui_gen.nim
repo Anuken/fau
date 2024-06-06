@@ -41,9 +41,6 @@ proc currentSourceDir(): string {.compileTime.} =
   result = currentSourcePath().replace("\\", "/")
   result = result[0 ..< result.rfind("/")]
 
-  echo "source path: ", currentSourcePath(), " result: ", result
-  echo currentSourcePath().fileExists
-
 {.passC: "-I" & currentSourceDir() & "/cimgui" & " -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1".}
 
 template compileCpp(file: string, name: string) =
@@ -57,7 +54,7 @@ template compileCpp(file: string, name: string) =
 
       const compilerName = when defined(Windows): "x86_64-w64-mingw32-g++" else: "g++"
 
-      const compileCommand = compilerName & " -std=c++14 -c -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 " & currentSourceDir() & "/cimgui/" & file & " -o " & objectPath
+      const compileCommand = compilerName & " -std=c++14 -c -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 cimgui/" & file & " -o " & objectPath
 
       echo "Compiling... ", compileCommand
       echo staticExec(compileCommand)
@@ -128,8 +125,6 @@ const notDefinedStructs = """
 const preProcs = """
 # Procs
 {.push warning[HoleEnumConv]: off.}
-static:
-  echo currentSourceDir()
 {.push nodecl, discardable, header: currentSourceDir() & "/cimgui/cimgui.h".}
 """
 
