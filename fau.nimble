@@ -17,3 +17,9 @@ requires "pixie == 5.0.6"
 requires "vmath == 2.0.0"
 requires "stbimage == 2.5"
 requires "jsony == 1.1.5"
+
+task imguiGen, "Generate imGUI bindings from source":
+  exec("nim r src/fau/tools/imgui_gen.nim")
+
+task imguiTest, "Run imGUI test apppplication":
+  exec("nim r src/fau/test/test_imgui.nim")

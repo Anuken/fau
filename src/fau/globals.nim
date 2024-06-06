@@ -52,6 +52,8 @@ type CursorType* = enum
 type FauEventKind* = enum
   ## start of a new frame
   feFrame,
+  ## end of a new frame (after main loop proc)
+  feEndFrame,
   ## end of application (window destroyed/game exit)
   feDestroy,
   ## any key down/up, including mouse
@@ -75,6 +77,7 @@ type FauEventKind* = enum
 type FauEvent* = object
   case kind*: FauEventKind
   of feFrame: discard
+  of feEndFrame: discard
   of feDestroy: discard
   of feKey:
     key*: KeyCode

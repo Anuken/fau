@@ -117,6 +117,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     #flush any pending draw operations
     drawFlush()
 
+    fireFauEvent(FauEvent(kind: feEndFrame))
+
     when isDebug:
       record()
 
