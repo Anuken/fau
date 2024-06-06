@@ -34,6 +34,8 @@ proc currentSourceDir(): string {.compileTime.} =
   result = currentSourcePath().replace("\\", "/")
   result = result[0 ..< result.rfind("/")]
 
+  echo "source path: ", currentSourcePath(), " result: ", result
+
 {.passC: "-I" & currentSourceDir() & "/cimgui" & " -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1".}
 
 template compileCpp(file: string, name: string) =
