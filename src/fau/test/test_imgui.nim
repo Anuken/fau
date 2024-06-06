@@ -16,7 +16,6 @@ proc init() =
                                   ImDrawIdx.sizeof().uint32).assert()
                                   
   imguiInitFau()
-
   igStyleColorsCherry()
 
 proc run() =

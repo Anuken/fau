@@ -37,12 +37,18 @@ proc currentSourceDir(): string {.compileTime.} =
 {.passC: "-I" & currentSourceDir() & "/cimgui" & " -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1".}
 
 template compileCpp(file: string, name: string) =
-  const objectPath = nimcache & "/" & name & ".cpp.o"
+  const objectPath = nimcache & "/" & name & "_" & hostOs & hostCPU & ".cpp.o"
 
   static:
     if not fileExists(objectPath):
-      createDir(objectPath.parentDir)
-      echo staticExec("g++ -std=c++14 -c -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 cimgui/" & file & " -o " & objectPath)
+      createDir(objectPath.parentDir.replace("\\", "/"))
+
+      #TODO this is awful and hardcoded and I hate it
+
+      const compilerName = when defined(Windows): "x86_64-w64-mingw32-g++" else: "g++"
+
+      echo "Compiling... ", name
+      echo staticExec(compilerName & " -std=c++14 -c -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 cimgui/" & file & " -o " & objectPath)
 
   {.passL: objectPath.}
 

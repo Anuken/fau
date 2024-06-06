@@ -20,6 +20,7 @@ var
   shader: Shader
   cursors: array[ImGuiMouseCursor.high.int + 1, Cursor]
   initialized = false
+  changeCursor = true
 
 proc mapKey(key: KeyCode): ImGuiKey =
   #TODO: number and numpad keys?
@@ -173,12 +174,13 @@ proc imguiUpdateFau =
 
   io.addMousePosEvent(fau.mouse.x/uiScaleFactor, (fau.size.y - 1f - fau.mouse.y)/uiScaleFactor)
 
-  let cursor = igGetMouseCursor()
-  if cursor == ImGuiMouseCursor.None or io.mouseDrawCursor:
-    setCursorHidden(true)
-  else:
-    setCursor(cursors[cursor.int])
-    setCursorHidden(false)
+  if changeCursor and io.wantCaptureMouse:
+    let cursor = igGetMouseCursor()
+    if cursor == ImGuiMouseCursor.None or io.mouseDrawCursor:
+      setCursorHidden(true)
+    else:
+      setCursor(cursors[cursor.int])
+      setCursorHidden(false)
 
   igNewFrame()
 
@@ -235,15 +237,21 @@ proc imguiRenderFau =
         
         indexBufferOffset += pcmd.elemCount.int
 
-proc imguiInitFau*(appName: string = "") =
+proc imguiHasMouse*(): bool = igGetIO().wantCaptureMouse
+proc imguiHasKeyboard*(): bool = igGetIO().wantCaptureKeyboard
+
+proc imguiInitFau*(appName: string = "", useCursor = true) =
   if initialized: return
 
   initialized = true
+  changeCursor = useCursor
 
   let context = igCreateContext()
   let io = igGetIO()
 
-  io.backendFlags = (io.backendFlags.int32 or ImGuiBackendFlags.HasMouseCursors.int32).ImGuiBackendFlags
+  if useCursor:
+    io.backendFlags = (io.backendFlags.int32 or ImGuiBackendFlags.HasMouseCursors.int32).ImGuiBackendFlags
+  
   if appName == "":
     io.iniFilename = nil
   else:
