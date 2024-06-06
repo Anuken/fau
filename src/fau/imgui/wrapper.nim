@@ -47,7 +47,7 @@ template compileCpp(file: string, name: string) =
 
       const compilerName = when defined(Windows): "x86_64-w64-mingw32-g++" else: "g++"
 
-      const compileCommand = compilerName & " -std=c++14 -c -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 cimgui/" & file & " -o " & objectPath
+      const compileCommand = compilerName & " -std=c++14 -c -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 " & currentSourceDir() & "/cimgui/" & file & " -o " & objectPath
 
       echo "Compiling... ", compileCommand
       echo staticExec(compileCommand)
