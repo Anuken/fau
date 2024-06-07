@@ -24,6 +24,7 @@ var
   cursors: array[ImGuiMouseCursor.high.int + 1, Cursor]
   initialized = false
   changeCursor = true
+  iniFile: string
 
 proc mapKey(key: KeyCode): ImGuiKey =
   #TODO: number and numpad keys?
@@ -272,7 +273,8 @@ proc imguiInitFau*(appName: string = "", useCursor = true) =
 
     try:
       folder.createDir()
-      io.iniFilename = folder / "imgui.ini"
+      iniFile = (folder / "imgui.ini")
+      io.iniFilename = iniFile
     except:
       echo "Failed to create save directory: ", getCurrentExceptionMsg()
       io.iniFilename = nil

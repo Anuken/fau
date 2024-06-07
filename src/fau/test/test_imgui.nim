@@ -15,7 +15,7 @@ proc init() =
                                   ImVec4.sizeof().uint32, ImDrawVert.sizeof().uint32,
                                   ImDrawIdx.sizeof().uint32).assert()
                                   
-  imguiInitFau()
+  imguiInitFau(appName = "imguiTest")
 
 proc run() =
   drawMat(ortho(fau.size))
