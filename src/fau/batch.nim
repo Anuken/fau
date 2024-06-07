@@ -267,12 +267,13 @@ proc buffer*(batch: Batch): Framebuffer = batch.buffer
 
 #draw a pre-cached mesh
 proc draw*(batch: Batch, cache: SpriteCache) =
-  batch.flush()
+  if cache.meshes.len > 0:
+    batch.flush()
 
-  for mesh in cache.meshes:
-    mesh.mesh.render(mesh.shader, meshParams(batch.buffer, 0, mesh.mesh.indices.len, blend = mesh.blend, clip = mesh.clip)):
-      texture = mesh.texture.sampler
-      proj = batch.mat
+    for mesh in cache.meshes:
+      mesh.mesh.render(mesh.shader, meshParams(batch.buffer, 0, mesh.mesh.indices.len, blend = mesh.blend, clip = mesh.clip)):
+        texture = mesh.texture.sampler
+        proj = batch.mat
 
 proc beginCache*(batch: Batch) =
   if not batch.caching:
