@@ -7,6 +7,9 @@ converter toImVec2*(vec: Vec2): ImVec2 = cast[ImVec2](vec)
 converter toFauVec2*(vec: ImVec2): Vec2 = cast[Vec2](vec)
 converter toImVec4*(color: Color): ImVec4 = ImVec4(x: color.r, y: color.g, z: color.b, w: color.a)
 
+proc imvec4*(x, y, z, w: float32): ImVec4 = ImVec4(x: x, y: y, z: z, w: w) 
+proc imvec2*(x, y: float32): ImVec2 = ImVec2(x: x, y: y) 
+
 const uiScaleFactor = 1f
 
 type IVert = object
@@ -110,24 +113,34 @@ proc igGlfwGetClipboardText(userData: pointer): cstring {.cdecl.} =
 proc igGlfwSetClipboardText(userData: pointer, text: cstring): void {.cdecl.} =
   setClipboardString($text)
 
-proc createRenderer() =
+proc reloadFontTexture =
   let io = igGetIO()
+
   var 
     pixels: ptr uint8
     width: int32
     height: int32
-
-  when false: #just for testing fonts...
-    const testFontData = staticRead("../src/imgui/cimgui/imgui/misc/fonts/Roboto-Medium.ttf")
-    let fontData = testFontData
-
-    io.fonts.clear()
-    let font = io.fonts.addFontFromMemoryTTF(addr fontData[0], fontData.len.int32, 20f);
-    io.fonts.build()
   
   io.fonts.getTexDataAsRGBA32(pixels.addr, width.addr, height.addr)
   fontTexture = loadTexturePtr(vec2i(width, height), pixels, filter = tfLinear)
   io.fonts.texID = fontTexture.addr
+
+proc imguiLoadFont*(path: static string, size: float32) =
+  let io = igGetIO()
+
+  let fontData = assetReadStatic(path)
+
+  var cfg = newImFontConfig()
+  cfg.fontDataOwnedByAtlas = false
+
+  io.fonts.clear()
+  let font = io.fonts.addFontFromMemoryTTF(addr fontData[0], fontData.len.int32, size, fontCfg = cfg);
+  io.fonts.build()
+  
+  reloadFontTexture()
+
+proc createRenderer() =
+  reloadFontTexture()
 
   #this is basically the spritebatch shader without mixcol
   shader = newShader(

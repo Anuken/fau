@@ -2,5 +2,6 @@
 
 import ../imgui/wrapper
 import ../imgui/impl
+import ../imgui/styles
 
-export wrapper, impl
+export wrapper, impl, styles
