@@ -37,12 +37,16 @@ when defined(debugVarEdit):
           #  `node` = defaultValue
           #igSameLine()
 
+          #TODO: object support
+
           when `node` is float32:
             igInputFloat(`name`, `node`.addr)
           elif `node` is int:
             var i32v: int32 = (`node`).int32
             igInputInt(`name`, i32v.addr)
             `node` = i32v
+          elif `node` is bool:
+            igCheckbox(`name`, `node`.addr)
           elif `node` is Color:
             var col: array[4, float32] = [`node`.r, `node`.g, `node`.b, `node`.a]
             igColorEdit4(`name`, col)
@@ -66,7 +70,6 @@ when defined(debugVarEdit):
 
       igEnd()
 
-    #igShowDemoWindow(showDemo.addr)
 else:
   if not declared(imguiInitFau):
     proc imguiInitFau*(useCursor = true, appName: string = "") = discard
