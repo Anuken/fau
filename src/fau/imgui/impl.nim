@@ -179,7 +179,7 @@ proc imguiUpdateFau =
   io.displaySize = fau.size / uiScaleFactor
   io.displayFramebufferScale = vec2(uiScaleFactor)
 
-  io.deltaTime = fau.rawDelta.float32
+  io.deltaTime = max(fau.rawDelta.float32, 0.001f)
 
   io.addKeyEvent(Ctrl, keyLCtrl.down or keyRCtrl.down)
   io.addKeyEvent(Shift, keyLShift.down or keyRShift.down)
