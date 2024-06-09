@@ -10,6 +10,9 @@ converter toImVec4*(color: Color): ImVec4 = ImVec4(x: color.r, y: color.g, z: co
 proc imvec4*(x, y, z, w: float32): ImVec4 = ImVec4(x: x, y: y, z: z, w: w) 
 proc imvec2*(x, y: float32): ImVec2 = ImVec2(x: x, y: y) 
 
+proc `or`*(f1, f2: ImguiWindowFlags): ImguiWindowFlags =
+  ((f1.int32) or (f2.int32)).ImguiWindowFlags
+
 const uiScaleFactor = 1f
 
 type IVert = object

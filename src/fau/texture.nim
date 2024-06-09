@@ -77,6 +77,8 @@ proc `wrap=`*(texture: Texture, wrap: TextureWrap) =
   texture.wrapU = wrap
   texture.wrapV = wrap
 
+proc sizef*(texture: Texture): Vec2 = texture.size.vec2
+
 proc ratio*(texture: Texture): float32 = float32(texture.size.x / texture.size.y)
 
 #completely reloads texture data

@@ -68,7 +68,18 @@ void main(){
   v_mixcolor = a_mixcolor;
   v_uv = a_uv;
   gl_Position = u_proj * a_pos;
-  }
+}
+"""
+
+const defaultFragShader* = """
+varying lowp vec4 v_color;
+varying lowp vec4 v_mixcolor;
+varying vec2 v_uv;
+uniform sampler2D u_texture;
+void main(){
+  vec4 c = texture2D(u_texture, v_uv);
+  gl_FragColor = mix(v_color * c, vec4(v_mixcolor.rgb, c.a), v_mixcolor.a);
+}
 """
 
 proc flushInternal(batch: Batch) =
@@ -204,18 +215,7 @@ proc newBatch*(size: int = 16380): Batch =
   
   batch.mesh.updateIndices()
   #create default shader
-  batch.defaultShader = newShader(defaultVertShader,
-
-  """
-  varying lowp vec4 v_color;
-  varying lowp vec4 v_mixcolor;
-  varying vec2 v_uv;
-  uniform sampler2D u_texture;
-  void main(){
-    vec4 c = texture2D(u_texture, v_uv);
-    gl_FragColor = mix(v_color * c, vec4(v_mixcolor.rgb, c.a), v_mixcolor.a);
-  }
-  """)
+  batch.defaultShader = newShader(defaultVertShader, defaultFragShader)
 
   result = batch
 

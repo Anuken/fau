@@ -197,6 +197,11 @@ proc fireFauEvent*(ev: FauEvent) =
 proc addFauListener*(ev: FauListener) =
   fau.listeners.add ev
 
+template addFauListener*(eventKind: FauEventKind, body: untyped) =
+  addFauListener do(event {.inject.}: FauEvent):
+    if event.kind == eventKind:
+      body
+
 #TODO not sure where else to put this?
 
 #Turns pixel units into world units

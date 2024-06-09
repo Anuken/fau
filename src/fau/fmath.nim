@@ -57,7 +57,13 @@ type Vec3* = object
 #used for dynamically updating springy things
 type Spring* = object
   value*, target*, velocity*: float32
-  damping*, frequency*: float32
+  damping*: float32 = 0.1f
+  frequency*: float32 = 4f
+
+type Spring2* = object
+  value*, target*, velocity*: Vec2
+  damping*: float32 = 0.1f
+  frequency*: float32 = 4f
 
 #TODO xywh can be vec2s, maybe?
 type Rect* = object
@@ -125,27 +131,6 @@ func elasticOut*(alpha: float32, value = 2f, power = 10f, scale = 1f, bounceCoun
   if a == 0f: return 0f
   a = 1f - a
   return (1f - pow(value, power * (a - 1f)) * sin(a * bounces.float32) * scale);
-
-#spring
-
-func spring*(damping = 0.1f, frequency = 4f, value = 0f, target = 0f): Spring = 
-  Spring(damping: damping, frequency: frequency, value: value, target: target)
-
-proc update*(spring: var Spring, delta: float32) =
-  ## update spring state
-
-  var angularFrequency = spring.frequency
-  angularFrequency *= PI * 2f
-
-  var f = 1.0f + 2.0f * delta * spring.damping * angularFrequency
-  var oo = angularFrequency * angularFrequency
-  var hoo = delta * oo
-  var hhoo = delta * hoo
-  var detInv = 1.0f / (f + hhoo)
-  var detX = f * spring.value + delta * spring.velocity + hhoo * spring.target
-  var detV = spring.velocity + hoo * (spring.target - spring.value)
-  spring.value = detX * detInv
-  spring.velocity = detV * detInv
 
 #utility functions
 
@@ -879,6 +864,64 @@ proc dst*(r: Rect, point: Vec2): float32 =
       distanceSegmentPoint(r.xy + r.size, r.xy + vec2(0f, r.h), point)
     )
   )
+
+#spring
+
+func spring*(damping = 0.1f, frequency = 4f, value = 0f, target = 0f): Spring = 
+  Spring(damping: damping, frequency: frequency, value: value, target: target)
+
+func `valueTarget=`*(s: var Spring, v: float32) =
+  s.value = v
+  s.target = v
+
+func spring2*(damping = 0.1f, frequency = 4f, value = vec2(), target = vec2()): Spring2 = 
+  Spring2(damping: damping, frequency: frequency, value: value, target: target)
+
+func `valueTarget=`*(s: var Spring2, v: Vec2) =
+  s.value = v
+  s.target = v
+
+proc update*(spring: var Spring2, delta: float32) =
+  ## update spring state
+  
+  var angularFrequency = spring.frequency
+  angularFrequency *= PI * 2f
+
+  var f = 1.0f + 2.0f * delta * spring.damping * angularFrequency
+  var oo = angularFrequency * angularFrequency
+  var hoo = delta * oo
+  var hhoo = delta * hoo
+  var detInv = 1.0f / (f + hhoo)
+
+  block:
+    let detX = f * spring.value.x + delta * spring.velocity.x + hhoo * spring.target.x
+    let detV = spring.velocity.x + hoo * (spring.target.x - spring.value.x)
+    spring.value.x = detX * detInv
+    spring.velocity.x = detV * detInv
+
+  block:
+    let detX = f * spring.value.y + delta * spring.velocity.y + hhoo * spring.target.y
+    let detV = spring.velocity.y + hoo * (spring.target.y - spring.value.y)
+
+    spring.value.y = detX * detInv
+    spring.velocity.y = detV * detInv
+
+proc update*(spring: var Spring, delta: float32) =
+  ## update spring state
+
+  var angularFrequency = spring.frequency
+  angularFrequency *= PI * 2f
+
+  var f = 1.0f + 2.0f * delta * spring.damping * angularFrequency
+  var oo = angularFrequency * angularFrequency
+  var hoo = delta * oo
+  var hhoo = delta * hoo
+  var detInv = 1.0f / (f + hhoo)
+
+  var detX = f * spring.value + delta * spring.velocity + hhoo * spring.target
+  var detV = spring.velocity + hoo * (spring.target - spring.value)
+  spring.value = detX * detInv
+  spring.velocity = detV * detInv
 
 const 
   M00 = 0
