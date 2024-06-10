@@ -14,9 +14,11 @@ const perm = [151, 160, 137, 91, 90, 15,
 49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254,
 138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180]
 
+{.push checks: off.}
+
 proc hash(seed, i: int32): int32 {.inline.} =
   #TODO this is broken, why do I have to mod it
-  perm[(i + seed) mod 256].int32
+  perm[(i + seed).euclMod 256].int32
 
 proc grad(hash: int32, x: float): float =
   let h: int32 = hash and 0x0F
@@ -284,3 +286,5 @@ proc fractal*(x: float, y: float, z: float, octaves: int, freq = 1.0, amp = 1.0,
     amplitude *= persistence
   
   return output / denom
+
+{.pop.}

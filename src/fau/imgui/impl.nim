@@ -15,6 +15,16 @@ proc `or`*(f1, f2: ImguiWindowFlags): ImguiWindowFlags =
 
 const uiScaleFactor = 1f
 
+proc igInputFloat2*(label: cstring, v: var Vec2, format: cstring = "%.3f", flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags) =
+  var arr = [v.x, v.y]
+  igInputFloat2(label, arr, format, flags)
+  v = arr.vec2
+
+proc igInputInt2*(label: cstring, v: var Vec2i, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags) =
+  var arr = [v.x.int32, v.y.int32]
+  igInputInt2(label, arr, flags)
+  v = arr.vec2i
+
 type IVert = object
   pos: Vec2
   uv: Vec2
