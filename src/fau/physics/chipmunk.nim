@@ -16,10 +16,10 @@ include wrapper
 
 {.push inline.}
 
-proc cpv(v: Vec2): cpVect = cpv(v.x, v.y)
-proc vec2(v: cpVect): Vec2 = vec2(v.x, v.y)
-proc rect(bb: cpBB): Rect = rect(bb.l, bb.t, bb.r - bb.l, bb.b - bb.t)
-proc bb(rect: Rect): cpBB = cpBBNew(rect.x, rect.y, rect.right, rect.top)
+converter cpv*(v: Vec2): cpVect = cpv(v.x, v.y)
+converter vec2*(v: cpVect): Vec2 = vec2(v.x, v.y)
+converter rect*(bb: cpBB): Rect = rect(bb.l, bb.t, bb.r - bb.l, bb.b - bb.t)
+converter bb*(rect: Rect): cpBB = cpBBNew(rect.x, rect.y, rect.right, rect.top)
 
 {.pop.}
 
@@ -53,6 +53,17 @@ type
     ## Beveled line segment collision shape.
   PolygonShape* = ref PolygonShapeObj
     ## Convex polygon collision shape. Slowest, but most flexible.
+  
+  ConstraintObj = object of RootObj
+    raw: ptr cpConstraint
+
+  Constraint = ref ConstraintObj
+  
+  DampedSpring* = ref ConstraintObj
+
+  SlideJoint* = ref ConstraintObj
+
+  PinJoint* = ref ConstraintObj
 
   ShapeFilter* = tuple
     ## A collision filter for shapes. This allows some collisions between shapes
@@ -152,6 +163,7 @@ type
     raw: ptr cpSpace
     bodies: seq[Body]
     shapes: seq[Shape]
+    constraints: seq[Constraint]
     defaultCollisionHandler: CollisionHandler
     pairCollisionHandlers: Table[tuple[a, b: CollisionKind], CollisionHandler]
   Space* = ref SpaceObj
@@ -462,6 +474,32 @@ proc newStaticBody*[T](user: T): UserBody[T] =
   result.initStatic()
   result.user = user
 
+# constraint
+
+proc `=destroy`(constraint: var ConstraintObj) =
+  if constraint.raw != nil:
+    cpConstraintFree(constraint.raw)
+    constraint.raw = nil
+
+proc destroy(constraint: var ConstraintObj) =
+  if constraint.raw != nil:
+    cpConstraintDestroy(constraint.raw)
+
+proc newDampedSpring*(a, b: Body, anchorA, anchorB: Vec2, restLength: float32, stiffness: float32, damping: float32): DampedSpring =
+  return DampedSpring(raw: cpDampedSpringNew(a.raw, b.raw, anchorA, anchorB, restLength, stiffness, damping))
+
+proc newSlideJoint*(a, b: Body, anchorA, anchorB: Vec2, min, max: float32): DampedSpring =
+  return SlideJoint(raw: cpSlideJointNew(a.raw, b.raw, anchorA, anchorB, min, max))
+
+proc newPinJoint*(a, b: Body, anchorA, anchorB: Vec2): PinJoint =
+  return PinJoint(raw: cpPinJointNew(a.raw, b.raw, anchorA, anchorB))
+
+proc addConstraint*[T: Constraint](space: Space, constraint: T) =
+  discard cpSpaceAddConstraint(space.raw, constraint.raw)
+  space.constraints.add(constraint)
+
+proc addTo*[T: Constraint](constraint: T, space: Space) =
+  space.addConstraint(constraint)
 
 # shape
 

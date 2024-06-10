@@ -45,6 +45,12 @@ template findIt*[T](list: seq[T], body: untyped): int =
   
   result
 
+template findItBlock*[T](list: seq[T], body: untyped, calledBlock: untyped) =
+  for i {.inject.}, it {.inject.} in list:
+    if body:
+      calledBlock
+      break
+
 template incTimer*(value: untyped, increment: float32, body: untyped): untyped =
   `value` += `increment`
   if `value` >= 1f:

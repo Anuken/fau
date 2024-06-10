@@ -15,7 +15,8 @@ static:
   if not dirExists(baseDir) or defined(clearCache):
     echo "Fetching Chipmunk repo..."
     if dirExists(baseDir): echo staticExec("rm -rf " & baseDir)
-    echo staticExec("git clone --depth 1 --branch Chipmunk-7.0.3 https://github.com/slembcke/Chipmunk2D " & baseDir)
+    #--branch Chipmunk-7.0.3 
+    echo staticExec("git clone --depth 1 https://github.com/slembcke/Chipmunk2D " & baseDir)
 
 # set up types
 
@@ -1115,6 +1116,12 @@ proc cpBodySleepWithGroup*(body: ptr cpBody; group: ptr cpBody) {.
 proc cpBodyIsSleeping*(body: ptr cpBody): cpBool {.importc: "cpBodyIsSleeping",
     header: "<chipmunk/chipmunk.h>".}
 ## Get the type of the body.
+
+proc cpBodyAddShape*(body: ptr cpBody; shape: ptr cpShape) {.
+    importc: "cpBodyAddShape", header: "<chipmunk/chipmunk.h>".}
+
+proc cpBodyRemoveShape*(body: ptr cpBody; shape: ptr cpShape) {.
+    importc: "cpBodyRemoveShape", header: "<chipmunk/chipmunk.h>".}
 
 proc cpBodyGetType*(body: ptr cpBody): cpBodyType {.importc: "cpBodyGetType",
     header: "<chipmunk/chipmunk.h>".}

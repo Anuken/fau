@@ -45,7 +45,7 @@ type Scaleable* = concept s
   s.fin() is float32
 
 type Vec2i* = object
-  x*, y*: int
+  x*, y*: int #TODO: use int32
 
 type Vec2* = object
   x*, y*: float32
@@ -292,6 +292,7 @@ func abtriangle*(x: float32, phase = 1f, mag = 1f): float32 =
 
 template vec2*(cx, cy: float32): Vec2 = Vec2(x: cx, y: cy)
 template vec2*(cx, cy: int): Vec2 = Vec2(x: cx.float32, y: cy.float32)
+template vec2*(a: array[2, float32]): Vec2 = vec2(a[0], a[1])
 proc vec2*(xy: float32): Vec2 {.inline.} = Vec2(x: xy, y: xy)
 proc vec2*(pos: AnyVec2): Vec2 {.inline.} = Vec2(x: pos.x, y: pos.y)
 template vec2*(): Vec2 = Vec2()
@@ -308,6 +309,8 @@ func vec2i*(): Vec2i {.inline.} = Vec2i()
 func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
 func vec2i*(v: Vec2): Vec2i {.inline.} = vec2i(v.x.int, v.y.int)
 proc vec2i*(pos: AnyVec2i): Vec2i {.inline.} = Vec2i(x: pos.x, y: pos.y)
+template vec2i*(a: array[2, int]): Vec2i = vec2i(a[0], a[1])
+template vec2i*(a: array[2, int32]): Vec2i = vec2i(a[0], a[1])
 
 #vector-vector operations
 
@@ -343,6 +346,9 @@ func `/`*(vec: Vec2i, value: float32): Vec2 {.inline.} = vec2(vec.x / value, vec
 func `-`*(vec: Vec2i): Vec2i {.inline.} = vec2i(-vec.x, -vec.y)
 
 #utility methods
+
+func inBounds*(vec: Vec2i, bounds: Vec2i): bool {.inline.} =
+  vec.x >= 0 and vec.y >= 0 and vec.x < bounds.x and vec.y < bounds.y
 
 func clamp*(vec: Vec2, min, max: Vec2): Vec2 = vec2(clamp(vec.x, min.x, max.x), clamp(vec.y, min.y, max.y))
 
@@ -881,13 +887,16 @@ func `valueTarget=`*(s: var Spring2, v: Vec2) =
   s.value = v
   s.target = v
 
-proc update*(spring: var Spring2, delta: float32) =
+func snap*(s: var Spring2) =
+  s.value = s.target
+
+proc update*(spring: var Spring2, delta: float32, damping = spring.damping, frequency = spring.frequency) =
   ## update spring state
   
-  var angularFrequency = spring.frequency
+  var angularFrequency = frequency
   angularFrequency *= PI * 2f
 
-  var f = 1.0f + 2.0f * delta * spring.damping * angularFrequency
+  var f = 1.0f + 2.0f * delta * damping * angularFrequency
   var oo = angularFrequency * angularFrequency
   var hoo = delta * oo
   var hhoo = delta * hoo
@@ -906,13 +915,13 @@ proc update*(spring: var Spring2, delta: float32) =
     spring.value.y = detX * detInv
     spring.velocity.y = detV * detInv
 
-proc update*(spring: var Spring, delta: float32) =
+proc update*(spring: var Spring, delta: float32, damping = spring.damping, frequency = spring.frequency) =
   ## update spring state
 
-  var angularFrequency = spring.frequency
+  var angularFrequency = frequency
   angularFrequency *= PI * 2f
 
-  var f = 1.0f + 2.0f * delta * spring.damping * angularFrequency
+  var f = 1.0f + 2.0f * delta * damping * angularFrequency
   var oo = angularFrequency * angularFrequency
   var hoo = delta * oo
   var hhoo = delta * hoo
