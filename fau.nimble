@@ -22,4 +22,7 @@ task imguiGen, "Generate imGUI bindings from source":
   exec("nim r src/fau/tools/imgui_gen.nim")
 
 task imguiTest, "Run imGUI test apppplication":
-  exec("nim r src/fau/test/test_imgui.nim")
+  exec("nim -d:fauTests -d:debug r src/fau/test/test_imgui.nim")
+
+task entityEditTest, "Run entity edit test apppplication":
+  exec("nim -d:fauTests -d:debug r src/fau/test/test_entityedit.nim")

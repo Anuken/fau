@@ -20,10 +20,35 @@ proc igInputFloat2*(label: cstring, v: var Vec2, format: cstring = "%g", flags: 
   igInputFloat2(label, arr, format, flags)
   v = arr.vec2
 
+proc igInputFloat4*(label: cstring, v: var Rect, format: cstring = "%g", flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags) =
+  var arr = [v.x, v.y, v.w, v.h]
+  igInputFloat4(label, arr, format, flags)
+  v = rect(arr[0], arr[1], arr[2], arr[3])
+
 proc igInputInt2*(label: cstring, v: var Vec2i, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags) =
   var arr = [v.x.int32, v.y.int32]
   igInputInt2(label, arr, flags)
   v = arr.vec2i
+
+proc igColorEdit4*(label: cstring, col: var Color, flags: ImGuiColorEditFlags = 0.ImGuiColorEditFlags): bool {.discardable, inline} =
+  var arr = [col.r, col.g, col.b, col.a]
+
+  result = igColorEdit4(label, arr, flags)
+
+  col = rgba(arr[0], arr[1], arr[2], arr[3])
+
+#int version. not int32
+#note that this truncates to the int32 range, but who needs numbers this big in text fields anyway?
+proc igInputInt*(label: cstring, v: ptr int, step: int32 = 1, step_fast: int32 = 100, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags): bool {.discardable, inline.} =
+  var i32 = v[].int32
+
+  result = igInputInt(label, addr i32, step, step_fast, flags)
+
+  v[] = i32
+
+proc igInputText*(label: cstring, text: var string, bufSize = 40, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags, callback: ImGuiInputTextCallback = nil, user_data: pointer = nil): bool {.discardable, inline.} =
+  igInputText(label, text.cstring, bufSize.uint, flags, callback, user_data)
+
 
 type IVert = object
   pos: Vec2
@@ -153,8 +178,11 @@ proc imguiLoadFont*(path: static string, size: float32) =
   
   reloadFontTexture()
 
-proc createRenderer() =
-  reloadFontTexture()
+proc createRenderer(font: static string, fontSize: float32) =
+  if font != "":
+    imguiLoadFont(font, fontSize)
+  else:
+    reloadFontTexture()
 
   #this is basically the spritebatch shader without mixcol
   shader = newShader(
@@ -267,7 +295,7 @@ proc imguiRenderFau =
 proc imguiHasMouse*(): bool = igGetIO().wantCaptureMouse
 proc imguiHasKeyboard*(): bool = igGetIO().wantCaptureKeyboard
 
-proc imguiInitFau*(appName: string = "", useCursor = true, theme: proc() = nil) =
+proc imguiInitFau*(appName: string = "", useCursor = true, theme: proc() = nil, font: static string = "", fontSize = 22f) =
   if initialized: return
 
   initialized = true
@@ -289,8 +317,9 @@ proc imguiInitFau*(appName: string = "", useCursor = true, theme: proc() = nil) 
 
     try:
       folder.createDir()
+      #save to global variable to prevent GC
       iniFile = (folder / "imgui.ini")
-      io.iniFilename = iniFile
+      io.iniFilename = iniFile.cstring
     except:
       echo "Failed to create save directory: ", getCurrentExceptionMsg()
       io.iniFilename = nil
@@ -305,7 +334,7 @@ proc imguiInitFau*(appName: string = "", useCursor = true, theme: proc() = nil) 
   cursors[ImGuiMouseCursor.ResizeNWSE.int] = newCursor(cursorResizeNwse)
   cursors[ImGuiMouseCursor.NotAllowed.int] = newCursor(cursorNotAllowed)
 
-  createRenderer()
+  createRenderer(font, fontSize)
 
   io.setClipboardTextFn = igGlfwSetClipboardText
   io.getClipboardTextFn = igGlfwGetClipboardText
