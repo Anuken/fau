@@ -30,7 +30,7 @@ proc igInputInt2*(label: cstring, v: var Vec2i, flags: ImGuiInputTextFlags = 0.I
   igInputInt2(label, arr, flags)
   v = arr.vec2i
 
-proc igColorEdit4*(label: cstring, col: var Color, flags: ImGuiColorEditFlags = 0.ImGuiColorEditFlags): bool {.discardable, inline} =
+proc igColorEdit4*(label: cstring, col: var Color, flags: ImGuiColorEditFlags = ImGuiColorEditFlags.AlphaBar): bool {.discardable, inline} =
   var arr = [col.r, col.g, col.b, col.a]
 
   result = igColorEdit4(label, arr, flags)
