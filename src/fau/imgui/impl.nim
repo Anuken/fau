@@ -15,7 +15,7 @@ proc `or`*(f1, f2: ImguiWindowFlags): ImguiWindowFlags =
 
 const uiScaleFactor = 1f
 
-proc igInputFloat2*(label: cstring, v: var Vec2, format: cstring = "%.3f", flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags) =
+proc igInputFloat2*(label: cstring, v: var Vec2, format: cstring = "%g", flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags) =
   var arr = [v.x, v.y]
   igInputFloat2(label, arr, format, flags)
   v = arr.vec2
@@ -267,7 +267,7 @@ proc imguiRenderFau =
 proc imguiHasMouse*(): bool = igGetIO().wantCaptureMouse
 proc imguiHasKeyboard*(): bool = igGetIO().wantCaptureKeyboard
 
-proc imguiInitFau*(appName: string = "", useCursor = true) =
+proc imguiInitFau*(appName: string = "", useCursor = true, theme: proc() = nil) =
   if initialized: return
 
   initialized = true
@@ -275,6 +275,9 @@ proc imguiInitFau*(appName: string = "", useCursor = true) =
 
   let context = igCreateContext()
   let io = igGetIO()
+
+  if theme != nil:
+    theme()
 
   if useCursor:
     io.backendFlags = (io.backendFlags.int32 or ImGuiBackendFlags.HasMouseCursors.int32).ImGuiBackendFlags
