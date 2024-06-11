@@ -19,6 +19,7 @@ type
 
 register defaultCompOpts:
   type
+    EmptyComponent = object
     Pos = object
       x, y: float32
     Vel = object
@@ -33,6 +34,7 @@ register defaultCompOpts:
       abool: bool
       aint: int
       obj: aNestedObject3
+      aPatch: Patch
 
 makeSystem "move", [Pos, Vel]:
   all:
@@ -41,7 +43,7 @@ makeSystem "move", [Pos, Vel]:
 
 makeSystem "draw", [Pos, VariousProperties]:
   all:
-    fillPoly(pos.vec2, 4, 10f, color = variousProperties.someColor)
+    draw(variousProperties.aPatch, pos.vec2, vec2(14f), color = variousProperties.someColor)
 
 makeEcsCommit "runSystems"
 
@@ -51,9 +53,10 @@ proc init() =
 
   for i in 0..<3:
     discard newEntityWith(
+      EmptyComponent(),
       Pos(x: i * 20f, y: 0),
       Vel(x: 0, y: 0),
-      VariousProperties()
+      VariousProperties(aPatch: "error".patch)
     )
 
 proc run() =

@@ -26,6 +26,14 @@ onEcsBuilt:
                   #TODO: delete button
 
                   var data = componentInstanceType()(compRef.index.int).access
+
+                  var fieldCount = 0
+                  for _, _ in data.fieldpairs:
+                    fieldCount.inc
+                  
+                  let disabled = fieldCount == 0
+
+                  igBeginDisabled(disabled)
                   
                   if igTreeNode($typeof(data)):
 
@@ -49,6 +57,8 @@ onEcsBuilt:
                           igCheckbox(field, addr value)
                         elif value is string:
                           igInputText(field, value)
+                        elif value is ref object:
+                          igText(field & ": " & $value[])
                         elif value is object:
                           if igTreeNode(field):
                             listFields(value)
@@ -63,6 +73,8 @@ onEcsBuilt:
                     ent.addOrUpdate data
 
                     igTreePop()
+                  
+                  igEndDisabled()
 
             igPopID()
         

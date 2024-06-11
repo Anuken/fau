@@ -128,6 +128,8 @@ proc draw*(batch: Batch, req: Req) =
 
     case req.kind
     of reqVert:
+      if req.tex == nil: return
+
       batch.prepare(req.tex)
 
       let
@@ -140,6 +142,8 @@ proc draw*(batch: Batch, req: Req) =
 
       batch.index += 4
     of reqRect:
+      if req.patch.texture == nil: return
+
       batch.prepare(req.patch.texture)
       if req.rotation == 0.0f:
         let
