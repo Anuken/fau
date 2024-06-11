@@ -1,5 +1,5 @@
 
-import polymorph, ../../core, ../g2/imgui, ../util/entityedit, ../assets
+import polymorph, ../../core, ../g2/imgui, ../util/entityedit, ../assets, ../util/animation
 
 type 
   aNestedObject = object
@@ -35,6 +35,7 @@ register defaultCompOpts:
       aint: int
       obj: aNestedObject3
       aPatch: Patch
+      animation: Animation
 
 makeSystem "move", [Pos, Vel]:
   all:
@@ -56,7 +57,7 @@ proc init() =
       EmptyComponent(),
       Pos(x: i * 20f, y: 0),
       Vel(x: 0, y: 0),
-      VariousProperties(aPatch: "error".patch)
+      VariousProperties(aPatch: "error".patch, animation: Animation())
     )
 
 proc run() =

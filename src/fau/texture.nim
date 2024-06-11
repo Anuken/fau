@@ -26,6 +26,8 @@ proc `=destroy`*(texture: var TextureObj) =
     glDeleteTexture(texture.handle)
     texture.handle = 0
 
+proc `$`*(texture: Texture): string = "{ID:" & $texture.handle & " " & $texture.size.x & "x" & $texture.size.y & "}"
+
 #binds the texture
 #TODO do not export, textures should not be used manually.
 proc use*(texture: Texture, unit: int = 0) =
