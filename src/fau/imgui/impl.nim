@@ -257,6 +257,9 @@ proc imguiUpdateFau =
 
   igNewFrame()
 
+  fau.captureMouse = igGetIO().wantCaptureMouse
+  fau.captureKeyboard = igGetIO().wantCaptureKeyboard
+
 proc imguiRenderFau =
   #pending fau draw operations need to be flushed
   drawFlush()
@@ -309,9 +312,6 @@ proc imguiRenderFau =
             texture = fontTexture.sampler(7)
         
         indexBufferOffset += pcmd.elemCount.int
-
-proc imguiHasMouse*(): bool = igGetIO().wantCaptureMouse
-proc imguiHasKeyboard*(): bool = igGetIO().wantCaptureKeyboard
 
 proc imguiInitFau*(appName: string = "", useCursor = true, theme: proc() = nil, font: static string = "", fontSize = 22f) =
   if initialized: return

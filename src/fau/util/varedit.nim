@@ -73,8 +73,6 @@ when defined(debugVarEdit):
 else:
   if not declared(imguiInitFau):
     proc imguiInitFau*(useCursor = true, appName: string = "") = discard
-    proc imguiHasMouse*(): bool = false
-    proc imguiHasKeyboard*(): bool = false
     proc imguiLoadFont*(path: static string, size: float32) = discard
 
   proc showVarEditor*() = discard

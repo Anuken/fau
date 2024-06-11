@@ -26,7 +26,7 @@ onEcsBuilt:
 
           let systemStr = ent.listSystems()
 
-          if (searchText == "" or systemStr.contains(searchText)) and igCollapsingHeader($ent.entityId.int & " [" & (systemStr.split('\n').mapIt(it.split(' ')[0])).join(" ")[0..^2] & "]"):
+          if (searchText == "" or systemStr.toLowerAscii.contains(searchText.toLowerAscii)) and igCollapsingHeader(cstring($ent.entityId.int & " [" & (systemStr.split('\n').mapIt(it.split(' ')[0])).join(" ")[0..^2] & "]")):
             igPushID(ent.entityId.int32)
             igPushItemWidth(300f)
 
@@ -51,7 +51,7 @@ onEcsBuilt:
 
                     template listFields(obj: untyped): untyped = 
                       for field, value in obj.fieldpairs:
-                        let fieldLabel = field.cstring
+                        let fieldLabel {.used.} = field.cstring
 
                         when value is int or value is int32:
                           igInputInt(fieldLabel, addr value)
@@ -70,13 +70,15 @@ onEcsBuilt:
                         elif value is string:
                           igInputText(fieldLabel, value)
                         elif value is ref object:
-                          igText($value[])
+                          igText(($value[]).cstring)
+                        elif value is EntityRef:
+                          igText((field & " Entity#" & $value.entityId.int).cstring)
                         elif value is object:
                           if igTreeNode(field):
                             listFields(value)
                             igTreePop()
                         elif compiles($value):
-                          igText(field & ": " & $value)
+                          igText((field & ": " & $value).cstring)
                         else:
                           igText(field)
                         
