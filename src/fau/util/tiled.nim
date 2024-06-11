@@ -293,6 +293,20 @@ proc readTilemapFile*(file: string): Tilemap = file.readFile().readTilemapString
 
 proc readTilemapAsset*(file: static string): Tilemap = assetReadStatic(file).readTilemapString()
 
+template loadFromProperties*(obj: typed, properties: TiledProps): untyped =
+  let props = properties
+  var result = obj()
+
+  for field, value in result.fieldPairs:
+    if props.has(field):
+      when value is float32: value = props.getFloat(field)
+      elif value is int: value = props.getInt(field)
+      elif value is bool: value = props.getBool(field)
+      elif value is string: value = props.getString(field)
+      elif value is Color: value = props.getColor(field)
+
+  result
+
 when isMainModule:
   import print
 

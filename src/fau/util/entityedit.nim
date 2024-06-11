@@ -43,7 +43,7 @@ onEcsBuilt:
 
                     template listFields(obj: untyped): untyped = 
                       for field, value in obj.fieldpairs:
-                        let fieldLabel = $field
+                        let fieldLabel = field.cstring
 
                         when value is int or value is int32:
                           igInputInt(fieldLabel, addr value)
