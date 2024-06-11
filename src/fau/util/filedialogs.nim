@@ -1,18 +1,18 @@
 import tinyfd/tinyfd
 
 proc saveFileDialog*(title = "Save File", defaultPathAndFile = "", patterns: seq[string] = @["*.*"], filterDescription = "All Files"): string =
-  var patternArr = newSeqOfCap[cstring](patterns.len)
-  for i in 0..<patterns.len:
-    patternArr[i] = patterns[i].cstring
+  var pats = allocCStringArray(patterns)
   
-  return $tinyfd_saveFileDialog(title.cstring, defaultPathAndFile.cstring, patterns.len.cint, cast[ptr UncheckedArray[cstring]](patternArr[0].addr), filterDescription.cstring)
+  result = $tinyfd_saveFileDialog(title.cstring, defaultPathAndFile.cstring, patterns.len.cint, pats, filterDescription.cstring)
+
+  pats.deallocCStringArray
 
 proc openFileDialog*(title = "Open File", defaultPathAndFile = "", patterns: seq[string] = @["*.*"], filterDescription = "All Files", multiSelect = false): string =
-  var patternArr = newSeqOfCap[cstring](patterns.len)
-  for i in 0..<patterns.len:
-    patternArr[i] = patterns[i].cstring
+  var pats = allocCStringArray(patterns)
   
-  return $tinyfd_openFileDialog(title.cstring, defaultPathAndFile.cstring, patterns.len.cint, cast[ptr UncheckedArray[cstring]](patternArr[0].addr), filterDescription.cstring, multiSelect.cint)
+  result = $tinyfd_openFileDialog(title.cstring, defaultPathAndFile.cstring, patterns.len.cint, pats, filterDescription.cstring, multiSelect.cint)
+
+  pats.deallocCStringArray
 
 when isMainModule:
   var patterns = @["*.png", "*.msav"]
