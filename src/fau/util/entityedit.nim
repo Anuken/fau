@@ -2,7 +2,9 @@ import polymorph, ../../core, ../g2/imgui
 import sequtils, strutils
 
 onEcsBuilt:
-  var entityEditorShown: bool
+  var 
+    entityEditorShown: bool
+    searchText: string = ""
 
   import sequtils, strutils
 
@@ -13,12 +15,18 @@ onEcsBuilt:
     if entityEditorShown:
     
       igBegin("Entities", addr entityEditorShown)
+      
+      igInputTextWithHint("##Search", "Search", searchText)
 
       if entityCount() != 0:
         for i in 0 ..< entityStorage.nextEntityId.int:
           let ent = (i.EntityId).makeRef
 
-          if ent.alive and igCollapsingHeader($ent.entityId.int & " [" & (ent.listSystems().split('\n').mapIt(it.split(' ')[0])).join(" ")[0..^2] & "]"):
+          if not ent.alive: continue
+
+          let systemStr = ent.listSystems()
+
+          if (searchText == "" or systemStr.contains(searchText)) and igCollapsingHeader($ent.entityId.int & " [" & (systemStr.split('\n').mapIt(it.split(' ')[0])).join(" ")[0..^2] & "]"):
             igPushID(ent.entityId.int32)
             igPushItemWidth(300f)
 

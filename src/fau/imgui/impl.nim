@@ -47,8 +47,26 @@ proc igInputInt*(label: cstring, v: ptr int, step: int32 = 1, step_fast: int32 =
   v[] = i32
 
 proc igInputText*(label: cstring, text: var string, bufSize = 40, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags, callback: ImGuiInputTextCallback = nil, user_data: pointer = nil): bool {.discardable, inline.} =
-  igInputText(label, text.cstring, bufSize.uint, flags, callback, user_data)
+  var buff = newString(max(bufSize, text.len))
+  buff[0..text.high] = text
 
+  igInputText(label, buff.cstring, bufSize.uint, flags, callback, user_data)
+
+  #I'm sure there's a better way to do this, but right now I don't care.
+  let len = buff.cstring.len
+  buff.setLen(len)
+  text = buff
+
+proc igInputTextWithHint*(label: cstring, hint: cstring, text: var string, bufSize = 40, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags, callback: ImGuiInputTextCallback = nil, user_data: pointer = nil): bool {.discardable, inline.} =
+  var buff = newString(max(bufSize, text.len))
+  buff[0..text.high] = text
+
+  igInputTextWithHint(label, hint, buff.cstring, bufSize.uint, flags, callback, user_data)
+
+  #I'm sure there's a better way to do this, but right now I don't care.
+  let len = buff.cstring.len
+  buff.setLen(len)
+  text = buff
 
 type IVert = object
   pos: Vec2
