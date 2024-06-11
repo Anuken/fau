@@ -1,7 +1,10 @@
 import polymorph, ../../core, ../g2/imgui
+import sequtils, strutils
 
 onEcsBuilt:
   var entityEditorShown: bool
+
+  import sequtils, strutils
 
   proc showEntityEditor*(toggleKey = keyF2) =
     if toggleKey.tapped:
@@ -15,15 +18,16 @@ onEcsBuilt:
         for i in 0 ..< entityStorage.nextEntityId.int:
           let ent = (i.EntityId).makeRef
 
-          if ent.alive and igCollapsingHeader("Entity: " & $ent.entityId.int):
+          if ent.alive and igCollapsingHeader($ent.entityId.int & " [" & (ent.listSystems().split('\n').mapIt(it.split(' ')[0])).join(" ")[0..^2] & "]"):
             igPushID(ent.entityId.int32)
-
-            #igText($ent)
+            igPushItemWidth(300f)
 
             if ent.componentCount > 0:
               for compRef in ent.components:
                 caseComponent(compRef.typeId):
                   #TODO: delete button
+
+                  igSeparator()
 
                   var data = componentInstanceType()(compRef.index.int).access
 
@@ -37,28 +41,28 @@ onEcsBuilt:
                   
                   if igTreeNode($typeof(data)):
 
-                    #igText $data
-
                     template listFields(obj: untyped): untyped = 
                       for field, value in obj.fieldpairs:
+                        let fieldLabel = $field
+
                         when value is int or value is int32:
-                          igInputInt(field, addr value)
+                          igInputInt(fieldLabel, addr value)
                         elif value is float32:
-                          igInputFloat(field, addr value)
+                          igInputFloat(fieldLabel, addr value)
                         elif value is Vec2:
-                          igInputFloat2(field, value)
+                          igInputFloat2(fieldLabel, value)
                         elif value is Vec2i:
-                          igInputInt2(field, value)
+                          igInputInt2(fieldLabel, value)
                         elif value is Rect:
-                          igInputFloat4(field, value)
+                          igInputFloat4(fieldLabel, value)
                         elif value is Color:
-                          igColorEdit4(field, value)
+                          igColorEdit4(fieldLabel, value)
                         elif value is bool:
-                          igCheckbox(field, addr value)
+                          igCheckbox(fieldLabel, addr value)
                         elif value is string:
-                          igInputText(field, value)
+                          igInputText(fieldLabel, value)
                         elif value is ref object:
-                          igText(field & ": " & $value[])
+                          igText($value[])
                         elif value is object:
                           if igTreeNode(field):
                             listFields(value)
@@ -67,7 +71,7 @@ onEcsBuilt:
                           igText(field & ": " & $value)
                         else:
                           igText(field)
-
+                        
                     listFields(data)
 
                     ent.addOrUpdate data
@@ -76,6 +80,7 @@ onEcsBuilt:
                   
                   igEndDisabled()
 
+            igPopItemWidth()
             igPopID()
         
 
