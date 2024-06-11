@@ -182,6 +182,12 @@ proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, origin
     blend: blend, shader: shader
   ))
 
+proc drawRect*(region: Patch, rect: Rect, origin = vec2(),
+  rotation = 0f, color = colorWhite, mixColor = colorClear, z: float32 = 0.0,
+  blend = blendNormal, shader: Shader = nil) {.inline.} =
+
+  drawRect(region, rect.x, rect.y, rect.w, rect.h, origin.x, origin.y, rotation, color, mixColor, z, blend, shader)
+
 proc drawVert*(texture: Texture, vertices: array[4, Vert2], z: float32 = 0, blend = blendNormal, shader: Shader = nil) {.inline.} = 
   fau.batch.draw(Req(
     kind: reqVert,

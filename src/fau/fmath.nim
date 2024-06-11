@@ -194,6 +194,7 @@ proc randSign*(): int =
 proc randSign*(r: var Rand): int =
   if r.rand(0f..1f) < 0.5f: 1 else: -1
 proc randAngle*(): float32 = rand(0f..(PI * 2f).float32)
+proc randAngle*(r: var Rand): float32 = r.rand(0f..(PI * 2f).float32)
 proc range*[T](r: var Rand, value: T): T = r.rand((-value)..value)
 
 {.pop.}
