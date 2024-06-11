@@ -197,7 +197,7 @@ proc imguiLoadFont*(path: static string, size: float32) =
   reloadFontTexture()
 
 proc createRenderer(font: static string, fontSize: float32) =
-  if font != "":
+  when font.len > 0:
     imguiLoadFont(font, fontSize)
   else:
     reloadFontTexture()
