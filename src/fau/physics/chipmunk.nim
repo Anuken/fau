@@ -53,17 +53,6 @@ type
     ## Beveled line segment collision shape.
   PolygonShape* = ref PolygonShapeObj
     ## Convex polygon collision shape. Slowest, but most flexible.
-  
-  ConstraintObj = object of RootObj
-    raw: ptr cpConstraint
-
-  Constraint = ref ConstraintObj
-  
-  DampedSpring* = ref ConstraintObj
-
-  SlideJoint* = ref ConstraintObj
-
-  PinJoint* = ref ConstraintObj
 
   ShapeFilter* = tuple
     ## A collision filter for shapes. This allows some collisions between shapes
@@ -123,6 +112,19 @@ type
     indexInSpace: int
   Body* = ref BodyObj
     ## A rigid body.
+
+  ConstraintObj = object of RootObj
+    raw: ptr cpConstraint
+    indexInSpace: int
+    a, b: Body
+
+  Constraint* = ref ConstraintObj
+  
+  DampedSpring* = ref ConstraintObj
+
+  SlideJoint* = ref ConstraintObj
+
+  PinJoint* = ref ConstraintObj
 
   Arbiter* = object
     ## A collision pair between two bodies.
@@ -226,6 +228,10 @@ proc `position=`*(body: Body, newPosition: Vec2) =
   ## to update the collision detection information for attached shapes if you're
   ## planning on making any queries against the space.
   cpBodySetPosition(body.raw, newPosition.cpv)
+
+#shorthand
+proc pos*(body: Body): Vec2 {.inline.} = body.position
+proc `pos=`*(body: Body, pos: Vec2) {.inline.} = body.position = pos
 
 proc centerOfGravity*(body: Body): Vec2 =
   ## Returns the body's center of gravity.
@@ -481,25 +487,58 @@ proc `=destroy`(constraint: var ConstraintObj) =
     cpConstraintFree(constraint.raw)
     constraint.raw = nil
 
-proc destroy(constraint: var ConstraintObj) =
-  if constraint.raw != nil:
-    cpConstraintDestroy(constraint.raw)
+#proc destroy(constraint: var ConstraintObj) =
+#  if constraint.raw != nil:
+#    cpConstraintDestroy(constraint.raw)
 
 proc newDampedSpring*(a, b: Body, anchorA, anchorB: Vec2, restLength: float32, stiffness: float32, damping: float32): DampedSpring =
-  return DampedSpring(raw: cpDampedSpringNew(a.raw, b.raw, anchorA, anchorB, restLength, stiffness, damping))
+  result = DampedSpring(a: a, b: b, raw: cpDampedSpringNew(a.raw, b.raw, anchorA, anchorB, restLength, stiffness, damping))
+  cpConstraintSetUserData(result.raw, cast[ptr Constraint](result))
+
+proc `damping=`*(spring: DampedSpring, value: float32) =
+  cpDampedSpringSetDamping(spring.raw, value)
+
+proc `stiffness=`*(spring: DampedSpring, value: float32) =
+  cpDampedSpringSetStiffness(spring.raw, value)
+
+proc `restLength=`*(spring: DampedSpring, value: float32) =
+  cpDampedSpringSetRestLength(spring.raw, value)
+
+proc damping*(spring: DampedSpring): float32 =
+  cpDampedSpringGetDamping(spring.raw)
+
+proc stiffness*(spring: DampedSpring): float32 =
+  cpDampedSpringGetStiffness(spring.raw)
+
+proc restLength*(spring: DampedSpring): float32 =
+  cpDampedSpringGetRestLength(spring.raw)
 
 proc newSlideJoint*(a, b: Body, anchorA, anchorB: Vec2, min, max: float32): DampedSpring =
-  return SlideJoint(raw: cpSlideJointNew(a.raw, b.raw, anchorA, anchorB, min, max))
+  result = SlideJoint(a: a, b: b, raw: cpSlideJointNew(a.raw, b.raw, anchorA, anchorB, min, max))
+  cpConstraintSetUserData(result.raw, cast[ptr Constraint](result))
 
 proc newPinJoint*(a, b: Body, anchorA, anchorB: Vec2): PinJoint =
-  return PinJoint(raw: cpPinJointNew(a.raw, b.raw, anchorA, anchorB))
+  result = PinJoint(a: a, b: b, raw: cpPinJointNew(a.raw, b.raw, anchorA, anchorB))
+  cpConstraintSetUserData(result.raw, cast[ptr Constraint](result))
 
 proc addConstraint*[T: Constraint](space: Space, constraint: T) =
   discard cpSpaceAddConstraint(space.raw, constraint.raw)
+  constraint.indexInSpace = space.constraints.len
   space.constraints.add(constraint)
+
+proc a*[T: Constraint](constraint: T): Body = constraint.a
+proc b*[T: Constraint](constraint: T): Body = constraint.b
 
 proc addTo*[T: Constraint](constraint: T, space: Space) =
   space.addConstraint(constraint)
+
+proc delConstraint*[T: Constraint](space: Space, constraint: T) =
+  cpSpaceRemoveConstraint(space.raw, constraint.raw)
+
+  space.constraints[constraint.indexInSpace] = space.constraints[^1]
+  space.constraints[constraint.indexInSpace].indexInSpace = constraint.indexInSpace
+  space.constraints.setLen(space.constraints.len - 1)
+  constraint.indexInSpace = 0
 
 # shape
 

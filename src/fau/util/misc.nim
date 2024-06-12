@@ -57,6 +57,16 @@ template incTimer*(value: untyped, increment: float32, body: untyped): untyped =
     `value` = 0f
     `body`
 
+template findMinIndex*[T](list: seq[T], op: untyped): int =
+  var minValue = float32.high
+  var result = -1
+  for i, it {.inject.} in list:
+    let newMin = op
+    if newMin < minValue:
+      minValue = newMin
+      result = i
+  result
+
 template findMin*[T](list: seq[T], op: untyped): untyped =
   var minValue = float32.high
   var result: T
