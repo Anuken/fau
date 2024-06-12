@@ -19,6 +19,14 @@ proc axis2*(left = keyA, right = keyD, bottom = keyS, top = keyW): Vec2 = vec2(a
 proc axisTap*(left, right: KeyCode): int = right.tapped.int - left.tapped.int
 proc axisTap2*(left, right, bottom, top: KeyCode): Vec2 = vec2(axisTap(left, right).float32, axisTap(bottom, top).float32)
 
+#modifier
+
+proc shiftTapped*: bool {.inline.} = keyLShift.tapped or keyRShift.tapped
+proc ctrlTapped*: bool {.inline.} = keyLCtrl.tapped or keyRCtrl.tapped
+
+proc shiftDown*: bool {.inline.} = keyLShift.down or keyRShift.down
+proc ctrlDown*: bool {.inline.} = keyLCtrl.down or keyRCtrl.down
+
 #gamepad (indexed)
 
 proc down*(pad: Gamepad, button: GamepadButton): bool {.inline.} = pad.buttons[button]
