@@ -68,6 +68,24 @@ proc igInputTextWithHint*(label: cstring, hint: cstring, text: var string, bufSi
   buff.setLen(len)
   text = buff
 
+proc igCombo*(label: cstring, current_item: ptr int, items: seq[string], popup_max_height_in_items: int32 = -1): bool =
+  let itemArray = allocCStringArray(items)
+  var cur = current_item[].int32
+  result = igCombo(label, addr cur, cast[ptr cstring](itemArray), popup_max_height_in_items)
+  current_item[] = cur
+  deallocCStringArray(itemArray)
+
+proc igComboEnum*[T: Ordinal](label: cstring, current: var T, popup_max_height_in_items: int32 = -1): bool =
+  var 
+    values: seq[string]
+    index = current.int
+  for i, val in low(T)..high(T):
+    values.add($val)
+  
+  result = igCombo(label, index, values, popup_max_height_in_items)
+
+  current = index.T
+
 type IVert = object
   pos: Vec2
   uv: Vec2
