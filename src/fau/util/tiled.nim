@@ -298,12 +298,17 @@ template loadFromProperties*(obj: typed, properties: TiledProps): untyped =
   var result = obj()
 
   for field, value in result.fieldPairs:
-    if props.has(field):
-      when value is float32: value = props.getFloat(field)
-      elif value is int: value = props.getInt(field)
-      elif value is bool: value = props.getBool(field)
-      elif value is string: value = props.getString(field)
-      elif value is Color: value = props.getColor(field)
+    when value is Vec2:
+      if props.has(field & "X"): value.x = props.getFloat(field & "X")
+      if props.has(field & "Y"): value.y = props.getFloat(field & "Y")
+
+    else:
+      if props.has(field):
+        when value is float32: value = props.getFloat(field)
+        elif value is int: value = props.getInt(field)
+        elif value is bool: value = props.getBool(field)
+        elif value is string: value = props.getString(field)
+        elif value is Color: value = props.getColor(field)
 
   result
 
