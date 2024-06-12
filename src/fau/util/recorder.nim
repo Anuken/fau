@@ -79,7 +79,7 @@ proc record*() =
 
   #draw selection UI
   if open:
-    var color = %"2890eb"
+    var color = if mp4: %"1dc5b7" else: %"2890eb"
 
     if recording:
       color = %"f54033"
@@ -93,6 +93,9 @@ proc record*() =
     if shiftKey.down and not fau.captureKeyboard:
       recordOffset = fau.mouse - fau.size/2f
       color = %"27e67a"
+    
+    if keyF12.tapped:
+      mp4 = not mp4
 
     for entry in [(color: colorBlack, stroke: 8f), (color: color, stroke: 2f)]:
       lineRect(

@@ -15,19 +15,19 @@ proc `or`*(f1, f2: ImguiWindowFlags): ImguiWindowFlags =
 
 const uiScaleFactor = 1f
 
-proc igInputFloat2*(label: cstring, v: var Vec2, format: cstring = "%g", flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags) =
+proc igInputFloat2*(label: cstring, v: var Vec2, format: cstring = "%g", flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags): bool {.discardable, inline} =
   var arr = [v.x, v.y]
-  igInputFloat2(label, arr, format, flags)
+  result = igInputFloat2(label, arr, format, flags)
   v = arr.vec2
 
-proc igInputFloat4*(label: cstring, v: var Rect, format: cstring = "%g", flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags) =
+proc igInputFloat4*(label: cstring, v: var Rect, format: cstring = "%g", flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags): bool {.discardable, inline} =
   var arr = [v.x, v.y, v.w, v.h]
-  igInputFloat4(label, arr, format, flags)
+  result = igInputFloat4(label, arr, format, flags)
   v = rect(arr[0], arr[1], arr[2], arr[3])
 
-proc igInputInt2*(label: cstring, v: var Vec2i, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags) =
+proc igInputInt2*(label: cstring, v: var Vec2i, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags): bool {.discardable, inline} =
   var arr = [v.x.int32, v.y.int32]
-  igInputInt2(label, arr, flags)
+  result = igInputInt2(label, arr, flags)
   v = arr.vec2i
 
 proc igColorEdit4*(label: cstring, col: var Color, flags: ImGuiColorEditFlags = ImGuiColorEditFlags.AlphaBar): bool {.discardable, inline} =
@@ -50,7 +50,7 @@ proc igInputText*(label: cstring, text: var string, bufSize = 40, flags: ImGuiIn
   var buff = newString(max(bufSize, text.len))
   buff[0..text.high] = text
 
-  igInputText(label, buff.cstring, bufSize.uint, flags, callback, user_data)
+  result = igInputText(label, buff.cstring, bufSize.uint, flags, callback, user_data)
 
   #I'm sure there's a better way to do this, but right now I don't care.
   let len = buff.cstring.len
@@ -61,7 +61,7 @@ proc igInputTextWithHint*(label: cstring, hint: cstring, text: var string, bufSi
   var buff = newString(max(bufSize, text.len))
   buff[0..text.high] = text
 
-  igInputTextWithHint(label, hint, buff.cstring, bufSize.uint, flags, callback, user_data)
+  result = igInputTextWithHint(label, hint, buff.cstring, bufSize.uint, flags, callback, user_data)
 
   #I'm sure there's a better way to do this, but right now I don't care.
   let len = buff.cstring.len
