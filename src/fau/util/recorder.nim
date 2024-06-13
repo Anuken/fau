@@ -51,7 +51,7 @@ proc record*() =
 
         var
           p = startProcess(
-            &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip{filters}\" {gifOutDir}/{dateStr}.{ext}",
+            &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip{filters}\" -c:v libx264 -pix_fmt yuv420p {gifOutDir}/{dateStr}.{ext}",
             options = {poEvalCommand, poStdErrToStdOut}
           )
           stream = p.inputStream
