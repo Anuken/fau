@@ -5,6 +5,7 @@ type Animation* = object
   durations: seq[float32]
   delay: float32
   duration*: float32
+  allSameWidth*: bool
 
 proc frame*(anim: Animation, time = fau.time, loop = false): Patch =
   let realTime = if loop: time else: time.min(anim.duration - 0.001f)
@@ -33,14 +34,24 @@ proc loadAnimation*(atlas: Atlas, name: string, delay = 0f, startFrame = 0): Ani
     i = startFrame
     lastDelay = -1
     allSame = true
+    firstSize = 0f
+  
+  result.allSameWidth = true
   
   while atlas[name & $i].found:
     let fdelay = if delay != 0f: int(delay * 1000f) else: atlas.getDuration(name & $i)
 
     if lastDelay != -1 and lastDelay != fdelay:
       allSame = false
+    
+    let nextFrame = atlas[name & $i]
 
-    result.frames.add(atlas[name & $i])
+    if firstSize == 0f:
+      firstSize = nextFrame.width
+    elif nextFrame.width != firstSize:
+      result.allSameWidth = false
+
+    result.frames.add(nextFrame)
     result.duration += fdelay
     result.durations.add fdelay / 1000f
     lastDelay = fdelay

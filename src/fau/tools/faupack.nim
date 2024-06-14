@@ -213,6 +213,10 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
 
         #standard ase file
         for layer in aseFile.layers:
+          let 
+            centerX = layer.userData == "centerX"
+            crop = layer.userData == "crop"
+
           #skip locked layers; I do not want to skip 'invisible' layers for convenience, so locked is used as the flag here instead
           if layer.kind == alImage and layer.frames.len > 0 and afEditable in layer.flags:
             #single-layer aseprite files default to file name only
@@ -232,8 +236,22 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
               copyMem(addr image.data[0], addr frame.data[0], frame.width * frame.height * 4)
               
               #aseprite layers are "cropped", so each layer needs to have a new image made with the uncropped version
-              let full = newImage(aseFile.width, aseFile.height)
-              full.draw(image, translate(vec2(frame.x.float32, frame.y.float32)))
+              let full = 
+                if crop: 
+                  image #it's pre-cropped, whee
+                elif centerX:
+                  #needs to be cropped to the X axis (centered)
+                  let 
+                    padding = min(frame.x, aseFile.width - (frame.x + frame.width))
+                    r = newImage(aseFile.width - padding * 2, aseFile.height)
+                  
+                  r.draw(image, translate(vec2((r.width/2f-image.width/2f).int, frame.y.float32)))
+                  r
+
+                else:
+                  let r = newImage(aseFile.width, aseFile.height)
+                  r.draw(image, translate(vec2(frame.x.float32, frame.y.float32)))
+                  r
 
               if frame.opacity != 255'u8 or layer.opacity != 255'u8:
                 full.applyOpacity(frame.opacity.float32 / 255f * layer.opacity.float32 / 255f)
