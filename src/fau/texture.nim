@@ -158,5 +158,8 @@ proc loadImgBytes*(textureBytes: string): Img =
 
   return Img(data: data, width: width, height: height)
 
+proc loadImgFile*(path: string): Img =
+  return loadImgBytes(readFile(path))
+
 proc loadImg*(path: static[string]): Img =
   return loadImgBytes(assetReadStatic(path))
