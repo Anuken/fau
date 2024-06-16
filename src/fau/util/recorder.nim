@@ -48,20 +48,30 @@ proc record*() =
           ext = if mp4: "mp4" else: "gif"
           filters = if mp4: "" else: ",split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
           len = w * h * 4
+        
+        var outp: Stream
 
-        var
-          p = startProcess(
-            &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip{filters}\" -c:v libx264 -pix_fmt yuv420p {gifOutDir}/{dateStr}.{ext}",
-            options = {poEvalCommand, poStdErrToStdOut}
-          )
-          stream = p.inputStream
+        try:
+            
+          var
+            p = startProcess(
+              &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip{filters}\" -c:v libx264 -pix_fmt yuv420p {gifOutDir}/{dateStr}.{ext}",
+              options = {poEvalCommand, poStdErrToStdOut}
+            )
+            stream = p.inputStream
+          
+          outp = p.outputStream
 
-        for frame in frames:
-          stream.writeData(frame, len)
-          stream.flush()
+          for frame in frames:
+            stream.writeData(frame, len)
+            stream.flush()
 
-        stream.close()
-        discard p.waitForExit()
+          stream.close()
+          discard p.waitForExit()
+
+        except:
+          echo outp.readAll()
+          echo getCurrentExceptionMsg()
 
         clearFrames()
         ftime = 0f
@@ -88,7 +98,7 @@ proc record*() =
 
     if resizeKey.down and not recording and not fau.captureKeyboard:
       color = %"f59827"
-      recordSize = (fau.size/2f + recordOffset - fau.mouse).abs * 2f
+      recordSize = ((fau.size/2f + recordOffset - fau.mouse).abs * 2f).round(2f)
 
     if shiftKey.down and not fau.captureKeyboard:
       recordOffset = fau.mouse - fau.size/2f
