@@ -8,11 +8,11 @@ export glproc, gltypes
 type Blending* = object
   src, dst: GLenum
 
-  srcAlpha = GlOne
-  dstAlpha = GlOneMinusSrcAlpha
+  srcAlpha: GLenum = GlOne
+  dstAlpha: GLenum = GlOneMinusSrcAlpha
 
-  eqRgb = GlFuncAdd
-  eqAlpha = GlFuncAdd
+  eqRgb: GLenum = GlFuncAdd
+  eqAlpha: GLenum = GlFuncAdd
 
 type CullFace* = enum
   cfFront,
