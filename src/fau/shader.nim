@@ -44,6 +44,7 @@ type ShaderUniform = object
 
 #OpenGL Shader program.
 type ShaderObj* = object
+  name*: string
   handle, vertHandle, fragHandle: GLuint
   compileLog: string
   compiled: bool
@@ -76,6 +77,7 @@ void main(){
 """
 
 proc `=destroy`*(shader: var ShaderObj) =
+  `=destroy`(shader.name)
   `=destroy`(shader.compileLog)
   `=destroy`(shader.uniforms)
   `=destroy`(shader.attributes)
@@ -169,7 +171,7 @@ proc preprocess(source: string, fragment: bool): string =
     result = pre & source
     
 proc newShader*(vertexSource, fragmentSource: string, name = "<unknown>"): Shader =
-  result = Shader()
+  result = Shader(name: name)
   result.uniforms = initTable[string, ShaderUniform]()
   result.compiled = true
   

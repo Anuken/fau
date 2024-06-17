@@ -139,11 +139,12 @@ proc getFft*(): array[256, float32] =
   for i in 0..<256:
     result[i] = dataArr[i].float32
 
+proc newEmptySound*(): Sound = Sound(handle: WavStreamCreate(), stream: false, loaded: false)
+proc newEmptyMusic*(): Sound = Sound(handle: WavStreamCreate(), protect: true, stream: true, loaded: false)
+
 proc loadMusicBytes*(path: string, data: string): Sound =
   let handle = WavStreamCreate()
-  var loaded = false
-  when not defined(skipSoundLoad):
-    loaded = checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+  var loaded = checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   return Sound(handle: handle, protect: true, stream: true, loaded: loaded)
 
 proc loadMusicStatic*(path: static[string]): Sound =
@@ -151,9 +152,7 @@ proc loadMusicStatic*(path: static[string]): Sound =
 
 proc loadMusicFile*(path: string): Sound =
   let handle = WavStreamCreate()
-  var loaded = false
-  when not defined(skipSoundLoad):
-    loaded = checkErr(path): handle.WavStreamLoad(path)
+  var loaded = checkErr(path): handle.WavStreamLoad(path)
   return Sound(handle: handle, protect: true, stream: true, loaded: loaded)
 
 proc loadMusicAsset*(path: string): Sound =
@@ -166,16 +165,16 @@ proc loadMusicAsset*(path: string): Sound =
 
 proc loadMusic*(path: static[string]): Sound =
   ## Loads music from the assets folder, or statically.
-  when staticAssets:
+  when defined(skipSoundLoad):
+    return newEmptyMusic()
+  elif staticAssets:
     return loadMusicStatic(path)
   else:
     return loadMusicAsset(path)
 
 proc loadSoundBytes*(path: string, data: string): Sound =
   let handle = WavCreate()
-  var loaded = false
-  when not defined(skipSoundLoad):
-    loaded = checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+  var loaded = checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   return Sound(handle: handle, loaded: loaded)
 
 proc loadSoundStatic*(path: static[string]): Sound =
@@ -183,14 +182,14 @@ proc loadSoundStatic*(path: static[string]): Sound =
 
 proc loadSoundFile*(path: string): Sound =
   let handle = WavCreate()
-  var loaded = false
-  when not defined(skipSoundLoad):
-    loaded = checkErr(path): handle.WavLoad(path)
+  var loaded = checkErr(path): handle.WavLoad(path)
   return Sound(handle: handle, loaded: loaded)
 
 proc loadSound*(path: static[string]): Sound =
   ## Loads a sound from the assets folder, or statically.
-  when staticAssets:
+  when defined(skipSoundLoad):
+    return newEmptySound()
+  elif staticAssets:
     return loadSoundStatic(path)
   elif defined(Android):
     #android needs to use assetRead, which gets files from the APK
