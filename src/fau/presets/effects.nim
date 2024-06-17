@@ -22,6 +22,14 @@ registerComponents(defaultComponentOptions):
       sizeVec*: Vec2
       color*: Color
 
+template scaled*(state: EffectState, scale: float32, body: untyped) =
+  block:
+    let
+       fin {.inject, used.} = state.fin / scale
+       fout {.inject, used.} = 1f - fin
+    if fin <= 1f:
+      body
+
 ## Defines several effects. Requires makeEffectsSystem() to be called somewhere to function properly.
 ## 
 ## Usage:
