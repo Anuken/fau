@@ -29,7 +29,7 @@ when defined(debugVarEdit):
     for node in allFields:
       let name = node.repr
       result.add quote do:
-        block:
+        block: #TODO: use entityedit system for this.
           #I could get this working, but it's not worth the effort.
           #let defaultValue {.global.} = `node`
 
@@ -47,13 +47,10 @@ when defined(debugVarEdit):
             `node` = i32v
           elif `node` is bool:
             igCheckbox(`name`, `node`.addr)
+          elif `node` is Vec2:
+            igInputFloat2(`name`, `node`)
           elif `node` is Color:
-            var col: array[4, float32] = [`node`.r, `node`.g, `node`.b, `node`.a]
-            igColorEdit4(`name`, col)
-            `node`.r = col[0]
-            `node`.g = col[1]
-            `node`.b = col[2]
-            `node`.a = col[3]
+            igColorEdit4(`name`, `node`)
           else:
             echo "Unknown type for editing for field: ", name
 
