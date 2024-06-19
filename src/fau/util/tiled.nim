@@ -107,7 +107,7 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
     let str = entry.value.string
     
     v[entry.name] = case entry.`type`:
-    of "string", "file", "": TileProp(kind: tpString, strVal: str[1..^2])
+    of "string", "file", "": TileProp(kind: tpString, strVal: fromJson(str, string))
     of "int": TileProp(kind: tpInt, intVal: str.parseInt())
     of "float": TileProp(kind: tpFloat, floatVal: str.parseFloat())
     of "bool": TileProp(kind: tpBool, boolVal: str == "true")
