@@ -209,7 +209,7 @@ proc imguiLoadFont*(path: static string, size: float32) =
   cfg.fontDataOwnedByAtlas = false
 
   io.fonts.clear()
-  let font = io.fonts.addFontFromMemoryTTF(addr fontData[0], fontData.len.int32, size, fontCfg = cfg);
+  io.fonts.addFontFromMemoryTTF(addr fontData[0], fontData.len.int32, size, fontCfg = cfg);
   io.fonts.build()
   
   reloadFontTexture()

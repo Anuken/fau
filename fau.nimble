@@ -16,7 +16,7 @@ requires "chroma == 0.2.7"
 requires "pixie == 5.0.6"
 requires "vmath == 2.0.0"
 requires "stbimage == 2.5"
-requires "jsony == 1.1.5"
+requires "https://www.github.com/Anuken/jsony#12d63bbf98fa36734c1ad6b836fae3aa0c1443e5"
 
 task imguiGen, "Generate imGUI bindings from source":
   exec("nim r src/fau/tools/imgui_gen.nim")
