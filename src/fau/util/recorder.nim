@@ -9,7 +9,7 @@ const
 var
   gifOutDir = "gifs"
   speedMultiplier* = 1f
-  recordFps* = 40f
+  recordFps* = 45f
   recordSize* = vec2(300f)
   recordOffset* = vec2(0f)
   recording = false

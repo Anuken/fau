@@ -1,8 +1,15 @@
-import macros, tables, strutils, os
+import macros, tables, strutils, parseutils, os
 
 # Utility macros, templates & sugar.
 
 var eventHandlers* {.compileTime} = newTable[string, seq[NimNode]]()
+
+proc parseFloat32*(str: openArray[char], val: var float32): int {.discardable.} =
+  ## Variant for parsing 32-bit floats, for convenience.
+
+  var v = val.float
+  result = parseFloat(str, v)
+  val = v.float32
 
 proc capitalize*(str: openArray[char], spaces = false, camel = false): string =
   ## Converts a snake_case or kebab-case string to UpperCase, optionally inserting spaces between words.
