@@ -40,12 +40,12 @@ proc drawViewport*(rect = rect()) =
   fau.batch.viewport(rect)
 
 #TODO should use a stack.
-proc drawClip*(clipped = rect()): bool {.discardable.} =
+proc drawClip*(clipped = rect(), view = fau.cam.screenBounds): bool {.discardable.} =
   if clipped.w.int > 0 and clipped.h.int > 0:
     #transform clipped rectangle from world into screen space
     let
-      topRight = project(fau.batch.mat, clipped.topRight)
-      botLeft = project(fau.batch.mat, clipped.botLeft)
+      topRight = project(fau.batch.mat, clipped.topRight, view)
+      botLeft = project(fau.batch.mat, clipped.botLeft, view)
 
     fau.batch.clip(rect(botLeft, topRight - botLeft))
     return true
