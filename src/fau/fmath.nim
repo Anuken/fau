@@ -263,6 +263,9 @@ func dst*(x1, y1, x2, y2: float32): float32 {.inline.} =
 func len*(x, y: float32): float32 {.inline.} = sqrt(x*x + y*y)
 func len2*(x, y: float32): float32 {.inline.} = x*x + y*y
 
+func odd*(x: int): bool {.inline.} = (x and 1).bool
+func even*(x: int): bool {.inline.} = not (x and 1).bool
+
 func sign*(x: float32): float32 {.inline.} = 
   if x < 0: -1 else: 1
 func sign*(x: bool): float32 {.inline.} = 
@@ -274,7 +277,7 @@ func sign*(x: int): int {.inline} =
 func signi*(x: float32): int {.inline} =
   if x < 0f: -1 else: 1
 func signodd*(x: int): float32 {.inline.} = 
-  if x mod 2 == 0: 1 else: -1
+  if x.odd: -1 else: 1
 
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
 func cos*(x, scl, mag: float32): float32 {.inline} = cos(x / scl) * mag
