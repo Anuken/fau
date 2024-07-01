@@ -61,9 +61,9 @@ proc newBlur*(scaling: int = 4, passes: int = 1): Blur =
   """
   )
 
-proc buffer*(blur: Blur, clearColor = colorClear): Framebuffer =
-  blur.p1.resize(fau.sizei div blur.scaling)
-  blur.p2.resize(fau.sizei div blur.scaling)
+proc buffer*(blur: Blur, clearColor = colorClear, size = fau.sizei): Framebuffer =
+  blur.p1.resize(size div blur.scaling)
+  blur.p2.resize(size div blur.scaling)
 
   blur.p1.clear(clearColor)
   return blur.p1
