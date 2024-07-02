@@ -6,25 +6,27 @@ type Atlas* = ref object
   patches*: Table[string, Patch]
   patches9*: Table[string, Patch9]
   durations*: Table[string, int]
-  texture*: Texture
+  textures*: seq[Texture]
   error*: Patch
   error9*: Patch9
 
 proc newEmptyAtlas*(): Atlas =
-  result = Atlas(texture: newTexture(vec2i(1)))
+  result = Atlas(textures: @[newTexture(vec2i(1))])
 
   let color = colorWhite
-  result.texture.load(vec2i(1), addr color)
+  result.textures[0].load(vec2i(1), addr color)
   
-  result.error = newPatch(result.texture, 0, 0, 1, 1)
+  result.error = newPatch(result.textures[0], 0, 0, 1, 1)
   result.error9 = newPatch9(result.error, 0, 0, 0, 0)
   result.patches["white"] = result.error
 
 #Loads an atlas from static resources.
 proc loadAtlas*(path: static[string]): Atlas =
   result = Atlas()
+
+  let mainTex = loadTexture(path & ".png")
   
-  result.texture = loadTexture(path & ".png")
+  result.textures = @[mainTex]
   let stream = assetStaticStream(path & ".dat")
 
   let amount = stream.readInt32()
@@ -37,7 +39,7 @@ proc loadAtlas*(path: static[string]): Atlas =
       width = stream.readInt16()
       height = stream.readInt16()
       hasSplit = stream.readBool()
-      patch = newPatch(result.texture, x, y, width, height)
+      patch = newPatch(mainTex, x, y, width, height)
 
     if hasSplit:
       let

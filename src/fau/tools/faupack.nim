@@ -6,6 +6,8 @@ type FolderSettings = object
   outlineColor: ColorRGBA
   pad: int = -1
   bleed: int = -1
+  separate: bool = false
+
 type PackEntry = tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int], duration: int, settings: FolderSettings]
 
 from vmath import nil
@@ -60,7 +62,6 @@ proc getImageSize(file: string): tuple[w: int, h: int] =
     outp = bytes[10..11]
     let h = cast[ptr uint16](addr outp[0])[]
     return (w.int, h.int)
-
 
 proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min = 64, max = 2048, padding = 0, bleeding = 2, verbose = false, silent = false) =
   let 
