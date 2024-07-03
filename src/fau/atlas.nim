@@ -1,5 +1,5 @@
 
-import strformat, tables, texture, patch, assets, streams, fmath, color
+import strformat, tables, texture, patch, assets, streams, fmath, color, util/misc
 
 #A single-texture atlas.
 type Atlas* = ref object
@@ -20,42 +20,56 @@ proc newEmptyAtlas*(): Atlas =
   result.error9 = newPatch9(result.error, 0, 0, 0, 0)
   result.patches["white"] = result.error
 
+proc getImageCount*(path: static[string]): int {.compileTime.} =
+  #TODO: horribly inefficient. I only need to read a single byte!
+  const dataPath = "assets/" & path & ".dat"
+  const data = readFile(dataPath)
+  result = cast[uint8](data[0]).int
+
 #Loads an atlas from static resources.
 proc loadAtlas*(path: static[string]): Atlas =
   result = Atlas()
 
-  let mainTex = loadTexture(path & ".png")
-  
-  result.textures = @[mainTex]
+  const imageCountConst = getImageCount(path)
+
   let stream = assetStaticStream(path & ".dat")
 
-  let amount = stream.readInt32()
-  for i in 0..<amount:
-    let 
-      nameLen = stream.readInt16()
-      name = stream.readStr(nameLen)
-      x = stream.readInt16()
-      y = stream.readInt16()
-      width = stream.readInt16()
-      height = stream.readInt16()
-      hasSplit = stream.readBool()
-      patch = newPatch(mainTex, x, y, width, height)
+  #number of images - ignored because it's read at compile time
+  discard stream.readUint8()
+  
+  var img = 0 #this is awful and pointless but the compiler yells at me if I don't put it here. it gets shadowed anyway
+  unroll(0..<imageCountConst, img):
+    let texture = loadTexture(path & $img & ".png")
+    result.textures.add texture
 
-    if hasSplit:
-      let
-        left = stream.readInt16()
-        right = stream.readInt16()
-        top = stream.readInt16()
-        bot = stream.readInt16()
-
-      result.patches9[name] = newPatch9(patch, left, right, top, bot)
+    let amount = stream.readInt32()
     
-    let duration = stream.readUint16()
+    for i in 0..<amount:
+      let 
+        nameLen = stream.readInt16()
+        name = stream.readStr(nameLen)
+        x = stream.readInt16()
+        y = stream.readInt16()
+        width = stream.readInt16()
+        height = stream.readInt16()
+        hasSplit = stream.readBool()
+        patch = newPatch(texture, x, y, width, height)
 
-    if duration != 0'u16:
-      result.durations[name] = duration.int
+      if hasSplit:
+        let
+          left = stream.readInt16()
+          right = stream.readInt16()
+          top = stream.readInt16()
+          bot = stream.readInt16()
 
-    result.patches[name] = patch
+        result.patches9[name] = newPatch9(patch, left, right, top, bot)
+      
+      let duration = stream.readUint16()
+
+      if duration != 0'u16:
+        result.durations[name] = duration.int
+
+      result.patches[name] = patch
 
   stream.close()
 

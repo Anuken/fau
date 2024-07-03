@@ -6,9 +6,22 @@ type FolderSettings = object
   outlineColor: ColorRGBA
   pad: int = -1
   bleed: int = -1
+  minSize: int = -1
+  maxSize: int = -1
   separate: bool = false
 
-type PackEntry = tuple[image: Image, file: string, pos: tuple[x, y: int], splits: array[4, int], duration: int, settings: FolderSettings]
+  #private state
+  imageIndex: int
+  packer: Packer
+
+type PackEntry = tuple[
+  image: Image, 
+  file: string, 
+  pos: tuple[x, y: int], 
+  splits: array[4, int], 
+  duration: int, 
+  settings: FolderSettings
+]
 
 from vmath import nil
 
@@ -63,15 +76,42 @@ proc getImageSize(file: string): tuple[w: int, h: int] =
     let h = cast[ptr uint16](addr outp[0])[]
     return (w.int, h.int)
 
+#TODO: should be in pack.json, not parameters
 proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min = 64, max = 2048, padding = 0, bleeding = 2, verbose = false, silent = false) =
   let 
     time = cpuTime()
-    packer = newPacker(min, min)
+    #packer = newPacker(min, min)
     blackRgba = rgba(0, 0, 0, 255)
   
   var 
+    #page index -> packer
+    packers: seq[Packer]
+    #maps image name -> pack data
     positions = initTable[string, PackEntry]()
+    #maps image index -> list of entries of that image
+    positionsByImage: seq[seq[PackEntry]]
+    #maps folder name -> settings
     settings = initTable[string, FolderSettings]()
+  
+  proc applyDefaults(settings: var FolderSettings) =
+    if settings.bleed < 0: settings.bleed = bleeding
+    if settings.pad < 0: settings.pad = padding
+    if settings.minSize < 0: settings.minSize = min
+    if settings.maxSize < 0: settings.maxSize = max
+
+    if settings.separate:
+      #separate image, make a new packer
+      settings.packer = newPacker(settings.minSize, settings.minSize)
+      settings.imageIndex = packers.len
+      packers.add settings.packer
+    elif settings.packer == nil: #unassigned (default) packer
+      if packers.len == 0:
+        #initialize the first packer, special case
+        settings.packer = newPacker(settings.minSize, settings.minSize)
+        packers.add settings.packer
+      else:
+        #use the first main packer
+        settings.packer = packers[0]
   
   proc getSettings(file: string): FolderSettings =
     let parent = file.parentDir
@@ -82,21 +122,32 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
       let settingsFile = parent / "folder.json"
       if settingsFile.fileExists:
         try:
-          let res = settingsFile.readFile.fromJson(FolderSettings)
+          var res = settingsFile.readFile.fromJson(FolderSettings)
+          applyDefaults(res)
           settings[parent] = res
           return res
         except CatchableError as e:
           echo "Error reading settings file ", settingsFile, " ", e.msg
+      elif parent != path and parent != "" and parent != ".": #recursively fetch settings of parent directory until path is reached
+        let parentSettings = getSettings(parent)
+        settings[parent] = parentSettings
+        return parentSettings
       
+      #default value
       result = FolderSettings()
+      applyDefaults(result)
       settings[parent] = result
+
+  #this MUST be called before any packing is done, as it reads the settings file in the main folder and creates a packer for it
+  discard getSettings(path / ".")
 
   proc packFile(file: string, image: Image, splits = [-1, -1, -1, -1], duration = 0, realFile = file) =
     let 
       settings = getSettings(realFile)
       name = file.splitFile.name
-      bleed = if settings.bleed < 0: bleeding else: settings.bleed
-      pad = if settings.pad < 0: padding else: settings.pad
+      bleed = settings.bleed
+      pad = settings.pad
+      packer = settings.packer
 
     if settings.outlineColor.a > 0:
       outline(image, settings.outlineColor)
@@ -125,7 +176,12 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
         else:
           packer.resize(packer.w, (packer.h + 1).nextPowerOfTwo)
     
-    positions[name] = (image, file, pos, splits, duration, settings)
+    if positionsByImage.len <= settings.imageIndex:
+      positionsByImage.setLen(max(positionsByImage.len, settings.imageIndex + 1))
+    
+    let entry = (image, file, pos, splits, duration, settings)
+    positions[name] = entry
+    positionsByImage[settings.imageIndex].add entry
 
   type PackEntry = tuple[file: string, size: int]
   var toPack: seq[PackEntry]
@@ -268,7 +324,6 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
     else:
       packFile(file, readImage(file))
 
-
   #save a white image
   if not positions.hasKey("white"):
     let img = newImage(1, 1)
@@ -283,66 +338,84 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
     
   output.parentDir.createDir()
 
-  var stream = openFileStream(&"{output}.dat", fmWrite)
-  var image = newImage(packer.w, packer.h)
+  #delete old sprite files
+  var deleteIndex = 0
+  var toDelete = ""
 
-  stream.write positions.len.int32
+  while toDelete == "" or toDelete.fileExists:
+    if toDelete != "":
+      toDelete.removeFile()
+      
+    toDelete = &"{output}{deleteIndex}.png"
+    deleteIndex.inc
+    
+  var stream = openFileStream(&"{output}.dat", fmWrite)
+
+  #var image = newImage(packer.w, packer.h)
+
+  stream.write(positionsByImage.len.uint8)
 
   if not silent:
     echo &"Saving {positions.len} images..."
 
   #blit packed images and write them to the stream
-  for region in positions.values:
-    image.draw(region.image, vmath.translate(vmath.vec2(region.pos.x.float32, region.pos.y.float32)))
+  for imageIndex, entries in positionsByImage:
+    var image = newImage(packers[imageIndex].w, packers[imageIndex].h)
 
-    let
-      bleed = if region.settings.bleed < 0: bleeding else: region.settings.bleed
+    stream.write(entries.len.int32)
 
-    #apply bleeding/gutters
-    if bleed > 0:
+    for region in entries:
+
+      image.draw(region.image, vmath.translate(vmath.vec2(region.pos.x.float32, region.pos.y.float32)))
+
       let
-        ix = region.pos.x
-        iy = region.pos.y
-        iw = region.image.width
-        ih = region.image.height
-      
-      for i in 0..<region.image.height:
-        for s in 1..bleed:
-          #left
-          image[ix - s, iy + i] = region.image[0, i]
-          #right
-          image[ix + s + iw - 1, iy + i] = region.image[iw - 1, i]
-      
-      for i in 0..<region.image.width:
-        for s in 1..bleed:
-          #bottom
-          image[ix + i, iy - s] = region.image[i, 0]
-          #top
-          image[ix + i, iy + s + ih - 1] = region.image[i, ih - 1]
+        bleed = if region.settings.bleed < 0: bleeding else: region.settings.bleed
 
-    stream.write region.file.splitFile.name.len.int16
-    stream.write region.file.splitFile.name
-    stream.write region.pos.x.int16
-    stream.write region.pos.y.int16
-    stream.write region.image.width.int16
-    stream.write region.image.height.int16
+      #apply bleeding/gutters
+      if bleed > 0:
+        let
+          ix = region.pos.x
+          iy = region.pos.y
+          iw = region.image.width
+          ih = region.image.height
+        
+        for i in 0..<region.image.height:
+          for s in 1..bleed:
+            #left
+            image[ix - s, iy + i] = region.image[0, i]
+            #right
+            image[ix + s + iw - 1, iy + i] = region.image[iw - 1, i]
+        
+        for i in 0..<region.image.width:
+          for s in 1..bleed:
+            #bottom
+            image[ix + i, iy - s] = region.image[i, 0]
+            #top
+            image[ix + i, iy + s + ih - 1] = region.image[i, ih - 1]
 
-    #write splits if present (-1 considered invalid value)
-    if region.splits[0] != -1:
-      stream.write true
-      for val in region.splits:
-        stream.write val.int16
-    else:
-      stream.write false
+      stream.write region.file.splitFile.name.len.int16
+      stream.write region.file.splitFile.name
+      stream.write region.pos.x.int16
+      stream.write region.pos.y.int16
+      stream.write region.image.width.int16
+      stream.write region.image.height.int16
+
+      #write splits if present (-1 considered invalid value)
+      if region.splits[0] != -1:
+        stream.write true
+        for val in region.splits:
+          stream.write val.int16
+      else:
+        stream.write false
+      
+      stream.write region.duration.uint16
     
-    stream.write region.duration.uint16
+    image.writeFile(&"{output}{imageIndex}.png")
   
   stream.close()
-  image.writeFile(&"{output}.png")
 
   if not silent:
     echo &"Done in {(cpuTime() - time).formatFloat(ffDecimal, 2)}s."
-  
   
 when isMainModule:
   import cligen
