@@ -351,8 +351,6 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
     
   var stream = openFileStream(&"{output}.dat", fmWrite)
 
-  #var image = newImage(packer.w, packer.h)
-
   stream.write(positionsByImage.len.uint8)
 
   if not silent:
