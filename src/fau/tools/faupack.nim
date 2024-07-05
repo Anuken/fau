@@ -77,7 +77,7 @@ proc getImageSize(file: string): tuple[w: int, h: int] =
     return (w.int, h.int)
 
 #TODO: should be in pack.json, not parameters
-proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min = 64, max = 2048, padding = 0, bleeding = 2, verbose = false, silent = false) =
+proc packImages(path: string, output: string = "atlas", tilemapFolder = "", verbose = false, silent = false) =
   let 
     time = cpuTime()
     #packer = newPacker(min, min)
@@ -92,12 +92,14 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
     positionsByImage: seq[seq[PackEntry]]
     #maps folder name -> settings
     settings = initTable[string, FolderSettings]()
+    #this is overwritten by a call later on, but the default values are still used once
+    defaultSettings = FolderSettings(minSize: 64, maxSize: 2048, pad: 0, bleed: 2)
   
   proc applyDefaults(settings: var FolderSettings) =
-    if settings.bleed < 0: settings.bleed = bleeding
-    if settings.pad < 0: settings.pad = padding
-    if settings.minSize < 0: settings.minSize = min
-    if settings.maxSize < 0: settings.maxSize = max
+    if settings.bleed < 0: settings.bleed = defaultSettings.bleed
+    if settings.pad < 0: settings.pad = defaultSettings.pad
+    if settings.minSize < 0: settings.minSize = defaultSettings.minSize
+    if settings.maxSize < 0: settings.maxSize = defaultSettings.maxSize
 
     if settings.separate:
       #separate image, make a new packer
@@ -139,7 +141,7 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
       settings[parent] = result
 
   #this MUST be called before any packing is done, as it reads the settings file in the main folder and creates a packer for it
-  discard getSettings(path / ".")
+  defaultSettings = getSettings(path / "pointless.png")
 
   proc packFile(file: string, image: Image, splits = [-1, -1, -1, -1], duration = 0, realFile = file) =
     let 
@@ -157,7 +159,7 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
     if positions.hasKey(name): 
       fail &"Duplicate image names: '{file}' and '{positions[name].file}'"
 
-    if image.width >= max or image.height >= max:
+    if image.width >= settings.maxSize or image.height >= settings.maxSize:
       fail &"Image '{file}' is too large to fit in this atlas ({image.width}x{image.height}). Increase the max atlas size."
     
     var pos: tuple[x, y: int] = (-1, -1)
@@ -168,8 +170,8 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
       if pos == (-1, -1):
         let increaseWidth = packer.w <= packer.h
 
-        if packer.w >= max and increaseWidth:
-          fail &"Failed to fit images into {max}x{max} texture. Last image packed: {file}"
+        if packer.w >= settings.maxSize and increaseWidth:
+          fail &"Failed to fit images into {settings.maxSize}x{settings.maxSize} texture. Last image packed: {file}"
         
         if increaseWidth:
           packer.resize((packer.w + 1).nextPowerOfTwo, packer.h)
@@ -366,8 +368,7 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", min 
 
       image.draw(region.image, vmath.translate(vmath.vec2(region.pos.x.float32, region.pos.y.float32)))
 
-      let
-        bleed = if region.settings.bleed < 0: bleeding else: region.settings.bleed
+      let bleed = region.settings.bleed
 
       #apply bleeding/gutters
       if bleed > 0:
@@ -419,8 +420,6 @@ when isMainModule:
   import cligen
 
   dispatch(packImages, help = {
-    "min": "minimum texture size",
-    "max": "maximum texture size",
     "path": "path of images to pack",
     "output": "name of output file(s)"
   })

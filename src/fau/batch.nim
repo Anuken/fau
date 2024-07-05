@@ -30,7 +30,7 @@ type CacheMesh = object
   clip: Rect
   blend: Blending
 
-type SpriteCache* = ref object
+type SpriteCache* = object
   meshes: seq[CacheMesh]
 
 type Batch* = ref object
