@@ -480,7 +480,7 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
     if i == 1:
       if wrap:
         (q2, q1) = preparePointyJoin(points[^1], a, b, hstroke)
-        (lq1, lq2) = (q1, q2)
+        (lq1, lq2) = (q2, q1)
       else:
         (q2, q1) = prepareFlatEndpoint(points[1], points[0], hstroke)
     
