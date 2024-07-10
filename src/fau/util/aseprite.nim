@@ -106,6 +106,8 @@ proc readAseStream*(s: Stream): AseImage =
       chunksNew = s.readUint32()
       chunks = if chunksNew == 0: chunksOld.uint32 else: chunksNew
 
+    var readImage = false
+
     for chunkId in 0..<chunks.int:
       let 
         chunkSize = s.readUint32()
@@ -177,6 +179,7 @@ proc readAseStream*(s: Stream): AseImage =
 
       elif chunkType == 0x2005'u16: #cel (image data)
         justReadTags = false
+        readImage = true
 
         let 
           layerIndex = s.readUint16()
@@ -215,6 +218,15 @@ proc readAseStream*(s: Stream): AseImage =
 
       else: #unknown chunk, skipping - I don't support indexed colors, so palettes do not matter
         skip(chunkSize.int - 6)
+    
+    if not readImage:
+
+      #add dummy empty 0x0 frame
+      for layerIndex in 0..<layerData.len:
+        layerData[layerIndex].frames.add AseFrame(
+          duration: durationMs.int,
+          x: 0, y: 0, width: 0, height: 0, opacity: 255'u8
+        )
     
   return AseImage(layers: layerData, width: width.int, height: height.int, colorDepth: colorDepth.int, tags: tags)
 
