@@ -46,7 +46,7 @@ proc igInputInt*(label: cstring, v: ptr int, step: int32 = 1, step_fast: int32 =
 
   v[] = i32
 
-proc igInputText*(label: cstring, text: var string, bufSize = 40, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags, callback: ImGuiInputTextCallback = nil, user_data: pointer = nil): bool {.discardable, inline.} =
+proc igInputText*(label: cstring, text: var string, bufSize = 64, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags, callback: ImGuiInputTextCallback = nil, user_data: pointer = nil): bool {.discardable, inline.} =
   var buff = newString(max(bufSize, text.len))
   buff[0..text.high] = text
 
@@ -57,7 +57,7 @@ proc igInputText*(label: cstring, text: var string, bufSize = 40, flags: ImGuiIn
   buff.setLen(len)
   text = buff
 
-proc igInputTextWithHint*(label: cstring, hint: cstring, text: var string, bufSize = 40, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags, callback: ImGuiInputTextCallback = nil, user_data: pointer = nil): bool {.discardable, inline.} =
+proc igInputTextWithHint*(label: cstring, hint: cstring, text: var string, bufSize = 64, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags, callback: ImGuiInputTextCallback = nil, user_data: pointer = nil): bool {.discardable, inline.} =
   var buff = newString(max(bufSize, text.len))
   buff[0..text.high] = text
 
