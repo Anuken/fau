@@ -24,6 +24,10 @@ func withA*(col: Color, val: float32): Color {.inline.} =
   result = col
   result.a = val
 
+func mulA*(col: Color, val: float32): Color {.inline.} =
+  result = col
+  result.a = result.a * val 
+
 func rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color {.inline.} = Color(rv: (clamp(r.float32) * 255f).uint8, gv: (clamp(g) * 255f).uint8, bv: (clamp(b) * 255f).uint8, av: (clamp(a) * 255f).uint8)
 
 func rgb*(r: float32, g: float32, b: float32): Color {.inline.} = rgba(r, g, b, 1f)
