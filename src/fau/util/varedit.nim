@@ -15,8 +15,6 @@ macro editable*(sec) =
     #with the editor disabled, it stays as-is
     result = sec
 
-macro foo*(varName, varType, varValue) = discard
-
 when defined(debugVarEdit):
   import ../g2/imgui
   export imgui
@@ -29,15 +27,8 @@ when defined(debugVarEdit):
     for node in allFields:
       let name = node.repr
       result.add quote do:
-        block: #TODO: use entityedit system for this.
-          #I could get this working, but it's not worth the effort.
-          #let defaultValue {.global.} = `node`
-
-          #if igButton("Reset", vec2(0f)):
-          #  `node` = defaultValue
-          #igSameLine()
-
-          #TODO: object support
+        block: 
+          #TODO: use entityedit system for this.
 
           when `node` is float32:
             igInputFloat(`name`, `node`.addr)

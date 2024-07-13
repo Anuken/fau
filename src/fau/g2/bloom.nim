@@ -69,7 +69,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
     #endif
 
     #ifdef COMBINE_RESULT
-    gl_FragColor = vec4(combined.rgb / mx, mx);
+    gl_FragColor = vec4(combined.rgb / mx, max(mx, combined.a));
     #else
     gl_FragColor = bloom;
     #endif
