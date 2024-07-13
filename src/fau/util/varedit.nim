@@ -19,7 +19,9 @@ when defined(debugVarEdit):
   import ../g2/imgui
   export imgui
 
-  var showDemo = true
+  var 
+    showDemo = true
+    searchText: string = ""
 
   macro buildVarEditUi =
     result = newStmtList()
@@ -29,21 +31,22 @@ when defined(debugVarEdit):
       result.add quote do:
         block: 
           #TODO: use entityedit system for this.
+          if (searchText == "" or `name`.toLowerAscii.contains(searchText.toLowerAscii)):
 
-          when `node` is float32:
-            igInputFloat(`name`, `node`.addr)
-          elif `node` is int:
-            var i32v: int32 = (`node`).int32
-            igInputInt(`name`, i32v.addr)
-            `node` = i32v
-          elif `node` is bool:
-            igCheckbox(`name`, `node`.addr)
-          elif `node` is Vec2:
-            igInputFloat2(`name`, `node`)
-          elif `node` is Color:
-            igColorEdit4(`name`, `node`)
-          else:
-            echo "Unknown type for editing for field: ", name
+            when `node` is float32:
+              igInputFloat(`name`, `node`.addr)
+            elif `node` is int:
+              var i32v: int32 = (`node`).int32
+              igInputInt(`name`, i32v.addr)
+              `node` = i32v
+            elif `node` is bool:
+              igCheckbox(`name`, `node`.addr)
+            elif `node` is Vec2:
+              igInputFloat2(`name`, `node`)
+            elif `node` is Color:
+              igColorEdit4(`name`, `node`)
+            else:
+              echo "Unknown type for editing for field: ", name
 
   var showEditor = false
 
@@ -53,6 +56,8 @@ when defined(debugVarEdit):
 
     if showEditor:
       igBegin("Variable Editor", addr showEditor)
+
+      igInputTextWithHint("##Search", "Search", searchText)
 
       buildVarEditUi()
 
