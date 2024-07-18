@@ -98,6 +98,7 @@ proc `$`*(color: Color): string = toHex(cast[uint32]((color.rv.uint32 shl 24) or
 
 const
   colorClear* = rgba(0, 0, 0, 0)
+  colorClearWhite* = rgba(1f, 1f, 1f, 0f)
   colorWhite* = rgb(1, 1, 1)
   colorBlack* = rgba(0, 0, 0)
   colorGray* = rgb(0.5f, 0.5f, 0.5f)

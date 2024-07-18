@@ -79,14 +79,14 @@ onEcsBuilt:
                           
                           igTreePop()
                       elif value is object:
-                        if igTreeNode(field):
+                        if igTreeNode(fieldLabel):
                           for ofield, ovalue in value.fieldpairs:
                             editField(ofield, ovalue)
                           igTreePop()
                       elif compiles($value):
                         igText((field & ": " & $value).cstring)
                       else:
-                        igText(field)
+                        igText(fieldLabel)
 
                     template listFields(obj: untyped): untyped = 
                       for field, value in obj.fieldpairs:

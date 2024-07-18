@@ -324,7 +324,7 @@ proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = co
       color, z
     )
 
-proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhite, edgeColor = colorClear, z: float32 = 0) =
+proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhite, edgeColor = colorClearWhite, z: float32 = 0) =
   let 
     sides = ceil(sides.float32 / 2.0).int * 2
     space = PI * 2.0 / sides.float32
