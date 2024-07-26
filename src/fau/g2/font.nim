@@ -2,7 +2,7 @@ import tables, unicode, packer, bitops
 import math
 import ../texture, ../patch, ../color, ../globals, ../util/misc, ../draw, ../assets
 
-from ../fmath import `+`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter
+from ../fmath import `+`, `*`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter, daBotLeft
 from pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`, dataIndex
 from vmath import x, y, `*`, `-`, `+`, isNaN, translate
 from bumpy import xy
@@ -13,6 +13,19 @@ type TexturePacker* = ref object
   texture*: Texture
   packer*: Packer
   image*: Image
+
+type TextStyle = enum
+  None,
+  Italic,
+  Bold,
+  Underline,
+  Strikethrough
+
+type Tag = object
+  color: Color = colorWhite
+  #None -> do nothing with style, it's color only
+  #Anything else -> apply the color AND toggle the style
+  style: TextStyle
 
 # Creates a new texture packer limited by the specified width/height
 proc newTexturePacker*(size: fmath.Vec2i): TexturePacker =
@@ -115,9 +128,9 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, out
   packer.update()
 
 #return (color, length)
-proc parseTag(text: string, start: int): (Color, int) =
+proc parseTag(text: openArray[char], start: int): (Tag, int) =
   case text[start]:
-  of ']': return (colorWhite, 1) #this means '[]', or the white color
+  of ']': return (Tag(), 1) #this means '[]', or the white color
   of '#': #color tag
     {.push checks: off}
     
@@ -140,40 +153,58 @@ proc parseTag(text: string, start: int): (Color, int) =
 
           colorInt = colorInt or 0xff
         
-        return (colorInt.rgbaToColor, i - start + 1)
+        return (Tag(color: colorInt.rgbaToColor), i - start + 1)
       
       if ch >= '0' and ch <= '9': colorInt = colorInt * 16 + (ch.uint32 - '0'.uint32)
       elif ch >= 'a' and ch <= 'f': colorInt = colorInt * 16 + (ch.uint32 - ('a'.uint32 - 10))
       elif ch >= 'A' and ch <= 'F': colorInt = colorInt * 16 + (ch.uint32 - ('A'.uint32 - 10))
       else: break #Unexpected character in hex color.
     
-    return (colorWhite, -1)
+    return (Tag(), -1)
 
     {.pop.}
   #invalid (custom color names not supported)
-  else: return (colorWhite, -1)
+  else: return (Tag(), -1)
 
 #returns (displayed string, seq[(color, startPos)])
-proc parseMarkup(text: string): (string, seq[(Color, int)]) =
+proc parseMarkup(text: openArray[char]): (string, seq[(Tag, int)]) =
   var 
     i = 0
     builder = newStringOfCap(text.len)
-    tags: seq[(Color, int)]
+    tags: seq[(Tag, int)]
     lastPos = -1
+
+  template applyFormat(i: int, newStyle: TextStyle) =
+    if lastPos != builder.len:
+      let lastColor = if tags.len == 0: colorWhite else: tags[^1][0].color
+      tags.add (Tag(style: newStyle, color: lastColor), builder.len)
+      lastPos = builder.len
+    else:
+      #special case: there are two tags right next to each other with no spacing, overwrite the head tag
+      let prev = tags[^1][0].style
+      
+      tags[^1][0].style = if newStyle == prev: None else: newStyle
 
   while i < text.len:
     #parse tag
     if i < text.len - 1 and text[i] == '[' and text[i + 1] != '[' and (i == 0 or text[i - 1] != '['):
-      let (color, len) = parseTag(text, i + 1)
+      let (tag, len) = parseTag(text, i + 1)
 
       if len > 0:
         i += len + 1
         if lastPos != builder.len:
-          tags.add (color, builder.len)
+          tags.add (tag, builder.len)
           lastPos = builder.len
         else:
           #special case: there are two tags right next to each other with no spacing, overwrite the head tag
-          tags[^1] = (color, builder.len)
+          tags[^1] = (tag, builder.len)
+        continue
+    
+    #parse markup character
+    if i == 0 or text[i - 1] != '\\':
+      if text[i] == '*':
+        applyFormat(i, Italic)
+        i.inc
         continue
     
     builder &= text[i]
@@ -184,7 +215,8 @@ proc parseMarkup(text: string): (string, seq[(Color, int)]) =
 proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false) =
   var 
     plainText: string
-    colors: seq[(Color, int)]
+    styles: set[TextStyle] = {}
+    colors: seq[(Tag, int)]
 
   if markup:
     (plainText, colors) = parseMarkup(text)
@@ -203,32 +235,44 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
     let ch = arrangement.selectionRects[i]
     let p = arrangement.positions[i]
 
+    if colors.len > 0 and markupIndex < colors.len:
+      let next = colors[markupIndex]
+      #encountered the next color
+      if i >= next[1]:
+        currentColor = next[0].color
+        currentColor.a = color.a * currentColor.a
+        
+        let style = next[0].style
+        if style != None:
+          if style in styles:
+            styles.excl style
+          else:
+            styles.incl style
+        
+        markupIndex.inc
+
     if font.patches.hasKey(rune):
       let offset = font.offsets[rune]
       let patch = font.patches[rune]
-
-      if colors.len > 0 and markupIndex < colors.len:
-        let next = colors[markupIndex]
-        #encountered the next color
-        if i >= next[1]:
-          currentColor = next[0]
-          currentColor.a = color.a * currentColor.a
-          markupIndex.inc
 
       var
         glyphIndex = i
         glyphOffset = fmath.vec2()
         glyphColor = currentColor
         glyphDraw = true
+        skew = 0f
+      
+      if Italic in styles:
+        skew = patch.height * 0.75f * 0.5f
 
       if modifier != nil:
         modifier(glyphIndex, glyphOffset, glyphColor, glyphDraw)
 
       if glyphDraw:
-        drawRect(patch,
-          (p.x + offset.x) * scale + pos.x + glyphOffset.x,
-          (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y,
-          patch.widthf*scale, patch.heightf*scale, color = glyphColor, z = z
+        drawv(patch,
+          fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y),
+          [fmath.vec2(-skew, 0f), fmath.vec2(skew, 0f), fmath.vec2(skew, 0f), fmath.vec2(-skew, 0f)],
+          size = patch.size * scale, align = daBotLeft, color = glyphColor, z = z
         )
 
 proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false) =
