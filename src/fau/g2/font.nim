@@ -2,7 +2,7 @@ import tables, unicode, packer, bitops
 import math
 import ../texture, ../patch, ../color, ../globals, ../util/misc, ../draw, ../assets
 
-from ../fmath import `+`, `*`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter, daBotLeft
+from ../fmath import `+`, `*`, `-`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter, daBotLeft
 from pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`, dataIndex
 from vmath import x, y, `*`, `-`, `+`, isNaN, translate
 from bumpy import xy
@@ -45,10 +45,13 @@ proc update*(packer: TexturePacker) =
   packer.texture.load(fmath.vec2i(packer.image.width, packer.image.height), addr packer.image.data[0])
 
 type 
+  FontGlyph = object
+    patch: Patch
+    offset, down, realSize: fmath.Vec2
+
   Font* = ref object
     font: pixie.Font
-    patches: Table[Rune, Patch]
-    offsets: Table[Rune, fmath.Vec2]
+    glyphs: Table[Rune, FontGlyph]
   GlyphProc* = proc(index: int, offset: var fmath.Vec2, color: var Color, draw: var bool)
 
 proc toVAlign(align: Align): pixie.VerticalAlignment {.inline.} =
@@ -89,10 +92,11 @@ proc outline(image: Image, color: chroma.ColorRGBA, diagonal: bool) =
         if found:
           image[x, y] = color
 
-proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color, diagonalOutline: bool): (Image, fmath.Vec2) =
+proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color, diagonalOutline: bool): (Image, fmath.Vec2, fmath.Vec2, fmath.Vec2) =
   var path = font.typeface.getGlyphPath(r)
   path.transform(vmath.scale(vmath.vec2(font.scale)))
   let bounds = path.computeBounds()
+  
   #no path found
   if bounds.w < 1 or bounds.h < 1: return
   let bxy = -bounds.xy
@@ -102,6 +106,8 @@ proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color
   #TODO this method of outlining only works for pixel fonts. there's almost certainly a better way
   if outline: result[0].outline(cast[chroma.ColorRGBA](outlineColor), diagonalOutline)
   result[1] = fmath.vec2(bounds.xy) + fmath.vec2(if outline: -(sizeOffset.float32 / 2f) else: 0f)
+  result[3] = fmath.vec2(bounds.w, bounds.h)
+  result[2] = -(result[1] + fmath.vec2(bounds.w, bounds.h))
 
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 
@@ -110,7 +116,7 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, out
 
   font.size = size
 
-  result = Font(font: font, patches: initTable[Rune, Patch]())
+  result = Font(font: font)
 
   let packer = newTexturePacker(fmath.vec2i(textureSize, textureSize))
 
@@ -118,12 +124,11 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, out
   for ch in 0x0020'u16..0x00FF'u16:
     let code = Rune(ch)
 
-    let (image, offset) = font.getGlyphImage(code, outline, outlineColor, diagonalOutline)
+    let (image, offset, down, realSize) = font.getGlyphImage(code, outline, outlineColor, diagonalOutline)
     if image.isNil: continue
 
     let patch = packer.pack(image)
-    result.patches[code] = patch
-    result.offsets[code] = offset
+    result.glyphs[code] = FontGlyph(patch: patch, offset: offset, down: down, realSize: realSize)
 
   packer.update()
 
@@ -251,29 +256,44 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
         
         markupIndex.inc
 
-    if font.patches.hasKey(rune):
-      let offset = font.offsets[rune]
-      let patch = font.patches[rune]
+    font.glyphs.withValue(rune, glyph):
+      let 
+        offset = glyph.offset
+        patch = glyph.patch
+        skewOffset = glyph.down.y
 
       var
         glyphIndex = i
         glyphOffset = fmath.vec2()
         glyphColor = currentColor
         glyphDraw = true
-        skew = 0f
+        skew1 = 0f
+        skew2 = 0f
       
       if Italic in styles:
-        skew = patch.height * 0.75f * 0.5f
+        let 
+          skewScl = 0.3f
+          total = patch.heightf * scale * skewScl
+          weight = (-skewOffset) / glyph.realSize.y
+          off = -(font.font.typeface.ascent * font.font.scale)/2f * skewScl * scale
+        
+        skew2 = total * (1f - weight) + off
+        skew1 = total * (weight) - off
 
       if modifier != nil:
         modifier(glyphIndex, glyphOffset, glyphColor, glyphDraw)
 
       if glyphDraw:
+        
+        #TODO: skewing should be based off of standard baseline
         drawv(patch,
-          fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y),
-          [fmath.vec2(-skew, 0f), fmath.vec2(skew, 0f), fmath.vec2(skew, 0f), fmath.vec2(-skew, 0f)],
+          fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, 
+          (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y),
+          [fmath.vec2(-skew1, 0f), fmath.vec2(skew2, 0f), fmath.vec2(skew2, 0f), fmath.vec2(-skew1, 0f)],
           size = patch.size * scale, align = daBotLeft, color = glyphColor, z = z
         )
+
+        #lineRect(fmath.rect(fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y), patch.size * scale), stroke = 1f, color = colorGreen, z = z)
 
 proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false) =
   draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier, markup)
