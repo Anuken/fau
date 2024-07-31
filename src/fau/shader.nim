@@ -15,6 +15,7 @@ type ShaderUniType = enum
   u2f,
   u3f,
   u4f,
+  ucolor,
   u1i,
   u2i,
   umat4,
@@ -31,8 +32,10 @@ type ShaderUniform = object
     v2f: Vec2
   of u3f: 
     v3f: Vec3
+  of ucolor: 
+    vcolor: Color
   of u4f: 
-    v4f: Color
+    v4f: (float32, float32, float32, float32)
   of u1i:
     v1i: int
   of u2i:
@@ -301,8 +304,14 @@ proc uniform*(shader: Shader, name: string, value: array[3, float32]) =
 
 proc uniform*(shader: Shader, name: string, value: Color) =
   shader.withUniform(name): 
-    if not (uni.kind == u4f and uni.v4f == value):
+    if not (uni.kind == ucolor and uni.vcolor == value):
       glUniform4f(loc.GLint, value.r, value.g, value.b, value.a)
+      shader.uniforms[name] = ShaderUniform(kind: ucolor, vcolor: value, loc: uni.loc)
+
+proc uniform*(shader: Shader, name: string, value: (float32, float32, float32, float32)) =
+  shader.withUniform(name): 
+    if not (uni.kind == u4f and uni.v4f == value):
+      glUniform4f(loc.GLint, value[0], value[1], value[2], value[3])
       shader.uniforms[name] = ShaderUniform(kind: u4f, v4f: value, loc: uni.loc)
 
 #TODO internal use only?
