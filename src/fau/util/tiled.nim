@@ -58,6 +58,7 @@ type
 
   TileLayer* = ref object
     name*: string
+    visible*: bool
     properties*: TiledProps
     width*, height*: int
     hasTiles*: bool

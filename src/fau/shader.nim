@@ -314,7 +314,6 @@ proc uniform*(shader: Shader, name: string, value: (float32, float32, float32, f
       glUniform4f(loc.GLint, value[0], value[1], value[2], value[3])
       shader.uniforms[name] = ShaderUniform(kind: u4f, v4f: value, loc: uni.loc)
 
-#TODO internal use only?
 macro uniforms*(shader: Shader, body: untyped): untyped =
   result = newStmtList()
 
