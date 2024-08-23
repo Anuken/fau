@@ -1,4 +1,4 @@
-import ../[atlas, patch, globals], math
+import ../[atlas, patch, globals, fmath], math
 
 type Animation* = object
   frames: seq[Patch]
@@ -13,7 +13,7 @@ proc frame*(anim: Animation, time = fau.time, loop = false): Patch =
   if anim.frames.len == 0: #you messed up
     fau.atlas.error
   elif anim.delay > 0f: #easy, optimized case - all frames same length, just divide to get it
-    anim.frames[(realTime / anim.delay).int.mod(anim.frames.len)]
+    anim.frames[(realTime / anim.delay).int.mod(anim.frames.len).clamp(0, anim.frames.len - 1)]
   else: #slow case: iterate through frames and find one based on duration
     let real = realTime mod anim.duration
     var counter = 0f

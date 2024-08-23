@@ -289,36 +289,40 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", verb
             for i, frame in layer.frames:
               #if there is 1 frame, don't add a suffix, otherwise use 0-indexing
               let frameName = if layer.frames.len == 1: imageName else: imageName & $i
-
-              #copy layer RGBA data into new image
-              let image = newImage(frame.width, frame.height)
-              copyMem(addr image.data[0], addr frame.data[0], frame.width * frame.height * 4)
               
-              #aseprite layers are "cropped", so each layer needs to have a new image made with the uncropped version
-              let full = 
-                if crop: 
-                  image #it's pre-cropped, whee
-                elif centerX:
-                  #needs to be cropped to the X axis (centered)
-                  let 
-                    padding = min(frame.x, aseFile.width - (frame.x + frame.width))
-                    r = newImage(aseFile.width - padding * 2, aseFile.height)
-                  
-                  r.draw(image, translate(vec2((r.width/2f-image.width/2f).int, frame.y.float32)))
-                  r
+              if frame.width == 0 and frame.height == 0: #empty frame
+                packFile(file / frameName, newImage(1, 1), duration = frame.duration, realFile = file)
+              else:
 
-                else:
-                  let r = newImage(aseFile.width, aseFile.height)
-                  r.draw(image, translate(vec2(frame.x.float32, frame.y.float32)))
-                  r
+                #copy layer RGBA data into new image
+                let image = newImage(frame.width, frame.height)
+                copyMem(addr image.data[0], addr frame.data[0], frame.width * frame.height * 4)
+                
+                #aseprite layers are "cropped", so each layer needs to have a new image made with the uncropped version
+                let full = 
+                  if crop: 
+                    image #it's pre-cropped, whee
+                  elif centerX:
+                    #needs to be cropped to the X axis (centered)
+                    let 
+                      padding = min(frame.x, aseFile.width - (frame.x + frame.width))
+                      r = newImage(aseFile.width - padding * 2, aseFile.height)
+                    
+                    r.draw(image, translate(vec2((r.width/2f-image.width/2f).int, frame.y.float32)))
+                    r
 
-              if frame.opacity != 255'u8 or layer.opacity != 255'u8:
-                full.applyOpacity(frame.opacity.float32 / 255f * layer.opacity.float32 / 255f)
+                  else:
+                    let r = newImage(aseFile.width, aseFile.height)
+                    r.draw(image, translate(vec2(frame.x.float32, frame.y.float32)))
+                    r
 
-              if layer.userData == "outline" or layer.userData == "outlined":
-                outline(full, if layer.userColor == 0'u32: blackRgba else: cast[ColorRGBA](layer.userColor))
+                if frame.opacity != 255'u8 or layer.opacity != 255'u8:
+                  full.applyOpacity(frame.opacity.float32 / 255f * layer.opacity.float32 / 255f)
 
-              packFile(file / frameName, full, duration = frame.duration, realFile = file)
+                if layer.userData == "outline" or layer.userData == "outlined":
+                  outline(full, if layer.userColor == 0'u32: blackRgba else: cast[ColorRGBA](layer.userColor))
+
+                packFile(file / frameName, full, duration = frame.duration, realFile = file)
       
       except CatchableError:
         echo "Failed to read file ", file, ": ", getCurrentExceptionMsg()

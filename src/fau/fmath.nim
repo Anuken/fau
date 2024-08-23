@@ -1053,7 +1053,7 @@ template particlesLifeAngle*(seed: int, amount: int, ppos: Vec2, basefin: float3
       rot {.inject, used.} = rotation + r.rand(-spread..spread).float32
       count {.inject, used.} = i
       v = vec2l(rot, r.rand(radius * fin))
-      pos {.inject.} = ppos + v
+      pos {.inject, used.} = ppos + v
     if fin <= 1f:
       body
 

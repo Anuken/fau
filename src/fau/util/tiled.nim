@@ -58,6 +58,7 @@ type
 
   TileLayer* = ref object
     name*: string
+    visible*: bool
     properties*: TiledProps
     width*, height*: int
     hasTiles*: bool
@@ -301,7 +302,11 @@ template loadFromProperties*(obj: typed, properties: TiledProps): untyped =
     when value is Vec2:
       if props.has(field & "X"): value.x = props.getFloat(field & "X")
       if props.has(field & "Y"): value.y = props.getFloat(field & "Y")
-
+    elif value is seq[float32] or value is array: #TODO this implementation is horrible
+      for i, arrayval in value.mpairs:
+        let key = field & $(i + 1)
+        if props.has(key):
+          arrayval = props.getFloat(key)
     else:
       if props.has(field):
         when value is float32: value = props.getFloat(field)

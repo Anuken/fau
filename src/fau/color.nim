@@ -24,6 +24,10 @@ func withA*(col: Color, val: float32): Color {.inline.} =
   result = col
   result.a = val
 
+func mulA*(col: Color, val: float32): Color {.inline.} =
+  result = col
+  result.a = result.a * val 
+
 func rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color {.inline.} = Color(rv: (clamp(r.float32) * 255f).uint8, gv: (clamp(g) * 255f).uint8, bv: (clamp(b) * 255f).uint8, av: (clamp(a) * 255f).uint8)
 
 func rgb*(r: float32, g: float32, b: float32): Color {.inline.} = rgba(r, g, b, 1f)
@@ -94,6 +98,7 @@ proc `$`*(color: Color): string = toHex(cast[uint32]((color.rv.uint32 shl 24) or
 
 const
   colorClear* = rgba(0, 0, 0, 0)
+  colorClearWhite* = rgba(1f, 1f, 1f, 0f)
   colorWhite* = rgb(1, 1, 1)
   colorBlack* = rgba(0, 0, 0)
   colorGray* = rgb(0.5f, 0.5f, 0.5f)

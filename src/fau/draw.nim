@@ -324,7 +324,7 @@ proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = co
       color, z
     )
 
-proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhite, edgeColor = colorClear, z: float32 = 0) =
+proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhite, edgeColor = colorClearWhite, z: float32 = 0, scl = vec2(1f)) =
   let 
     sides = ceil(sides.float32 / 2.0).int * 2
     space = PI * 2.0 / sides.float32
@@ -332,11 +332,11 @@ proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhite
   for i in countup(0, sides - 1, 2):
     fillQuad(
       pos, centerColor,
-      pos + vec2(cos(space * i.float32), sin(space * i.float32)) * radius,
+      pos + vec2(cos(space * i.float32), sin(space * i.float32)) * radius * scl,
       edgeColor,
-      pos + vec2(cos(space * (i + 1).float32), sin(space * (i + 1).float32)) * radius,
+      pos + vec2(cos(space * (i + 1).float32), sin(space * (i + 1).float32)) * radius * scl,
       edgeColor,
-      pos + vec2(cos(space * (i + 2).float32), sin(space * (i + 2).float32)) * radius,
+      pos + vec2(cos(space * (i + 2).float32), sin(space * (i + 2).float32)) * radius * scl,
       edgeColor,
       z
     )
