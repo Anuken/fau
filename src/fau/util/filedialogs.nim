@@ -1,16 +1,22 @@
 import tinyfd/tinyfd
 
-when defined(Windows):
-  import sequtils
-
 proc saveFileDialog*(title = "Save File", defaultPathAndFile = "", patterns: seq[string] = @["*.*"], filterDescription = "All Files"): string =
   var patList = patterns
   #does not work properly on macos
   when defined(macosx): patList.insert("", 0)
   
   when defined(Windows):
-    var pats = patList.mapIt(it.newWideCString)
-    result = $tinyfd_saveFileDialogW(title.newWideCString, defaultPathAndFile.newWideCString, pats.len.cint, cast[ptr UncheckedArray[WideCString]](addr pats[0]), filterDescription.newWideCString)
+    var 
+      pats: seq[WideCString]
+      #needed to delay destruction, otherwise the WideCString gets dealloc'd
+      patsdata: seq[WideCStringObj]
+
+    for s in patList:
+      patsdata.add s.newWideCString
+      pats.add patsdata[^1].toWideCString
+
+    let data = tinyfd_saveFileDialogW(title.newWideCString, defaultPathAndFile.newWideCString, pats.len.cint, addr pats[0], filterDescription.newWideCString)
+    result = if data == nil: "" else: $data
   else:
     var pats = allocCStringArray(patList)
     result = $tinyfd_saveFileDialog(title.cstring, defaultPathAndFile.cstring, patList.len.cint, pats, filterDescription.cstring)
@@ -22,8 +28,17 @@ proc openFileDialog*(title = "Open File", defaultPathAndFile = "", patterns: seq
   when defined(macosx): patList.insert("", 0)
   
   when defined(Windows):
-    var pats = patList.mapIt(it.newWideCString)
-    result = $tinyfd_openFileDialogW(title.newWideCString, defaultPathAndFile.newWideCString, pats.len.cint, cast[ptr UncheckedArray[WideCString]](addr pats[0]), filterDescription.newWideCString, multiSelect.cint)
+    var 
+      pats: seq[WideCString]
+      #needed to delay destruction, otherwise the WideCString gets dealloc'd
+      patsdata: seq[WideCStringObj]
+
+    for s in patList:
+      patsdata.add s.newWideCString
+      pats.add patsdata[^1].toWideCString
+    
+    let data = tinyfd_openFileDialogW(title.newWideCString, defaultPathAndFile.newWideCString, pats.len.cint, addr pats[0], filterDescription.newWideCString, multiSelect.cint)
+    result = if data == nil: "" else: $data
   else:
     var pats = allocCStringArray(patList)
     result = $tinyfd_openFileDialog(title.cstring, defaultPathAndFile.cstring, patList.len.cint, pats, filterDescription.cstring, multiSelect.cint)
