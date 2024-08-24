@@ -10,7 +10,7 @@ proc saveFileDialog*(title = "Save File", defaultPathAndFile = "", patterns: seq
   
   when defined(Windows):
     var pats = patList.mapIt(it.newWideCString)
-    result = $tinyfd_saveFileDialogW(title.newWideCString, defaultPathAndFile.newWideCString, pats.len.cint, cast[ptr UncheckedArray[WideCString]](pats[0]), filterDescription.newWideCString)
+    result = $tinyfd_saveFileDialogW(title.newWideCString, defaultPathAndFile.newWideCString, pats.len.cint, cast[ptr UncheckedArray[WideCString]](addr pats[0]), filterDescription.newWideCString)
   else:
     var pats = allocCStringArray(patList)
     result = $tinyfd_saveFileDialog(title.cstring, defaultPathAndFile.cstring, patList.len.cint, pats, filterDescription.cstring)
@@ -23,7 +23,7 @@ proc openFileDialog*(title = "Open File", defaultPathAndFile = "", patterns: seq
   
   when defined(Windows):
     var pats = patList.mapIt(it.newWideCString)
-    result = $tinyfd_openFileDialogW(title.newWideCString, defaultPathAndFile.newWideCString, pats.len.cint, cast[ptr UncheckedArray[WideCString]](pats[0]), filterDescription.newWideCString, multiSelect.cint)
+    result = $tinyfd_openFileDialogW(title.newWideCString, defaultPathAndFile.newWideCString, pats.len.cint, cast[ptr UncheckedArray[WideCString]](addr pats[0]), filterDescription.newWideCString, multiSelect.cint)
   else:
     var pats = allocCStringArray(patList)
     result = $tinyfd_openFileDialog(title.cstring, defaultPathAndFile.cstring, patList.len.cint, pats, filterDescription.cstring, multiSelect.cint)
