@@ -5,6 +5,49 @@ import macros
 var
   allFields {.compileTime.}: seq[NimNode]
 
+template editFieldUi*(field: string, value: untyped): untyped =
+  let fieldLabel {.used.} = field.cstring
+
+  when value is int or value is int32:
+    igInputInt(fieldLabel, addr value)
+  elif value is float32:
+    igInputFloat(fieldLabel, addr value)
+  elif value is Vec2:
+    igInputFloat2(fieldLabel, value)
+  elif value is Vec2i:
+    igInputInt2(fieldLabel, value)
+  elif value is Rect:
+    igInputFloat4(fieldLabel, value)
+  elif value is Color:
+    igColorEdit4(fieldLabel, value)
+  elif value is bool:
+    igCheckbox(fieldLabel, addr value)
+  elif value is string:
+    igInputText(fieldLabel, value)
+  elif value is ref object:
+    igText(($value[]).cstring)
+  elif value is EntityRef:
+    igText((field & " Entity#" & $value.entityId.int).cstring)
+  elif value is array or value is seq:
+    if igTreeNode(field):
+      for i, arrayval in value.mpairs:
+        editFieldUi($i, arrayval)
+      
+      igTreePop()
+  elif value is object:
+    if igTreeNode(fieldLabel):
+      for ofield, ovalue in value.fieldpairs:
+        editFieldUi(ofield, ovalue)
+      igTreePop()
+  elif compiles($value):
+    igText((field & ": " & $value).cstring)
+  else:
+    igText(fieldLabel)
+
+template listFieldsUi*(obj: untyped): untyped = 
+  for field, value in obj.fieldpairs:
+    editFieldUi(field, value)
+
 macro editable*(sec) =
 
   when defined(debugVarEdit):
@@ -29,24 +72,9 @@ when defined(debugVarEdit):
     for node in allFields:
       let name = node.repr
       result.add quote do:
-        block: 
-          #TODO: use entityedit system for this.
+        block:
           if (searchText == "" or `name`.toLowerAscii.contains(searchText.toLowerAscii)):
-
-            when `node` is float32:
-              igInputFloat(`name`, `node`.addr)
-            elif `node` is int:
-              var i32v: int32 = (`node`).int32
-              igInputInt(`name`, i32v.addr)
-              `node` = i32v
-            elif `node` is bool:
-              igCheckbox(`name`, `node`.addr)
-            elif `node` is Vec2:
-              igInputFloat2(`name`, `node`)
-            elif `node` is Color:
-              igColorEdit4(`name`, `node`)
-            else:
-              echo "Unknown type for editing for field: ", name
+            editFieldUi(`name`, `node`)
 
   var showEditor = false
 
