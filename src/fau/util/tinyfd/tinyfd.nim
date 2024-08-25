@@ -16,5 +16,5 @@ proc tinyfd_openFileDialog*(title, defaultPathAndFile: cstring, numOfFilterPatte
 
 when defined(Windows):
   
-  proc tinyfd_saveFileDialogW*(title, defaultPathAndFile: WideCString, numOfFilterPatterns: cint, filterPatterns: ptr UncheckedArray[WideCString], singleFilterDescription: WideCString): WideCString {.cdecl, header: "tinyfiledialogs.h".}
-  proc tinyfd_openFileDialogW*(title, defaultPathAndFile: WideCString, numOfFilterPatterns: cint, filterPatterns: ptr UncheckedArray[WideCString], singleFilterDescription: WideCString, aAllowMultipleSelects: cint): WideCString {.cdecl, header: "tinyfiledialogs.h".}
+  proc tinyfd_saveFileDialogW*(title, defaultPathAndFile: WideCString, numOfFilterPatterns: cint, filterPatterns: ptr WideCString, singleFilterDescription: WideCString): WideCString {.cdecl, header: "tinyfiledialogs.h".}
+  proc tinyfd_openFileDialogW*(title, defaultPathAndFile: WideCString, numOfFilterPatterns: cint, filterPatterns: ptr WideCString, singleFilterDescription: WideCString, aAllowMultipleSelects: cint): WideCString {.cdecl, header: "tinyfiledialogs.h".}
