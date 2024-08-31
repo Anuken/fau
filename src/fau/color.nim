@@ -56,6 +56,36 @@ func hsv*(h, s, v: float32, a = 1f): Color =
   of 4: rgba(t, p, v, a)
   else: rgba(v, p, q, a)
 
+func toHsv(color: Color): tuple[h: float32, s: float32, v: float32] =
+  let max = max(max(color.r, color.g), color.b)
+  let min = min(min(color.r, color.g),color.b)
+  let ran = max - min
+
+  if ran == 0f:
+    result[0] = 0f
+  elif max == color.r:
+    result[0] = (60f * (color.g - color.b) / ran + 360) mod 360f
+  elif max == color.g:
+    result[0] = 60f * (color.b - color.r) / ran + 120f
+  else:
+    result[0] = 60f * (color.r - color.g) / ran + 240f
+
+  if max > 0:
+    result[1] = 1 - min / max
+  else:
+    result[1] = 0;
+  
+  result[0] /= 360f
+  
+  result[2] = max
+
+func shiftHsv*(color: Color, h = 0f, s = 0f, v = 0f): Color =
+  var hsv = color.toHsv()
+  hsv[0] = emod(hsv[0] + h, 1f)
+  hsv[1] = clamp(hsv[1] + s)
+  hsv[2] = clamp(hsv[2] + v)
+  return hsv(hsv[0], hsv[1], hsv[2], color.a)
+
 func `/`*(a, b: Color): Color {.inline.} = rgba(a.r / b.r, a.g / b.g, a.b / b.b, a.a / b.a)
 func `/`*(a: Color, b: float32): Color {.inline.} = rgba(a.r / b, a.g / b, a.b / b, a.a)
 
