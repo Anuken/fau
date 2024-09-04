@@ -70,11 +70,11 @@ type MeshParam* = object
   viewport*: Rect #empty rectangle means use buffer bounds
 
 const
-  blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha)
+  blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha, srcAlpha: GlOne, dstAlpha: GlOneMinusSrcAlpha)
   blendMaxAlpha* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha, eqAlpha: GlMax)
   blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
   blendPremultiplied* = Blending(src: GlOne, dst: GlOneMinusSrcAlpha)
-  blendErase* = Blending(src: GlZero, dst: GlOneMinusSrcAlpha)
+  blendErase* = Blending(src: GlZero, dst: GlOneMinusSrcAlpha, eqAlpha: GlFuncReverseSubtract)
   #implies glDisable(GlBlend)
   blendDisabled* = Blending(src: GlZero, dst: GlZero)
 
