@@ -398,7 +398,7 @@ proc spikes*(pos: Vec2, sides: int, radius: float32, len: float32, stroke = 1f.p
     let ang = i / sides * 360f.rad + rotation
     lineAngle(pos + vec2l(ang, radius), ang, len, stroke, color, z = z)
 
-proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
+proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f, scl = vec2(1f)) =
   let 
     space = PI*2 / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)
@@ -414,10 +414,10 @@ proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px
       sin2f = sin(a + space)
 
     fillQuad(
-      pos + vec2(cosf, sinf) * r1,
-      pos + vec2(cos2f, sin2f) * r1,
-      pos + vec2(cos2f, sin2f) * r2,
-      pos + vec2(cosf, sinf) * r2,
+      pos + vec2(cosf, sinf) * r1 * scl,
+      pos + vec2(cos2f, sin2f) * r1 * scl,
+      pos + vec2(cos2f, sin2f) * r2 * scl,
+      pos + vec2(cosf, sinf) * r2 * scl,
       color, z
     )
 
