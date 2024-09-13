@@ -651,6 +651,7 @@ proc `xy=`*(r: var Rect, pos: Vec2) {.inline.} =
 proc pos*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
 proc size*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
 proc wh*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
+proc area*(r: Rect): float32 {.inline.} = r.w * r.h
 
 proc botLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
 proc topLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y + r.h)

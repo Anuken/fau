@@ -177,7 +177,7 @@ proc postHook*(map: var Tilemap) =
   for layer in map.layers:
     for obj in layer.objects:
       obj.tile = gidToTile[obj.gid]
-      obj.pos = vec2(obj.x, map.height * map.tileheight - obj.y)
+      obj.pos = vec2(obj.x, map.height * map.tileheight - (obj.y + (if obj.tile == map.emptyTile and not obj.ellipse: obj.height else: 0f)))
       obj.size = vec2(obj.width, obj.height)
 
     if layer.data != "":

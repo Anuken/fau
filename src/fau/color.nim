@@ -116,7 +116,9 @@ template `%`*(str: static[string]): Color =
   ret
 
 proc parseColor*(str: string): Color =
-  let offset = if str[0] == '#': 1 else: 0
+  let offset = if str.len > 0 and str[0] == '#': 1 else: 0
+  if str.len - offset < 6: return Color()
+
   Color(
     rv: str[(0+offset)..(1+offset)].parseHexInt.uint8, 
     gv: str[(2+offset)..(3+offset)].parseHexInt.uint8, 
