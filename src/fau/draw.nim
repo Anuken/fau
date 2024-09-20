@@ -283,20 +283,20 @@ proc fillQuad*(v1: Vec2, c1: Color, v2: Vec2, c2: Color, v3: Vec2, c3: Color, v4
 proc fillQuad*(v1, v2, v3, v4: Vec2, color: Color, z = 0f, blend = blendNormal) =
   fillQuad(v1, color, v2, color, v3, color, v4, color, z, blend = blend)
 
-proc fillRect*(x, y, w, h: float32, color = colorWhite, z = 0f) =
-  drawRect(fau.white, x, y, w, h, color = color, z = z)
+proc fillRect*(x, y, w, h: float32, color = colorWhite, z = 0f, blend = blendNormal) =
+  drawRect(fau.white, x, y, w, h, color = color, z = z, blend = blend)
 
-proc fillSquare*(pos: Vec2, radius: float32, color = colorWhite, z = 0f) =
-  draw(fau.white, pos, size = vec2(radius * 2f), color = color, z = z)
+proc fillSquare*(pos: Vec2, radius: float32, color = colorWhite, z = 0f, blend = blendNormal) =
+  draw(fau.white, pos, size = vec2(radius * 2f), color = color, z = z, blend = blend)
 
-proc fillRect*(rect: Rect, color = colorWhite, z = 0f) =
-  fillRect(rect.x, rect.y, rect.w, rect.h, color, z)
+proc fillRect*(rect: Rect, color = colorWhite, z = 0f, blend = blendNormal) =
+  fillRect(rect.x, rect.y, rect.w, rect.h, color, z, blend = blend)
 
-proc fillTri*(v1, v2, v3: Vec2, color: Color, z: float32 = 0) =
-  fillQuad(v1, color, v2, color, v3, color, v3, color, z)
+proc fillTri*(v1, v2, v3: Vec2, color: Color, z: float32 = 0, blend = blendNormal) =
+  fillQuad(v1, color, v2, color, v3, color, v3, color, z, blend = blend)
 
-proc fillTri*(v1, v2, v3: Vec2, c1, c2, c3: Color, z: float32 = 0) =
-  fillQuad(v1, c1, v2, c2, v3, c3, v3, c3, z)
+proc fillTri*(v1, v2, v3: Vec2, c1, c2, c3: Color, z: float32 = 0, blend = blendNormal) =
+  fillQuad(v1, c1, v2, c2, v3, c3, v3, c3, z, blend = blend)
 
 proc fillCircle*(pos: Vec2, rad: float32, color: Color = colorWhite, z: float32 = 0, blend = blendNormal) =
   draw(fau.circle, pos, size = vec2(rad*2f), color = color, z = z, blend = blend)
