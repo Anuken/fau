@@ -3,25 +3,17 @@ import color, mesh, texture, framebuffer, patch, shader, fmath, math, util/misc,
 ## "Low-level" sprite batcher.
 
 type
-  ReqKind* = enum
-    reqVert,
-    reqRect,
-    reqProc
-  Req* = object
-    blend*: Blending
-    shader*: Shader
-    z*: float32
-    case kind*: ReqKind:
-    of reqVert:
-      verts*: array[4, Vert2]
-      tex*: Texture
-    of reqRect:
-      patch*: Patch
-      pos*, origin*, size*: Vec2
-      rotation*: float32
-      color*, mixColor*: Color
-    of reqProc:
-      draw*: proc()
+  Req = object
+    z: float32
+
+    case hasProc: bool:
+    of true:
+      callback: proc()
+    of false:
+      tex: Texture
+      blend: Blending
+      shader: Shader
+      offset, len: int32
 
 type CacheMesh = object
   mesh: Mesh2
@@ -43,6 +35,7 @@ type Batch* = ref object
   clip, viewport: Rect
   index: int
   size: int
+  requestVertices: seq[Vert2]
   req: seq[Req]
   #The projection matrix being used by the batch; requires flush
   mat: Mat
@@ -105,94 +98,110 @@ proc flushInternal(batch: Batch) =
   else:
     batch.mesh.updateVertices(0..<batch.index)
     
-    #TODO: setting up these uniforms is redundant. they're usually the same and should be cached
     batch.mesh.render(shader, meshParams(batch.buffer, 0, batch.index div 4 * 6, blend = batch.lastBlend, clip = batch.clip, viewport = batch.viewport)):
       texture = batch.lastTexture.sampler
       proj = batch.mat
 
   batch.index = 0
 
-proc prepare(batch: Batch, texture: Texture) =
-  if batch.lastTexture != texture or batch.index >= batch.size:
+proc prepare(batch: Batch, texture: Texture, blend: Blending, shader: Shader) =
+  if batch.lastTexture != texture or batch.lastBlend != blend or batch.lastShader != shader or batch.index >= batch.size:
     batch.flushInternal()
+    batch.lastShader = shader
+    batch.lastBlend = blend
     batch.lastTexture = texture
 
-proc draw*(batch: Batch, req: Req) =
+proc draw*(batch: Batch, z: float32, callback: proc()) =
   if batch.sort:
-    batch.req.add req
+    batch.req.add Req(hasProc: true, z: z, callback: callback)
   else:
-    if batch.lastShader != req.shader or batch.lastBlend != req.blend:
+    callback()
+
+proc drawVertPtr(batch: Batch, src: pointer, len: int, texture: Texture, blend: Blending, shader: Shader) {.inline.} =
+  batch.prepare(texture, blend, shader)
+
+  var 
+    total = len
+    point = src
+
+  while total > 0:
+    let copied = min(total, (batch.mesh.vertices.len - batch.index))
+
+    copyMem(addr batch.mesh.vertices[batch.index], point, sizeof(Vert2) * copied)
+
+    total -= copied
+    batch.index += copied
+    point = cast[pointer](cast[uint](point) + uint(copied * sizeof(Vert2)))
+
+    if batch.index >= batch.size:
       batch.flushInternal()
-      batch.lastShader = req.shader
-      batch.lastBlend = req.blend
 
-    case req.kind
-    of reqVert:
-      if req.tex == nil: return
+proc draw*(batch: Batch, z: float32, texture: Texture, vertices: openArray[Vert2], blend: Blending, shader: Shader) =
+  if texture == nil: return
 
-      batch.prepare(req.tex)
+  if batch.sort:
+    let idx = batch.requestVertices.len
+    batch.requestVertices.setLen(idx + vertices.len)
+    copyMem(addr batch.requestVertices[idx], addr vertices[0], sizeof(Vert2) * vertices.len)
 
-      let
-        verts = addr batch.mesh.vertices
-        idx = batch.index
+    if batch.req.len > 0:
+      let last = batch.req[^1]
+      if not last.hasProc and last.z == z and last.tex == texture and last.blend == blend and last.shader == shader:
+        
+        #merge last request, don't add a new one to sort.
+        batch.req[^1].len += vertices.len.int32
+        return
+      
+    batch.req.add Req(hasProc: false, z: z, tex: texture, offset: (batch.requestVertices.len - vertices.len).int32, len: vertices.len.int32, blend: blend, shader: shader)
+  else:
+    batch.drawVertPtr(addr vertices[0], vertices.len, texture, blend, shader)
 
-      #copy over the vertices
-      for i in 0..<4:
-        verts[i + idx] = req.verts[i]
+proc draw*(batch: Batch, z: float32, patch: Patch, pos, size, origin: Vec2, rotation: float32, color, mixColor: Color, blend: Blending, shader: Shader) =
+  if patch.texture == nil: return
 
-      batch.index += 4
-    of reqRect:
-      if req.patch.texture == nil: return
+  let vertices = if rotation == 0.0f:
+    let
+      x2 = size.x + pos.x
+      y2 = size.y + pos.y
+      u = patch.u
+      v = patch.v2
+      u2 = patch.u2
+      v2 = patch.v
+      cf = color
+      mf = mixColor
 
-      batch.prepare(req.patch.texture)
-      if req.rotation == 0.0f:
-        let
-          x2 = req.size.x + req.pos.x
-          y2 = req.size.y + req.pos.y
-          u = req.patch.u
-          v = req.patch.v2
-          u2 = req.patch.u2
-          v2 = req.patch.v
-          idx = batch.index
-          verts = addr batch.mesh.vertices
-          cf = req.color
-          mf = req.mixColor
+    [vert2(pos.x, pos.y, u, v, cf, mf), vert2(pos.x, y2, u, v2, cf, mf), vert2(x2, y2, u2, v2, cf, mf), vert2(x2, pos.y, u2, v, cf, mf)]
+  else:
+    let
+      #bottom left and top right corner points relative to origin
+      worldOriginX = pos.x + origin.x
+      worldOriginY = pos.y + origin.y
+      fx = -origin.x
+      fy = -origin.y
+      fx2 = size.x - origin.x
+      fy2 = size.y - origin.y
+      #rotate
+      cos = cos(rotation)
+      sin = sin(rotation)
+      x1 = cos * fx - sin * fy + worldOriginX
+      y1 = sin * fx + cos * fy + worldOriginY
+      x2 = cos * fx - sin * fy2 + worldOriginX
+      y2 = sin * fx + cos * fy2 + worldOriginY
+      x3 = cos * fx2 - sin * fy2 + worldOriginX
+      y3 = sin * fx2 + cos * fy2 + worldOriginY
+      x4 = x1 + (x3 - x2)
+      y4 = y3 - (y2 - y1)
+      u = patch.u
+      v = patch.v2
+      u2 = patch.u2
+      v2 = patch.v
+      
+      cf = color
+      mf = mixColor
+    
+    [vert2(x1, y1, u, v, cf, mf), vert2(x2, y2, u, v2, cf, mf), vert2(x3, y3, u2, v2, cf, mf), vert2(x4, y4, u2, v, cf, mf)]
 
-        verts.minsert(idx, [vert2(req.pos.x, req.pos.y, u, v, cf, mf), vert2(req.pos.x, y2, u, v2, cf, mf), vert2(x2, y2, u2, v2, cf, mf), vert2(x2, req.pos.y, u2, v, cf, mf)])
-      else:
-        let
-          #bottom left and top right corner points relative to origin
-          worldOriginX = req.pos.x + req.origin.x
-          worldOriginY = req.pos.y + req.origin.y
-          fx = -req.origin.x
-          fy = -req.origin.y
-          fx2 = req.size.x - req.origin.x
-          fy2 = req.size.y - req.origin.y
-          #rotate
-          cos = cos(req.rotation)
-          sin = sin(req.rotation)
-          x1 = cos * fx - sin * fy + worldOriginX
-          y1 = sin * fx + cos * fy + worldOriginY
-          x2 = cos * fx - sin * fy2 + worldOriginX
-          y2 = sin * fx + cos * fy2 + worldOriginY
-          x3 = cos * fx2 - sin * fy2 + worldOriginX
-          y3 = sin * fx2 + cos * fy2 + worldOriginY
-          x4 = x1 + (x3 - x2)
-          y4 = y3 - (y2 - y1)
-          u = req.patch.u
-          v = req.patch.v2
-          u2 = req.patch.u2
-          v2 = req.patch.v
-          idx = batch.index
-          verts = addr batch.mesh.vertices
-          cf = req.color
-          mf = req.mixColor
-
-        verts.minsert(idx, [vert2(x1, y1, u, v, cf, mf), vert2(x2, y2, u, v2, cf, mf), vert2(x3, y3, u2, v2, cf, mf), vert2(x4, y4, u2, v, cf, mf)])
-
-      batch.index += 4
-    of reqProc:
-      req.draw()
+  batch.draw(z, patch.texture, vertices, blend, shader)
 
 proc newBatch*(size: int = 16380): Batch = 
   let batch = Batch(
@@ -203,7 +212,8 @@ proc newBatch*(size: int = 16380): Batch =
     ),
     buffer: screen,
     size: size * 4,
-    sort: true
+    sort: true,
+    requestVertices: newSeqOfCap[Vert2](10000)
   )
 
   #set up default indices
@@ -232,8 +242,12 @@ proc flush*(batch: Batch) =
     batch.sort = false
 
     for req in batch.req:
-      batch.draw(req)
+      if req.hasProc:
+        req.callback()
+      else:
+        batch.drawVertPtr(addr batch.requestVertices[req.offset], req.len, req.tex, req.blend, req.shader)
     
+    batch.requestVertices.setLen(0)
     batch.req.setLen(0)
     batch.sort = true
 

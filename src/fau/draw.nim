@@ -77,8 +77,8 @@ proc draw*(cache: SpriteCache) =
   fau.batch.draw(cache)
 
 #Draws something custom at a specific Z layer
-proc draw*(z: float32, value: proc(), blend = blendNormal, shader: Shader = nil) =
-  fau.batch.draw(Req(kind: reqProc, draw: value, z: z, blend: blend, shader: shader))
+proc draw*(z: float32, callback: proc()) =
+  fau.batch.draw(z, callback)
 
 #Custom handling of begin/end for a specific Z layer
 proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
@@ -99,14 +99,10 @@ proc draw*(
     alignH = (-(asLeft in align).float32 + (asRight in align).float32 + 1f) / 2f
     alignV = (-(asBot in align).float32 + (asTop in align).float32 + 1f) / 2f
 
-  fau.batch.draw(Req(
-    kind: reqRect,
-    patch: region, 
-    pos: pos - size * vec2(alignH, alignV) * scl, 
-    z: z, size: size * scl, origin: origin,
-    rotation: rotation, color: color, mixColor: mixColor,
-    blend: blend, shader: shader
-  ))
+  fau.batch.draw(
+    z, region, pos - size * vec2(alignH, alignV) * scl, 
+    size * scl, origin,rotation, color, mixColor, blend, shader
+  )
 
 proc draw*(
   region: Patch, bounds: Rect,
@@ -152,25 +148,17 @@ proc drawv*(region: Patch, pos: Vec2, corners: array[4, Vec2], z = 0f, size = re
     cf = color
     mf = mixColor
 
-  fau.batch.draw(Req(
-    kind: reqVert,
-    tex: region.texture, 
-    verts: [vert2(cor1.x, cor1.y, u, v, cf, mf), vert2(cor2.x, cor2.y, u, v2, cf, mf), vert2(cor3.x, cor3.y, u2, v2, cf, mf), vert2(cor4.x, cor4.y, u2, v, cf, mf)], 
-    z: z,
-    blend: blend, shader: shader
-  ))
+  fau.batch.draw(
+    z,
+    region.texture, 
+    [vert2(cor1.x, cor1.y, u, v, cf, mf), vert2(cor2.x, cor2.y, u, v2, cf, mf), vert2(cor3.x, cor3.y, u2, v2, cf, mf), vert2(cor4.x, cor4.y, u2, v, cf, mf)], 
+    blend, shader
+  )
 
 proc drawRect*(region: Patch, x, y, width, height: float32, originX = 0f, originY = 0f,
   rotation = 0f, color = colorWhite, mixColor = colorClear, z: float32 = 0.0,
   blend = blendNormal, shader: Shader = nil) {.inline.} =
-  fau.batch.draw(Req(
-    kind: reqRect,
-    patch: region, pos: vec2(x, y), z: z, 
-    size: vec2(width, height), 
-    origin: vec2(originX, originY), 
-    rotation: rotation, color: color, mixColor: mixColor,
-    blend: blend, shader: shader
-  ))
+  fau.batch.draw(z, region, vec2(x, y), vec2(width, height), vec2(originX, originY), rotation, color, mixColor, blend, shader)
 
 proc drawRect*(region: Patch, rect: Rect, origin = vec2(),
   rotation = 0f, color = colorWhite, mixColor = colorClear, z: float32 = 0.0,
@@ -179,11 +167,7 @@ proc drawRect*(region: Patch, rect: Rect, origin = vec2(),
   drawRect(region, rect.x, rect.y, rect.w, rect.h, origin.x, origin.y, rotation, color, mixColor, z, blend, shader)
 
 proc drawVert*(texture: Texture, vertices: array[4, Vert2], z: float32 = 0, blend = blendNormal, shader: Shader = nil) {.inline.} = 
-  fau.batch.draw(Req(
-    kind: reqVert,
-    tex: texture, verts: vertices, z: z,
-    blend: blend, shader: shader
-  ))
+  fau.batch.draw(z, texture, vertices, blend, shader)
 
 proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f, blend = blendNormal) =
   let
