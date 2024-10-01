@@ -18,10 +18,10 @@ type Bloom* = object
   scaling*: int
 
 #note: the colorBlacklist parameter is injected straight into the if-statement for the threshold check.
-proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, combined = true, colorBlacklist = "", filter = tfLinear): Bloom =
-  result.buffer = newFramebuffer(depth = depth, filter = filter)
-  result.p1 = newFramebuffer(filter = tFLinear)
-  result.p2 = newFramebuffer(filter = tFLinear)
+proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, combined = true, colorBlacklist = "", filter = tfLinear, maxAlpha = true, parent: Bloom = Bloom()): Bloom =
+  result.buffer = if parent.buffer == nil: newFramebuffer(depth = depth, filter = filter) else: parent.buffer
+  result.p1 = if parent.p1 == nil: newFramebuffer(filter = tFLinear) else: parent.p1
+  result.p2 = if parent.p2 == nil: newFramebuffer(filter = tFLinear) else: parent.p2
   result.scaling = scaling
   result.blurPasses = passes
 
@@ -49,6 +49,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
 
   result.bloom = newShader(screenspace,
   (if alpha: "#define ALPHA_BLEND\n" else: "") &
+  (if maxAlpha: "#define MAX_ALPHA\n" else: "") &
   (if combined: "#define COMBINE_RESULT\n" else: "") &
   """ 
   uniform lowp sampler2D u_texture0;
@@ -69,7 +70,13 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
     #endif
 
     #ifdef COMBINE_RESULT
+
+    #ifdef MAX_ALPHA
     gl_FragColor = vec4(combined.rgb / mx, max(mx, combined.a));
+    #else
+    gl_FragColor = vec4(combined.rgb / mx, mx);
+    #endif
+
     #else
     gl_FragColor = bloom;
     #endif
