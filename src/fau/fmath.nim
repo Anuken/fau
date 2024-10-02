@@ -178,7 +178,7 @@ func round*(value, space: float32): float32 {.inline.} = round(value / space) * 
 func floor*(value, space: float32): float32 {.inline.} = floor(value / space) * space
 
 ## hashes an integer to a random positive integer
-func hashInt*(value: int): int {.inline.} =
+func hashInt*(value: int64): int {.inline.} =
   var x = value.uint64
   x = x xor (x shr 33)
   x *= 0xff51afd7ed558ccd'u64
@@ -366,6 +366,7 @@ func clamp*(vec: var Vec2i, min, max: Vec2i) =
 
 func dot*(vec, other: Vec2): float32 {.inline.} = vec.x * other.x + vec.y * other.y
 
+func ceil*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.ceil, vec.y.ceil)
 func floor*(vec: Vec2): Vec2 {.inline.} = vec2(vec.x.floor, vec.y.floor)
 func round*(vec: Vec2, scale = 1f): Vec2 {.inline.} = vec2(vec.x.round(scale), vec.y.round(scale))
 func roundi*(vec: Vec2): Vec2i {.inline.} = vec2i(vec.x.round.int, vec.y.round.int)
