@@ -28,6 +28,7 @@ proc height*(patch: Patch): int {.inline.} = ((patch.v2 - patch.v) * patch.textu
 #TODO: these are not rounded. should they be?
 proc widthf*(patch: Patch): float32 {.inline.} = ((patch.u2 - patch.u) * patch.texture.size.x.float32).abs
 proc heightf*(patch: Patch): float32 {.inline.} = ((patch.v2 - patch.v) * patch.texture.size.y.float32).abs
+proc ratio*(patch: Patch): float32 = patch.widthf / patch.heightf
 proc size*(patch: Patch): Vec2 {.inline.} = vec2(patch.widthf, patch.heightf)
 proc sizei*(patch: Patch): Vec2i {.inline.} = vec2i(patch.width, patch.height)
 proc uv*(patch: Patch): Vec2 {.inline.} = vec2(patch.u, patch.v)

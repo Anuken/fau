@@ -187,7 +187,8 @@ func hashInt*(value: int64): int {.inline.} =
   x = x xor (x shr 33)
   return x.int.abs
 
-proc chance*(c: float): bool = rand(0.0..1.0) < c
+proc chance*(c: float32): bool = rand(0f..1f) < c
+proc chance*(r: var Rand, c: float32): bool = r.rand(0f..1f) < c
 proc randRange*[T](value: T): T = rand((-value)..value)
 proc randSign*(): int = 
   if rand(0f..1f) < 0.5f: 1 else: -1 #rand(bool) doesn't work
