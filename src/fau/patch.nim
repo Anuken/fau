@@ -45,6 +45,8 @@ proc scroll*(patch: var Patch, u, v: float32) =
   patch.u2 += u
   patch.v2 += v
 
+proc scroll*(patch: var Patch, uv: Vec2) = patch.scroll(uv.x, uv.y)
+
 proc split*(patch: Patch, size: Vec2i): seq[seq[Patch]] =
   var
     dim = patch.sizei div size
