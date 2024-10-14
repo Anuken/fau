@@ -6,7 +6,8 @@ export glproc, gltypes
 
 #types of blending
 type Blending* = object
-  src, dst: GLenum
+  src: GLenum = GlSrcAlpha
+  dst: GLenum = GlOneMinusSrcAlpha
 
   srcAlpha: GLenum = GlOne
   dstAlpha: GLenum = GlOneMinusSrcAlpha
@@ -77,6 +78,17 @@ const
   blendErase* = Blending(src: GlZero, dst: GlOneMinusSrcAlpha, eqAlpha: GlFuncReverseSubtract)
   #implies glDisable(GlBlend)
   blendDisabled* = Blending(src: GlZero, dst: GlZero)
+  blendClip* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha, srcAlpha: GlDstAlpha, dstAlpha: GlOneMinusSrcAlpha)
+
+proc blendFromString*(name: string): Blending =
+  case name:
+  of "", "normal": blendNormal
+  of "maxAlpha": blendMaxAlpha
+  of "additive", "add": blendAdditive
+  of "premultiplied": blendPremultiplied
+  of "disabled": blendDisabled
+  of "clip": blendClip
+  else: blendNormal
 
 #global vertex array state for optimization
 var lastVertexArray = 0

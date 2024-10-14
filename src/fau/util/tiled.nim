@@ -1,4 +1,4 @@
-import jsony, parseutils, tables, zippy, base64, ../fmath, ../assets, ../color
+import jsony, parseutils, tables, zippy, base64, ../fmath, ../assets, ../color, ../mesh
 
 type
   TilePropKind* = enum
@@ -313,6 +313,7 @@ template loadFromProperties*(obj: typed, properties: TiledProps): untyped =
         elif value is int: value = props.getInt(field)
         elif value is bool: value = props.getBool(field)
         elif value is string: value = props.getString(field)
+        elif value is Blending: value = blendFromString(props.getString(field))
         elif value is Color: value = props.getColor(field)
 
   result
