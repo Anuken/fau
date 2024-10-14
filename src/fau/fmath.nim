@@ -663,6 +663,9 @@ proc botRight*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y)
 proc top*(r: Rect): float32 {.inline.} = r.y + r.h
 proc right*(r: Rect): float32 {.inline.} = r.x + r.w
 
+proc `top=`*(r: var Rect, val: float32) {.inline.} = r.h = val - r.y
+proc `right=`*(r: var Rect, val: float32) {.inline.} = r.w = val - r.x
+
 proc x2*(r: Rect): float32 {.inline.} = r.y + r.h
 proc y2*(r: Rect): float32 {.inline.} = r.x + r.w
 
