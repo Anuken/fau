@@ -228,6 +228,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if params.transparent:
     windowHint(TRANSPARENT_FRAMEBUFFER, 1.cint)
   
+  if params.mousePassthrough:
+    windowHint(MOUSE_PASSTHROUGH, 1.cint)
+  
   if params.undecorated:
     windowHint(DECORATED, 0.cint)
 
@@ -419,6 +422,9 @@ proc setWindowDecorated*(decorated: bool) =
 proc setWindowFloating*(floating: bool) =
   window.setWindowAttrib(FLOATING, floating.cint)
 
+proc setMousePassthrough*(passthrough: bool) =
+  window.setWindowAttrib(MOUSE_PASSTHROUGH, passthrough.cint)
+
 proc setClipboardString*(text: string) =
   window.setClipboardString(text.cstring)
 
@@ -460,7 +466,7 @@ proc setWindowSize*(size: Vec2i) =
 proc setVsync*(on: bool) =
   swapInterval(on.cint)
 
-proc isMaximized*(): bool = window.getWindowAttrib(MAXIMIZED).bool
+proc isMaximized*(): bool = window.getWindowAttrib(Maximized).bool
 
 proc isFullscreen*(): bool =
   return window.getWindowMonitor() != nil

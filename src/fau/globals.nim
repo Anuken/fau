@@ -125,11 +125,13 @@ type FauInitParams* = object
   undecorated*: bool
   #whether the window has a transparent framebuffer
   transparent*: bool
+  #whether the window allows mouse events to pass through
+  mousePassthrough*: bool
   #default background clear color
   clearColor*: Color
 
-proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, floating = false, depth = false, undecorated = false, transparent = false, clearColor = colorClear): FauInitParams =
-  FauInitParams(size: size, title: title, maximize: maximize, depth: depth, floating: floating, undecorated: undecorated, transparent: transparent, clearColor: clearColor)
+proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, floating = false, depth = false, undecorated = false, transparent = false, mousePassthrough = false, clearColor = colorClear): FauInitParams =
+  FauInitParams(size: size, title: title, maximize: maximize, depth: depth, floating: floating, undecorated: undecorated, transparent: transparent, mousePassthrough: mousePassthrough, clearColor: clearColor)
 
 #Hold all the graphics state.
 type FauState* = object
