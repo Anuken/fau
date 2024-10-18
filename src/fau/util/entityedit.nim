@@ -6,7 +6,7 @@ onEcsBuilt:
     entityEditorShown: bool
     searchText: string = ""
 
-  import sequtils, strutils
+  import sequtils, strutils, varedit, tables
 
   proc showEntityEditor*(toggleKey = keyF2) =
     if toggleKey.tapped:

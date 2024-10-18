@@ -24,6 +24,13 @@ template editFieldUi*(field: string, value: untyped): untyped =
     igCheckbox(fieldLabel, addr value)
   elif value is string:
     igInputText(fieldLabel, value)
+  elif value is Patch:
+    #unfortunately patches are read-only for now.
+    var name = "error"
+    for pname, patch in fau.atlas.patches.pairs:
+      if patch == value:
+        name = pname
+    igText((field & ": " & $name).cstring)
   elif value is ref object:
     igText(($value[]).cstring)
   elif value is EntityRef:
