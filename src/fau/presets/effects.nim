@@ -12,6 +12,7 @@ type
     sizeVec*: Vec2
     color*: Color
     id*: int
+    entity*: EntityRef
   EffectProc* = proc(e: EffectState)
 
 registerComponents(defaultComponentOptions):
@@ -50,12 +51,13 @@ macro defineEffects*(body: untyped) =
     proc rendererNone*(e: EffectState) {.inject.} = discard
 
     onEcsBuilt:
-      proc createEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f, parent = NoEntityRef, sizeVec = vec2()) =
-        if eid.int < 0: return
+      proc createEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f, parent = NoEntityRef, sizeVec = vec2()): EntityRef {.discardable.} =
+        if eid.int < 0: return NoEntityRef
 
         let res = newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rotation, color: color, sizef: size, sizeVec: sizeVec))
         
         addParent(res, pos, parent)
+        return res
 
   let brackets = newNimNode(nnkBracket)
   
@@ -72,6 +74,7 @@ macro defineEffects*(body: untyped) =
       effectBody = child.last
       procName = ident "renderer" & capped
       templName = ident "effect" & capped
+      templNameEntity = ident "effectEntity" & capped
       idName = ident "effectId" & capped
       id = newLit curid
     
@@ -94,6 +97,9 @@ macro defineEffects*(body: untyped) =
       
       onEcsBuilt:
         template `templName`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f, parent = NoEntityRef, sizeVec = vec2()) =
+          discard createEffect(`id`.EffectId, pos, rotation, color, life, size, parent, sizeVec)
+        
+        template `templNameEntity`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f, parent = NoEntityRef, sizeVec = vec2()): EntityRef =
           createEffect(`id`.EffectId, pos, rotation, color, life, size, parent, sizeVec)
     
     brackets.add quote do:
@@ -111,4 +117,4 @@ macro defineEffects*(body: untyped) =
 template makeEffectsSystem*() =
   makeSystem("drawEffects", [Pos, Effect, Timed]):
     all:
-      allEffects[effect.ide.int](EffectState(pos: item.pos.vec, time: timed.time, lifetime: timed.lifetime, color: effect.color, size: effect.sizef, rotation: effect.rotation, id: entity.entityId.int, sizeVec: effect.sizeVec))
+      allEffects[effect.ide.int](EffectState(entity: entity, pos: item.pos.vec, time: timed.time, lifetime: timed.lifetime, color: effect.color, size: effect.sizef, rotation: effect.rotation, id: entity.entityId.int, sizeVec: effect.sizeVec))

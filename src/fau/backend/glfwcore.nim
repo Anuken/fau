@@ -364,6 +364,11 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
         fireFauEvent FauEvent(kind: feGamepadChanged, connected: true, gamepad: gamepad)
 
+  #after initializing, log the error instead of crashing
+  discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
+    echo "GLFW error: " & $desc & " (error code: " & $code & ")"
+  )
+
   mainLoop(proc() =
     pollEvents()
 
@@ -400,7 +405,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
         
           for but in GamepadButton:
             pad.buttonsJustDown[but] = buttons[but] and not pad.buttons[but]
-            pad.buttonsJustUp[but]= not buttons[but] and pad.buttons[but]
+            pad.buttonsJustUp[but] = not buttons[but] and pad.buttons[but]
           
           pad.buttons = buttons
 
