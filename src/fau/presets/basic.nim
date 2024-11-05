@@ -25,6 +25,12 @@ macro whenComp*(entity: EntityRef, t: typedesc, body: untyped) =
         `body`
 
 onEcsBuilt:
+  template x*(pos: PosInstance): float32 = pos.vec.x
+  template y*(pos: PosInstance): float32 = pos.vec.y
+
+  template `x=`*(pos: PosInstance, val: float32): float32 = pos.vec.x = val
+  template `y=`*(pos: PosInstance, val: float32): float32 = pos.vec.y = val
+
   converter toVec*(pos: PosInstance): Vec2 {.inline} = pos.vec
 
   proc addParent*(entity: EntityRef, pos: Vec2, parent: EntityRef) =

@@ -43,6 +43,15 @@ iterator walkDirRec2*(dir: string,
         yield if relative: rel else: dir & (if rel.startsWith("/"): "" else: "/") & rel
     checkDir = false
 
+template findResult*[T](list: seq[T], body: untyped): T =
+  var result = default(T)
+  for i, it {.inject.} in list:
+    if body:
+      result = it
+      break
+  
+  result
+
 template findIt*[T](list: seq[T], body: untyped): int =
   var result = -1
   for i, it {.inject.} in list:
