@@ -213,6 +213,7 @@ template addFauListener*(eventKind: FauEventKind, body: untyped) =
 
 #Turns pixel units into world units
 proc px*(val: float32): float32 {.inline.} = val * fau.pixelScl
+proc px*(val: Vec2): Vec2 {.inline.} = vec2(val.x.px, val.y.px)
 
 proc unproject*(matInv: Mat, vec: Vec2, viewRect = rect(vec2(), fau.size)): Vec2 = (((vec - viewRect.xy) * 2f) / max(viewRect.size, vec2(1f)) - 1f) * matInv
 proc project*(mat: Mat, vec: Vec2, viewRect = rect(vec2(), fau.size)): Vec2 = viewRect.size * (vec * mat + 1f) / 2f + viewRect.xy
