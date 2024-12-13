@@ -221,6 +221,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   defaultWindowHints()
   windowHint(CONTEXT_VERSION_MINOR, 0)
   windowHint(CONTEXT_VERSION_MAJOR, 2)
+  windowHint(0x0002200D, 0) #disable retina scaling (GLFW_SCALE_FRAMEBUFFER)
   if params.depth: windowHint(DEPTH_BITS, 16.cint)
   windowHint(DOUBLEBUFFER, 1)
   windowHint(MAXIMIZED, params.maximize.cint)
