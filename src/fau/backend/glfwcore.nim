@@ -216,7 +216,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   if init() == 0: raise newException(Exception, "Failed to Initialize GLFW")
 
-  echo "Initialized GLFW v3.3.2" #the version constants given are currently incorrect
+  echo "Initialized GLFW v", VERSION_MAJOR, ".", VERSION_MINOR, ".", VERSION_REVISION 
 
   defaultWindowHints()
   windowHint(CONTEXT_VERSION_MINOR, 0)
