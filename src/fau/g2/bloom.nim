@@ -18,7 +18,7 @@ type Bloom* = object
   scaling*: int
 
 #note: the colorBlacklist parameter is injected straight into the if-statement for the threshold check.
-proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, combined = true, filter = tfLinear, maxAlpha = true, parent: Bloom = Bloom()): Bloom =
+proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, combined = true, colorBlacklist = "", filter = tfLinear, maxAlpha = true, parent: Bloom = Bloom()): Bloom =
   result.buffer = if parent.buffer == nil: newFramebuffer(depth = depth, filter = filter) else: parent.buffer
   result.p1 = if parent.p1 == nil: newFramebuffer(filter = tFLinear) else: parent.p1
   result.p2 = if parent.p2 == nil: newFramebuffer(filter = tFLinear) else: parent.p2
@@ -38,13 +38,13 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
 
   void main(){
     vec4 color = texture2D(u_texture, v_uv);
-    if(color.r + color.g + color.b > u_threshold * 3.0){
+    if(color.r + color.g + color.b > u_threshold * 3.0$BLACKLIST$){
       gl_FragColor = color;
     }else{
       gl_FragColor = vec4(0.0);
     }
   }
-  """
+  """.replace("$BLACKLIST$", colorBlacklist)
   )
 
   result.bloom = newShader(screenspace,
