@@ -24,7 +24,7 @@ proc frame*(anim: Animation, time = fau.time, loop = false): Patch =
 
     anim.frames[0]
 
-proc empty*(anim: Animation): bool = anim.frames.len == 0
+proc empty*(anim: Animation): bool = anim.frames.len == 0 or not anim.frames[0].found
 
 proc `[]`*(anim: Animation, time = fau.time): Patch = anim.frame(time)
 
