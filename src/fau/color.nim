@@ -1,9 +1,13 @@
 
 import fmath, math, strutils, endians
 
-#defines a RGBA color
+#defines a RGBA 32-bit color
 type Color* = object
   rv*, gv*, bv*, av*: uint8
+
+#defines a RGBA 4-float color; useful for lerping between colors per frame, and not much else
+type Colorf* = object
+  r*, g*, b*, a*: float32
 
 #just in case something gets messed up somewhere
 static: assert sizeof(Color) == 4, "Size of Color must be 4 bytes, but is " & $sizeof(Color)
@@ -127,6 +131,13 @@ proc parseColor*(str: string): Color =
   )
 
 proc `$`*(color: Color): string = toHex(cast[uint32]((color.rv.uint32 shl 24) or (color.gv.uint32 shl 16) or (color.bv.uint32 shl 8) or color.av))
+
+converter toColor*(cf: Colorf): Color = rgba(cf.r, cf.g, cf.b, cf.a)
+converter toColorf*(c: Color): Colorf = Colorf(r: c.r, g: c.g, b: c.b, a: c.a)
+
+proc mix*(color: Colorf, other: Colorf, alpha: float32): Colorf =
+  let inv = 1.0 - alpha
+  return Colorf(r: color.r*inv + other.r*alpha, g: color.g*inv + other.g*alpha, b: color.b*inv + other.b*alpha, a: color.a*inv + other.a*alpha)
 
 const
   colorClear* = rgba(0, 0, 0, 0)
