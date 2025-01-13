@@ -36,7 +36,7 @@ template editFieldUi*(field: string, value: untyped): untyped =
   elif value is EntityRef:
     igText((field & " Entity#" & $value.entityId.int).cstring)
   elif value is array or value is seq:
-    if igTreeNode(field):
+    if igTreeNode(fieldLabel):
       for i, arrayval in value.mpairs:
         editFieldUi($i, arrayval)
       
