@@ -19,7 +19,11 @@ onEcsBuilt:
       igInputTextWithHint("##Search", "Search", searchText)
 
       if entityCount() != 0:
+        var total = 0
         for i in 0 ..< entityStorage.nextEntityId.int:
+          if total > 100:
+            break
+          
           let ent = (i.EntityId).makeRef
 
           if not ent.alive: continue
@@ -27,6 +31,7 @@ onEcsBuilt:
           let systemStr = ent.listSystems()
 
           if (searchText == "" or systemStr.toLowerAscii.contains(searchText.toLowerAscii)) and igCollapsingHeader(cstring($ent.entityId.int & " [" & (systemStr.split('\n').mapIt(it.split(' ')[0])).join(" ")[0..^2] & "]")):
+            total.inc
             igPushID(ent.entityId.int32)
             igPushItemWidth(300f)
 
