@@ -199,7 +199,11 @@ type FauState* = object
 var fau* = FauState()
 
 proc fireFauEvent*(ev: FauEvent) =
-  for l in fau.listeners: l(ev)
+  #prevent concurrent modification
+  var i = 0
+  while i < fau.listeners.len:
+    fau.listeners[i](ev)
+    i.inc
 
 proc addFauListener*(ev: FauListener) =
   fau.listeners.add ev

@@ -30,40 +30,43 @@ onEcsBuilt:
 
           let systemStr = ent.listSystems()
 
-          if (searchText == "" or systemStr.toLowerAscii.contains(searchText.toLowerAscii)) and igCollapsingHeader(cstring($ent.entityId.int & " [" & (systemStr.split('\n').mapIt(it.split(' ')[0])).join(" ")[0..^2] & "]")):
+          if (searchText == "" or systemStr.toLowerAscii.contains(searchText.toLowerAscii)):
             total.inc
-            igPushID(ent.entityId.int32)
-            igPushItemWidth(300f)
+            
+            if igCollapsingHeader(cstring($ent.entityId.int & " [" & (systemStr.split('\n').mapIt(it.split(' ')[0])).join(" ")[0..^2] & "]")):
+            
+              igPushID(ent.entityId.int32)
+              igPushItemWidth(300f)
 
-            if ent.componentCount > 0:
-              for compRef in ent.components:
-                caseComponent(compRef.typeId):
-                  #TODO: delete button
+              if ent.componentCount > 0:
+                for compRef in ent.components:
+                  caseComponent(compRef.typeId):
+                    #TODO: delete button
 
-                  igSeparator()
+                    igSeparator()
 
-                  var data = componentInstanceType()(compRef.index.int).access
+                    var data = componentInstanceType()(compRef.index.int).access
 
-                  var fieldCount = 0
-                  for _, _ in data.fieldpairs:
-                    fieldCount.inc
-                  
-                  let disabled = fieldCount == 0
+                    var fieldCount = 0
+                    for _, _ in data.fieldpairs:
+                      fieldCount.inc
+                    
+                    let disabled = fieldCount == 0
 
-                  igBeginDisabled(disabled)
-                  
-                  if igTreeNode($typeof(data)):
-                        
-                    listFieldsUi(data)
+                    igBeginDisabled(disabled)
+                    
+                    if igTreeNode($typeof(data)):
+                          
+                      listFieldsUi(data)
 
-                    ent.addOrUpdate data
+                      ent.addOrUpdate data
 
-                    igTreePop()
-                  
-                  igEndDisabled()
+                      igTreePop()
+                    
+                    igEndDisabled()
 
-            igPopItemWidth()
-            igPopID()
+              igPopItemWidth()
+              igPopID()
         
 
       igEnd()
