@@ -52,10 +52,11 @@ proc record*() =
         var outp: Stream
 
         try:
+          let outFile = &"{gifOutDir}/{dateStr}.{ext}"
             
           var
             p = startProcess(
-              &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip{filters}\" -c:v libx264 -pix_fmt yuv420p {gifOutDir}/{dateStr}.{ext}",
+              &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip{filters}\" -c:v libx264 -pix_fmt yuv420p {outFile}",
               options = {poEvalCommand, poStdErrToStdOut}
             )
             stream = p.inputStream
@@ -68,6 +69,10 @@ proc record*() =
 
           stream.close()
           discard p.waitForExit()
+          
+          let fullPath = outFile.expandFilename
+
+          discard startProcess(&"echo \"file://{fullPath}\" | xclip -sel clip -t text/uri-list -i", options = {poEvalCommand})
 
         except:
           echo outp.readAll()
