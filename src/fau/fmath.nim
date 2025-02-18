@@ -1041,7 +1041,7 @@ template particles*(seed: int, amount: int, ppos: Vec2, radius: float32, body: u
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particlesAngle*(seed: int, amount: int, ppos: Vec2, radius: float32, rotation, spread: float32, body: untyped) =
   var r = initRand(seed)
-  for i in 0..<amount:
+  for i {.inject.} in 0..<amount:
     let
       rot {.inject.} = rotation + r.rand(-spread..spread).float32
       v = vec2l(rot, r.rand(radius))
@@ -1051,7 +1051,7 @@ template particlesAngle*(seed: int, amount: int, ppos: Vec2, radius: float32, ro
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particlesLifeAngle*(seed: int, amount: int, ppos: Vec2, basefin: float32, radius: float32, rotation, spread: float32, body: untyped) =
   var r = initRand(seed)
-  for i in 0..<amount:
+  for i {.inject.} in 0..<amount:
     let
       lscl = r.rand(0.1f..1f)
       fin {.inject, used.} = basefin / lscl
@@ -1066,7 +1066,7 @@ template particlesLifeAngle*(seed: int, amount: int, ppos: Vec2, basefin: float3
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particlesLifeOffset*(seed: int, amount: int, ppos: Vec2, basefin: float32, radiusFrom, radius: float32, body: untyped) =
   var r = initRand(seed)
-  for i in 0..<amount:
+  for i {.inject.} in 0..<amount:
     let
       lscl = r.rand(0.1f..1f)
       fin {.inject, used.} = basefin / lscl
