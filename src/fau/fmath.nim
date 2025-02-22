@@ -766,19 +766,22 @@ proc overlaps*(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
     hitPos = vec2(r1.x + r1.w / 2f + v1.x * entryTime, r1.y + r1.h / 2f + v1.y * entryTime)
     return true
 
-proc intersectSegments(p1, p2, p3, p4: Vec2): bool =
+proc intersectSegmentsOverlap*(p1, p2, p3, p4: Vec2): tuple[hit: bool, intersect: Vec2] =
   let d = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y)
-  if d == 0f: return false
+  if d == 0f: return (false, vec2())
   let 
     yd = p1.y - p3.y
     xd = p1.x - p3.x
     ua = ((p4.x - p3.x) * yd - (p4.y - p3.y) * xd) / d
-  if ua < 0 or ua > 1: return false
+  if ua < 0 or ua > 1: return (false, vec2())
 
   let ub = ((p2.x - p1.x) * yd - (p2.y - p1.y) * xd) / d
-  if ub < 0 or ub > 1: return false
+  if ub < 0 or ub > 1: return ((false, vec2()))
 
-  return true #intersection: (x1 + (x2 - x1) * ua, y1 + (y2 - y1) * ua);
+  return (true, p1 + (p2 - p1) * ua)
+
+proc intersectSegments(p1, p2, p3, p4: Vec2): bool =
+  return intersectSegmentsOverlap(p1, p2, p3, p4)[0]
 
 proc intersectSegment*(rect: Rect, p1, p2: Vec2): bool =
   return
