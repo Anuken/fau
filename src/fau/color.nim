@@ -145,6 +145,7 @@ const
   colorWhite* = rgb(1, 1, 1)
   colorBlack* = rgba(0, 0, 0)
   colorGray* = rgb(0.5f, 0.5f, 0.5f)
+  colorLightGray* = rgb(0.75f, 0.75f, 0.75f)
   colorRoyal* = %"4169e1"
   colorCoral* = %"ff7f50"
   colorOrange* = %"ffa500"

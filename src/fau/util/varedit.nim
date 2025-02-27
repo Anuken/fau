@@ -65,6 +65,32 @@ macro editable*(sec) =
     #with the editor disabled, it stays as-is
     result = sec
 
+macro editableVars*(vars: untyped) =
+  when defined(debugVarEdit):
+    result = newStmtList()
+
+    var newSec = newNimNode(nnkVarSection)
+
+    for asgn in vars:
+      asgn.expectKind(nnkAsgn)
+      
+      newSec.add newIdentDefs(asgn[0], newEmptyNode(), asgn[1])
+
+      allFields.add asgn[0]
+    
+    result.add newSec
+
+  else:
+    result = newStmtList()
+
+    var newSec = newNimNode(nnkConstSection)
+
+    for asgn in vars:
+      asgn.expectKind(nnkAsgn)
+      newSec.add newIdentDefs(asgn[0], newEmptyNode(), asgn[1])
+    
+    result.add newSec
+
 when defined(debugVarEdit):
   import ../g2/imgui
   export imgui
