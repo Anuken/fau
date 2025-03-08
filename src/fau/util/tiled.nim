@@ -180,6 +180,9 @@ proc postHook*(map: var Tilemap) =
       obj.pos = vec2(obj.x, map.height * map.tileheight - (obj.y + (if obj.tile == map.emptyTile and not obj.ellipse: obj.height else: 0f)))
       obj.size = vec2(obj.width, obj.height)
 
+      for pos in obj.polygon.mitems: pos.y = - pos.y
+      for pos in obj.polyline.mitems: pos.y = - pos.y
+
     if layer.data != "":
 
       if layer.encoding != "base64":

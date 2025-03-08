@@ -792,7 +792,7 @@ proc intersectSegment*(rect: Rect, p1, p2: Vec2): bool =
     intersectSegments(p1, p2, rect.topLeft, rect.botLeft)
 
 #TODO: this is very slow
-proc pointInsidePoly*(center: Vec2, sides: int, radius: float32, rotation: float32, point: Vec2): bool =
+proc polyContainsPoint*(center: Vec2, sides: int, radius: float32, rotation: float32, point: Vec2): bool =
   let 
     step = pi2 / sides.float32
   
@@ -810,6 +810,23 @@ proc pointInsidePoly*(center: Vec2, sides: int, radius: float32, rotation: float
       return false
   
   return true
+
+proc polyContainsPoint*(points: openArray[Vec2], point: Vec2): bool =
+  var intersects = 0
+
+  let 
+    x = point.x
+    y = point.y
+
+  for i in 0..<points.len:
+    let 
+      a = points[i]
+      b = points[(i + 1) mod points.len]
+    
+    if ((a.y <= x and y <= b.y) or (b.y <= y and y <= a.y)) and x < ((b.x - a.x) / (b.y - a.y) * (y - a.y) + a.x):
+      intersects.inc
+  
+  return intersects.odd
 
 proc penetrationX*(a, b: Rect): float32 {.inline.} =
   let nx = a.centerX - b.centerX
