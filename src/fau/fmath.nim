@@ -823,7 +823,7 @@ proc polyContainsPoint*(points: openArray[Vec2], point: Vec2): bool =
       a = points[i]
       b = points[(i + 1) mod points.len]
     
-    if ((a.y <= x and y <= b.y) or (b.y <= y and y <= a.y)) and x < ((b.x - a.x) / (b.y - a.y) * (y - a.y) + a.x):
+    if ((a.y <= y and y <= b.y) or (b.y <= y and y <= a.y)) and x < ((b.x - a.x) / (b.y - a.y) * (y - a.y) + a.x):
       intersects.inc
   
   return intersects.odd
