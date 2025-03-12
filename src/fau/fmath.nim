@@ -422,6 +422,8 @@ func rotate*(vec: Vec2i, steps: int): Vec2i =
     result.x = -result.y
     result.y = x
 
+func isNan*(vec: Vec2): bool {.inline.} = vec.x.isNan or vec.y.isNan
+
 func len*(vec: Vec2): float32 {.inline.} = sqrt(vec.x * vec.x + vec.y * vec.y)
 func len2*(vec: Vec2): float32 {.inline.} = vec.x * vec.x + vec.y * vec.y
 func `len=`*(vec: var Vec2, b: float32) = 
