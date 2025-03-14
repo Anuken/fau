@@ -88,6 +88,7 @@ proc blendFromString*(name: string): Blending =
   of "premultiplied": blendPremultiplied
   of "disabled": blendDisabled
   of "clip": blendClip
+  of "erase": blendErase
   else: blendNormal
 
 #global vertex array state for optimization
