@@ -51,12 +51,12 @@ macro defineEffects*(body: untyped) =
     proc rendererNone*(e: EffectState) {.inject.} = discard
 
     onEcsBuilt:
-      proc makeEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f, parent = NoEntityRef, sizeVec = vec2()): EntityRef {.discardable.} =
+      proc makeEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f, parent = NoEntityRef, parentDelete = false, sizeVec = vec2()): EntityRef {.discardable.} =
         if eid.int < 0: return NoEntityRef
 
         let res = newEntityWith(Pos(vec: pos), Timed(lifetime: life), Effect(ide: eid, rotation: rotation, color: color, sizef: size, sizeVec: sizeVec))
         
-        addParent(res, pos, parent)
+        addParent(res, pos, parent, parentDelete)
         return res
 
   let brackets = newNimNode(nnkBracket)
@@ -96,11 +96,11 @@ macro defineEffects*(body: untyped) =
         `effectBody`
       
       onEcsBuilt:
-        template `templName`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f, parent = NoEntityRef, sizeVec = vec2()) =
-          discard makeEffect(`id`.EffectId, pos, rotation, color, life, size, parent, sizeVec)
+        template `templName`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f, parent = NoEntityRef, parentDelete = false, sizeVec = vec2()) =
+          discard makeEffect(`id`.EffectId, pos, rotation, color, life, size, parent, parentDelete, sizeVec)
         
-        template `templNameEntity`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f, parent = NoEntityRef, sizeVec = vec2()): EntityRef =
-          makeEffect(`id`.EffectId, pos, rotation, color, life, size, parent, sizeVec)
+        template `templNameEntity`*(pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = `lifeVal`, size = 0f, parent = NoEntityRef, parentDelete = false, sizeVec = vec2()): EntityRef =
+          makeEffect(`id`.EffectId, pos, rotation, color, life, size, parent, parentDelete, sizeVec)
     
     brackets.add quote do:
       `procName`.EffectProc
