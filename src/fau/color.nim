@@ -135,6 +135,9 @@ proc `$`*(color: Color): string = toHex(cast[uint32]((color.rv.uint32 shl 24) or
 converter toColor*(cf: Colorf): Color = rgba(cf.r, cf.g, cf.b, cf.a)
 converter toColorf*(c: Color): Colorf = Colorf(r: c.r, g: c.g, b: c.b, a: c.a)
 
+proc toArray*(c: Color): array[4, float32] = [c.r, c.g, c.b, c.a]
+proc toColor*(arr: array[4, float32]): Color = rgba(arr[0], arr[1], arr[2], arr[3])
+
 proc mix*(color: Colorf, other: Colorf, alpha: float32): Colorf =
   let inv = 1.0 - alpha
   return Colorf(r: color.r*inv + other.r*alpha, g: color.g*inv + other.g*alpha, b: color.b*inv + other.b*alpha, a: color.a*inv + other.a*alpha)

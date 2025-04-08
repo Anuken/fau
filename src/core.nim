@@ -12,7 +12,7 @@ when not defined(noAudio):
   import fau/audio
   export audio
 
-when isDebug:
+when isDebug and not defined(noRecorder):
   import fau/util/recorder
 
 export fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer, input
@@ -119,7 +119,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
 
     fireFauEvent(FauEvent(kind: feEndFrame))
 
-    when isDebug:
+    when isDebug and not defined(noRecorder):
       record()
 
     inc fau.frameId

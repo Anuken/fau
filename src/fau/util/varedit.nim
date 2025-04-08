@@ -33,8 +33,6 @@ template editFieldUi*(field: string, value: untyped): untyped =
     igText((field & ": " & $name).cstring)
   elif value is ref object:
     igText(($value[]).cstring)
-  elif value is EntityRef:
-    igText((field & " Entity#" & $value.entityId.int).cstring)
   elif value is array or value is seq:
     if igTreeNode(fieldLabel):
       for i, arrayval in value.mpairs:
@@ -49,7 +47,13 @@ template editFieldUi*(field: string, value: untyped): untyped =
   elif compiles($value):
     igText((field & ": " & $value).cstring)
   else:
-    igText(fieldLabel)
+    when defined(EntityRef):
+      if value is EntityRef:
+        igText((field & " Entity#" & $value.entityId.int).cstring)
+      else:
+        igText(fieldLabel)
+    else:
+      igText(fieldLabel)
 
 template listFieldsUi*(obj: untyped): untyped = 
   for field, value in obj.fieldpairs:
@@ -92,7 +96,7 @@ macro editableVars*(vars: untyped) =
     result.add newSec
 
 when defined(debugVarEdit):
-  import ../g2/imgui
+  import ../g2/imgui, strutils
   export imgui
 
   var 

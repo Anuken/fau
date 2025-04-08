@@ -115,7 +115,7 @@ proc clear*(buffer: Framebuffer, color = colorClear) =
     glClear(GlColorBufferBit)
 
 #TODO wrap pixels in a object with a destructor?
-proc read*(buffer: Framebuffer, pos: Vec2i, size: Vec2i): pointer =
+proc read*(buffer: Framebuffer, pos: Vec2i = vec2i(), size: Vec2i = buffer.size): pointer =
   ## Reads pixels from the screen and returns a pointer to RGBA data.
   ## The result MUST be deallocated after use!
   buffer.use()

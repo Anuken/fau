@@ -321,7 +321,7 @@ proc imguiRenderFau =
        
           mesh.render(shader, meshParams(
               clip = rect(clipRect.x, clipRect.y, clipRect.w, clipRect.h),
-              offset = indexBufferOffset,
+              offset = pcmd.idxOffset.int,
               count = pcmd.elemCount.int,
               blend = blendNormal
             )):
