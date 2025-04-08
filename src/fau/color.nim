@@ -42,6 +42,8 @@ func alpha*(a: float32): Color {.inline.} = rgba(1.0, 1.0, 1.0, a)
 
 func gray*(g: float32): Color {.inline.} = rgb(g, g, g)
 
+func inv*(c: Color): Color = rgba(1f - c.r, 1f - c.g, 1f - c.b, 1f)
+
 #H, S, V are all floats from 0 to 1
 func hsv*(h, s, v: float32, a = 1f): Color =
   let 
