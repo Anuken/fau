@@ -1,4 +1,4 @@
-import fmath, sequtils
+import ../fmath, sequtils
 
 const maxInQuadrant = 5
 
