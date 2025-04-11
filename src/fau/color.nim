@@ -121,16 +121,22 @@ template `%`*(str: static[string]): Color =
   const ret = Color(rv: str[0..1].parseHexInt.uint8, gv: str[2..3].parseHexInt.uint8, bv: str[4..5].parseHexInt.uint8, av: if str.len > 6: str[6..7].parseHexInt.uint8 else: 255'u8)
   ret
 
-proc parseColor*(str: string): Color =
+proc parseColor*(str: string, invalid = Color()): Color =
+  ## TODO this is very slow, parseutils,parseHex would be a lot faster
   let offset = if str.len > 0 and str[0] == '#': 1 else: 0
-  if str.len - offset < 6: return Color()
+  if str.len - offset < 6: return invalid
 
-  Color(
-    rv: str[(0+offset)..(1+offset)].parseHexInt.uint8, 
-    gv: str[(2+offset)..(3+offset)].parseHexInt.uint8, 
-    bv: str[(4+offset)..(5+offset)].parseHexInt.uint8, 
-    av: if str.len > 6 + offset: str[(6+offset)..(7+offset)].parseHexInt.uint8 else: 255'u8
-  )
+  try:
+
+    Color(
+      rv: str[(0+offset)..(1+offset)].parseHexInt.uint8, 
+      gv: str[(2+offset)..(3+offset)].parseHexInt.uint8, 
+      bv: str[(4+offset)..(5+offset)].parseHexInt.uint8, 
+      av: if str.len > 6 + offset: str[(6+offset)..(7+offset)].parseHexInt.uint8 else: 255'u8
+    )
+
+  except ValueError:
+    return invalid
 
 proc `$`*(color: Color): string = toHex(cast[uint32]((color.rv.uint32 shl 24) or (color.gv.uint32 shl 16) or (color.bv.uint32 shl 8) or color.av))
 

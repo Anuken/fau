@@ -114,7 +114,14 @@ type
     PlatformHasViewports = 1024
     HasMouseHoveredViewport = 2048
     RendererHasViewports = 4096
-  ImGuiButtonFlagsPrivate* {.pure, size: int32.sizeof.} = enum
+  ImGuiButtonFlags* {.pure, size: int32.sizeof.} = enum
+    #TODO: these are merged from another definition. why are they separate?
+    None = 0
+    MouseButtonLeft = 1
+    MouseButtonRight = 2
+    MouseButtonMiddle = 4
+    MouseButtonMask = 7
+
     PressedOnClick = 16
     PressedOnClickRelease = 32
     PressedOnClickReleaseAnywhere = 64
@@ -133,12 +140,6 @@ type
     NoHoveredOnFocus = 524288
     NoSetKeyOwner = 1048576
     NoTestKeyOwner = 2097152
-  ImGuiButtonFlags* {.pure, size: int32.sizeof.} = enum
-    None = 0
-    MouseButtonLeft = 1
-    MouseButtonRight = 2
-    MouseButtonMiddle = 4
-    MouseButtonMask = 7
   ImGuiChildFlags* {.pure, size: int32.sizeof.} = enum
     None = 0
     Border = 1
