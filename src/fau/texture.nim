@@ -28,6 +28,11 @@ proc `=destroy`*(texture: var TextureObj) =
 
 proc `$`*(texture: Texture): string = "{ID:" & $texture.handle & " " & $texture.size.x & "x" & $texture.size.y & "}"
 
+proc width*(texture: Texture): int {.inline.} = texture.size.x
+proc height*(texture: Texture): int {.inline.} = texture.size.y
+proc widthf*(texture: Texture): float32 {.inline.} = texture.size.x.float32
+proc heightf*(texture: Texture): float32 {.inline.} = texture.size.y.float32
+
 #binds the texture
 #TODO do not export, textures should not be used manually.
 proc use*(texture: Texture, unit: int = 0) =
