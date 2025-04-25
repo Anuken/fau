@@ -62,7 +62,7 @@ func hsv*(h, s, v: float32, a = 1f): Color =
   of 4: rgba(t, p, v, a)
   else: rgba(v, p, q, a)
 
-func toHsv(color: Color): tuple[h: float32, s: float32, v: float32] =
+func toHsv*(color: Color): tuple[h: float32, s: float32, v: float32] =
   let max = max(max(color.r, color.g), color.b)
   let min = min(min(color.r, color.g),color.b)
   let ran = max - min

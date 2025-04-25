@@ -354,6 +354,12 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   fau.mouse = fixMouse(inMouseX, inMouseY)
 
   glInitialized = true
+
+  #after initializing, log the error instead of crashing
+  discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
+    echo "GLFW error: " & $desc & " (error code: " & $code & ")"
+  )
+
   initProc()
 
   #find existing gamepads at game startup
@@ -364,11 +370,6 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
         fau.gamepads.add(gamepad)
 
         fireFauEvent FauEvent(kind: feGamepadChanged, connected: true, gamepad: gamepad)
-
-  #after initializing, log the error instead of crashing
-  discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
-    echo "GLFW error: " & $desc & " (error code: " & $code & ")"
-  )
 
   mainLoop(proc() =
     pollEvents()
