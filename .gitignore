@@ -2,3 +2,5 @@ build
 *.wasm
 tmp/
 .idea/
+nimble.develop
+nimble.paths
