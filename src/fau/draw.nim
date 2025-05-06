@@ -308,6 +308,50 @@ proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = co
       color, z
     )
 
+proc fillDropShadow*(rect: Rect, blur: float32, color = colorBlack, z = 0f) =
+  let 
+    edge = color.withA(0f)
+    ir = rect.grow(-blur)
+  
+  #center
+  fillRect(ir, color = color, z = z)
+
+  #bottom
+  fillQuad(
+    ir.xy, color,
+    rect.xy, edge,
+    rect.botRight, edge,
+    ir.botRight, color,
+    z = z
+  )
+
+  #right
+  fillQuad(
+    ir.botRight, color,
+    rect.botRight, edge,
+    rect.topRight, edge,
+    ir.topRight, color,
+    z = z
+  )
+
+  #top
+  fillQuad(
+    ir.topRight, color,
+    rect.topRight, edge,
+    rect.topLeft, edge,
+    ir.topLeft, color,
+    z = z
+  )
+
+  #left
+  fillQuad(
+    ir.topLeft, color,
+    rect.topLeft, edge,
+    rect.xy, edge,
+    ir.xy, color,
+    z = z
+  )
+
 proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhite, edgeColor = colorClearWhite, z: float32 = 0, scl = vec2(1f)) =
   let 
     sides = ceil(sides.float32 / 2.0).int * 2

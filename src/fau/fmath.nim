@@ -671,6 +671,9 @@ proc `right=`*(r: var Rect, val: float32) {.inline.} = r.w = val - r.x
 proc x2*(r: Rect): float32 {.inline.} = r.y + r.h
 proc y2*(r: Rect): float32 {.inline.} = r.x + r.w
 
+proc `x2=`*(r: var Rect, x: float32) {.inline.} = r.w = x - r.x
+proc `y2=`*(r: var Rect, y: float32) {.inline.} = r.h = y - r.y
+
 proc grow*(r: var Rect, amount: float32) = r = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)
 proc grow*(r: Rect, amount: float32): Rect = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)
 proc grow*(r: Rect, amount: Vec2): Rect = rect(r.x - amount.x/2f, r.y - amount.y/2f, r.w + amount.x, r.h + amount.y)
