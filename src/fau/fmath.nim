@@ -91,6 +91,18 @@ iterator signsi*(): int =
   yield 1
   yield -1
 
+func parseAlign*(text: string): Align =
+  case text:
+  of "left": daLeft
+  of "right": daRight
+  of "top": daTop
+  of "bottom", "bot": daBot
+  of "topLeft": daTopLeft
+  of "topRight":daTopRight
+  of "botLeft", "bottomLeft": daBotLeft
+  of "botRight", "bottomRight":daBotRight
+  else: daCenter
+
 ## fade in from 0 to 1
 func fin*(t: Timeable): float32 {.inline.} = t.time / t.lifetime
 
