@@ -6,17 +6,17 @@ type
 
   TileProp* = object
     case kind*: TilePropKind
-    of tpString: 
+    of tpString:
       strVal*: string
-    of tpInt: 
+    of tpInt:
       intVal*: int
-    of tpFloat: 
+    of tpFloat:
       floatVal*: float
-    of tpBool: 
+    of tpBool:
       boolVal*: bool
     of tpColor:
       colorVal*: Color
-      
+
   TiledProps* = TableRef[string, TileProp]
 
   TiledTile* = ref object
@@ -103,10 +103,10 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
     var i: float
     discard parseFloat(s, i)
     return i
-  
+
   for i, entry in entries:
     let str = entry.value.string
-    
+
     v[entry.name] = case entry.`type`:
     of "string", "file", "": TileProp(kind: tpString, strVal: fromJson(str, string))
     of "int": TileProp(kind: tpInt, intVal: str.parseInt())
@@ -122,7 +122,7 @@ proc parseHook*(s: string, i: var int, v: var TiledProps) =
       #what the hell, tiled? who stores hex colors in #AARRGGBB format?
       TileProp(kind: tpColor, colorVal: color)
     else: TileProp()
-  
+
 proc postHook*(map: var Tilemap) =
   var gidToTile = initTable[int, TiledTile]()
 
@@ -133,14 +133,14 @@ proc postHook*(map: var Tilemap) =
   for tileset in map.tilesets:
     if tileset.source != "":
       raise Exception.newException("Tilesets must be embedded in the file, not external (" & tileset.source & ")")
-    
+
     #import tiles by splitting image
     if tileset.columns > 0 and tileset.imagewidth > 0:
       var idToTile = initTable[int, TiledTile]()
 
       for prevTile in tileset.tiles:
         idToTile[prevTile.id] = prevTile
-      
+
       #clear old tiles (parsed with properties)
       tileset.tiles.setLen(0)
 
@@ -168,7 +168,7 @@ proc postHook*(map: var Tilemap) =
           tileset.tiles.add(tile)
 
           curId.inc
-    
+
     for tile in tileset.tiles:
       tile.id += tileset.firstgid
       gidToTile[tile.id] = tile
@@ -188,16 +188,16 @@ proc postHook*(map: var Tilemap) =
       if layer.encoding != "base64":
         raise Exception.newException("Tilemaps must use base64 encoding instead of CSV, CSV tile data is massive (check map settings)")
 
-      let 
+      let
         decoded = decode(layer.data)
         decompressed = if layer.compression == "": decoded else: uncompress(decoded)
         numTiles = decompressed.len div 4
         intData = cast[ptr UncheckedArray[uint32]](addr decompressed[0])
-      
+
       layer.tiles = newSeq[TileCell](numTiles)
 
       for i in 0..<numTiles:
-        let 
+        let
           packedGid = intData[i]
           flipHorizontal = (packedGid and 0x80000000'u32) != 0
           flipVertical = (packedGid and 0x40000000'u32) != 0
@@ -216,7 +216,7 @@ proc postHook*(map: var Tilemap) =
 
       #dealloc useless data
       layer.data = ""
-    
+
     layer.hasTiles = layer.tiles.len > 0
 
 # TiledProps CAN BE NIL. Why? Because ensuring that it isn't, or making it a Table (non-ref) crashes emscripten.
