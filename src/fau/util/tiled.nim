@@ -37,7 +37,7 @@ type
     rotation*: float32
     pos*, size*: Vec2
     visible*: bool
-    ellipse*, point*: bool
+    ellipse*, point*, rectangle*: bool
     polygon*, polyline*: seq[Vec2]
     properties*: TiledProps
     tile*: TiledTile
@@ -176,6 +176,10 @@ proc postHook*(map: var Tilemap) =
   #actually load tile data from layers in post
   for layer in map.layers:
     for obj in layer.objects:
+
+      if obj.gid == 0 and not obj.ellipse and not obj.point and obj.polygon.len == 0 and obj.polyline.len == 0:
+        obj.rectangle = true
+
       obj.tile = gidToTile[obj.gid]
       obj.pos = vec2(obj.x, map.height * map.tileheight - (obj.y + (if obj.tile == map.emptyTile and not obj.ellipse: obj.height else: 0f)))
       obj.size = vec2(obj.width, obj.height)
