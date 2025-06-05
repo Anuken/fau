@@ -113,20 +113,20 @@ proc draw*(
   blend = blendNormal, shader: Shader = nil) {.inline.} = draw(region, bounds.xy, bounds.size, 0f, vec2(1f), origin, rotation, daBotLeft, color, mixColor, blend, shader)
 
 #draws a region with rotated bits
-proc drawv*(region: Patch, pos: Vec2, corners: array[4, Vec2], z = 0f, size = region.size * fau.pixelScl,
-  origin = size * 0.5f, rotation = 0f, align = daCenter,
+proc drawv*(region: Patch, pos: Vec2, corners: array[4, Vec2], z = 0f, scl = vec2(1f), size = region.size * fau.pixelScl,
+  origin = size * 0.5f * scl, rotation = 0f, align = daCenter,
   color = colorWhite, mixColor = colorClear,
   blend = blendNormal, shader: Shader = nil) =
 
   let
     alignH = (-(asLeft in align).float32 + (asRight in align).float32 + 1f) / 2f
     alignV = (-(asBot in align).float32 + (asTop in align).float32 + 1f) / 2f
-    worldOriginX: float32 = pos.x + origin.x - size.x * alignH
-    worldOriginY: float32 = pos.y + origin.y - size.y * alignV
+    worldOriginX: float32 = pos.x + origin.x - size.x * scl.x * alignH
+    worldOriginY: float32 = pos.y + origin.y - size.y * scl.y * alignV
     fx: float32 = -origin.x
     fy: float32 = -origin.y
-    fx2: float32 = size.x - origin.x
-    fy2: float32 = size.y - origin.y
+    fx2: float32 = size.x * scl.x - origin.x
+    fy2: float32 = size.y * scl.y - origin.y
     cos: float32 = cos(rotation.degToRad)
     sin: float32 = sin(rotation.degToRad)
     x1 = cos * fx - sin * fy + worldOriginX

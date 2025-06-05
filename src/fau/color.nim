@@ -110,15 +110,12 @@ proc mix*(color: Color, other: Color, alpha: float32): Color =
   let inv = 1.0 - alpha
   return rgba(color.r*inv + other.r*alpha, color.g*inv + other.g*alpha, color.b*inv + other.b*alpha, color.a*inv + other.a*alpha)
 
-#colors have limited precision, don't use this.
-#proc mix*(color: var Color, other: Color, alpha: float32) = 
-#  let inv = 1.0 - alpha
-#  color = rgba(color.r*inv + other.r*alpha, color.g*inv + other.g*alpha, color.b*inv + other.b*alpha, color.a*inv + other.a*alpha)
-
 #converts a hex string to a color at compile-time; no overhead
 export parseHexInt
 template `%`*(str: static[string]): Color =
-  const ret = Color(rv: str[0..1].parseHexInt.uint8, gv: str[2..3].parseHexInt.uint8, bv: str[4..5].parseHexInt.uint8, av: if str.len > 6: str[6..7].parseHexInt.uint8 else: 255'u8)
+  const v = str
+  const offset = (if v[0] == '#': 1 else: 0)
+  const ret = Color(rv: v[offset..(offset+1)].parseHexInt.uint8, gv: v[(offset+2)..(offset+3)].parseHexInt.uint8, bv: v[(offset+4)..(offset+5)].parseHexInt.uint8, av: if v.len > 6+offset: v[(offset+6)..(offset+7)].parseHexInt.uint8 else: 255'u8)
   ret
 
 proc parseColor*(str: string, invalid = Color()): Color =
