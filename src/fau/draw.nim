@@ -282,31 +282,50 @@ proc fillTri*(v1, v2, v3: Vec2, color: Color, z: float32 = 0, blend = blendNorma
 proc fillTri*(v1, v2, v3: Vec2, c1, c2, c3: Color, z: float32 = 0, blend = blendNormal) =
   fillQuad(v1, c1, v2, c2, v3, c3, v3, c3, z, blend = blend)
 
-proc fillCircle*(pos: Vec2, rad: float32, color: Color = colorWhite, z: float32 = 0, blend = blendNormal) =
-  draw(fau.circle, pos, size = vec2(rad*2f), color = color, z = z, blend = blend)
+proc fillCircle*(pos: Vec2, rad: float32, color: Color = colorWhite, z: float32 = 0, blend = blendNormal, scl = vec2(1f)) =
+  draw(fau.circle, pos, size = vec2(rad*2f), scl = scl, color = color, z = z, blend = blend)
 
-proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = colorWhite, z: float32 = 0) =
-  let space = PI*2 / sides.float32
+proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = colorWhite, z: float32 = 0, scl = vec2(1f), blend = blendNormal) =
+  if sides == 3:
 
-  for i in countup(0, sides-1, 2):
-    fillQuad(
-      pos,
-      pos + vec2(cos(space * (i).float32 + rotation), sin(space * (i).float32 + rotation)) * radius,
-      pos + vec2(cos(space * (i + 1).float32 + rotation), sin(space * (i + 1).float32 + rotation)) * radius,
-      pos + vec2(cos(space * (i + 2).float32 + rotation), sin(space * (i + 2).float32 + rotation)) * radius,
-      color, z
-    )
-  
-  let md = sides mod 2
-
-  if md != 0 and sides >= 4:
-    let i = sides - 2
     fillTri(
-      pos,
-      pos + vec2(cos(space * i.float32 + rotation), sin(space * i.float32 + rotation)) * radius,
-      pos + vec2(cos(space * (i + 1).float32 + rotation), sin(space * (i + 1).float32 + rotation)) * radius,
-      color, z
+      pos + vec2l(0f + rotation, radius) * scl,
+      pos + vec2l(120f.rad + rotation, radius) * scl,
+      pos + vec2l(240f.rad + rotation, radius) * scl,
+      color, z, blend
     )
+  elif sides == 4:
+
+    fillQuad(
+      pos + vec2l(0f + rotation, radius) * scl,
+      pos + vec2l(90f.rad + rotation, radius) * scl,
+      pos + vec2l(180f.rad + rotation, radius) * scl,
+      pos + vec2l(270f.rad + rotation, radius) * scl,
+      color, z, blend
+    )
+  else:
+
+    let space = PI*2 / sides.float32
+
+    for i in countup(0, sides - 2, 2):
+      fillQuad(
+        pos,
+        pos + vec2(cos(space * (i).float32 + rotation), sin(space * (i).float32 + rotation)) * radius * scl,
+        pos + vec2(cos(space * (i + 1).float32 + rotation), sin(space * (i + 1).float32 + rotation)) * radius * scl,
+        pos + vec2(cos(space * (i + 2).float32 + rotation), sin(space * (i + 2).float32 + rotation)) * radius * scl,
+        color, z, blend
+      )
+    
+    let md = sides mod 2
+
+    if md != 0:
+      let i = sides - 1
+      fillTri(
+        pos,
+        pos + vec2(cos(space * i.float32 + rotation), sin(space * i.float32 + rotation)) * radius * scl,
+        pos + vec2(cos(space * (i + 1).float32 + rotation), sin(space * (i + 1).float32 + rotation)) * radius * scl,
+        color, z, blend
+      )
 
 proc fillDropShadow*(rect: Rect, blur: float32, color = colorBlack, z = 0f) =
   let 
