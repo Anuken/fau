@@ -445,7 +445,7 @@ proc spikes*(pos: Vec2, sides: int, radius: float32, len: float32, stroke = 1f.p
     let ang = i / sides * 360f.rad + rotation
     lineAngle(pos + vec2l(ang, radius), ang, len, stroke, color, z = z)
 
-proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f, scl = vec2(1f)) =
+proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f, scl = vec2(1f), blend = blendNormal) =
   let 
     space = PI*2 / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)
@@ -465,10 +465,10 @@ proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px
       pos + vec2(cos2f, sin2f) * r1 * scl,
       pos + vec2(cos2f, sin2f) * r2 * scl,
       pos + vec2(cosf, sinf) * r2 * scl,
-      color, z
+      color, z, blend
     )
 
-proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorWhite, z = 0f) =
+proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorWhite, z = 0f, blend = blendNormal) =
   if points.len < 2: return
 
   if points.len == 2:
@@ -531,18 +531,18 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
       else:
         (q2, q1) = prepareFlatEndpoint(points[1], points[0], hstroke)
     
-    fillQuad(q1, q2, q3, q4, color = color, z = z)
+    fillQuad(q1, q2, q3, q4, color = color, z = z, blend = blend)
     q1 = q4
     q2 = q3
 
   if wrap:
     let (q3, q4) = preparePointyJoin(points[^2], points[^1], points[0], hstroke)
 
-    fillQuad(q1, q2, q3, q4, color = color, z = z)
-    fillQuad(q3, q4, lq2, lq1, color = color, z = z)
+    fillQuad(q1, q2, q3, q4, color = color, z = z, blend = blend)
+    fillQuad(q3, q4, lq2, lq1, color = color, z = z, blend = blend)
   else:
     let (q4, q3) = prepareFlatEndpoint(points[^2], points[^1], hstroke)
-    fillQuad(q1, q2, q3, q4, color = color, z = z)
+    fillQuad(q1, q2, q3, q4, color = color, z = z, blend = blend)
 
 proc arcRadius*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radiusFrom, radiusTo: float32, rotation = 0f, color = colorWhite, z = 0f) =
   let 
