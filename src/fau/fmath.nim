@@ -669,6 +669,17 @@ proc size*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
 proc wh*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
 proc area*(r: Rect): float32 {.inline.} = r.w * r.h
 
+#fixes negative width or height
+proc normalized*(r: Rect): Rect =
+  result = r
+  if r.w < 0: 
+    result.w = -r.w
+    result.x -= result.w
+  
+  if r.h < 0: 
+    result.h = -r.h
+    result.y -= result.h
+
 proc botLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
 proc topLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y + r.h)
 proc topRight*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y + r.h)
