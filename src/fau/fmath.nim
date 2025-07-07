@@ -425,6 +425,12 @@ func rotate*(vec: Vec2, rads: float32): Vec2 =
   let si = sin(rads)
   return vec2(vec.x * co - vec.y * si, vec.x * si + vec.y * co)
 
+func rotateAround*(base: Vec2, origin: Vec2, rads: float32): Vec2 = 
+  let vec = base - origin
+  let co = cos(rads)
+  let si = sin(rads)
+  return vec2(vec.x * co - vec.y * si, vec.x * si + vec.y * co) + origin
+
 func rotate*(vec: Vec2i, steps: int): Vec2i =
   ## Rotates in 90 degree increments.
   let amount = steps.emod 4
