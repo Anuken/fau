@@ -245,16 +245,15 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   swapInterval(1)
 
-  #center window on primary monitor if it's not maximized
-  if not params.maximize:
-    let 
-      monitor = getPrimaryMonitor()
-      mode = monitor.getVideoMode()
-    
-    if mode != nil:
-      var mx, my: cint
-      getMonitorPos(monitor, mx.addr, my.addr)
-      window.setWindowPos(mx + (mode.width - params.size.x.cint) div 2, my + (mode.height - params.size.y.cint) div 2)
+  #center window on primary monitor (even if maximized, it fixes a bug on my linux machine)
+  let 
+    monitor = getPrimaryMonitor()
+    mode = monitor.getVideoMode()
+  
+  if mode != nil:
+    var mx, my: cint
+    getMonitorPos(monitor, mx.addr, my.addr)
+    window.setWindowPos(mx + (mode.width - params.size.x.cint) div 2, my + (mode.height - params.size.y.cint) div 2)
 
   if not loadGl(getProcAddress, extensionSupported):
     raise Exception.newException("Failed to load OpenGL.")
@@ -262,7 +261,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   echo "Initialized OpenGL v", glVersionMajor, ".", glVersionMinor, " [VAO: ", supportsVertexArrays, "]"
 
   #load window icon if possible
-  when assetExistsStatic("icon.png") and not defined(macosx):
+  when assetExistsStatic("icon.png") and not defined(macosx) and not defined(wayland):
     let textureBytes = assetReadStatic("icon.png")
 
     var
