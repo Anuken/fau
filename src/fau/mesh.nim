@@ -52,6 +52,7 @@ type MeshObj*[V] = object
 
   activeAttribs: array[12, int]
   totalActive: int
+  attribsValid: bool
 #Generic mesh
 type Mesh*[T] = ref MeshObj[T]
 #Basic 2D mesh
@@ -168,7 +169,7 @@ proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, ve
 proc newMesh2*(isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[Vert2] = @[], indices: seq[Index] = @[]): Mesh =
   newMesh[Vert2](isStatic, primitiveType, vertices, indices)
 
-#global state for active attribute management
+#global state for active attribute management - not used for VAOs!
 #current active attributes; maps the index to the glEnableVertexAttribArray location
 var activeAttribs: array[32, int]
 #total active attributes in activeAttribs
@@ -253,7 +254,19 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
   result = newStmtList()
   var attribIndex = 0
 
-  var resultBody = result
+  var 
+    disableBody = newStmtList()
+    enableBody = newStmtList()
+
+  var checkOuter = newStmtList()
+  checkOuter.add quote do:
+    block:
+      `mesh`.attribsValid = true
+
+  var checkBody = checkOuter[0][1]
+
+  enableBody.add quote do:
+    glBindBuffer(GlArrayBuffer, `mesh`.vertexBuffer)
 
   for identDefs in getImpl(vertexType)[2][2]:
     let t = identDefs[^2]
@@ -266,21 +279,33 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
       
       var (components, componentType, normalized) = getVertType(typeName)
 
-      resultBody.add quote do:
+      checkBody.add quote do:
+        let loc = shader.getAttributeLoc(`alias`)
+        if `mesh`.activeAttribs[`attribIndex`] != loc + 1:
+          `mesh`.attribsValid = false
+          break
+
+      disableBody.add quote do:
+        if `mesh`.activeAttribs[`attribIndex`] != 0:
+          glDisableVertexAttribArray((`mesh`.activeAttribs[`attribIndex`] - 1).GLuint)
+          `mesh`.activeAttribs[`attribIndex`] = 0
+
+      enableBody.add quote do:
         let loc = shader.getAttributeLoc(`alias`)
 
-        if `mesh`.activeAttribs[`attribIndex`] != loc + 1:
-          if loc != -1: #attribute enabled and wasn't before
-            `mesh`.activeAttribs[`attribIndex`] = loc + 1
-            glEnableVertexAttribArray(loc.GLuint)
-            glVertexAttribPointer(loc.GLuint, `components`.GLint, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
-          elif `mesh`.activeAttribs[`attribIndex`] != 0 and false: #attribute disabled, and it used to be - TODO - buggy?
-            glDisableVertexAttribArray(`mesh`.activeAttribs[`attribIndex`].GLuint)
-            `mesh`.activeAttribs[`attribIndex`] = 0
-      
+        if loc != -1:
+          `mesh`.activeAttribs[`attribIndex`] = loc + 1
+          glEnableVertexAttribArray(loc.GLuint)
+          glVertexAttribPointer(loc.GLuint, `components`.GLint, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
+    
       attribIndex.inc
   
-  resultBody.add quote do:
+  result.add quote do:
+    `checkOuter`
+    if not `mesh`.attribsValid:
+      `disableBody`
+      `enableBody`
+
     `mesh`.totalActive = `attribIndex`
 
 #this binds the VAO (if applicable)
