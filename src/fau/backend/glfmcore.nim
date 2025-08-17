@@ -126,9 +126,16 @@ proc `windowTitle=`*(title: string) = discard
 #stops the game immediately
 proc quitApp*() = quit(0)
 
+#TODO unimplemented
+proc setClipboardString*(text: string) = discard
+proc getClipboardString*(): string = ""
+
 #dummy code for cross-platform support, does nothing
 type Cursor* = object
 
 proc newCursor*(standardType: CursorType): Cursor = Cursor()
 proc newCursor*(path: static string): Cursor = Cursor()
 proc setCursor*(cursor: Cursor) = discard
+proc setCursorHidden*(hidden: bool) = discard
+proc setFullscreen*(on: bool) = discard
+proc setVsync*(on: bool) = discard

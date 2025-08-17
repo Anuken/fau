@@ -302,7 +302,7 @@ proc readTilemapFile*(file: string): Tilemap = file.readFile().readTilemapString
 proc readTilemapAsset*(file: static string): Tilemap = assetReadStatic(file).readTilemapString()
 
 template loadFromProperties*(obj: typed, properties: TiledProps): untyped =
-  let props = properties
+  let props {.used.} = properties
   var result = obj()
 
   for field, value in result.fieldPairs:
