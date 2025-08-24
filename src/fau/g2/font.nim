@@ -2,7 +2,7 @@ import tables, unicode, packer, bitops
 import math
 import ../texture, ../patch, ../color, ../globals, ../util/misc, ../draw, ../assets
 
-from ../fmath import `+`, `*`, `-`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter, daBotLeft
+from ../fmath import `+`, `*`, `-`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter, daBotLeft, rect, Rect
 from pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`, dataIndex
 from vmath import x, y, `*`, `-`, `+`, isNaN, translate
 from bumpy import xy
@@ -172,7 +172,7 @@ proc parseTag(text: openArray[char], start: int): (Tag, int) =
   else: return (Tag(), -1)
 
 #returns (displayed string, seq[(color, startPos)])
-proc parseMarkup(text: openArray[char]): (string, seq[(Tag, int)]) =
+proc parseMarkup(color: Color, text: openArray[char]): (string, seq[(Tag, int)]) =
   var 
     i = 0
     builder = newStringOfCap(text.len)
@@ -181,7 +181,7 @@ proc parseMarkup(text: openArray[char]): (string, seq[(Tag, int)]) =
 
   template applyFormat(i: int, newStyle: TextStyle) =
     if lastPos != builder.len:
-      let lastColor = if tags.len == 0: colorWhite else: tags[^1][0].color
+      let lastColor = if tags.len == 0: color else: tags[^1][0].color
       tags.add (Tag(style: newStyle, color: lastColor), builder.len)
       lastPos = builder.len
     else:
@@ -217,14 +217,14 @@ proc parseMarkup(text: openArray[char]): (string, seq[(Tag, int)]) =
   
   return (builder, tags)
 
-proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false) =
+proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
   var 
     plainText: string
     styles: set[TextStyle] = {}
     colors: seq[(Tag, int)]
 
   if markup:
-    (plainText, colors) = parseMarkup(text)
+    (plainText, colors) = parseMarkup(color, text)
   else:
     plainText = text
   
@@ -234,6 +234,10 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
   var 
     currentColor = color
     markupIndex = 0
+    tbx = Inf.float32
+    tby = Inf.float32
+    tbx2 = -Inf.float32
+    tby2 = -Inf.float32
 
   #TODO this will break with non-ASCII text immediately due to the markup parsing using byte indices
   for i, rune in arrangement.runes:
@@ -284,16 +288,24 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
         modifier(glyphIndex, glyphOffset, glyphColor, glyphDraw)
 
       if glyphDraw:
+
+        let 
+          glyphPos = fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y)
+          glyphSize = patch.size * scale
         
-        #TODO: skewing should be based off of standard baseline
+        tbx = min(tbx, glyphPos.x - glyphOffset.x)
+        tby = min(tby, glyphPos.y - glyphOffset.y)
+        tbx2 = max(tbx2, glyphPos.x - glyphOffset.x + glyphSize.x)
+        tby2 = max(tby2, glyphPos.y - glyphOffset.y + glyphSize.y)
+        
         drawv(patch,
-          fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, 
-          (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y),
+          glyphPos,
           [fmath.vec2(-skew1, 0f), fmath.vec2(skew2, 0f), fmath.vec2(skew2, 0f), fmath.vec2(-skew1, 0f)],
-          size = patch.size * scale, align = daBotLeft, color = glyphColor, z = z
+          size = glyphSize, align = daBotLeft, color = glyphColor, z = z
         )
 
         #lineRect(fmath.rect(fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y), patch.size * scale), stroke = 1f, color = colorGreen, z = z)
+  return rect(tbx, tby, tbx2 - tbx, tby2 - tby)
 
-proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false) =
-  draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier, markup)
+proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
+  return draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier, markup)

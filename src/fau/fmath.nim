@@ -91,6 +91,18 @@ iterator signsi*(): int =
   yield 1
   yield -1
 
+func parseAlign*(text: string): Align =
+  case text:
+  of "left": daLeft
+  of "right": daRight
+  of "top": daTop
+  of "bottom", "bot": daBot
+  of "topLeft": daTopLeft
+  of "topRight":daTopRight
+  of "botLeft", "bottomLeft": daBotLeft
+  of "botRight", "bottomRight":daBotRight
+  else: daCenter
+
 ## fade in from 0 to 1
 func fin*(t: Timeable): float32 {.inline.} = t.time / t.lifetime
 
@@ -413,6 +425,12 @@ func rotate*(vec: Vec2, rads: float32): Vec2 =
   let si = sin(rads)
   return vec2(vec.x * co - vec.y * si, vec.x * si + vec.y * co)
 
+func rotateAround*(base: Vec2, origin: Vec2, rads: float32): Vec2 = 
+  let vec = base - origin
+  let co = cos(rads)
+  let si = sin(rads)
+  return vec2(vec.x * co - vec.y * si, vec.x * si + vec.y * co) + origin
+
 func rotate*(vec: Vec2i, steps: int): Vec2i =
   ## Rotates in 90 degree increments.
   let amount = steps.emod 4
@@ -657,6 +675,17 @@ proc size*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
 proc wh*(r: Rect): Vec2 {.inline.} = vec2(r.w, r.h)
 proc area*(r: Rect): float32 {.inline.} = r.w * r.h
 
+#fixes negative width or height
+proc normalized*(r: Rect): Rect =
+  result = r
+  if r.w < 0: 
+    result.w = -r.w
+    result.x -= result.w
+  
+  if r.h < 0: 
+    result.h = -r.h
+    result.y -= result.h
+
 proc botLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y)
 proc topLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y + r.h)
 proc topRight*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y + r.h)
@@ -670,6 +699,9 @@ proc `right=`*(r: var Rect, val: float32) {.inline.} = r.w = val - r.x
 
 proc x2*(r: Rect): float32 {.inline.} = r.y + r.h
 proc y2*(r: Rect): float32 {.inline.} = r.x + r.w
+
+proc `x2=`*(r: var Rect, x: float32) {.inline.} = r.w = x - r.x
+proc `y2=`*(r: var Rect, y: float32) {.inline.} = r.h = y - r.y
 
 proc grow*(r: var Rect, amount: float32) = r = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)
 proc grow*(r: Rect, amount: float32): Rect = rect(r.x - amount/2f, r.y - amount/2f, r.w + amount, r.h + amount)

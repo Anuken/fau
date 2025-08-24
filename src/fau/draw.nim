@@ -113,20 +113,20 @@ proc draw*(
   blend = blendNormal, shader: Shader = nil) {.inline.} = draw(region, bounds.xy, bounds.size, 0f, vec2(1f), origin, rotation, daBotLeft, color, mixColor, blend, shader)
 
 #draws a region with rotated bits
-proc drawv*(region: Patch, pos: Vec2, corners: array[4, Vec2], z = 0f, size = region.size * fau.pixelScl,
-  origin = size * 0.5f, rotation = 0f, align = daCenter,
+proc drawv*(region: Patch, pos: Vec2, corners: array[4, Vec2], z = 0f, scl = vec2(1f), size = region.size * fau.pixelScl,
+  origin = size * 0.5f * scl, rotation = 0f, align = daCenter,
   color = colorWhite, mixColor = colorClear,
   blend = blendNormal, shader: Shader = nil) =
 
   let
     alignH = (-(asLeft in align).float32 + (asRight in align).float32 + 1f) / 2f
     alignV = (-(asBot in align).float32 + (asTop in align).float32 + 1f) / 2f
-    worldOriginX: float32 = pos.x + origin.x - size.x * alignH
-    worldOriginY: float32 = pos.y + origin.y - size.y * alignV
+    worldOriginX: float32 = pos.x + origin.x - size.x * scl.x * alignH
+    worldOriginY: float32 = pos.y + origin.y - size.y * scl.y * alignV
     fx: float32 = -origin.x
     fy: float32 = -origin.y
-    fx2: float32 = size.x - origin.x
-    fy2: float32 = size.y - origin.y
+    fx2: float32 = size.x * scl.x - origin.x
+    fy2: float32 = size.y * scl.y - origin.y
     cos: float32 = cos(rotation.degToRad)
     sin: float32 = sin(rotation.degToRad)
     x1 = cos * fx - sin * fy + worldOriginX
@@ -282,31 +282,94 @@ proc fillTri*(v1, v2, v3: Vec2, color: Color, z: float32 = 0, blend = blendNorma
 proc fillTri*(v1, v2, v3: Vec2, c1, c2, c3: Color, z: float32 = 0, blend = blendNormal) =
   fillQuad(v1, c1, v2, c2, v3, c3, v3, c3, z, blend = blend)
 
-proc fillCircle*(pos: Vec2, rad: float32, color: Color = colorWhite, z: float32 = 0, blend = blendNormal) =
-  draw(fau.circle, pos, size = vec2(rad*2f), color = color, z = z, blend = blend)
+proc fillCircle*(pos: Vec2, rad: float32, color: Color = colorWhite, z: float32 = 0, blend = blendNormal, scl = vec2(1f)) =
+  draw(fau.circle, pos, size = vec2(rad*2f), scl = scl, color = color, z = z, blend = blend)
 
-proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = colorWhite, z: float32 = 0) =
-  let space = PI*2 / sides.float32
+proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = colorWhite, z: float32 = 0, scl = vec2(1f), blend = blendNormal) =
+  if sides == 3:
 
-  for i in countup(0, sides-1, 2):
-    fillQuad(
-      pos,
-      pos + vec2(cos(space * (i).float32 + rotation), sin(space * (i).float32 + rotation)) * radius,
-      pos + vec2(cos(space * (i + 1).float32 + rotation), sin(space * (i + 1).float32 + rotation)) * radius,
-      pos + vec2(cos(space * (i + 2).float32 + rotation), sin(space * (i + 2).float32 + rotation)) * radius,
-      color, z
-    )
-  
-  let md = sides mod 2
-
-  if md != 0 and sides >= 4:
-    let i = sides - 2
     fillTri(
-      pos,
-      pos + vec2(cos(space * i.float32 + rotation), sin(space * i.float32 + rotation)) * radius,
-      pos + vec2(cos(space * (i + 1).float32 + rotation), sin(space * (i + 1).float32 + rotation)) * radius,
-      color, z
+      pos + vec2l(0f + rotation, radius) * scl,
+      pos + vec2l(120f.rad + rotation, radius) * scl,
+      pos + vec2l(240f.rad + rotation, radius) * scl,
+      color, z, blend
     )
+  elif sides == 4:
+
+    fillQuad(
+      pos + vec2l(0f + rotation, radius) * scl,
+      pos + vec2l(90f.rad + rotation, radius) * scl,
+      pos + vec2l(180f.rad + rotation, radius) * scl,
+      pos + vec2l(270f.rad + rotation, radius) * scl,
+      color, z, blend
+    )
+  else:
+
+    let space = PI*2 / sides.float32
+
+    for i in countup(0, sides - 2, 2):
+      fillQuad(
+        pos,
+        pos + vec2(cos(space * (i).float32 + rotation), sin(space * (i).float32 + rotation)) * radius * scl,
+        pos + vec2(cos(space * (i + 1).float32 + rotation), sin(space * (i + 1).float32 + rotation)) * radius * scl,
+        pos + vec2(cos(space * (i + 2).float32 + rotation), sin(space * (i + 2).float32 + rotation)) * radius * scl,
+        color, z, blend
+      )
+    
+    let md = sides mod 2
+
+    if md != 0:
+      let i = sides - 1
+      fillTri(
+        pos,
+        pos + vec2(cos(space * i.float32 + rotation), sin(space * i.float32 + rotation)) * radius * scl,
+        pos + vec2(cos(space * (i + 1).float32 + rotation), sin(space * (i + 1).float32 + rotation)) * radius * scl,
+        color, z, blend
+      )
+
+proc fillDropShadow*(rect: Rect, blur: float32, color = colorBlack, z = 0f) =
+  let 
+    edge = color.withA(0f)
+    ir = rect.grow(-blur)
+  
+  #center
+  fillRect(ir, color = color, z = z)
+
+  #bottom
+  fillQuad(
+    ir.xy, color,
+    rect.xy, edge,
+    rect.botRight, edge,
+    ir.botRight, color,
+    z = z
+  )
+
+  #right
+  fillQuad(
+    ir.botRight, color,
+    rect.botRight, edge,
+    rect.topRight, edge,
+    ir.topRight, color,
+    z = z
+  )
+
+  #top
+  fillQuad(
+    ir.topRight, color,
+    rect.topRight, edge,
+    rect.topLeft, edge,
+    ir.topLeft, color,
+    z = z
+  )
+
+  #left
+  fillQuad(
+    ir.topLeft, color,
+    rect.topLeft, edge,
+    rect.xy, edge,
+    ir.xy, color,
+    z = z
+  )
 
 proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhite, edgeColor = colorClearWhite, z: float32 = 0, scl = vec2(1f)) =
   let 
@@ -382,7 +445,7 @@ proc spikes*(pos: Vec2, sides: int, radius: float32, len: float32, stroke = 1f.p
     let ang = i / sides * 360f.rad + rotation
     lineAngle(pos + vec2l(ang, radius), ang, len, stroke, color, z = z)
 
-proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f, scl = vec2(1f)) =
+proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f, scl = vec2(1f), blend = blendNormal) =
   let 
     space = PI*2 / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)
@@ -402,10 +465,10 @@ proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px
       pos + vec2(cos2f, sin2f) * r1 * scl,
       pos + vec2(cos2f, sin2f) * r2 * scl,
       pos + vec2(cosf, sinf) * r2 * scl,
-      color, z
+      color, z, blend
     )
 
-proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorWhite, z = 0f) =
+proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorWhite, z = 0f, blend = blendNormal) =
   if points.len < 2: return
 
   if points.len == 2:
@@ -468,18 +531,18 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
       else:
         (q2, q1) = prepareFlatEndpoint(points[1], points[0], hstroke)
     
-    fillQuad(q1, q2, q3, q4, color = color, z = z)
+    fillQuad(q1, q2, q3, q4, color = color, z = z, blend = blend)
     q1 = q4
     q2 = q3
 
   if wrap:
     let (q3, q4) = preparePointyJoin(points[^2], points[^1], points[0], hstroke)
 
-    fillQuad(q1, q2, q3, q4, color = color, z = z)
-    fillQuad(q3, q4, lq2, lq1, color = color, z = z)
+    fillQuad(q1, q2, q3, q4, color = color, z = z, blend = blend)
+    fillQuad(q3, q4, lq2, lq1, color = color, z = z, blend = blend)
   else:
     let (q4, q3) = prepareFlatEndpoint(points[^2], points[^1], hstroke)
-    fillQuad(q1, q2, q3, q4, color = color, z = z)
+    fillQuad(q1, q2, q3, q4, color = color, z = z, blend = blend)
 
 proc arcRadius*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radiusFrom, radiusTo: float32, rotation = 0f, color = colorWhite, z = 0f) =
   let 

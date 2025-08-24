@@ -87,14 +87,10 @@ macro editableVars*(vars: untyped) =
   else:
     result = newStmtList()
 
-    var newSec = newNimNode(nnkConstSection)
-
     for asgn in vars:
       asgn.expectKind(nnkAsgn)
-      newSec.add newIdentDefs(asgn[0], newEmptyNode(), asgn[1])
+      result.add newConstStmt(asgn[0], asgn[1])
     
-    result.add newSec
-
 when defined(debugVarEdit):
   import ../g2/imgui, strutils
   export imgui
@@ -130,7 +126,7 @@ when defined(debugVarEdit):
 
 else:
   if not declared(imguiInitFau):
-    proc imguiInitFau*(useCursor = true, appName: string = "") = discard
-    proc imguiLoadFont*(path: static string, size: float32) = discard
+    proc imguiInitFau(useCursor = true, appName: string = "") = discard
+    proc imguiLoadFont(path: static string, size: float32) = discard
 
-  proc showVarEditor*() = discard
+  proc showVarEditor() = discard

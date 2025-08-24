@@ -245,9 +245,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   swapInterval(1)
 
-  #center window on primary monitor if it's not maximized
+  #center window on primary monitor if not maximized
   if not params.maximize:
-    let 
+    let
       monitor = getPrimaryMonitor()
       mode = monitor.getVideoMode()
     
@@ -262,7 +262,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   echo "Initialized OpenGL v", glVersionMajor, ".", glVersionMinor, " [VAO: ", supportsVertexArrays, "]"
 
   #load window icon if possible
-  when assetExistsStatic("icon.png") and not defined(macosx):
+  when assetExistsStatic("icon.png") and not defined(macosx) and not defined(wayland):
     let textureBytes = assetReadStatic("icon.png")
 
     var

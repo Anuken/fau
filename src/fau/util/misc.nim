@@ -43,7 +43,7 @@ iterator walkDirRec2*(dir: string,
         yield if relative: rel else: dir & (if rel.startsWith("/"): "" else: "/") & rel
     checkDir = false
 
-template findResult*[T](list: seq[T], body: untyped): T =
+template findResult*[T](list: openArray[T], body: untyped): T =
   var result = default(T)
   for i, it {.inject.} in list:
     if body:
@@ -52,7 +52,7 @@ template findResult*[T](list: seq[T], body: untyped): T =
   
   result
 
-template findIt*[T](list: seq[T], body: untyped): int =
+template findIt*[T](list: openArray[T], body: untyped): int =
   var result = -1
   for i, it {.inject.} in list:
     if body:
@@ -61,7 +61,7 @@ template findIt*[T](list: seq[T], body: untyped): int =
   
   result
 
-template findItBlock*[T](list: seq[T], body: untyped, calledBlock: untyped) =
+template findItBlock*[T](list: openArray[T], body: untyped, calledBlock: untyped) =
   for i {.inject.}, it {.inject.} in list:
     if body:
       calledBlock
@@ -73,7 +73,7 @@ template incTimer*(value: untyped, increment: float32, body: untyped): untyped =
     `value` = 0f
     `body`
 
-template findMinIndex*[T](list: seq[T], op: untyped): int =
+template findMinIndex*[T](list: openArray[T], op: untyped): int =
   var minValue = float32.high
   var result = -1
   for i, it {.inject.} in list:
@@ -83,7 +83,7 @@ template findMinIndex*[T](list: seq[T], op: untyped): int =
       result = i
   result
 
-template findMin*[T](list: seq[T], op: untyped): untyped =
+template findMin*[T](list: openArray[T], op: untyped): untyped =
   var minValue = float32.high
   var result: T
   for it {.inject.} in list:
@@ -93,7 +93,7 @@ template findMin*[T](list: seq[T], op: untyped): untyped =
       result = it
   result
 
-template findMin*[T](list: seq[T], op: untyped, predicate: untyped): untyped =
+template findMin*[T](list: openArray[T], op: untyped, predicate: untyped): untyped =
   var minValue = float32.high
   var result: T
   for it {.inject.} in list:

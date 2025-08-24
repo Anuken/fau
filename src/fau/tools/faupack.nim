@@ -9,6 +9,8 @@ type FolderSettings = object
   minSize: int = -1
   maxSize: int = -1
   separate: bool = false
+  cropX: bool = false
+  crop: bool = false
 
   #private state
   imageIndex: int
@@ -268,13 +270,15 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", verb
       packFile(split.name, cropped, [left, right, top, bot], realFile = file)
     elif split.ext == ".aseprite":
       try:
-        let aseFile = readAseFile(file)
+        let 
+          aseFile = readAseFile(file)
+          settings = getSettings(file)
 
         #standard ase file
         for layer in aseFile.layers:
           let 
-            centerX = layer.userData == "centerX"
-            crop = layer.userData == "crop"
+            centerX = layer.userData == "centerX" or settings.cropX
+            crop = layer.userData == "crop" or settings.crop
 
           #skip locked layers; I do not want to skip 'invisible' layers for convenience, so locked is used as the flag here instead
           if layer.kind == alImage and layer.frames.len > 0 and afEditable in layer.flags:
@@ -300,7 +304,7 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", verb
                 
                 #aseprite layers are "cropped", so each layer needs to have a new image made with the uncropped version
                 let full = 
-                  if crop: 
+                  if crop:
                     image #it's pre-cropped, whee
                   elif centerX:
                     #needs to be cropped to the X axis (centered)
