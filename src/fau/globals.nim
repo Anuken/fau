@@ -169,6 +169,8 @@ type FauState* = object
   time*: float32
   #All input listeners
   listeners*: seq[FauListener]
+  #Callbacks scheduled to run at the beginning of the new thread.
+  postedCallbacks*: seq[proc()]
   #All currently plugged-in gamepads.
   gamepads*: seq[Gamepad]
 
@@ -207,6 +209,11 @@ proc fireFauEvent*(ev: FauEvent) =
 
 proc addFauListener*(ev: FauListener) =
   fau.listeners.add ev
+
+template postCallback*(body: untyped) =
+  ## Runs the specified callback at the beginning of the next frame.
+  fau.postedCallbacks.add do():
+    body
 
 template addFauListener*(eventKind: FauEventKind, body: untyped) =
   addFauListener do(event {.inject.}: FauEvent):

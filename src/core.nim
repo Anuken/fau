@@ -112,6 +112,13 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
 
     fireFauEvent(FauEvent(kind: feFrame))
 
+    if fau.postedCallbacks.len > 0:
+      #make sure to iterate on a copy to prevent concurrent modification
+      let callbacks = fau.postedCallbacks
+      for value in callbacks:
+        value()
+      fau.postedCallbacks.setLen(0)
+
     loopProc()
 
     #flush any pending draw operations
