@@ -68,10 +68,10 @@ proc igInputTextWithHint*(label: cstring, hint: cstring, text: var string, bufSi
   buff.setLen(len)
   text = buff
 
-proc igCombo*(label: cstring, current_item: ptr int, items: seq[string], popup_max_height_in_items: int32 = -1): bool =
+proc igCombo*(label: cstring, current_item: ptr int, items: openArray[string], popup_max_height_in_items: int32 = -1): bool {.discardable.} =
   let itemArray = allocCStringArray(items)
   var cur = current_item[].int32
-  result = igCombo(label, addr cur, cast[ptr cstring](itemArray), popup_max_height_in_items)
+  result = igCombo(label, addr cur, cast[ptr cstring](itemArray), items.len.int32, popup_max_height_in_items)
   current_item[] = cur
   deallocCStringArray(itemArray)
 

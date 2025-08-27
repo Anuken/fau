@@ -81,6 +81,7 @@ const
   blendDisabled* = Blending(src: GlZero, dst: GlZero)
   blendClip* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha, srcAlpha: GlDstAlpha, dstAlpha: GlOneMinusSrcAlpha)
 
+#TODO maybe blending should become an enum
 proc blendFromString*(name: string): Blending =
   case name:
   of "", "normal": blendNormal
@@ -91,6 +92,16 @@ proc blendFromString*(name: string): Blending =
   of "clip": blendClip
   of "erase": blendErase
   else: blendNormal
+
+proc `$`*(blend: Blending): string =
+  if blend == blendNormal: "normal"
+  elif blend == blendMaxAlpha: "maxAlpha"
+  elif blend == blendAdditive: "additive"
+  elif blend == blendPremultiplied: "premultiplied"
+  elif blend == blendDisabled: "disabled"
+  elif blend == blendClip: "clip"
+  elif blend == blendErase: "erase"
+  else: "normal"
 
 #global vertex array state for optimization
 var lastVertexArray = 0
