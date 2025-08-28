@@ -63,27 +63,20 @@ func hsv*(h, s, v: float32, a = 1f): Color =
   else: rgba(v, p, q, a)
 
 func toHsv*(color: Color): tuple[h: float32, s: float32, v: float32] =
-  let max = max(max(color.r, color.g), color.b)
-  let min = min(min(color.r, color.g),color.b)
-  let ran = max - min
+  let 
+    max = max(max(color.r, color.g), color.b)
+    min = min(min(color.r, color.g),color.b)
+    ran = max - min
 
-  if ran == 0f:
-    result[0] = 0f
-  elif max == color.r:
-    result[0] = (60f * (color.g - color.b) / ran + 360) mod 360f
-  elif max == color.g:
-    result[0] = 60f * (color.b - color.r) / ran + 120f
-  else:
-    result[0] = 60f * (color.r - color.g) / ran + 240f
+  let h = if ran == 0f: 0f
+  #has to be inlined here, otherwise leads to internal GCC errors!
+  elif max(max(color.rv, color.gv), color.bv) == color.rv: (60f * (color.g - color.b) / ran + 360) mod 360f
+  elif max == color.g: 60f * (color.b - color.r) / ran + 120f
+  else: 60f * (color.r - color.g) / ran + 240f
 
-  if max > 0:
-    result[1] = 1 - min / max
-  else:
-    result[1] = 0;
-  
-  result[0] /= 360f
-  
-  result[2] = max
+  let s = if max > 0f: 1f - min / max else: 0f
+
+  return (h / 360f, s, max)
 
 func shiftHsv*(color: Color, h = 0f, s = 0f, v = 0f): Color =
   var hsv = color.toHsv()
