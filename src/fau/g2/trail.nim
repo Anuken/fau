@@ -31,7 +31,7 @@ proc draw*(trail: var Trail, color: Color, width: float32, z = 0f, blend = blend
       w = p.width * width / trail.points.len * (trail.points.len - 1) * 2f 
     
     if p.width > 0.001f:
-      draw("hcircle".patch, p.v, size = vec2(w), rotation = -trail.lastAngle + 180f.rad, color = color, z = z, blend = blend)
+      draw("hcircle".patch, trail.lastPos, size = vec2(w), rotation = -trail.lastAngle + 180f.rad, color = color, z = z, blend = blend)
 
   let size = width / trail.points.len
   var lastAngle = trail.lastAngle
