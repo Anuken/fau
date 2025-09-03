@@ -17,6 +17,7 @@ requires "pixie == 5.0.6"
 requires "vmath == 2.0.0"
 requires "stbimage == 2.5"
 requires "https://www.github.com/Anuken/jsony#b8c0edbac379b0507c1967c56725ecf442cfd6d7"
+requires "mimalloc >= 0.3.6"
 
 task imguiGen, "Generate imGUI bindings from source":
   exec("nim r src/fau/tools/imgui_gen.nim")

@@ -24,14 +24,14 @@ proc pointLen*(trail: var Trail): int =
 
 template initPoint(pos: Vec2, w: float32): TrailPoint = TrailPoint(v: pos, width: w)
 
-proc draw*(trail: var Trail, color: Color, width: float32, z = 0f, blend = blendNormal, cap = false) =
+proc draw*(trail: var Trail, color: Color, width: float32, z = 0f, blend = blendNormal, cap = false, color2 = color) =
   if cap and trail.points.len > 0:
     let 
       p = trail.points[^1]
       w = p.width * width / trail.points.len * (trail.points.len - 1) * 2f 
     
     if p.width > 0.001f:
-      draw("hcircle".patch, p.v, size = vec2(w), rotation = -trail.lastAngle + 180f.rad, color = color, z = z, blend = blend)
+      draw("hcircle".patch, trail.lastPos, size = vec2(w), rotation = -trail.lastAngle + 180f.rad, color = color, z = z, blend = blend)
 
   let size = width / trail.points.len
   var lastAngle = trail.lastAngle
@@ -57,13 +57,15 @@ proc draw*(trail: var Trail, color: Color, width: float32, z = 0f, blend = blend
     let
       c = vec2(sin(a1), cos(a1)) * i * size * p.width
       n = vec2(sin(a2), cos(a2)) * (i+1f) * size * p2.width
+
+      c1 = color.mix(color2, 1f - i / trail.points.len)
+      c2 = color.mix(color2, 1f - (i + 1) / trail.points.len)
     
     fillQuad(
-      p.v - c,
-      p.v + c,
-      p2.v - n,
-      p2.v + n,
-      color = color,
+      p.v - c, c1,
+      p.v + c, c1,
+      p2.v - n, c2,
+      p2.v + n, c2,
       blend = blend,
       z = z
     )

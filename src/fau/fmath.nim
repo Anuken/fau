@@ -201,6 +201,7 @@ func hashInt*(value: int64): int {.inline.} =
 
 proc chance*(c: float32): bool = rand(0f..1f) < c
 proc chance*(r: var Rand, c: float32): bool = r.rand(0f..1f) < c
+proc randRange*[T](r: var Rand, value: T): T = r.rand((-value)..value)
 proc randRange*[T](value: T): T = rand((-value)..value)
 proc randSign*(): int = 
   if rand(0f..1f) < 0.5f: 1 else: -1 #rand(bool) doesn't work
