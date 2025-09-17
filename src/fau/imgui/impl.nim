@@ -214,6 +214,8 @@ proc imguiLoadFont*(path: static string, size: float32) =
   
   reloadFontTexture()
 
+  destroy(cfg)
+
 proc createRenderer(font: static string, fontSize: float32) =
   when font.len > 0:
     imguiLoadFont(font, fontSize)
