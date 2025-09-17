@@ -277,7 +277,7 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
       if Italic in styles:
         let 
           skewScl = 0.3f
-          total = patch.heightf * scale * skewScl
+          total = glyph.realSize.y * scale * skewScl
           weight = (-skewOffset) / glyph.realSize.y
           off = -(font.font.typeface.ascent * font.font.scale)/2f * skewScl * scale
         

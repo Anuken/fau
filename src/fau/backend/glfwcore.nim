@@ -239,6 +239,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
     windowHint(CONTEXT_VERSION_MAJOR, 3)
     windowHint(CONTEXT_VERSION_MINOR, 2)
     windowHint(OPENGL_PROFILE, OPENGL_CORE_PROFILE)
+    windowHint(OPENGL_FORWARD_COMPAT, 1)
 
   window = createWindow(params.size.x.cint, params.size.y.cint, params.title.cstring, nil, nil)
   window.makeContextCurrent()
