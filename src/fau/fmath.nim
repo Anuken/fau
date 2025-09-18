@@ -1100,6 +1100,44 @@ proc `*`*(self: Vec2, mat: Mat): Vec2 = vec2(self.x * mat[0] + self.y * mat[3] +
 proc scl*(mat: Mat): Vec2 {.inline.} = vec2(mat[M00], mat[M11])
 
 proc trans*(mat: Mat): Vec2 {.inline.} = vec2(mat[M02], mat[M12])
+#TODO bad API
+proc matTranslate*(vec: Vec2): Mat = [
+    1f, 0f, 0f,
+    0f, 1f, 0f,
+    vec.x, vec.y, 1f
+  ]
+
+proc matScale*(vec: Vec2): Mat = [
+    vec.x, 0f, 0f,
+    0f, vec.y, 0f,
+    0f, 0f, 1f
+  ]
+
+proc matRotate*(rotation: float32): Mat = 
+  let 
+    cos = cos(rotation)
+    sin = sin(rotation)
+
+  return [
+    cos, sin, 0f,
+    -sin, cos, 0f,
+    0f, 0f, 1f
+  ]
+
+proc scaleBy*(mat: Mat, amount: Vec2): Mat {.inline.} =
+  result = mat
+  result[M00] *= amount.x
+  result[M11] *= amount.y
+
+proc translateBy*(mat: Mat, amount: Vec2): Mat {.inline.} =
+  result = mat
+  result[M02] += amount.x
+  result[M12] += amount.y
+
+proc translate*(mat: Mat, vec: Vec2): Mat {.inline.} = mat * matTranslate(vec)
+proc scale*(mat: Mat, vec: Vec2): Mat {.inline.} = mat * matScale(vec)
+proc rotate*(mat: Mat, amount: float32): Mat {.inline.} = mat * matRotate(amount)
+
 
 #PARTICLES
 
