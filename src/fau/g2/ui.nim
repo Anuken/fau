@@ -31,7 +31,9 @@ var
 
 proc uis*(val: float32): float32 {.inline.} = uiScale * val
 
-proc mouseUi(): Vec2 =
+proc uis*(val: Vec2): Vec2 {.inline.} = val * uiScale
+
+proc mouseUi*(): Vec2 =
   fau.mouseWorld()
 
 #TODO: inject some state for better button press handling.
