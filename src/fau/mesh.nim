@@ -131,7 +131,7 @@ proc toGlEnum(face: CullFace): GlEnum {.inline.} =
   of cfFrontAndBack: GlFrontAndBack
 
 #creates a new set of mesh parameters
-proc meshParams*(buffer: Framebuffer = screen, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled, cullFace = cfBack, clip = rect(), viewport = rect()): MeshParam {.inline.} = 
+proc meshParams*(buffer: Framebuffer = screenBufferHack, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled, cullFace = cfBack, clip = rect(), viewport = rect()): MeshParam {.inline.} = 
   MeshParam(buffer: buffer, offset: offset, count: count, depth: depth, writeDepth: writeDepth, blend: blend, cullFace: cullFace, clip: clip, viewport: viewport)
 
 #returns the unique ID of the shader - currently this is just the GL handle to the vertex buffer

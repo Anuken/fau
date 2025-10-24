@@ -151,6 +151,8 @@ type FauState* = object
   quad*: SMesh
   #Screenspace shader
   screenspace*: Shader
+  #Global framebuffer
+  screen*: Framebuffer
   #Global texture atlas.
   atlas*: Atlas
   #Frame number

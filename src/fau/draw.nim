@@ -1,4 +1,4 @@
-import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, tables, screenbuffer
+import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, tables
 export batch #for aligns
 
 ## Drawing utilities based on global state.
@@ -53,7 +53,7 @@ proc drawBuffer*(buffer: Framebuffer) =
   fau.batch.buffer(buffer)
 
 proc drawBufferScreen*() =
-  fau.batch.buffer(screen)
+  fau.batch.buffer(fau.screen)
 
 proc beginCache*(sort = true) =
   drawSort(sort)

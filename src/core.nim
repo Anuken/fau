@@ -1,4 +1,4 @@
-import fau/[fmath, globals, color, framebuffer, mesh, assets, patch, shader, texture, batch, atlas, draw, screenbuffer, input]
+import fau/[fmath, globals, color, framebuffer, mesh, assets, patch, shader, texture, batch, atlas, draw, input, screenbuffer]
 import os, times, random
 
 const isDebug* = defined(debug)
@@ -15,7 +15,7 @@ when not defined(noAudio):
 when isDebug and not defined(noRecorder):
   import fau/util/recorder
 
-export fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, screenbuffer, input
+export fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, input
 
 #global state for input/time
 var
@@ -107,8 +107,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
 
     fau.size = fau.sizei.vec2
 
-    screen.resize(fau.sizei)
-    screen.clear(fau.clearColor)
+    fau.screen.resize(fau.sizei)
+    fau.screen.clear(fau.clearColor)
 
     fireFauEvent(FauEvent(kind: feFrame))
 
@@ -155,8 +155,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     #assume window starts out shown
     fau.shown = true
 
-    screen = newDefaultFramebuffer(params.depth)
-    
+    fau.screen = newDefaultFramebuffer(params.depth)
+    screenBufferHack = fau.screen
+
     #create and use batch
     fau.batch = newBatch()
 

@@ -210,7 +210,7 @@ proc newBatch*(size: int = 16380): Batch =
       indices = newSeq[Index](size * 6),
       update = false #do not upload the vertices on the first draw call, it's redundant
     ),
-    buffer: screen,
+    buffer: screenBufferHack,
     size: size * 4,
     sort: true,
     requestVertices: newSeqOfCap[Vert2](10000)
