@@ -698,8 +698,8 @@ proc right*(r: Rect): float32 {.inline.} = r.x + r.w
 proc `top=`*(r: var Rect, val: float32) {.inline.} = r.h = val - r.y
 proc `right=`*(r: var Rect, val: float32) {.inline.} = r.w = val - r.x
 
-proc x2*(r: Rect): float32 {.inline.} = r.y + r.h
-proc y2*(r: Rect): float32 {.inline.} = r.x + r.w
+proc x2*(r: Rect): float32 {.inline.} = r.x + r.w
+proc y2*(r: Rect): float32 {.inline.} = r.y + r.h
 
 proc `x2=`*(r: var Rect, x: float32) {.inline.} = r.w = x - r.x
 proc `y2=`*(r: var Rect, y: float32) {.inline.} = r.h = y - r.y
