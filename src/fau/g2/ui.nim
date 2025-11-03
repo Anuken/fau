@@ -4,7 +4,7 @@ import ../draw, ../globals, ../color, ../patch, ../fmath, ../input, font
 
 type 
   ButtonStyle* = object
-    downColor*, upColor*, overColor*, disabledColor*: Color
+    downColor*, upColor*, overColor*, disabledColor*: Color = colorWhite
     iconUpColor*, iconDownColor*: Color
     up*, down*, over*: Patch9
     textUpColor*, textDisabledColor*, textOverColor*: Color = colorWhite
@@ -63,7 +63,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     col = style.downColor
     if style.down.valid: patch = style.down
 
-  draw(if patch.valid: patch else: fau.white.patch9, bounds, mixColor = col, scale = uiPatchScale)
+  draw(if patch.valid: patch else: fau.white.patch9, bounds, color = col, scale = uiPatchScale)
 
   if text.len != 0 and not font.isNil:
     font.draw(text,
