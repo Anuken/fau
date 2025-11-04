@@ -37,7 +37,7 @@ proc mouseUi*(): Vec2 =
   fau.mouseWorld()
 
 #TODO: inject some state for better button press handling.
-proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f, rotation = 0f, markup = false): bool =
+proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f, rotation = 0f, markup = false, z = 0f): bool =
   var 
     col = style.upColor
     textCol = style.textUpColor
@@ -63,18 +63,18 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     col = style.downColor
     if style.down.valid: patch = style.down
 
-  draw(if patch.valid: patch else: fau.white.patch9, bounds, color = col, scale = uiPatchScale)
+  draw(if patch.valid: patch else: fau.white.patch9, bounds, color = col, scale = uiPatchScale, z = z)
 
   if text.len != 0 and not font.isNil:
     font.draw(text,
       vec2(bounds.x, bounds.y) + vec2(patch.left.float32, patch.bot.float32) * uiPatchScale,
       bounds = vec2(bounds.w, bounds.h) - vec2(patch.left.float32 + patch.right.float32, patch.bot.float32 + patch.top.float32) * uiPatchScale,
       scale = uiFontScale, align = daCenter,
-      color = textCol, markup = markup
+      color = textCol, markup = markup, z = z
     )
 
   if icon.valid:
-    draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor, rotation = rotation)
+    draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor, rotation = rotation, z = z)
 
 template slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle, text = "") =
   ## Special slider template with automatic state injection.
