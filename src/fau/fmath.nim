@@ -692,6 +692,11 @@ proc topLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y + r.h)
 proc topRight*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y + r.h)
 proc botRight*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y)
 
+proc topCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w/2f, r.y + r.h)
+proc botCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w/2f, r.y)
+proc rightCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y + r.h/2f)
+proc leftCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y + r.h/2f)
+
 proc top*(r: Rect): float32 {.inline.} = r.y + r.h
 proc right*(r: Rect): float32 {.inline.} = r.x + r.w
 

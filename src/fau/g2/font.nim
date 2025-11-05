@@ -8,6 +8,8 @@ from vmath import x, y, `*`, `-`, `+`, isNaN, translate
 from bumpy import xy
 from chroma import nil
 
+const debugBounds = defined(fontBoundsDebug)
+
 #Dynamic packer that writes its results to a GL texture.
 type TexturePacker* = ref object
   texture*: Texture
@@ -305,7 +307,11 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
         )
 
         #lineRect(fmath.rect(fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y), patch.size * scale), stroke = 1f, color = colorGreen, z = z)
-  return rect(tbx, tby, tbx2 - tbx, tby2 - tby)
+  result = rect(tbx, tby, tbx2 - tbx, tby2 - tby)
+
+  when debugBounds:
+    lineRect(fmath.rect(pos, bounds), stroke = scale, color = colorPurple, z = z)
+    lineRect(result, stroke = scale, color = colorGreen, z = z)
 
 proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
   return draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier, markup)
