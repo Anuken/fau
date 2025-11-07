@@ -17,8 +17,8 @@ type KeyCode* = enum
   keyExecute, keyHelp, keyMenu, keySelect, keyStop, keyAgain, keyUndo, keyCut, keyCopy, keyPaste, keyFind, keyMute, keyVolumeup, keyVolumedown,
   keyKpComma, keyAlterase, keySysreq, keyCancel, keyClear, keyPrior, keyReturn2, keySeparator, keyOut, keyOper, keyClearagain,
   keyCrsel, keyExsel, keyDecimalseparator, keyLctrl, keyLshift, keyLalt, keyLgui, keyRctrl, keyLsuper, keyRsuper,
-  keyRshift, keyRalt, keyRgui, keyMode, keyUnknown,
-  keyMouseLeft, keyMouseMiddle, keyMouseRight
+  keyRshift, keyRalt, keyRgui, keyMode, keyUnknown, keyUnset,
+  keyMouseLeft, keyMouseMiddle, keyMouseRight, keyMouseForward, keyMouseBack
 
 const
   allNumpadKeys* = [keyKp1, keyKp2, keyKp3, keyKp4, keyKp5, keyKp6, keyKp7, keyKp8, keyKp9]

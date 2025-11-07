@@ -170,6 +170,8 @@ proc mapMouseCode(code: cint): KeyCode =
     of MOUSE_BUTTON_LEFT: keyMouseLeft
     of MOUSE_BUTTON_RIGHT: keyMouseRight
     of MOUSE_BUTTON_MIDDLE: keyMouseMiddle
+    of MOUSE_BUTTON_5: keyMouseForward
+    of MOUSE_BUTTON_4: keyMouseBack
     else: keyUnknown
 
 var theLoop: proc()

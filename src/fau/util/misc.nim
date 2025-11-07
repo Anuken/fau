@@ -23,6 +23,8 @@ proc capitalize*(str: openArray[char], spaces = false, camel = false): string =
     elif (i == 0 and not camel) or (i > 0 and str[i - 1] in {'-', '_'}):
       result.add(c.toUpperAscii)
     else:
+      if i > 0 and spaces and c.isUpperAscii and str[i - 1].isLowerAscii:
+        result.add ' '
       result.add(c)
 
 #walkDirRec implementation that actually works when cross-compiling (avoid usage of the `/` proc)

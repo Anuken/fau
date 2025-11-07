@@ -76,12 +76,12 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
   if icon.valid:
     draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor, rotation = rotation, z = z)
 
-template slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle, text = "") =
+template slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle, text = "", disabled = false) =
   ## Special slider template with automatic state injection.
   var down {.global.}: bool
-  slider(bounds, min, max, down, value, style, text)
+  slider(bounds, min, max, down, value, style, text, 1f, disabled)
 
-proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var float32, style = defaultSliderStyle, text = "", textScale = 1f) =
+proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var float32, style = defaultSliderStyle, text = "", textScale = 1f, disabled = false) =
   #TODO vertical padding would be nice?
   if style.back.valid:
     draw(style.back, bounds, scale = uiPatchScale, mixColor = style.backColor)
@@ -95,7 +95,7 @@ proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var floa
     patch = style.up
     col = style.upColor
 
-  if bounds.contains(mouse) or wasDown:
+  if (bounds.contains(mouse) or wasDown) and not disabled:
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
 
