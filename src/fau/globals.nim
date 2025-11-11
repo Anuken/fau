@@ -194,6 +194,8 @@ type FauState* = object
   #All last known touch pointer states
   touches*: array[10, Touch]
 
+  #If true, a mouse is hovered over an in-game button (similar to captureMouse but for non-imgui)
+  uiHover*: bool
   #If true, the mouse is captured by UI.
   captureMouse*: bool
   #If true, the keyboard is captured by UI.

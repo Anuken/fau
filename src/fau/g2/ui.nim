@@ -51,6 +51,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     textCol = style.textDisabledColor
 
   if over:
+    fau.uiHover = true
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
     textCol = style.textOverColor
@@ -98,6 +99,7 @@ proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var floa
   if (bounds.contains(mouse) or wasDown) and not disabled:
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
+    fau.uiHover = true
 
     if keyMouseLeft.tapped or wasDown:
       wasDown = true
