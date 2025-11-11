@@ -37,9 +37,12 @@ proc drawClip*(clipped = rect(), view = fau.cam.screenBounds): bool {.discardabl
     let
       topRight = project(fau.batch.mat, clipped.topRight, view)
       botLeft = project(fau.batch.mat, clipped.botLeft, view)
+      bounds = rect(botLeft, topRight - botLeft)
 
-    fau.batch.clip(rect(botLeft, topRight - botLeft))
-    return true
+    if bounds.w.int > 0 and bounds.h.int > 0:
+      fau.batch.clip(bounds)
+      return true
+    return false
   else:
     fau.batch.clip(rect())
     return false
