@@ -134,10 +134,10 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
   """
   )
 
-proc buffer*(bloom: Bloom, clearColor = colorClear, size = fau.sizei): Framebuffer =
+proc buffer*(bloom: Bloom, clearColor = colorClear, size = fau.sizei, scaling = bloom.scaling): Framebuffer =
   bloom.buffer.resize(size)
-  bloom.p1.resize(size div bloom.scaling)
-  bloom.p2.resize(size div bloom.scaling)
+  bloom.p1.resize(size div scaling)
+  bloom.p2.resize(size div scaling)
 
   bloom.buffer.clear(clearColor)
   return bloom.buffer
