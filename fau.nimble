@@ -16,7 +16,7 @@ requires "chroma >= 0.2.7"
 requires "pixie >= 5.0.6"
 requires "vmath >= 2.0.0"
 requires "stbimage >= 2.5"
-requires "https://www.github.com/Anuken/jsony#b8c0edbac379b0507c1967c56725ecf442cfd6d7"
+requires "https://www.github.com/Anuken/jsony#d4d368b0d8c6f1db0f842f73bbe31f42855a9375"
 requires "mimalloc >= 0.3.6"
 
 task imguiGen, "Generate imGUI bindings from source":
