@@ -578,13 +578,13 @@ proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, r
   
   arcRadius(pos, sides, angleFrom, angleTo, r1, r2, rotation, color, z)
 
-proc crescent*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
+proc crescent*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f, slopePow = 1f) =
   let 
-    space = (angleTo - angleFrom) / sides.float32
+    space = (angleTo - angleFrom) / (sides.float32)
   
   for i in 0..<sides:
     let 
-      hstep = stroke / 2.0 / cos(space / 2.0) * (i / sides).slope
+      hstep = stroke / 2.0 / cos(space / 2.0) * (i / (sides - 1)).slope.powout(slopePow)
       r1 = radius - hstep
       r2 = radius + hstep
 
