@@ -15,6 +15,7 @@ type TextureObj = object
   minfilter, magfilter: TextureFilter
   target: Glenum
   size*: Vec2i
+  mipmaps: bool
 type Texture* = ref TextureObj
 
 type Img* = object
@@ -91,6 +92,8 @@ proc load*(texture: Texture, size: Vec2i, pixels: pointer) =
   #bind texture
   texture.use()
   glTexImage2D(texture.target, 0, GlRGBA.Glint, size.x.GLsizei, size.y.GLsizei, 0, GlRGBA, GlUnsignedByte, pixels)
+  if texture.mipmaps:
+    glGenerateMipmap(texture.target)
   texture.size = size
 
 #updates a portion of a texture with some pixels.
@@ -100,8 +103,8 @@ proc update*(texture: Texture, pos: Vec2i, size: Vec2i, pixels: pointer) =
   glTexSubImage2D(texture.target, 0, pos.x.GLint, pos.y.GLint, size.x.GLsizei, size.y.GLsizei, GlRGBA, GlUnsignedByte, pixels)
 
 #creates a base texture with no data uploaded
-proc newTexture*(size: Vec2i = vec2i(1), filter = tfNearest, wrap = twClamp): Texture = 
-  result = Texture(handle: glGenTexture(), uwrap: wrap, vwrap: wrap, minfilter: filter, magfilter: filter, target: GlTexture2D, size: size)
+proc newTexture*(size: Vec2i = vec2i(1), filter = tfNearest, wrap = twClamp, mipmaps = false): Texture = 
+  result = Texture(handle: glGenTexture(), uwrap: wrap, vwrap: wrap, minfilter: filter, magfilter: filter, target: GlTexture2D, size: size, mipmaps: mipmaps)
   result.use()
 
   #set parameters
@@ -111,15 +114,15 @@ proc newTexture*(size: Vec2i = vec2i(1), filter = tfNearest, wrap = twClamp): Te
   glTexParameteri(result.target, GlTextureWrapT, result.vwrap.toGlEnum.GLint)
 
 #load texture from ptr to decoded PNG data
-proc loadTexturePtr*(size: Vec2i, data: pointer, filter = tfNearest, wrap = twClamp): Texture =
-  result = newTexture(filter = filter, wrap = wrap)
+proc loadTexturePtr*(size: Vec2i, data: pointer, filter = tfNearest, wrap = twClamp, mipmaps = false): Texture =
+  result = newTexture(filter = filter, wrap = wrap, mipmaps = mipmaps)
 
   result.size = size
   result.load(size, data)
 
 #load texture from bytes
-proc loadTextureBytes*(bytes: string, filter = tfNearest, wrap = twClamp): Texture =
-  result = newTexture(filter = filter, wrap = wrap)
+proc loadTextureBytes*(bytes: string, filter = tfNearest, wrap = twClamp, mipmaps = false): Texture =
+  result = newTexture(filter = filter, wrap = wrap, mipmaps = mipmaps)
 
   var
     width, height, channels: int
@@ -129,8 +132,8 @@ proc loadTextureBytes*(bytes: string, filter = tfNearest, wrap = twClamp): Textu
   result.load(vec2i(width, height), addr data[0])
 
 #load texture from path
-proc loadTextureFile*(path: string, filter = tfNearest, wrap = twClamp): Texture = 
-  result = newTexture(filter = filter, wrap = wrap)
+proc loadTextureFile*(path: string, filter = tfNearest, wrap = twClamp, mipmaps = false): Texture = 
+  result = newTexture(filter = filter, wrap = wrap, mipmaps = mipmaps)
 
   var
     width, height, channels: int
@@ -143,16 +146,16 @@ proc loadTextureFile*(path: string, filter = tfNearest, wrap = twClamp): Texture
 
   result.load(vec2i(width, height), addr data[0])
 
-proc loadTextureAsset*(path: string, filter = tfNearest, wrap = twClamp): Texture =
-  loadTextureBytes(assetRead(path), filter, wrap)
+proc loadTextureAsset*(path: string, filter = tfNearest, wrap = twClamp, mipmaps = false): Texture =
+  loadTextureBytes(assetRead(path), filter, wrap, mipmaps)
 
-proc loadTexture*(path: static[string], filter = tfNearest, wrap = twClamp): Texture =
+proc loadTexture*(path: static[string], filter = tfNearest, wrap = twClamp, mipmaps = false): Texture =
   when staticAssets:
-    loadTextureBytes(assetReadStatic(path), filter, wrap)
+    loadTextureBytes(assetReadStatic(path), filter, wrap, mipmaps)
   elif defined(Android): #android -> load asset
-    loadTextureBytes(assetRead(path), filter, wrap)
+    loadTextureBytes(assetRead(path), filter, wrap, mipmaps)
   else: #load from filesystem
-    loadTextureFile(path.assetFile, filter, wrap)
+    loadTextureFile(path.assetFile, filter, wrap, mipmaps)
 
 proc loadImgBytes*(textureBytes: string): Img =
   var
