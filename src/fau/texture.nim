@@ -2,7 +2,8 @@ import stb_image/read as stbi, gl/[glproc, gltypes], fmath, assets, os
 
 type TextureFilter* = enum
   tfNearest,
-  tfLinear
+  tfLinear,
+  tfMipMap
 
 type TextureWrap* = enum
   twClamp,
@@ -44,6 +45,7 @@ proc toGlEnum*(filter: TextureFilter): GLenum {.inline.} =
   case filter
   of tfNearest: GlNearest
   of tfLinear: GlLinear
+  of tfMipmap: GlLinearMipmapLinear
 
 proc toGlEnum(wrap: TextureWrap): GLenum {.inline.} =
   case wrap
@@ -109,7 +111,8 @@ proc newTexture*(size: Vec2i = vec2i(1), filter = tfNearest, wrap = twClamp, mip
 
   #set parameters
   glTexParameteri(result.target, GlTextureMinFilter, result.minfilter.toGlEnum.GLint)
-  glTexParameteri(result.target, GlTextureMagFilter, result.magfilter.toGlEnum.GLint)
+  #mipmap can't be a magnification filter, but allow it for convenience
+  glTexParameteri(result.target, GlTextureMagFilter, if result.magFilter == tfMipMap: GlLinear.GLint else: result.magfilter.toGlEnum.GLint)
   glTexParameteri(result.target, GlTextureWrapS, result.uwrap.toGlEnum.GLint)
   glTexParameteri(result.target, GlTextureWrapT, result.vwrap.toGlEnum.GLint)
 
