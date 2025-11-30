@@ -28,6 +28,8 @@ proc empty*(anim: Animation): bool = anim.frames.len == 0 or not anim.frames[0].
 
 proc `[]`*(anim: Animation, time = fau.time): Patch = anim.frame(time)
 
+proc len*(anim: Animation): int = anim.frames.len
+
 proc loadAnimation*(atlas: Atlas, name: string, delay = 0f, startFrame = 0): Animation =
   result.delay = delay
   var 

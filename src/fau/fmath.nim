@@ -1139,7 +1139,7 @@ proc scale*(mat: Mat, vec: Vec2): Mat {.inline.} = mat * matScale(vec)
 proc rotate*(mat: Mat, amount: float32): Mat {.inline.} = mat * matRotate(amount)
 
 
-#PARTICLES
+#PARTICLES - TODO - move to a new module
 
 ## Stateless particles based on RNG. x/y are injected into template body.
 template particles*(seed: int, amount: int, ppos: Vec2, radius: float32, body: untyped) =
@@ -1222,7 +1222,7 @@ template spread*(shots: int, spread: float32, body: untyped) =
       spreadIndex {.inject, used.} = i
     body
 
-#CAMERA
+#CAMERA - TODO - move to another module (it's not math)
 
 proc width*(cam: Cam): float32 {.inline.} = cam.size.x
 proc height*(cam: Cam): float32 {.inline.} = cam.size.y

@@ -28,13 +28,16 @@ type
   AseLayer* = ref object
     flags*: set[AseLayerFlags]
     name*: string
+    index*: int
     opacity*: uint8
     frames*: seq[AseFrame]
     kind*: AseLayerType
     userData*: string
     userColor*: uint32 #RGBA8888
+    children*: seq[AseLayer]
   AseImage* = ref object
     layers*: seq[AseLayer]
+    rootLayers*: seq[AseLayer]
     tags*: seq[AseTag]
     width*, height*: int
     colorDepth*: int
@@ -85,9 +88,12 @@ proc readAseStream*(s: Stream): AseImage =
 
   var 
     layerData: seq[AseLayer]
+    rootLayers: seq[AseLayer]
     tags: seq[AseTag]
     justReadTags = false
     readTagIndex = 0
+    groupStack: seq[AseLayer]
+    lastDepth = 0
 
   for frameid in 0..<frames.int:
     discard s.readUint32() #frame total bytes
@@ -119,8 +125,8 @@ proc readAseStream*(s: Stream): AseImage =
         let
           flags = s.readUint16()
           layerType = s.readUint16()
-        
-        discard s.readUint16() #child level, ignored
+          childLevel = s.readUint16().int #child level, ignored
+
         discard s.readUint32() #width/height, ignored
         discard s.readUint16() #blend mode, ignored
 
@@ -134,8 +140,25 @@ proc readAseStream*(s: Stream): AseImage =
         if layerType == 2:
           #tileset index, don't care
           discard s.readUint32()
+
+        let resultLayer = AseLayer(index: layerData.len, opacity: if validOpacity: opacity else: 255'u8, name: name, flags: cast[set[AseLayerFlags]](flags), kind: layerType.AseLayerType)
         
-        layerData.add AseLayer(opacity: if validOpacity: opacity else: 255'u8, name: name, flags: cast[set[AseLayerFlags]](flags), kind: layerType.AseLayerType)
+        layerData.add resultLayer
+        
+        if childLevel < lastDepth:
+          for i in 0..<(lastDepth - childLevel):
+            if groupStack.len > 0:
+              discard groupStack.pop()
+        
+        lastDepth = childLevel
+
+        if childLevel > 0 and groupStack.len > 0:
+          groupStack[^1].children.add resultLayer
+        else:
+          rootLayers.add resultLayer
+
+        if resultLayer.kind == alGroup:
+          groupStack.add(resultLayer)
       
       elif chunkType == 0x2018'u16: #tags
         justReadTags = true
@@ -228,6 +251,6 @@ proc readAseStream*(s: Stream): AseImage =
           x: 0, y: 0, width: 0, height: 0, opacity: 255'u8
         )
     
-  return AseImage(layers: layerData, width: width.int, height: height.int, colorDepth: colorDepth.int, tags: tags)
+  return AseImage(layers: layerData, rootLayers: rootLayers, width: width.int, height: height.int, colorDepth: colorDepth.int, tags: tags)
 
 proc readAseFile*(path: string): AseImage = readAseStream(newFileStream(path, bufSize = 512))
