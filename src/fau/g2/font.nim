@@ -53,6 +53,10 @@ type
 
   Font* = ref object
     font: pixie.Font
+    packer: TexturePacker
+    outlineColor: Color
+    outline, diagonalOutline: bool
+    dirty: bool
     glyphs: Table[Rune, FontGlyph]
   GlyphProc* = proc(index: int, offset: var fmath.Vec2, color: var Color, draw: var bool)
 
@@ -111,6 +115,22 @@ proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color
   result[3] = fmath.vec2(bounds.w, bounds.h)
   result[2] = -(result[1] + fmath.vec2(bounds.w, bounds.h))
 
+proc packGlyph(font: Font, code: Rune): bool {.discardable.} =
+  let (image, offset, down, realSize) = font.font.getGlyphImage(code, font.outline, font.outlineColor, font.diagonalOutline)
+  if image.isNil: return false
+
+  let patch = font.packer.pack(image)
+  font.glyphs[code] = FontGlyph(patch: patch, offset: offset, down: down, realSize: realSize)
+
+  font.dirty = true
+
+  return true
+
+proc updateTexture(font: Font) =
+  if font.dirty:
+    font.packer.update()
+    font.dirty = false
+
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 
 proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
@@ -118,33 +138,26 @@ proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, out
 
   font.size = size
 
-  result = Font(font: font)
-
-  let packer = newTexturePacker(fmath.vec2i(textureSize, textureSize))
+  result = Font(font: font, packer: newTexturePacker(fmath.vec2i(textureSize, textureSize)), outline: outline, outlineColor: outlineColor, diagonalOutline: diagonalOutline)
 
   #load standard latin characters
   for ch in 0x0020'u16..0x00FF'u16:
-    let code = Rune(ch)
+    result.packGlyph(ch.Rune)
 
-    let (image, offset, down, realSize) = font.getGlyphImage(code, outline, outlineColor, diagonalOutline)
-    if image.isNil: continue
-
-    let patch = packer.pack(image)
-    result.glyphs[code] = FontGlyph(patch: patch, offset: offset, down: down, realSize: realSize)
-
-  packer.update()
+  result.updateTexture()
 
 #return (color, length)
-proc parseTag(text: openArray[char], start: int): (Tag, int) =
-  case text[start]:
+proc parseTag(text: openArray[Rune], start: int): (Tag, int) =
+  {.push checks: off}
+
+  case text[start].char:
   of ']': return (Tag(), 1) #this means '[]', or the white color
   of '#': #color tag
-    {.push checks: off}
     
     # Parse hex color RRGGBBAA where AA is optional and defaults to 0xFF if less than 6 chars are used.
     var colorInt = 0'u32;
     for i in (start + 1)..<text.len:
-      let ch = text[i]
+      let ch = text[i].char
 
       if ch == ']':
         if i < start + 2 or i > start + 9 or i == start + 8: 
@@ -169,55 +182,63 @@ proc parseTag(text: openArray[char], start: int): (Tag, int) =
     
     return (Tag(), -1)
 
-    {.pop.}
   #invalid (custom color names not supported)
   else: return (Tag(), -1)
 
+  {.pop.}
+
 #returns (displayed string, seq[(color, startPos)])
 proc parseMarkup(color: Color, text: openArray[char]): (string, seq[(Tag, int)]) =
+  {.push checks: off}
+
   var 
+    runes = text.toRunes
     i = 0
     builder = newStringOfCap(text.len)
+    blen = 0
     tags: seq[(Tag, int)]
     lastPos = -1
 
   template applyFormat(i: int, newStyle: TextStyle) =
-    if lastPos != builder.len:
+    if lastPos != blen:
       let lastColor = if tags.len == 0: color else: tags[^1][0].color
-      tags.add (Tag(style: newStyle, color: lastColor), builder.len)
-      lastPos = builder.len
+      tags.add (Tag(style: newStyle, color: lastColor), blen)
+      lastPos = blen
     else:
       #special case: there are two tags right next to each other with no spacing, overwrite the head tag
       let prev = tags[^1][0].style
       
       tags[^1][0].style = if newStyle == prev: None else: newStyle
 
-  while i < text.len:
+  while i < runes.len:
     #parse tag
-    if i < text.len - 1 and text[i] == '[' and text[i + 1] != '[' and (i == 0 or text[i - 1] != '['):
-      let (tag, len) = parseTag(text, i + 1)
+    if i < runes.len - 1 and runes[i].char == '[' and runes[i + 1].char != '[' and (i == 0 or runes[i - 1].char != '['):
+      let (tag, len) = parseTag(runes, i + 1)
 
       if len > 0:
         i += len + 1
-        if lastPos != builder.len:
-          tags.add (tag, builder.len)
-          lastPos = builder.len
+        if lastPos != blen:
+          tags.add (tag, blen)
+          lastPos = blen
         else:
           #special case: there are two tags right next to each other with no spacing, overwrite the head tag
-          tags[^1] = (tag, builder.len)
+          tags[^1] = (tag, blen)
         continue
     
     #parse markup character
-    if i == 0 or text[i - 1] != '\\':
-      if text[i] == '*':
+    if i == 0 or runes[i - 1].char != '\\':
+      if runes[i].char == '*':
         applyFormat(i, Italic)
         i.inc
         continue
     
-    builder &= text[i]
+    builder &= $runes[i]
+    blen.inc
     i.inc
   
   return (builder, tags)
+
+  {.pop.}
 
 proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
   var 
@@ -261,8 +282,21 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
             styles.incl style
         
         markupIndex.inc
+    
+    var 
+      found = false
+      glyph: FontGlyph
+    
+    font.glyphs.withValue(rune, value):
+      glyph = value[]
+      found = true
+    
+    if not found:
+      if font.packGlyph(rune):
+        found = true
+        glyph = font.glyphs[rune]
 
-    font.glyphs.withValue(rune, glyph):
+    if found:
       let 
         offset = glyph.offset
         patch = glyph.patch
@@ -308,6 +342,9 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
 
         #lineRect(fmath.rect(fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y), patch.size * scale), stroke = 1f, color = colorGreen, z = z)
   result = rect(tbx, tby, tbx2 - tbx, tby2 - tby)
+
+  #TODO: if there is one new character per frame, this lags. a lot.
+  font.updateTexture()
 
   when debugBounds:
     lineRect(fmath.rect(pos, bounds), stroke = scale, color = colorPurple, z = z)
