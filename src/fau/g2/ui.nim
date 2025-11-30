@@ -4,7 +4,7 @@ import ../draw, ../globals, ../color, ../patch, ../fmath, ../input, font
 
 type 
   ButtonStyle* = object
-    downColor*, upColor*, overColor*, disabledColor*: Color
+    downColor*, upColor*, overColor*, disabledColor*: Color = colorWhite
     iconUpColor*, iconDownColor*: Color
     up*, down*, over*: Patch9
     textUpColor*, textDisabledColor*, textOverColor*: Color = colorWhite
@@ -31,11 +31,13 @@ var
 
 proc uis*(val: float32): float32 {.inline.} = uiScale * val
 
-proc mouseUi(): Vec2 =
+proc uis*(val: Vec2): Vec2 {.inline.} = val * uiScale
+
+proc mouseUi*(): Vec2 =
   fau.mouseWorld()
 
 #TODO: inject some state for better button press handling.
-proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f, rotation = 0f, markup = false): bool =
+proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch(), toggled = false, disabled = false, iconSize = if icon.valid: uiPatchScale * icon.widthf else: 0f, rotation = 0f, markup = false, z = 0f): bool =
   var 
     col = style.upColor
     textCol = style.textUpColor
@@ -49,6 +51,7 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     textCol = style.textDisabledColor
 
   if over:
+    fau.uiHover = true
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
     textCol = style.textOverColor
@@ -61,25 +64,25 @@ proc button*(bounds: Rect, text = "", style = defaultButtonStyle, icon = Patch()
     col = style.downColor
     if style.down.valid: patch = style.down
 
-  draw(if patch.valid: patch else: fau.white.patch9, bounds, mixColor = col, scale = uiPatchScale)
+  draw(if patch.valid: patch else: fau.white.patch9, bounds, color = col, scale = uiPatchScale, z = z)
 
   if text.len != 0 and not font.isNil:
     font.draw(text,
       vec2(bounds.x, bounds.y) + vec2(patch.left.float32, patch.bot.float32) * uiPatchScale,
       bounds = vec2(bounds.w, bounds.h) - vec2(patch.left.float32 + patch.right.float32, patch.bot.float32 + patch.top.float32) * uiPatchScale,
       scale = uiFontScale, align = daCenter,
-      color = textCol, markup = markup
+      color = textCol, markup = markup, z = z
     )
 
   if icon.valid:
-    draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor, rotation = rotation)
+    draw(icon, bounds.center, iconSize.vec2, mixColor = if down: style.iconDownColor else: style.iconUpColor, rotation = rotation, z = z)
 
-template slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle, text = "") =
+template slider*(bounds: Rect, min, max: float32, value: var float32, style = defaultSliderStyle, text = "", disabled = false) =
   ## Special slider template with automatic state injection.
   var down {.global.}: bool
-  slider(bounds, min, max, down, value, style, text)
+  slider(bounds, min, max, down, value, style, text, 1f, disabled)
 
-proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var float32, style = defaultSliderStyle, text = "", textScale = 1f) =
+proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var float32, style = defaultSliderStyle, text = "", textScale = 1f, disabled = false) =
   #TODO vertical padding would be nice?
   if style.back.valid:
     draw(style.back, bounds, scale = uiPatchScale, mixColor = style.backColor)
@@ -93,9 +96,10 @@ proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var floa
     patch = style.up
     col = style.upColor
 
-  if bounds.contains(mouse) or wasDown:
+  if (bounds.contains(mouse) or wasDown) and not disabled:
     if canHover and style.over.valid: patch = style.over
     if canHover: col = style.overColor
+    fau.uiHover = true
 
     if keyMouseLeft.tapped or wasDown:
       wasDown = true
@@ -113,10 +117,10 @@ proc slider*(bounds: Rect, min, max: float32, wasDown: var bool, value: var floa
     defaultFont.draw(text, bounds, scale = uiFontScale * textScale)
 
 #TODO remove? this is striclty less useful
-proc text*(bounds: Rect, text: string, align = daCenter, color = colorWhite, scale = 1f, modifier: GlyphProc = nil, markup = false, font = defaultFont): Rect {.discardable.} =
+proc text*(bounds: Rect, text: string, align = daCenter, color = colorWhite, scale = 1f, modifier: GlyphProc = nil, markup = false, font = defaultFont, z = 0f): Rect {.discardable.} =
   return font.draw(text,
     bounds,
     scale = uiFontScale * scale, align = align,
     color = color, modifier = modifier,
-    markup = markup
+    markup = markup, z = z
   )

@@ -68,7 +68,7 @@ proc buffer*(blur: Blur, clearColor = colorClear, size = fau.sizei): Framebuffer
   blur.p1.clear(clearColor)
   return blur.p1
 
-proc blit*(blur: Blur, params = meshParams()) =
+proc blit*(blur: Blur, params = meshParams(), strength = 1f) =
   
   #no texture
   if blur.p1.texture.isNil: return
@@ -81,11 +81,11 @@ proc blit*(blur: Blur, params = meshParams()) =
     #horizontal
     blit(blur.shader, meshParams(buffer = blur.p2)):
       texture = blur.p1.sampler
-      dir = vec2(1, 0)
+      dir = vec2(1, 0) * strength
     #vertical
     blit(blur.shader, meshParams(buffer = blur.p1)):
       texture = blur.p2.sampler
-      dir = vec2(0, 1)
+      dir = vec2(0, 1) * strength
 
   blit(fau.screenspace, params):
     texture = blur.p1.sampler(0)

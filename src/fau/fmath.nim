@@ -692,14 +692,19 @@ proc topLeft*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y + r.h)
 proc topRight*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y + r.h)
 proc botRight*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y)
 
+proc topCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w/2f, r.y + r.h)
+proc botCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w/2f, r.y)
+proc rightCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y + r.h/2f)
+proc leftCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y + r.h/2f)
+
 proc top*(r: Rect): float32 {.inline.} = r.y + r.h
 proc right*(r: Rect): float32 {.inline.} = r.x + r.w
 
 proc `top=`*(r: var Rect, val: float32) {.inline.} = r.h = val - r.y
 proc `right=`*(r: var Rect, val: float32) {.inline.} = r.w = val - r.x
 
-proc x2*(r: Rect): float32 {.inline.} = r.y + r.h
-proc y2*(r: Rect): float32 {.inline.} = r.x + r.w
+proc x2*(r: Rect): float32 {.inline.} = r.x + r.w
+proc y2*(r: Rect): float32 {.inline.} = r.y + r.h
 
 proc `x2=`*(r: var Rect, x: float32) {.inline.} = r.w = x - r.x
 proc `y2=`*(r: var Rect, y: float32) {.inline.} = r.h = y - r.y

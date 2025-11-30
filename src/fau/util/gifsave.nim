@@ -1,4 +1,4 @@
-import ../draw, ../globals, ../fmath, ../screenbuffer, ../color, os, strformat, times, osproc, math, streams, strutils
+import ../draw, ../globals, ../fmath, ../color, os, strformat, times, osproc, math, streams, strutils
 from pixie import Image, newImage, writeFile, flipVertical
 
 export Image, newImage, writeFile, flipVertical
@@ -11,7 +11,7 @@ const useGifPalette = defined(useGifPalette)
 
 proc addGifFrame*(frames: var seq[pointer], bounds: Rect): pointer {.discardable.} =
   drawFlush()
-  result = screen.read(
+  result = fau.screen.read(
     bounds.xy.vec2i,
     bounds.size.vec2i
   )
@@ -55,7 +55,7 @@ template makeAnimation*(frameCount: int, fps: int, bounds: Rect, path: string, p
 
   for i {.inject.} in 0..<frameCount:
     let fin {.inject, used.} = i.float32 / (frameCount.float32)
-    screen.clear(background)
+    fau.screen.clear(background)
     body
 
     let 
@@ -77,7 +77,7 @@ template makeGifBase*(frameCount: int, fps: int, bounds: Rect, path: string, bac
 
   for i {.inject.} in 0..<frameCount:
     let fin {.inject, used.} = i.float32 / (frameCount.float32)
-    screen.clear(background)
+    fau.screen.clear(background)
     body
     addGifFrame(frames.bounds)
   

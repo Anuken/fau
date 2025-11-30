@@ -1,4 +1,4 @@
-import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, ../util/misc, stb_image/read as stbi
+import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, ../util/misc, stb_image/read as stbi, std/strutils
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 
@@ -170,7 +170,22 @@ proc mapMouseCode(code: cint): KeyCode =
     of MOUSE_BUTTON_LEFT: keyMouseLeft
     of MOUSE_BUTTON_RIGHT: keyMouseRight
     of MOUSE_BUTTON_MIDDLE: keyMouseMiddle
+    of MOUSE_BUTTON_5: keyMouseForward
+    of MOUSE_BUTTON_4: keyMouseBack
     else: keyUnknown
+
+# will return an empty string for unknown keys
+proc getKeyName*(code: KeyCode): string = 
+  var keyNames {.global.}: array[KeyCode, string]
+
+  once:
+    for i in 0..<384:
+      let key = toKeyCode(i.cint)
+      if key != keyUnknown:
+        let val = $getKeyName(i.cint, KEY_UNKNOWN.cint)
+        keyNames[key] = (if val.len == 1: capitalizeAscii(val) else: val)
+  
+  return keyNames[code]
 
 var theLoop: proc()
 

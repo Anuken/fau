@@ -1,4 +1,4 @@
-import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, tables, screenbuffer
+import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, tables
 export batch #for aligns
 
 ## Drawing utilities based on global state.
@@ -37,9 +37,12 @@ proc drawClip*(clipped = rect(), view = fau.cam.screenBounds): bool {.discardabl
     let
       topRight = project(fau.batch.mat, clipped.topRight, view)
       botLeft = project(fau.batch.mat, clipped.botLeft, view)
+      bounds = rect(botLeft, topRight - botLeft)
 
-    fau.batch.clip(rect(botLeft, topRight - botLeft))
-    return true
+    if bounds.w.int > 0 and bounds.h.int > 0:
+      fau.batch.clip(bounds)
+      return true
+    return false
   else:
     fau.batch.clip(rect())
     return false
@@ -53,7 +56,7 @@ proc drawBuffer*(buffer: Framebuffer) =
   fau.batch.buffer(buffer)
 
 proc drawBufferScreen*() =
-  fau.batch.buffer(screen)
+  fau.batch.buffer(fau.screen)
 
 proc beginCache*(sort = true) =
   drawSort(sort)
@@ -575,13 +578,13 @@ proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, r
   
   arcRadius(pos, sides, angleFrom, angleTo, r1, r2, rotation, color, z)
 
-proc crescent*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
+proc crescent*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f, slopePow = 1f) =
   let 
-    space = (angleTo - angleFrom) / sides.float32
+    space = (angleTo - angleFrom) / (sides.float32)
   
   for i in 0..<sides:
     let 
-      hstep = stroke / 2.0 / cos(space / 2.0) * (i / sides).slope
+      hstep = stroke / 2.0 / cos(space / 2.0) * (i / (sides - 1)).slope.powout(slopePow)
       r1 = radius - hstep
       r2 = radius + hstep
 

@@ -1,4 +1,4 @@
-import ../draw, ../globals, ../fmath, ../input, ../screenbuffer, ../color, os, strformat, times, osproc, math, streams, strutils
+import ../draw, ../globals, ../fmath, ../input, ../color, ../framebuffer, os, strformat, times, osproc, math, streams, strutils
 
 const
   resizeKey = keyLctrl
@@ -87,7 +87,7 @@ proc record*() =
     if ftime >= 60f / recordFps:
       ftime = ftime.mod 60f / recordFps
 
-      frames.add screen.read(
+      frames.add fau.screen.read(
          (recordOffset + fau.size/2f - recordSize/2f).vec2i,
          recordSize.vec2i
        )
