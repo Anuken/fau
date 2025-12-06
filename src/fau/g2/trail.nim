@@ -50,22 +50,22 @@ proc draw*(trail: var Trail, color: Color, width: float32, z = 0f, blend = blend
       p2 = initPoint(trail.lastPos, trail.lastWidth)
     
     let a2 = if p.v == p2.v: trail.lastAngle else: -p.v.angle(p2.v)
-    let a1 = if i == 0: a2 else: trail.lastAngle
+    let a1 = if i == 0: a2 else: lastAngle
 
     if p.width <= 0.001f or p2.width <= 0.001f: continue
 
     let
-      c = vec2(sin(a1), cos(a1)) * i * size * p.width
-      n = vec2(sin(a2), cos(a2)) * (i+1f) * size * p2.width
+      offset1 = vec2(sin(a1), cos(a1)) * i * size * p.width
+      offset2 = vec2(sin(a2), cos(a2)) * (i+1f) * size * p2.width
 
       c1 = color.mix(color2, 1f - i / trail.points.len)
       c2 = color.mix(color2, 1f - (i + 1) / trail.points.len)
     
     fillQuad(
-      p.v - c, c1,
-      p.v + c, c1,
-      p2.v - n, c2,
-      p2.v + n, c2,
+      p.v - offset1, c1,
+      p.v + offset1, c1,
+      p2.v + offset2, c2,
+      p2.v - offset2, c2,
       blend = blend,
       z = z
     )
