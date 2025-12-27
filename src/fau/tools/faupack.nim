@@ -365,12 +365,17 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", verb
 
   if not silent:
     echo &"Saving {positions.len} images..."
-
+  
   #blit packed images and write them to the stream
   for imageIndex, entries in positionsByImage:
-    var image = newImage(packers[imageIndex].w, packers[imageIndex].h)
+    var 
+      image = newImage(packers[imageIndex].w, packers[imageIndex].h)
+      packer = packers[imageIndex]
 
     stream.write(entries.len.int32)
+    #writing the size of the image is necessary to make it load in parallel properly
+    stream.write(packer.w.int16)
+    stream.write(packer.h.int16)
 
     for region in entries:
 

@@ -1,4 +1,6 @@
-import stb_image/read as stbi, gl/[glproc, gltypes], fmath, assets, os
+import gl/[glproc, gltypes], fmath, assets, os
+
+import stb_image/read {.all.} as stbi
 
 type TextureFilter* = enum
   tfNearest,
@@ -19,9 +21,7 @@ type TextureObj = object
   mipmaps: bool
 type Texture* = ref TextureObj
 
-type Img* = object
-  width*, height*: int
-  data*: seq[uint8]
+type RawImage* = tuple[data: pointer, width: int, height: int]
 
 proc `=destroy`*(texture: var TextureObj) =
   if texture.handle != 0 and glInitialized:
@@ -89,6 +89,46 @@ proc `wrap=`*(texture: Texture, wrap: TextureWrap) =
 
 proc ratio*(texture: Texture): float32 = float32(texture.size.x / texture.size.y)
 
+proc loadRawImageMem*(buffer: openArray[byte] | openArray[char] | string, channels = 4): RawImage {.gcsafe.} =
+  var
+    width: cint
+    height: cint
+    components: cint
+
+  let data = stbi.stbi_load_from_memory(cast[ptr cuchar](buffer[0].addr), buffer.len.cint, width, height, components, channels.cint)
+
+  if data == nil:
+    raise newException(STBIException, stbi.failureReason())
+
+  return (data.pointer, width.int, height.int)
+
+proc loadRawImageFile*(filename: string, channels = 4): RawImage {.gcsafe.} =
+  var
+    width: cint
+    height: cint
+    components: cint
+
+  let data = stbi.stbi_load(filename.cstring, width, height, components, channels.cint)
+
+  if data == nil:
+    raise newException(STBIException, stbi.failureReason())
+
+  return (data.pointer, width.int, height.int)
+
+proc loadRawImage*(path: static[string]): RawImage {.gcsafe.} =
+  when staticAssets:
+    loadRawImageMem(assetReadStatic(path))
+  elif defined(Android): #android -> load asset
+    loadRawImageMem(assetRead(path))
+  else: #load from filesystem
+    loadRawImageFile(path.assetFile)   
+
+proc freeRawImage*(img: RawImage) =
+  stbi.stbi_image_free(img.data)
+
+proc freeRawImage*(img: pointer) =
+  stbi.stbi_image_free(img)
+
 #completely reloads texture data
 proc load*(texture: Texture, size: Vec2i, pixels: pointer) =
   #bind texture
@@ -127,27 +167,24 @@ proc loadTexturePtr*(size: Vec2i, data: pointer, filter = tfNearest, wrap = twCl
 proc loadTextureBytes*(bytes: string, filter = tfNearest, wrap = twClamp, mipmaps = false): Texture =
   result = newTexture(filter = filter, wrap = wrap, mipmaps = mipmaps)
 
-  var
-    width, height, channels: int
-    data: seq[uint8]
+  let (data, width, height) = loadRawImageMem(bytes)
 
-  data = stbi.loadFromMemory(cast[seq[byte]](bytes), width, height, channels, 4)
-  result.load(vec2i(width, height), addr data[0])
+  result.load(vec2i(width, height), data)
+
+  freeRawImage(data)
 
 #load texture from path
 proc loadTextureFile*(path: string, filter = tfNearest, wrap = twClamp, mipmaps = false): Texture = 
   result = newTexture(filter = filter, wrap = wrap, mipmaps = mipmaps)
-
-  var
-    width, height, channels: int
-    data: seq[uint8]
   
   try:
-    data = stbi.load(path, width, height, channels, 4)
+    let (data, width, height) = loadRawImageFile(path)
+
+    result.load(vec2i(width, height), data)
+
+    freeRawImage(data)
   except STBIException:
     raise Exception.newException("Failed to load image '" & path & "': " & $getCurrentExceptionMsg())
-
-  result.load(vec2i(width, height), addr data[0])
 
 proc loadTextureAsset*(path: string, filter = tfNearest, wrap = twClamp, mipmaps = false): Texture =
   loadTextureBytes(assetRead(path), filter, wrap, mipmaps)
@@ -159,18 +196,3 @@ proc loadTexture*(path: static[string], filter = tfNearest, wrap = twClamp, mipm
     loadTextureBytes(assetRead(path), filter, wrap, mipmaps)
   else: #load from filesystem
     loadTextureFile(path.assetFile, filter, wrap, mipmaps)
-
-proc loadImgBytes*(textureBytes: string): Img =
-  var
-    width, height, channels: int
-    data: seq[uint8]
-  
-  data = stbi.loadFromMemory(cast[seq[byte]](textureBytes), width, height, channels, 4)
-
-  return Img(data: data, width: width, height: height)
-
-proc loadImgFile*(path: string): Img =
-  return loadImgBytes(readFile(path))
-
-proc loadImg*(path: static[string]): Img =
-  return loadImgBytes(assetReadStatic(path))

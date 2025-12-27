@@ -1,4 +1,4 @@
-import ../draw, ../globals, ../fmath, ../color, os, strformat, times, osproc, math, streams, strutils
+import ../draw, ../globals, ../fmath, ../color, os, strformat, times, osproc, math, streams, strutils, ../framebuffer
 from pixie import Image, newImage, writeFile, flipVertical
 
 export Image, newImage, writeFile, flipVertical

@@ -1,4 +1,4 @@
-import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, ../util/misc, stb_image/read as stbi, std/strutils
+import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, ../util/misc, std/strutils
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 
@@ -17,13 +17,16 @@ proc `=destroy`(cursor: var CursorObj) =
     destroyCursor(cursor.handle)
     cursor.handle = nil
 
-proc toGLfwImage(img: Img): GlfwImage = GlfwImage(width: img.width.cint, height: img.height.cint, pixels: cstring(cast[string](img.data)))
+proc toGlfwImage(img: RawImage): GlfwImage = GlfwImage(width: img.width.cint, height: img.height.cint, pixels: cast[cstring](img.data))
 
 proc newCursor*(path: static string): Cursor =
   let 
-    img = loadImg(path)
-    glfwImage = toGlfwImage(img)
+    img = loadRawImage(path)
+    glfwImage = img.toGlfwImage
     handle = createCursor(addr glfwImage, (img.width div 2).cint, (img.height div 2).cint)
+
+  freeRawImage(img)
+
   return Cursor(handle: handle)
 
 proc newCursor*(standardType: CursorType): Cursor = 
@@ -279,16 +282,14 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   #load window icon if possible
   when assetExistsStatic("icon.png") and not defined(macosx) and not defined(wayland):
-    let textureBytes = assetReadStatic("icon.png")
+    let 
+      textureBytes = assetReadStatic("icon.png")
+      img = loadRawImageMem(textureBytes)
+      glfwImage = img.toGlfwImage
 
-    var
-      width, height, channels: int
-      data: seq[uint8]
-    
-    data = stbi.loadFromMemory(cast[seq[byte]](textureBytes), width, height, channels, 4)
+    window.setWindowIcon(1, addr glfwImage)
 
-    var image = GlfwImage(width: width.cint, height: height.cint, pixels: cstring(cast[string](data)))
-    window.setWindowIcon(1, addr image)
+    freeRawImage(img)
 
   #listen to window size changes and relevant events.
 

@@ -59,6 +59,11 @@ type
     dirty: bool
     glyphs: Table[Rune, FontGlyph]
   GlyphProc* = proc(index: int, offset: var fmath.Vec2, color: var Color, draw: var bool)
+  GlyphParams* = object
+    index*: int
+    offset*: fmath.Vec2
+    color*: Color
+    draw*: bool
 
 proc toVAlign(align: Align): pixie.VerticalAlignment {.inline.} =
   return if asBot in align and asTop in align: pixie.MiddleAlign
