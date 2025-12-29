@@ -172,6 +172,16 @@ proc loadMusic*(path: static[string]): Sound =
   else:
     return loadMusicAsset(path)
 
+proc loadMusicHandle(path: static[string], handle: pointer): bool {.gcsafe.}  =
+  ## Loads a music file from a raw ptr handle. Used for parallel loading.
+  when defined(skipSoundLoad):
+    false #don't load anything
+  elif staticAssets or defined(Android):
+    let data = when staticAssets: assetReadStatic(path) else: assetRead(path)
+    checkErr(path): cast[ptr WavStream](handle).WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+  else:
+    checkErr(path): cast[ptr WavStream](handle).WavStreamLoad(path.assetFile)
+
 proc loadSoundBytes*(path: string, data: string): Sound =
   let handle = WavCreate()
   var loaded = checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
@@ -197,12 +207,12 @@ proc loadSound*(path: static[string]): Sound =
   else: #load from filesystem
     return loadSoundFile(path.assetFile)
 
-proc loadSoundHandle(path: static[string], handle: pointer): bool =
+proc loadSoundHandle(path: static[string], handle: pointer): bool {.gcsafe.} =
   ## Loads a sound from a raw ptr handle. Used for parallel loading.
   when defined(skipSoundLoad):
     false #don't load anything
   elif staticAssets or defined(Android):
-    let data = if staticAssets: assetReadStatic(path) else: assetRead(path)
+    let data = when staticAssets: assetReadStatic(path) else: assetRead(path)
     checkErr(path): cast[ptr Wav](handle).WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
   else:
     checkErr(path): cast[ptr Wav](handle).WavLoad(path.assetFile)
@@ -297,12 +307,12 @@ macro defineAudio*() =
           
           if mus:
             loadBody.add quote do:
-              `nameid` = loadMusic(`file`)
+              `nameid` = newEmptyMusic()
+              exec.spawn loadMusicHandle(`file`, `nameid`.handle) -> `nameid`.loaded
           else:
             loadBody.add quote do:
               `nameid` = newEmptySound()
               exec.spawn loadSoundHandle(`file`, `nameid`.handle) -> `nameid`.loaded
-              #`nameid` = loadSound(`file`)
   
   result.add loadProc
 
