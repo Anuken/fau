@@ -1,4 +1,4 @@
-import soloud, os, macros, strutils, assets, globals
+import soloud, os, macros, strutils, assets, globals, threading
 
 # High-level soloud wrapper.
 
@@ -139,7 +139,7 @@ proc getFft*(): array[256, float32] =
   for i in 0..<256:
     result[i] = dataArr[i].float32
 
-proc newEmptySound*(): Sound = Sound(handle: WavStreamCreate(), stream: false, loaded: false)
+proc newEmptySound*(): Sound = Sound(handle: WavCreate(), stream: false, loaded: false)
 proc newEmptyMusic*(): Sound = Sound(handle: WavStreamCreate(), protect: true, stream: true, loaded: false)
 
 proc loadMusicBytes*(path: string, data: string): Sound =
@@ -196,6 +196,16 @@ proc loadSound*(path: static[string]): Sound =
     return loadSoundBytes(path, assetRead(path))
   else: #load from filesystem
     return loadSoundFile(path.assetFile)
+
+proc loadSoundHandle(path: static[string], handle: pointer): bool =
+  ## Loads a sound from a raw ptr handle. Used for parallel loading.
+  when defined(skipSoundLoad):
+    false #don't load anything
+  elif staticAssets or defined(Android):
+    let data = if staticAssets: assetReadStatic(path) else: assetRead(path)
+    checkErr(path): cast[ptr Wav](handle).WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+  else:
+    checkErr(path): cast[ptr Wav](handle).WavLoad(path.assetFile)
 
 proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, paused = false, bus = if sound.stream: nil else: soundBus): Voice {.discardable.} =
   #handle may not exist due to failed loading
@@ -266,8 +276,10 @@ macro defineAudio*() =
 
   let loadProc = quote do:
     proc loadAudio*() =
-      discard
-  let loadBody = loadProc.last
+      var exec {.inject.} = createMaster()
+      exec.awaitAll:
+        discard
+  let loadBody = loadProc[6].last[1]
 
   #TODO this can be slow, parallelize or use more streams if possible
   for folder in walkDir("assets"):
@@ -288,7 +300,9 @@ macro defineAudio*() =
               `nameid` = loadMusic(`file`)
           else:
             loadBody.add quote do:
-              `nameid` = loadSound(`file`)
+              `nameid` = newEmptySound()
+              exec.spawn loadSoundHandle(`file`, `nameid`.handle) -> `nameid`.loaded
+              #`nameid` = loadSound(`file`)
   
   result.add loadProc
 
