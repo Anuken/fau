@@ -222,11 +222,9 @@ proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, pa
   if sound.handle.isNil or not initialized or not sound.loaded: return
 
   let id = if bus == nil: 
-    so.SoloudPlayEx(sound.handle, volume, pan, paused.cint, 0)
+    so.SoloudPlayEx(sound.handle, volume, pan, pitch, paused.cint, loop.cint, 0)
   else:
-    BusPlayEx(bus.handle, sound.handle, volume, pan, paused.cint)
-  if pitch != 1.0f: discard so.SoloudSetRelativePlaySpeed(id, pitch)
-  if loop: so.SoloudSetLooping(id, 1)
+    BusPlayEx(bus.handle, sound.handle, volume, pan, pitch, paused.cint, loop.cint)
   if sound.protect: so.SoloudSetProtectVoice(id, 1)
   sound.voice = id.Voice
   return id.Voice
