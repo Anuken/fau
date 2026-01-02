@@ -1,4 +1,4 @@
-import soloud, os, macros, strutils, assets, globals, threading
+import soloud, os, macros, strutils, assets, globals, threading, util/misc
 
 # High-level soloud wrapper.
 
@@ -63,21 +63,31 @@ proc resume*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 0)
 proc seek*(v: Voice, pos: float) {.inline.} = discard so.SoloudSeek(v.cuint, pos.cdouble)
 
 proc valid*(v: Voice): bool {.inline.} = v.int > 0 and so.SoloudIsValidVoiceHandle(v.cuint).bool
-proc paused*(v: Voice): bool {.inline.} = so.SoloudGetPause(v.cuint).bool
+proc paused*(v: Voice): bool {.inline.} = v.int > 0 and so.SoloudGetPause(v.cuint).bool
 proc playing*(v: Voice): bool {.inline.} = not v.paused
-proc volume*(v: Voice): float32 {.inline.} = so.SoloudGetVolume(v.cuint).float32
-proc pitch*(v: Voice): float32 {.inline.} = discard so.SoloudGetRelativePlaySpeed(v.cuint).float32
-proc loopCount*(v: Voice): int {.inline.} = so.SoloudGetLoopCount(v.cuint).int
-proc streamTime*(v: Voice): float {.inline.} = so.SoloudGetStreamTime(v.cuint).float
+proc volume*(v: Voice): float32 {.inline.} = 
+  if v.int > 0: so.SoloudGetVolume(v.cuint).float32 else: 0f
+proc pitch*(v: Voice): float32 {.inline.} = 
+  if v.int > 0: so.SoloudGetRelativePlaySpeed(v.cuint).float32 else: 0f
+proc loopCount*(v: Voice): int {.inline.} = 
+  if v.int > 0: so.SoloudGetLoopCount(v.cuint).int else: 0
+proc streamTime*(v: Voice): float {.inline.} = 
+  if v.int > 0: so.SoloudGetStreamTime(v.cuint).float else: 0f
 #TODO what is the difference?
-proc streamPos*(v: Voice): float {.inline.} = so.SoloudGetStreamPosition(v.cuint).float
+proc streamPos*(v: Voice): float {.inline.} = 
+  if v.int > 0: so.SoloudGetStreamPosition(v.cuint).float else: 0f
 
-proc `paused=`*(v: Voice, value: bool) {.inline.} = so.SoloudSetPause(v.cuint, value.cint)
-proc `volume=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetVolume(v.cuint, value)
-proc `pitch=`*(v: Voice, value: float32) {.inline.} = discard so.SoloudSetRelativePlaySpeed(v.cuint, value)
-proc `pan=`*(v: Voice, value: float32) {.inline.} = so.SoloudSetPan(v.cuint, value)
+proc `paused=`*(v: Voice, value: bool) {.inline.} = 
+  if v.int > 0: so.SoloudSetPause(v.cuint, value.cint)
+proc `volume=`*(v: Voice, value: float32) {.inline.} = 
+  if v.int > 0: so.SoloudSetVolume(v.cuint, value)
+proc `pitch=`*(v: Voice, value: float32) {.inline.} = 
+  if v.int > 0: discard so.SoloudSetRelativePlaySpeed(v.cuint, value)
+proc `pan=`*(v: Voice, value: float32) {.inline.} = 
+  if v.int > 0: so.SoloudSetPan(v.cuint, value)
 
-proc fadeVolume*(v: Voice, value: float32, time: float) {.inline.} = so.SoloudFadeVolume(v.cuint, value, time)
+proc fadeVolume*(v: Voice, value: float32, time: float) {.inline.} = 
+  if v.int > 0: so.SoloudFadeVolume(v.cuint, value, time)
 
 proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
   if sound.stream:
@@ -95,6 +105,10 @@ proc play*(bus: AudioBus) =
 proc stop*(bus: AudioBus) =
   bus.voice.stop()
   bus.voice = 0.Voice
+
+proc restart*(bus: AudioBus) =
+  bus.stop()
+  bus.play()
 
 proc `paused=`*(bus: AudioBus, value: bool) {.inline.} =
   bus.voice.paused = value
@@ -289,11 +303,10 @@ macro defineAudio*() =
         discard
   let loadBody = loadProc[6].last[1]
 
-  #TODO this can be slow, parallelize or use more streams if possible
   for folder in walkDir("assets"):
     if folder.kind == pcDir:
-      for f in walkDir(folder.path):
-        let file = f.path.substr("assets/".len)
+      for f in walkDirRec2(folder.path):
+        let file = f.substr("assets/".len)
         #all assets MUST be ogg, I don't care to support other formats.
         if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext == ".ogg":
           let
