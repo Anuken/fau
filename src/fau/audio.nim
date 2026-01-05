@@ -27,6 +27,8 @@ const
   fEchoDelay* = 1.FilterParam
   fEchoDecay* = 2.FilterParam
   fEchoFilter* = 3.FilterParam
+  NoVoice* = 0.Voice
+  defaultMaxConcurrent = 7
 
 var 
   so: ptr Soloud
@@ -95,6 +97,13 @@ proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
   else:
     WavSetLoopPoint(cast[ptr Wav](sound.handle), value.cdouble)
 
+proc `maxConcurrent=`(sound: Sound, max: int) =
+  if sound.handle != nil:
+    if sound.stream:
+      cast[ptr WavStream](sound.handle).WavStreamSetMaxConcurrent(max.cint)
+    else:
+      cast[ptr Wav](sound.handle).WavSetMaxConcurrent(max.cint)
+
 proc newAudioBus*(): AudioBus =
   AudioBus(handle: BusCreate())
 
@@ -153,7 +162,10 @@ proc getFft*(): array[256, float32] =
   for i in 0..<256:
     result[i] = dataArr[i].float32
 
-proc newEmptySound*(): Sound = Sound(handle: WavCreate(), stream: false, loaded: false)
+proc newEmptySound*(): Sound = 
+  result = Sound(handle: WavCreate(), stream: false, loaded: false)
+  result.maxConcurrent = defaultMaxConcurrent
+
 proc newEmptyMusic*(): Sound = Sound(handle: WavStreamCreate(), protect: true, stream: true, loaded: false)
 
 proc loadMusicBytes*(path: string, data: string): Sound =
