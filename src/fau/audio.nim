@@ -1,4 +1,4 @@
-import soloud, os, macros, strutils, assets, globals, threading, util/misc
+import soloud, os, macros, strutils, assets, globals, threading, util/misc, tables
 
 # High-level soloud wrapper.
 
@@ -30,9 +30,12 @@ const
   NoVoice* = 0.Voice
   defaultMaxConcurrent = 7
 
+let soundNone* = Sound()
+
 var 
   so: ptr Soloud
   initialized: bool
+  soundTable: Table[string, Sound]
   soundBus*: AudioBus
 
 proc `=destroy`*(sound: var SoundObj) =
@@ -48,6 +51,12 @@ proc `=destroy`*(bus: var AudioBusObj) =
   if bus.handle != nil:
     BusDestroy(bus.handle)
     bus.handle = nil
+
+proc valid*(sound: Sound): bool {.inline.} = sound.loaded
+
+proc getSoundByName*(name: string): Sound = soundTable.getOrDefault(name, soundNone)
+proc registerSound*(name: string, sound: Sound) = 
+  soundTable[name] = sound
 
 template checkErr(details: string, body: untyped): bool =
   let err = body
@@ -92,6 +101,8 @@ proc fadeVolume*(v: Voice, value: float32, time: float) {.inline.} =
   if v.int > 0: so.SoloudFadeVolume(v.cuint, value, time)
 
 proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
+  if sound.handle.isNil: return
+
   if sound.stream:
     WavStreamSetLoopPoint(cast[ptr WavStream](sound.handle), value.cdouble)
   else:
@@ -169,17 +180,15 @@ proc newEmptySound*(): Sound =
 proc newEmptyMusic*(): Sound = Sound(handle: WavStreamCreate(), protect: true, stream: true, loaded: false)
 
 proc loadMusicBytes*(path: string, data: string): Sound =
-  let handle = WavStreamCreate()
-  var loaded = checkErr(path): handle.WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
-  return Sound(handle: handle, protect: true, stream: true, loaded: loaded)
+  result = newEmptyMusic()
+  result.loaded = checkErr(path): cast[ptr WavStream](result.handle).WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
 
 proc loadMusicStatic*(path: static[string]): Sound =
   return loadMusicBytes(path, assetReadStatic(path))
 
 proc loadMusicFile*(path: string): Sound =
-  let handle = WavStreamCreate()
-  var loaded = checkErr(path): handle.WavStreamLoad(path)
-  return Sound(handle: handle, protect: true, stream: true, loaded: loaded)
+  result = newEmptyMusic()
+  result.loaded = checkErr(path): cast[ptr WavStream](result.handle).WavStreamLoad(path)
 
 proc loadMusicAsset*(path: string): Sound =
   ## Loads music from the assets folder - non-static parameter version. Uses preloaded asset directory if static.
@@ -209,17 +218,15 @@ proc loadMusicHandle(path: static[string], handle: pointer): bool {.gcsafe.}  =
     checkErr(path): cast[ptr WavStream](handle).WavStreamLoad(path.assetFile)
 
 proc loadSoundBytes*(path: string, data: string): Sound =
-  let handle = WavCreate()
-  var loaded = checkErr(path): handle.WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
-  return Sound(handle: handle, loaded: loaded)
+  result = newEmptySound()
+  result.loaded = checkErr(path): cast[ptr Wav](result.handle).WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
 
 proc loadSoundStatic*(path: static[string]): Sound =
   return loadSoundBytes(path, assetReadStatic(path))
 
 proc loadSoundFile*(path: string): Sound =
-  let handle = WavCreate()
-  var loaded = checkErr(path): handle.WavLoad(path)
-  return Sound(handle: handle, loaded: loaded)
+  result = newEmptySound()
+  result.loaded = checkErr(path): cast[ptr Wav](result.handle).WavLoad(path)
 
 proc loadSound*(path: static[string]): Sound =
   ## Loads a sound from the assets folder, or statically.
@@ -256,6 +263,7 @@ proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, pa
   return id.Voice
 
 proc length*(sound: Sound): float =
+  if sound.handle.isNil: return 0.0
   if sound.stream:
     return WavStreamGetLength(cast[ptr WavStream](sound.handle)).float
   else:
@@ -331,10 +339,12 @@ macro defineAudio*() =
           if mus:
             loadBody.add quote do:
               `nameid` = newEmptyMusic()
+              registerSound(`name`, `nameid`)
               exec.spawn loadMusicHandle(`file`, `nameid`.handle) -> `nameid`.loaded
           else:
             loadBody.add quote do:
               `nameid` = newEmptySound()
+              registerSound(`name`, `nameid`)
               exec.spawn loadSoundHandle(`file`, `nameid`.handle) -> `nameid`.loaded
   
   result.add loadProc
