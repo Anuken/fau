@@ -286,10 +286,16 @@ proc fadeFilter*(voice: Voice, index: int, attribute: FilterParam, value, timeSe
   so.SoloudFadeFilterParameter(voice.cuint, index.cuint, attribute.cuint, value.float32, timeSec.float32)
 
 proc setFilterParam*(voice: Voice, index: int, attribute: FilterParam, value: float32) =
-  so.SoloudSetFilterParameter(voice.cuint, index.cuint, attribute.cuint, value.float32)
+  if initialized:
+    so.SoloudSetFilterParameter(voice.cuint, index.cuint, attribute.cuint, value.float32)
 
 proc setGlobalFilter*(index: int, filter: AudioFilter) =
-  so.SoloudSetGlobalFilter(index.cuint, cast[ptr Filter](filter))
+  if initialized:
+    so.SoloudSetGlobalFilter(index.cuint, cast[ptr Filter](filter))
+
+proc clearGlobalFilter*(index: int) =
+  if initialized:
+    so.SoloudSetGlobalFilter(index.cuint, nil)
 
 proc newBiquadFilter*(): BiquadFilter =
   return BiquadResonantFilterCreate()
@@ -309,6 +315,10 @@ proc setHighpass*(filter: BiquadFilter, value: float32, resonance: float32 = 2f)
 proc newLowpassFilter*(cutoff: float32, resonance = 2f): BiquadFilter =
   result = newBiquadFilter()
   result.setLowpass(cutoff, resonance)
+
+proc newHighpassFilter*(cutoff: float32, resonance = 2f): BiquadFilter =
+  result = newBiquadFilter()
+  result.setHighpass(cutoff, resonance)
 
 #TODO remove, this should be more generic
 #[
