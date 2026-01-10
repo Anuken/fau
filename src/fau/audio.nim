@@ -68,7 +68,7 @@ template checkErr(details: string, body: untyped): bool =
   success
 
 proc stop*(v: Voice) {.inline.} = 
-  if initialized: so.SoloudStop(v.cuint)
+  if initialized and v.int > 0: so.SoloudStop(v.cuint)
 proc pause*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 1)
 proc resume*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 0)
 proc seek*(v: Voice, pos: float) {.inline.} = discard so.SoloudSeek(v.cuint, pos.cdouble)
@@ -109,11 +109,19 @@ proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
     WavSetLoopPoint(cast[ptr Wav](sound.handle), value.cdouble)
 
 proc `maxConcurrent=`(sound: Sound, max: int) =
-  if sound.handle != nil:
-    if sound.stream:
-      cast[ptr WavStream](sound.handle).WavStreamSetMaxConcurrent(max.cint)
-    else:
-      cast[ptr Wav](sound.handle).WavSetMaxConcurrent(max.cint)
+  if sound.handle == nil: return
+  if sound.stream:
+    cast[ptr WavStream](sound.handle).WavStreamSetMaxConcurrent(max.cint)
+  else:
+    cast[ptr Wav](sound.handle).WavSetMaxConcurrent(max.cint)
+
+proc `minInterrupt=`*(sound: Sound, minInterrupt: float) =
+  if sound.handle == nil: return
+
+  if sound.stream:
+    cast[ptr WavStream](sound.handle).WavStreamSetMinConcurrentInterrupt(minInterrupt.cdouble)
+  else:
+    cast[ptr Wav](sound.handle).WavSetMinConcurrentInterrupt(minInterrupt.cdouble)
 
 proc newAudioBus*(): AudioBus =
   AudioBus(handle: BusCreate())
