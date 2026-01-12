@@ -282,6 +282,10 @@ proc setFilter*(sound: Sound, index: int, filter: AudioFilter) =
   if sound.loaded and initialized:
     cast[ptr Wav](sound.handle).WavSetFilter(index.cuint, cast[ptr Filter](filter))
 
+proc setFilter*(bus: AudioBus, index: int, filter: AudioFilter) =
+  if initialized:
+    cast[ptr Bus](bus.handle).BusSetFilter(index.cuint, cast[ptr Filter](filter))
+
 proc fadeFilter*(voice: Voice, index: int, attribute: FilterParam, value, timeSec: float32) =
   so.SoloudFadeFilterParameter(voice.cuint, index.cuint, attribute.cuint, value.float32, timeSec.float32)
 
