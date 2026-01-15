@@ -123,6 +123,14 @@ proc `minInterrupt=`*(sound: Sound, minInterrupt: float) =
   else:
     cast[ptr Wav](sound.handle).WavSetMinConcurrentInterrupt(minInterrupt.cdouble)
 
+proc stop*(sound: Sound) =
+  if sound.handle == nil or not initialized: return
+
+  if sound.stream:
+    cast[ptr WavStream](sound.handle).WavStreamStop()
+  else:
+    cast[ptr Wav](sound.handle).WavStop()
+
 proc newAudioBus*(): AudioBus =
   AudioBus(handle: BusCreate())
 
