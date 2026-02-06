@@ -268,7 +268,7 @@ proc loadSoundHandle(path: static[string], handle: pointer): bool {.gcsafe.} =
 
 proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, paused = false, bus = if sound.stream: nil else: soundBus): Voice {.discardable.} =
   #handle may not exist due to failed loading
-  if sound.handle.isNil or not initialized or not sound.loaded: return
+  if sound == nil or sound.handle.isNil or not initialized or not sound.loaded: return
 
   let id = if bus == nil: 
     so.SoloudPlayEx(sound.handle, volume, pan, pitch, paused.cint, loop.cint, 0)

@@ -1,8 +1,8 @@
 import ../[atlas, patch, globals, fmath], math
 
 type Animation* = object
-  frames: seq[Patch]
-  durations: seq[float32]
+  frames*: seq[Patch]
+  durations*: seq[float32]
   delay: float32
   duration*: float32
   allSameWidth*: bool
