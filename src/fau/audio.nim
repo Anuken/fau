@@ -108,7 +108,7 @@ proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
   else:
     WavSetLoopPoint(cast[ptr Wav](sound.handle), value.cdouble)
 
-proc `maxConcurrent=`(sound: Sound, max: int) =
+proc `maxConcurrent=`*(sound: Sound, max: int) =
   if sound.handle == nil: return
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamSetMaxConcurrent(max.cint)
