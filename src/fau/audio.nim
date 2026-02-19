@@ -8,6 +8,7 @@ type
     stream: bool
     loaded: bool
     protect: bool
+    filePath: string
     voice*: Voice
   Sound* = ref SoundObj
   Voice* = distinct cuint
@@ -39,6 +40,8 @@ var
   soundBus*: AudioBus
 
 proc `=destroy`*(sound: var SoundObj) =
+  `=destroy`(sound.filePath)
+
   if sound.handle != nil:
     if sound.stream:
       WavStreamDestroy(cast[ptr WavStream](sound.handle))
@@ -51,6 +54,13 @@ proc `=destroy`*(bus: var AudioBusObj) =
   if bus.handle != nil:
     BusDestroy(bus.handle)
     bus.handle = nil
+
+proc file*(sound: Sound): string {.inline.} = sound.filePath
+
+proc `$`*(sound: Sound): string =
+  if sound.isNil: "nil"
+  elif sound.loaded: "Sound{" & sound.filePath & "}"
+  else: "Sound{uninitialized}"
 
 proc valid*(sound: Sound): bool {.inline.} = sound.loaded
 
@@ -189,21 +199,21 @@ proc getFft*(): array[256, float32] =
   for i in 0..<256:
     result[i] = dataArr[i].float32
 
-proc newEmptySound*(): Sound = 
-  result = Sound(handle: WavCreate(), stream: false, loaded: false)
+proc newEmptySound*(path = ""): Sound = 
+  result = Sound(handle: WavCreate(), stream: false, loaded: false, filePath: path)
   result.maxConcurrent = defaultMaxConcurrent
 
-proc newEmptyMusic*(): Sound = Sound(handle: WavStreamCreate(), protect: true, stream: true, loaded: false)
+proc newEmptyMusic*(path = ""): Sound = Sound(handle: WavStreamCreate(), protect: true, stream: true, loaded: false, filePath: path)
 
 proc loadMusicBytes*(path: string, data: string): Sound =
-  result = newEmptyMusic()
+  result = newEmptyMusic(path)
   result.loaded = checkErr(path): cast[ptr WavStream](result.handle).WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
 
 proc loadMusicStatic*(path: static[string]): Sound =
   return loadMusicBytes(path, assetReadStatic(path))
 
 proc loadMusicFile*(path: string): Sound =
-  result = newEmptyMusic()
+  result = newEmptyMusic(path)
   result.loaded = checkErr(path): cast[ptr WavStream](result.handle).WavStreamLoad(path)
 
 proc loadMusicAsset*(path: string): Sound =
@@ -217,7 +227,7 @@ proc loadMusicAsset*(path: string): Sound =
 proc loadMusic*(path: static[string]): Sound =
   ## Loads music from the assets folder, or statically.
   when defined(skipSoundLoad):
-    return newEmptyMusic()
+    return newEmptyMusic(path)
   elif staticAssets:
     return loadMusicStatic(path)
   else:
@@ -234,20 +244,20 @@ proc loadMusicHandle(path: static[string], handle: pointer): bool {.gcsafe.}  =
     checkErr(path): cast[ptr WavStream](handle).WavStreamLoad(path.assetFile)
 
 proc loadSoundBytes*(path: string, data: string): Sound =
-  result = newEmptySound()
+  result = newEmptySound(path)
   result.loaded = checkErr(path): cast[ptr Wav](result.handle).WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
 
 proc loadSoundStatic*(path: static[string]): Sound =
   return loadSoundBytes(path, assetReadStatic(path))
 
 proc loadSoundFile*(path: string): Sound =
-  result = newEmptySound()
+  result = newEmptySound(path)
   result.loaded = checkErr(path): cast[ptr Wav](result.handle).WavLoad(path)
 
 proc loadSound*(path: static[string]): Sound =
   ## Loads a sound from the assets folder, or statically.
   when defined(skipSoundLoad):
-    return newEmptySound()
+    return newEmptySound(path)
   elif staticAssets:
     return loadSoundStatic(path)
   elif defined(Android):
@@ -368,12 +378,12 @@ macro defineAudio*() =
           
           if mus:
             loadBody.add quote do:
-              `nameid` = newEmptyMusic()
+              `nameid` = newEmptyMusic(`file`)
               registerSound(`name`, `nameid`)
               exec.spawn loadMusicHandle(`file`, `nameid`.handle) -> `nameid`.loaded
           else:
             loadBody.add quote do:
-              `nameid` = newEmptySound()
+              `nameid` = newEmptySound(`file`)
               registerSound(`name`, `nameid`)
               exec.spawn loadSoundHandle(`file`, `nameid`.handle) -> `nameid`.loaded
   
