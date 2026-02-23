@@ -51,6 +51,10 @@ proc assetFile*(name: string): string =
   ## Resolves the asset to a specific file by name
   assetFolder / name
 
+proc resolveStaticAssetPath*(filename: string): string = 
+  ## Resolves path in assets folder -> path in filesystem on the machine
+  rootDir & "/assets/" & filename
+
 proc assetRead*(fname: string): string =
   #fix windows being dumb
   let filename = fname.replace('\\', '/')

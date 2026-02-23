@@ -358,6 +358,9 @@ proc filterEcho*(sound: Sound, delay = 0.4, decay = 0.9, filtering = 0.5) =
 macro defineAudio*() =
   result = newStmtList()
 
+  proc getFileLen(path: string): int =
+    staticExec("stat -c%s " & resolveStaticAssetPath(path)).parseInt
+
   let loadProc = quote do:
     proc loadAudio*() =
       var exec {.inject.} = createMaster()
@@ -373,7 +376,7 @@ macro defineAudio*() =
         if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext == ".ogg":
           let
             mus = file.startsWith("music")
-            isStream = mus or assetReadStatic(file).len >= (1000 * 55)
+            isStream = mus or getFileLen(file) >= (1000 * 55)
             name = file.splitFile.name
             nameid = ident(if mus: "music" & name.capitalizeAscii() else: "sound" & name.capitalizeAscii())
           result.add quote do:
