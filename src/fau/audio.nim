@@ -295,10 +295,12 @@ proc length*(sound: Sound): float =
   else:
     return WavGetLength(cast[ptr Wav](sound.handle)).float
 
-#TODO only works with wavs, not streams
 proc setFilter*(sound: Sound, index: int, filter: AudioFilter) =
   if sound.loaded and initialized:
-    cast[ptr Wav](sound.handle).WavSetFilter(index.cuint, cast[ptr Filter](filter))
+    if sound.stream:
+      cast[ptr WavStream](sound.handle).WavStreamSetFilter(index.cuint, cast[ptr Filter](filter))
+    else:
+      cast[ptr Wav](sound.handle).WavSetFilter(index.cuint, cast[ptr Filter](filter))
 
 proc setFilter*(bus: AudioBus, index: int, filter: AudioFilter) =
   if initialized:
@@ -371,12 +373,13 @@ macro defineAudio*() =
         if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext == ".ogg":
           let
             mus = file.startsWith("music")
+            isStream = mus or assetReadStatic(file).len >= (1000 * 55)
             name = file.splitFile.name
             nameid = ident(if mus: "music" & name.capitalizeAscii() else: "sound" & name.capitalizeAscii())
           result.add quote do:
             var `nameid`*: Sound
           
-          if mus:
+          if isStream:
             loadBody.add quote do:
               `nameid` = newEmptyMusic(`file`)
               registerSound(`name`, `nameid`)
