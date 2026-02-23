@@ -6,6 +6,7 @@ type
   SoundObj* = object
     handle: ptr AudioSource
     stream: bool
+    useSoundBus: bool
     loaded: bool
     protect: bool
     filePath: string
@@ -200,10 +201,13 @@ proc getFft*(): array[256, float32] =
     result[i] = dataArr[i].float32
 
 proc newEmptySound*(path = ""): Sound = 
-  result = Sound(handle: WavCreate(), stream: false, loaded: false, filePath: path)
+  result = Sound(handle: WavCreate(), stream: false, loaded: false, filePath: path, useSoundBus: true)
   result.maxConcurrent = defaultMaxConcurrent
 
-proc newEmptyMusic*(path = ""): Sound = Sound(handle: WavStreamCreate(), protect: true, stream: true, loaded: false, filePath: path)
+proc newEmptyMusic*(path = "", useSoundBus = false): Sound = 
+  result = Sound(handle: WavStreamCreate(), protect: true, stream: true, loaded: false, filePath: path, useSoundBus: useSoundBus)
+  if useSoundBus:
+    result.maxConcurrent = defaultMaxConcurrent
 
 proc loadMusicBytes*(path: string, data: string): Sound =
   result = newEmptyMusic(path)
@@ -276,7 +280,7 @@ proc loadSoundHandle(path: static[string], handle: pointer): bool {.gcsafe.} =
   else:
     checkErr(path): cast[ptr Wav](handle).WavLoad(path.assetFile)
 
-proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, paused = false, bus = if sound.stream: nil else: soundBus): Voice {.discardable.} =
+proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, paused = false, bus = if sound.useSoundBus: soundBus else: nil): Voice {.discardable.} =
   #handle may not exist due to failed loading
   if sound == nil or sound.handle.isNil or not initialized or not sound.loaded: return
 
@@ -384,7 +388,7 @@ macro defineAudio*() =
           
           if isStream:
             loadBody.add quote do:
-              `nameid` = newEmptyMusic(`file`)
+              `nameid` = newEmptyMusic(`file`, not `mus`)
               registerSound(`name`, `nameid`)
               exec.spawn loadMusicHandle(`file`, `nameid`.handle) -> `nameid`.loaded
           else:
