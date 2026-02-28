@@ -32,7 +32,13 @@ template editFieldUi*(field: string, value: untyped): untyped =
         name = pname
     igText((field & ": " & $name).cstring)
   elif value is ref object:
-    igText(($value[]).cstring)
+    when compiles($value):
+      igText(($value).cstring)
+    else:
+      if value == nil:
+        igText("nil")
+      else:
+        igText(($value[]).cstring)
   elif value is array or value is seq:
     if igTreeNode(fieldLabel):
       for i, arrayval in value.mpairs:
