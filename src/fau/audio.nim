@@ -40,6 +40,8 @@ var
   soundTable: Table[string, Sound]
   soundBus*: AudioBus
 
+proc `==`*(voice, other: Voice): bool {.borrow.}
+
 proc `=destroy`*(sound: var SoundObj) =
   `=destroy`(sound.filePath)
 
@@ -135,7 +137,7 @@ proc `minInterrupt=`*(sound: Sound, minInterrupt: float) =
     cast[ptr Wav](sound.handle).WavSetMinConcurrentInterrupt(minInterrupt.cdouble)
 
 proc stop*(sound: Sound) =
-  if sound.handle == nil or not initialized: return
+  if sound == nil or sound.handle == nil or not initialized: return
 
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamStop()
