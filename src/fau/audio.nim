@@ -1,4 +1,4 @@
-import soloud, os, macros, strutils, assets, globals, threading, util/misc, tables
+import soloud, os, macros, strutils, assets, globals, threading, util/misc, tables, std/monotimes
 
 # High-level soloud wrapper.
 
@@ -10,6 +10,10 @@ type
     loaded: bool
     protect: bool
     filePath: string
+    ## minimum interval in ms between this sound being played
+    minInterval*: int
+    lastPlayTime: int64
+    lastVolume: float32
     voice*: Voice
   Sound* = ref SoundObj
   Voice* = distinct cuint
@@ -285,6 +289,16 @@ proc loadSoundHandle(path: static[string], handle: pointer): bool {.gcsafe.} =
 proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, paused = false, bus = if sound.useSoundBus: soundBus else: nil): Voice {.discardable.} =
   #handle may not exist due to failed loading
   if sound == nil or sound.handle.isNil or not initialized or not sound.loaded: return
+
+  #handle two sounds being played within the minimum interval
+  if sound.minInterval > 0:
+    let time = getMonoTime().ticks
+    if time - sound.lastPlayTime < sound.minInterval div 1000000:
+      if volume > sound.lastVolume:
+        sound.voice.volume = min(sound.lastVolume + volume, volume * 1.25f)
+        sound.voice.pan = pan
+      return sound.voice
+    sound.lastPlayTime = time
 
   let id = if bus == nil: 
     so.SoloudPlayEx(sound.handle, volume, pan, pitch, paused.cint, loop.cint, 0)
