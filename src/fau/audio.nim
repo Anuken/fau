@@ -71,7 +71,10 @@ proc `$`*(sound: Sound): string =
 
 proc valid*(sound: Sound): bool {.inline.} = sound.loaded
 
+proc hasSoundByName*(name: string): bool = soundTable.hasKey(name)
+
 proc getSoundByName*(name: string): Sound = soundTable.getOrDefault(name, soundNone)
+
 proc registerSound*(name: string, sound: Sound) = 
   soundTable[name] = sound
 
