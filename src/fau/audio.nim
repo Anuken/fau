@@ -382,7 +382,7 @@ macro defineAudio*() =
   result = newStmtList()
 
   proc getFileLen(path: string): int =
-    staticExec("stat -c%s " & resolveStaticAssetPath(path)).parseInt
+    staticExec((when defined(macos): "stat -f '%z' " else: "stat -c%s ") & resolveStaticAssetPath(path)).parseInt
 
   let loadProc = quote do:
     proc loadAudio*() =
