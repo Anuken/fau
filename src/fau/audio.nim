@@ -69,7 +69,7 @@ proc `$`*(sound: Sound): string =
   elif sound.loaded: "Sound{" & sound.filePath & "}"
   else: "Sound{uninitialized}"
 
-proc valid*(sound: Sound): bool {.inline.} = sound.loaded
+proc valid*(sound: Sound): bool {.inline.} = sound != nil and sound.loaded
 
 proc hasSoundByName*(name: string): bool = soundTable.hasKey(name)
 
