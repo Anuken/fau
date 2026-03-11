@@ -69,7 +69,7 @@ proc `$`*(sound: Sound): string =
   elif sound.loaded: "Sound{" & sound.filePath & "}"
   else: "Sound{uninitialized}"
 
-proc valid*(sound: Sound): bool {.inline.} = sound != nil and sound.loaded
+proc valid*(sound: Sound): bool {.inline.} = sound != nil and sound.loaded and sound.handle != nil
 
 proc hasSoundByName*(name: string): bool = soundTable.hasKey(name)
 
@@ -121,7 +121,7 @@ proc fadeVolume*(v: Voice, value: float32, time: float) {.inline.} =
   if v.int > 0: so.SoloudFadeVolume(v.cuint, value, time)
 
 proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
-  if sound.handle.isNil: return
+  if not sound.valid: return
 
   if sound.stream:
     WavStreamSetLoopPoint(cast[ptr WavStream](sound.handle), value.cdouble)
@@ -129,22 +129,31 @@ proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
     WavSetLoopPoint(cast[ptr Wav](sound.handle), value.cdouble)
 
 proc `maxConcurrent=`*(sound: Sound, max: int) =
-  if sound.handle == nil: return
+  if not sound.valid: return
+
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamSetMaxConcurrent(max.cint)
   else:
     cast[ptr Wav](sound.handle).WavSetMaxConcurrent(max.cint)
 
 proc `minInterrupt=`*(sound: Sound, minInterrupt: float) =
-  if sound.handle == nil: return
+  if not sound.valid: return
 
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamSetMinConcurrentInterrupt(minInterrupt.cdouble)
   else:
     cast[ptr Wav](sound.handle).WavSetMinConcurrentInterrupt(minInterrupt.cdouble)
 
+proc length*(sound: Sound): float =
+  if not sound.valid: return 0
+  
+  if sound.stream:
+    return WavStreamGetLength(cast[ptr WavStream](sound.handle)).float
+  else:
+    return WavGetLength(cast[ptr Wav](sound.handle)).float
+
 proc stop*(sound: Sound) =
-  if sound == nil or sound.handle == nil or not initialized: return
+  if not sound.valid: return
 
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamStop()
@@ -290,8 +299,7 @@ proc loadSoundHandle(path: static[string], handle: pointer): bool {.gcsafe.} =
     checkErr(path): cast[ptr Wav](handle).WavLoad(path.assetFile)
 
 proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, paused = false, bus = if sound.useSoundBus: soundBus else: nil): Voice {.discardable.} =
-  #handle may not exist due to failed loading
-  if sound == nil or sound.handle.isNil or not initialized or not sound.loaded: return
+  if not sound.valid: return
 
   #handle two sounds being played within the minimum interval
   if sound.minInterval > 0:
@@ -303,7 +311,7 @@ proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, pa
       return sound.voice
     sound.lastPlayTime = time
 
-  let id = if bus == nil: 
+  let id = if bus == nil:
     so.SoloudPlayEx(sound.handle, volume, pan, pitch, paused.cint, loop.cint, 0)
   else:
     BusPlayEx(bus.handle, sound.handle, volume, pan, pitch, paused.cint, loop.cint)
@@ -311,22 +319,16 @@ proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, pa
   sound.voice = id.Voice
   return id.Voice
 
-proc length*(sound: Sound): float =
-  if sound.handle.isNil: return 0.0
-  if sound.stream:
-    return WavStreamGetLength(cast[ptr WavStream](sound.handle)).float
-  else:
-    return WavGetLength(cast[ptr Wav](sound.handle)).float
-
 proc setFilter*(sound: Sound, index: int, filter: AudioFilter) =
-  if sound.loaded and initialized:
-    if sound.stream:
-      cast[ptr WavStream](sound.handle).WavStreamSetFilter(index.cuint, cast[ptr Filter](filter))
-    else:
-      cast[ptr Wav](sound.handle).WavSetFilter(index.cuint, cast[ptr Filter](filter))
+  if not sound.valid: return
+
+  if sound.stream:
+    cast[ptr WavStream](sound.handle).WavStreamSetFilter(index.cuint, cast[ptr Filter](filter))
+  else:
+    cast[ptr Wav](sound.handle).WavSetFilter(index.cuint, cast[ptr Filter](filter))
 
 proc setFilter*(bus: AudioBus, index: int, filter: AudioFilter) =
-  if initialized:
+  if initialized and bus != nil:
     cast[ptr Bus](bus.handle).BusSetFilter(index.cuint, cast[ptr Filter](filter))
 
 proc fadeFilter*(voice: Voice, index: int, attribute: FilterParam, value, timeSec: float32) =
@@ -335,6 +337,12 @@ proc fadeFilter*(voice: Voice, index: int, attribute: FilterParam, value, timeSe
 proc setFilterParam*(voice: Voice, index: int, attribute: FilterParam, value: float32) =
   if initialized:
     so.SoloudSetFilterParameter(voice.cuint, index.cuint, attribute.cuint, value.float32)
+
+proc setFilterParam*(bus: AudioBus, index: int, attribute: FilterParam, value: float32) =
+  setFilterParam(bus.voice, index, attribute, value)
+
+proc setGlobalFilterParam*(index: int, attribute: FilterParam, value: float32) =
+  setFilterParam(NoVoice, index, attribute, value)
 
 proc setGlobalFilter*(index: int, filter: AudioFilter) =
   if initialized:
