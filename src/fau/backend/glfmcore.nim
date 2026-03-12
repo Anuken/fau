@@ -139,3 +139,4 @@ proc setCursor*(cursor: Cursor) = discard
 proc setCursorHidden*(hidden: bool) = discard
 proc setFullscreen*(on: bool) = discard
 proc setVsync*(on: bool) = discard
+proc isFocused*(): bool = true

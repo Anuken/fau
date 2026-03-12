@@ -492,6 +492,8 @@ proc setVsync*(on: bool) =
 
 proc isMaximized*(): bool = window.getWindowAttrib(Maximized).bool
 
+proc isFocused*(): bool = window.getWindowAttrib(Focused).bool
+
 proc isFullscreen*(): bool =
   return window.getWindowMonitor() != nil
 
