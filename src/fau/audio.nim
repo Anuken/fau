@@ -19,7 +19,7 @@ type
   Voice* = distinct cuint
   AudioBusObj* = object
     handle: ptr Bus
-    voice: Voice
+    voice*: Voice
   AudioBus* = ref AudioBusObj
   AudioFilter* = ptr Filter
   #EchoFilter* = ptr EchoFilter #TODO how to resolve name conflict?
