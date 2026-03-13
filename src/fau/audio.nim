@@ -71,6 +71,8 @@ proc `$`*(sound: Sound): string =
 
 proc valid*(sound: Sound): bool {.inline.} = sound != nil and sound.loaded and sound.handle != nil
 
+proc hasHandle*(sound: Sound): bool {.inline.} = sound != nil and sound.handle != nil
+
 proc hasSoundByName*(name: string): bool = soundTable.hasKey(name)
 
 proc getSoundByName*(name: string): Sound = soundTable.getOrDefault(name, soundNone)
@@ -121,7 +123,7 @@ proc fadeVolume*(v: Voice, value: float32, time: float) {.inline.} =
   if v.int > 0: so.SoloudFadeVolume(v.cuint, value, time)
 
 proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
-  if not sound.valid: return
+  if not sound.hasHandle: return
 
   if sound.stream:
     WavStreamSetLoopPoint(cast[ptr WavStream](sound.handle), value.cdouble)
@@ -129,7 +131,7 @@ proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
     WavSetLoopPoint(cast[ptr Wav](sound.handle), value.cdouble)
 
 proc `maxConcurrent=`*(sound: Sound, max: int) =
-  if not sound.valid: return
+  if not sound.hasHandle: return
 
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamSetMaxConcurrent(max.cint)
@@ -137,7 +139,7 @@ proc `maxConcurrent=`*(sound: Sound, max: int) =
     cast[ptr Wav](sound.handle).WavSetMaxConcurrent(max.cint)
 
 proc `minInterrupt=`*(sound: Sound, minInterrupt: float) =
-  if not sound.valid: return
+  if not sound.hasHandle: return
 
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamSetMinConcurrentInterrupt(minInterrupt.cdouble)
@@ -211,6 +213,10 @@ proc setGlobalVolume*(vol: float32) =
 
 proc enableSoundVisualization*(visualize = true) =
   so.SoloudSetVisualizationEnable(visualize.cint)
+
+proc getAudioVoices*(): int =
+  if initialized:
+    return so.SoloudGetActiveVoiceCount().int
 
 proc getFft*(): array[256, float32] =
   let data = so.SoloudCalcFFT()
