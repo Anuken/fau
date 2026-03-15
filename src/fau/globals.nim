@@ -2,6 +2,9 @@ import fmath, framebuffer, shader, batch, color, patch, texture, mesh, atlas
 
 const 
   isMobile* = defined(ios) or defined(Android)
+  isLinux* = defined(Linux)
+  isWindows* = defined(Windows)
+  isMac* = defined(macosx)
   isAndroid* = defined(Android)
   isIos* = defined(ios)
   isDesktop* = not isMobile

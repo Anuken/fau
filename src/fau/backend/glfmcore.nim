@@ -1,4 +1,4 @@
-import glfm, ../gl/[glad, gltypes, glproc], ../globals, ../fmath
+import glfm, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, strutils
 
 # backend for mobile platforms
 # NOTE: this backend is unfinished! keyboard doesn't work
@@ -140,3 +140,4 @@ proc setCursorHidden*(hidden: bool) = discard
 proc setFullscreen*(on: bool) = discard
 proc setVsync*(on: bool) = discard
 proc isFocused*(): bool = true
+proc getKeyName*(key: KeyCode): string = capitalizeAscii(($key)[3..^1])
