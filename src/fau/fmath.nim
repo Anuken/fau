@@ -700,7 +700,9 @@ proc rightCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x + r.w, r.y + r.h/2f)
 proc leftCenter*(r: Rect): Vec2 {.inline.} = vec2(r.x, r.y + r.h/2f)
 
 proc top*(r: Rect): float32 {.inline.} = r.y + r.h
+proc bot*(r: Rect): float32 {.inline.} = r.y
 proc right*(r: Rect): float32 {.inline.} = r.x + r.w
+proc left*(r: Rect): float32 {.inline.} = r.x
 
 proc `top=`*(r: var Rect, val: float32) {.inline.} = r.h = val - r.y
 proc `right=`*(r: var Rect, val: float32) {.inline.} = r.w = val - r.x
