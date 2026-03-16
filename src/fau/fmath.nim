@@ -365,6 +365,8 @@ func `-`*(vec: Vec2i): Vec2i {.inline.} = vec2i(-vec.x, -vec.y)
 
 #utility methods
 
+template map*(vec: Vec2, op: untyped): Vec2 = vec2(op(vec.x), op(vec.y))
+
 func inBounds*(vec: Vec2i, bounds: Vec2i): bool {.inline.} =
   vec.x >= 0 and vec.y >= 0 and vec.x < bounds.x and vec.y < bounds.y
 

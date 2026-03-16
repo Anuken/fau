@@ -1,6 +1,6 @@
 import globals, fmath
 
-const controllerDeadzone = 0.2
+const gamepadDeadzone* = 0.2
 
 var 
   keysPressed*: array[KeyCode, bool]
@@ -41,7 +41,7 @@ proc axis2*(pad: Gamepad, axes: GamepadAxis2): Vec2 {.inline.} =
   elif axes == right: result = vec2(pad.axis(rightX), pad.axis(rightY))
   else: result = vec2()
 
-  if result.len < controllerDeadzone:
+  if result.len < gamepadDeadzone:
     result = vec2()
 
 #gamepad (for singleplayer, any gamepad will work)
