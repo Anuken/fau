@@ -8,7 +8,7 @@ binDir        = "build"
 
 requires "nim >= 2.0.0"
 requires "https://github.com/Anuken/staticglfw#9fa998cae81a5c795063e0c4e2476747d0257cd3"
-requires "https://github.com/Anuken/glfm#eac00f1d5df3b9f72d8bc00b8cb16190b0638dff"
+requires "https://github.com/Anuken/glfm#0977b9148761eb44904f0b68ed486bd5b68ea1b7"
 requires "https://github.com/Anuken/nimsoloud#7e23039c4790f36f233733171845bae02044708c"
 requires "https://github.com/Anuken/polymorph#170f1b22c1d13828ad9ef84237b9d4d408b77cc6"
 requires "https://github.com/Araq/malebolgia#ab17bef08e8e84fabc33e0b039b324438e1ce27b"

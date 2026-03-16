@@ -11,11 +11,11 @@ var
 
 proc toKeyCode(code: GLFMKey): Keycode =
   return case code:
-  of GLFMKeyNavBack, GLFMKeyEscape: keyEscape
-  of GLFMKeyLeft: keyLeft
-  of GLFMKeyRight: keyRight
-  of GLFMKeyUp: keyUp
-  of GLFMKeyDown: keyDown
+  of GLFMKeyNavigationBack, GLFMKeyEscape: keyEscape
+  of GLFMKeyArrowLeft: keyLeft
+  of GLFMKeyArrowRight: keyRight
+  of GLFMKeyArrowUp: keyUp
+  of GLFMKeyArrowDown: keyDown
   else: keyUnknown
 
 proc updateInsets(display: ptr GLFMDisplay) =
@@ -69,7 +69,6 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
 
     return true
   )
-
   
   display.glfmSetKeyFunc(proc(display: ptr GLFMDisplay, keyCode: GLFMKey, action: GLFMKeyAction, modifiers: cint): bool {.cdecl.} = 
     let code = toKeyCode(keyCode)
@@ -100,8 +99,9 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     cinitProc()
   )
 
-  display.glfmSetMainLoopFunc(proc(display: ptr GLFMDisplay; frameTime: cdouble) {.cdecl.} =
+  display.glfmSetRenderFunc(proc(display: ptr GLFMDisplay) {.cdecl.} =
     cloopProc()
+    display.glfmSwapBuffers()
   )
 
   display.glfmSetSurfaceDestroyedFunc(proc(display: ptr GLFMDisplay) {.cdecl.} =

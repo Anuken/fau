@@ -490,7 +490,7 @@ proc glGetShaderInfoLog*(shader: GLuint): string =
   dealloc(infoLog)
 
 proc glGetString*(name: GLenum): string = 
-  return $cast[cstring](glGetStringBASE(GL_EXTENSIONS))
+  return $cast[cstring](glGetStringBASE(name))
 
 proc glGetVertexAttribfv*(index: GLuint, pname: GLenum): GLfloat = 
   var resultVal: GLfloat
