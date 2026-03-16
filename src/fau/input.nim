@@ -72,3 +72,21 @@ proc gamepadAxis2*(axes: GamepadAxis2): Vec2 =
   for pad in fau.gamepads:
     let val = pad.axis2(axes)
     if not val.zero: return val
+
+proc name*(button: GamepadButton): string =
+  return case button
+  of a: "A"
+  of b: "B"
+  of x: "X"
+  of y: "Y"
+  of leftBumper: "Left Bumper"
+  of rightBumper: "Right Bumper"
+  of back: "Back"
+  of start: "Start"
+  of guide: "Guide" 
+  of leftThumb: "Left Thumbstick"
+  of rightThumb: "Right Thumbstick"
+  of dpadUp: "D-Pad Up"
+  of dpadDown: "D-Pad Down"
+  of dpadLeft: "D-Pad Left"
+  of dpadRight: "D-Pad Right"

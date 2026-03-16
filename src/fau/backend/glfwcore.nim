@@ -425,6 +425,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
           for but in GamepadButton:
             pad.buttonsJustDown[but] = buttons[but] and not pad.buttons[but]
             pad.buttonsJustUp[but] = not buttons[but] and pad.buttons[but]
+
+            if pad.buttonsJustDown[but]: fireFauEvent FauEvent(kind: feGamepadButton, buttonGamepad: pad, buttonDown: true, button: but)
+            if pad.buttonsJustUp[but]: fireFauEvent FauEvent(kind: feGamepadButton, buttonGamepad: pad, buttonDown: false, button: but)
           
           pad.buttons = buttons
 

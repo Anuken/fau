@@ -73,8 +73,10 @@ type FauEventKind* = enum
   feResize,
   ## visibility changed (show/hide)
   feVisible,
-  # controller connected / disconnected
-  feGamepadChanged
+  ## controller connected / disconnected
+  feGamepadChanged,
+  ## controller button pressed
+  feGamepadButton
 
 #a generic input event
 type FauEvent* = object
@@ -104,6 +106,10 @@ type FauEvent* = object
   of feGamepadChanged:
     connected*: bool
     gamepad*: Gamepad
+  of feGamepadButton:
+    buttonGamepad*: Gamepad
+    button*: GamepadButton
+    buttonDown*: bool
 
 type FauListener* = proc(e: FauEvent)
 
