@@ -52,7 +52,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     raise Exception.newException("GLFM error: " & $message)
   )
 
-  echo "Initialized GLFM v" & $GLFM_VERSION_MAJOR & "." & $GLFM_VERSION_MINOR
+  display.glfmSetMultitouchEnabled(true)
 
   display.glfmSetSurfaceResizedFunc(proc(surf: ptr GLFMDisplay, width, height: cint) {.cdecl.} = 
     updateInsets(surf)
@@ -67,7 +67,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
     elif phase == GLFMTouchPhaseMoved:
       fireFauEvent(FauEvent(kind: feDrag, dragId: touch.int, dragPos: vec2(x.float32, fau.size.y - 1 - y.float32)))
 
-    return true
+    return false
   )
   
   display.glfmSetKeyFunc(proc(display: ptr GLFMDisplay, keyCode: GLFMKey, action: GLFMKeyAction, modifiers: cint): bool {.cdecl.} = 
@@ -114,6 +114,8 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   display.glfmSetAppFocusFunc(proc(display: ptr GLFMDisplay, focused: bool) {.cdecl.} =
     fireFauEvent(FauEvent(kind: feVisible, shown: focused))
   )
+
+  echo "Initialized GLFM v" & $GLFM_VERSION_MAJOR & "." & $GLFM_VERSION_MINOR
   
 #TODO most parameters are ignored here, depth matters!
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: FauInitParams) =

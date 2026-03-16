@@ -58,6 +58,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
         t.pos = e.touchPos
         t.down = e.touchDown
         if e.touchDown:
+          t.justDown = true
+        if e.touchDown:
           t.last = t.pos
           t.delta = vec2(0f, 0f)
     of feDrag:
@@ -135,6 +137,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     for x in keysJustDown.mitems: x = false
     for x in keysJustUp.mitems: x = false
     fau.scroll = vec2()
+    for touch in fau.touches.mitems:
+      touch.justDown = false
   ), 
   (proc() =
 
@@ -191,7 +195,6 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     #center the UVs to prevent artifacts
     let avg = ((fau.white.u + fau.white.u2) / 2.0, (fau.white.v + fau.white.v2) / 2.0)
     (fau.white.u, fau.white.v, fau.white.u2, fau.white.v2) = (avg[0], avg[1], avg[0], avg[1])
-    
 
     if initProc != nil:
       initProc()

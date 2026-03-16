@@ -111,6 +111,7 @@ type FauListener* = proc(e: FauEvent)
 type Touch* = object
   pos*, delta*, last*: Vec2
   down*: bool
+  justDown*: bool
 
 #Paramters for initialization of Fau across many backends.
 type FauInitParams* = object
