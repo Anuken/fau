@@ -38,7 +38,9 @@ type GamepadAxis2* = enum
 
 type GamepadButton* = enum
   a, b, x, y, leftBumper, rightBumper, back, start, guide, 
-  leftThumb, rightThumb, dpadUp, dpadRight, dpadDown, dpadLeft
+  leftThumb, rightThumb, dpadUp, dpadRight, dpadDown, dpadLeft,
+  leftTrigger, rightTrigger, #these are not buttons, but it is useful to treat them as such
+  unset #unset/unkown
 
 #A game controller.
 type Gamepad* = ref object

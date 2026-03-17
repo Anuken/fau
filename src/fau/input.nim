@@ -90,3 +90,6 @@ proc name*(button: GamepadButton): string =
   of dpadDown: "D-Pad Down"
   of dpadLeft: "D-Pad Left"
   of dpadRight: "D-Pad Right"
+  of leftTrigger: "Left Trigger"
+  of rightTrigger: "Right Trigger"
+  of unset: "Unset"

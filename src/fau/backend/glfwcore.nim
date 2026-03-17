@@ -403,8 +403,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
           pad.axes[leftY] = -state.axes[GamepadAxisLeftY]
           pad.axes[rightX] = state.axes[GamepadAxisRightX]
           pad.axes[rightY] = -state.axes[GamepadAxisRightY]
-          pad.axes[leftTrigger] = state.axes[GamepadAxisLeftTrigger]
-          pad.axes[rightTrigger] = state.axes[GamepadAxisRightTrigger]
+          pad.axes[GamepadAxis.leftTrigger] = state.axes[GamepadAxisLeftTrigger]
+          pad.axes[GamepadAxis.rightTrigger] = state.axes[GamepadAxisRightTrigger]
           
           var buttons: array[GamepadButton, bool]
 
@@ -424,6 +424,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
           buttons[dpadRight] = state.buttons[GamepadButtonDpadRight].bool
           buttons[dpadDown] = state.buttons[GamepadButtonDpadDown].bool
           buttons[dpadLeft] = state.buttons[GamepadButtonDpadLeft].bool
+          buttons[GamepadButton.leftTrigger] = pad.axes[GamepadAxis.leftTrigger] > -1f + gamepadDeadzone
+          buttons[GamepadButton.rightTrigger] = pad.axes[GamepadAxis.rightTrigger] > -1f + gamepadDeadzone
         
           for but in GamepadButton:
             pad.buttonsJustDown[but] = buttons[but] and not pad.buttons[but]
