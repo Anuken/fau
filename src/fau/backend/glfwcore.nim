@@ -377,8 +377,6 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
     echo "GLFW error: " & $desc & " (error code: " & $code & ")"
   )
 
-  initProc()
-
   #find existing gamepads at game startup
   when not defined(emscripten):
     for i in 0..<8:
@@ -386,7 +384,12 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
         let gamepad = Gamepad(index: i.int, name: $getGamepadName(i.cint))
         fau.gamepads.add(gamepad)
 
-        fireFauEvent FauEvent(kind: feGamepadChanged, connected: true, gamepad: gamepad)
+  initProc()
+
+  #only fire the connected event once init is called, as that is when the listeners have been registered
+  when not defined(emscripten):
+    for gamepad in fau.gamepads:
+      fireFauEvent FauEvent(kind: feGamepadChanged, connected: true, gamepad: gamepad)
 
   mainLoop(proc() =
     pollEvents()
