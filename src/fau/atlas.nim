@@ -37,21 +37,29 @@ proc loadAtlas*(path: static[string]): Atlas =
   #number of images - ignored because it's read at compile time
   discard stream.readUint8()
 
-  var 
-    dataPointers: array[imageCountConst, RawImage]
-    exec = createMaster()
+  const 
+    lazyLoading = defined(atlasLazyLoad)
+    threadedLoading = not lazyLoading
+
+  when threadedLoading:
+    var 
+      dataPointers: array[imageCountConst, RawImage]
+      exec = createMaster()
   
-  exec.awaitAll:
+  template loadBody {.dirty.} =
     var img = 0 #this is awful and pointless but the compiler yells at me if I don't put it here. it gets shadowed anyway
     unroll(0..<imageCountConst, img):
+      const imgPath = path & $img & ".png"
       
       let 
         amount = stream.readInt32()
-        #TODO: add later
         texWidth = stream.readInt16()
         texHeight = stream.readInt16()
       
-      let texture = newTexture(vec2i(texWidth.int, texHeight.int))
+      when threadedLoading:
+        let texture = newTexture(vec2i(texWidth.int, texHeight.int), path = imgPath)
+      else:
+        let texture = newLazyTexture(vec2i(texWidth.int, texHeight.int), data = assetReadStatic(imgPath), path = imgPath)
       result.textures.add texture
       
       for i in 0..<amount:
@@ -81,14 +89,21 @@ proc loadAtlas*(path: static[string]): Atlas =
 
         result.patches[name] = patch
       
-      const imgPath = path & $img & ".png"
-      exec.spawn loadRawImage(imgPath) -> dataPointers[img]
+      when threadedLoading:
+        exec.spawn loadRawImage(imgPath) -> dataPointers[img]
+
+  when threadedLoading:
+    exec.awaitAll:
+      loadBody
+  else:
+    loadBody
 
   stream.close()
 
-  for i, texture in result.textures:
-    texture.load(texture.size, dataPointers[i].data)
-    freeRawImage(dataPointers[i])
+  when threadedLoading:
+    for i, texture in result.textures:
+      texture.load(texture.size, dataPointers[i].data)
+      freeRawImage(dataPointers[i])
 
   result.error = result.patches["error"]
   result.error9 = newPatch9(result.patches["error"], 0, 0, 0, 0)
