@@ -76,8 +76,6 @@ proc use*(texture: Texture, unit: int = 0) =
 
     texture.size = vec2i(width, height)
 
-    echo "Lazily loaded texture: ", texture.path, " ", texture.size
-
     if texture.mipmaps:
       glGenerateMipmap(texture.target)
     
