@@ -72,6 +72,7 @@ proc glfmMain*(display: ptr GLFMDisplay) {.exportc, cdecl.} =
   
   display.glfmSetKeyFunc(proc(display: ptr GLFMDisplay, keyCode: GLFMKey, action: GLFMKeyAction, modifiers: cint): bool {.cdecl.} = 
     let code = toKeyCode(keyCode)
+    if code == keyUnknown: return false
     
     case action:
       of GLFMKeyActionPressed:

@@ -14,7 +14,14 @@ type
     minInterval*: int
     lastPlayTime: int64
     lastVolume: float32
+    ## last played voice
     voice*: Voice
+    minInterruptValue = 0f
+    maxConcurrentValue = 0
+
+    #lazy loading proc; called in play() if the sound is nil.
+    loader: proc(sound: ptr AudioSource): bool {.gcsafe, nimcall.}
+    usedLoader: bool
   Sound* = ref SoundObj
   Voice* = distinct cuint
   AudioBusObj* = object
@@ -42,6 +49,7 @@ var
   so: ptr Soloud
   initialized: bool
   soundTable: Table[string, Sound]
+  allSounds: seq[Sound]
   soundBus*: AudioBus
 
 proc `==`*(voice, other: Voice): bool {.borrow.}
@@ -73,12 +81,31 @@ proc valid*(sound: Sound): bool {.inline.} = sound != nil and sound.loaded and s
 
 proc hasHandle*(sound: Sound): bool {.inline.} = sound != nil and sound.handle != nil
 
+proc checkLoad*(sound: Sound) {.gcsafe.} =
+  ## Attempts to lazy-load a sound, if it is not already loaded.
+  if sound.hasHandle and not sound.loaded and sound.loader != nil and not sound.usedLoader:
+    sound.usedLoader = true
+    sound.loaded = sound.loader(sound.handle)
+
+proc loadSoundsParallel*(sounds: openArray[Sound]) =
+  ## Equivalent of checkLoad, but runs in parallel for many sounds.
+  var exec = createMaster()
+  exec.awaitAll:
+    for sound in sounds:
+      if sound.hasHandle and not sound.loaded and sound.loader != nil and not sound.usedLoader:
+        sound.usedLoader = true
+        let loaderProc = sound.loader #TODO broken
+        exec.spawn loaderProc(sound.handle) -> sound.loaded
+
 proc hasSoundByName*(name: string): bool = soundTable.hasKey(name)
 
 proc getSoundByName*(name: string): Sound = soundTable.getOrDefault(name, soundNone)
 
 proc registerSound*(name: string, sound: Sound) = 
   soundTable[name] = sound
+  allSounds.add sound
+
+proc getAllSounds*(): seq[Sound] {.inline.} = allSounds
 
 template checkErr(details: string, body: untyped): bool =
   let err = body
@@ -132,6 +159,7 @@ proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
 
 proc `maxConcurrent=`*(sound: Sound, max: int) =
   if not sound.hasHandle: return
+  sound.maxConcurrentValue = max
 
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamSetMaxConcurrent(max.cint)
@@ -140,6 +168,7 @@ proc `maxConcurrent=`*(sound: Sound, max: int) =
 
 proc `minInterrupt=`*(sound: Sound, minInterrupt: float) =
   if not sound.hasHandle: return
+  sound.minInterruptValue = minInterrupt
 
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamSetMinConcurrentInterrupt(minInterrupt.cdouble)
@@ -224,6 +253,22 @@ proc getFft*(): array[256, float32] =
   for i in 0..<256:
     result[i] = dataArr[i].float32
 
+proc unload*(sound: Sound) =
+  ## If a sound has a lazy loader, unloads it.
+  if sound.hasHandle and sound.loader != nil and sound.loaded and sound.usedLoader:
+    sound.voice = NoVoice
+    sound.usedLoader = false
+    sound.loaded = false
+    if sound.stream:
+      WavStreamDestroy(cast[ptr WavStream](sound.handle))
+      sound.handle = WavStreamCreate()
+    else:
+      WavDestroy(cast[ptr Wav](sound.handle))
+      sound.handle = WavCreate()
+    
+    if sound.maxConcurrentValue > 0: sound.maxConcurrent = sound.maxConcurrentValue
+    if sound.minInterruptValue > 0: sound.minInterrupt = sound.minInterruptValue
+
 proc newEmptySound*(path = ""): Sound = 
   result = Sound(handle: WavCreate(), stream: false, loaded: false, filePath: path, useSoundBus: true)
   result.maxConcurrent = defaultMaxConcurrent
@@ -305,6 +350,8 @@ proc loadSoundHandle(path: static[string], handle: pointer): bool {.gcsafe.} =
     checkErr(path): cast[ptr Wav](handle).WavLoad(path.assetFile)
 
 proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, paused = false, bus = if sound.useSoundBus: soundBus else: nil): Voice {.discardable.} =
+  if sound.hasHandle: sound.checkLoad()
+
   if not sound.valid: return
 
   #handle two sounds being played within the minimum interval
@@ -403,7 +450,12 @@ macro defineAudio*() =
       var exec {.inject.} = createMaster()
       exec.awaitAll:
         discard
-  let loadBody = loadProc[6].last[1]
+  
+  let 
+    loadBody = loadProc[6].last[1]
+    outerBody = loadProc[6]
+
+  const lazyLoad = defined(audioLazyLoad)
 
   for folder in walkDir("assets"):
     if folder.kind == pcDir:
@@ -425,10 +477,17 @@ macro defineAudio*() =
               registerSound(`name`, `nameid`)
               exec.spawn loadMusicHandle(`file`, `nameid`.handle) -> `nameid`.loaded
           else:
-            loadBody.add quote do:
-              `nameid` = newEmptySound(`file`)
-              registerSound(`name`, `nameid`)
-              exec.spawn loadSoundHandle(`file`, `nameid`.handle) -> `nameid`.loaded
+            when lazyLoad:
+              outerBody.insert(0, quote do:
+                `nameid` = newEmptySound(`file`)
+                registerSound(`name`, `nameid`)
+                `nameid`.loader = proc(sound: ptr AudioSource): bool = loadSoundHandle(`file`, sound)
+              )
+            else:
+              loadBody.add quote do:
+                `nameid` = newEmptySound(`file`)
+                registerSound(`name`, `nameid`)
+                exec.spawn loadSoundHandle(`file`, `nameid`.handle) -> `nameid`.loaded
   
   result.add loadProc
 
