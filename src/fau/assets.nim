@@ -69,7 +69,7 @@ proc assetRead*(fname: string): string =
 
     var outString = newString(size)
     
-    discard glfmReadFileBuffer(filename, addr assetData[0])
+    discard glfmReadFileBuffer(filename, addr outString[0])
 
     return outString
   else:
