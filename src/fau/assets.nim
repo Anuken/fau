@@ -67,13 +67,9 @@ proc assetRead*(fname: string): string =
   elif defined(Android):
     let size = glfmReadFileSize(filename)
 
-    var 
-      assetData = cast[cstring](alloc(size))
-      outString = newString(size)
+    var outString = newString(size)
     
-    discard glfmReadFileBuffer(filename, assetData)
-    copyMem(addr outString[0], assetData, size)
-    dealloc(assetData)
+    discard glfmReadFileBuffer(filename, addr assetData[0])
 
     return outString
   else:

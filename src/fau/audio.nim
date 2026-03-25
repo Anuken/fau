@@ -20,8 +20,13 @@ type
     maxConcurrentValue = 0
 
     #lazy loading proc; called in play() if the sound is nil.
-    loader: proc(sound: ptr AudioSource): bool {.gcsafe, nimcall.}
     usedLoader: bool
+    lazy: bool
+
+    #for lazy loading
+    when staticAssets:
+      staticData: string
+
   Sound* = ref SoundObj
   Voice* = distinct cuint
   AudioBusObj* = object
@@ -52,6 +57,15 @@ var
   allSounds: seq[Sound]
   soundBus*: AudioBus
 
+template checkErr(details: string, body: untyped): bool =
+  let err = body
+  #the game shouldn't crash when an audio error happens, but it would be nice to log to stderr
+  var success = true
+  if err != 0: 
+    echo "[Audio] ", details, ": ", so.SoloudGetErrorString(err)
+    success = false
+  success
+
 proc `==`*(voice, other: Voice): bool {.borrow.}
 
 proc `=destroy`*(sound: var SoundObj) =
@@ -81,21 +95,38 @@ proc valid*(sound: Sound): bool {.inline.} = sound != nil and sound.loaded and s
 
 proc hasHandle*(sound: Sound): bool {.inline.} = sound != nil and sound.handle != nil
 
+proc loadLazy*(handle: ptr AudioSource, dataOrFile: string): bool {.gcsafe.} =
+  when staticAssets:
+    return cast[ptr Wav](handle).WavLoadMemEx(cast[ptr cuchar](dataOrFile.cstring), dataOrFile.len.cuint, 1, 0) == 0
+  else:
+    return cast[ptr Wav](handle).WavLoad(dataOrFile) == 0
+
 proc checkLoad*(sound: Sound) {.gcsafe.} =
   ## Attempts to lazy-load a sound, if it is not already loaded.
-  if sound.hasHandle and not sound.loaded and sound.loader != nil and not sound.usedLoader:
+  when defined(skipSoundLoad): return
+
+  if sound.hasHandle and not sound.loaded and sound.lazy and not sound.usedLoader and not sound.stream:
     sound.usedLoader = true
-    sound.loaded = sound.loader(sound.handle)
+
+    when staticAssets:
+      sound.loaded = loadLazy(sound.handle, sound.staticData)
+    else:
+      sound.loaded = loadLazy(sound.handle, sound.file.assetFile)
 
 proc loadSoundsParallel*(sounds: openArray[Sound]) =
   ## Equivalent of checkLoad, but runs in parallel for many sounds.
+  when defined(skipSoundLoad): return
+  
   var exec = createMaster()
   exec.awaitAll:
     for sound in sounds:
-      if sound.hasHandle and not sound.loaded and sound.loader != nil and not sound.usedLoader:
+      if sound.hasHandle and not sound.loaded and sound.lazy and not sound.usedLoader and not sound.stream:
         sound.usedLoader = true
-        let loaderProc = sound.loader #TODO broken
-        exec.spawn loaderProc(sound.handle) -> sound.loaded
+
+        when staticAssets:
+          exec.spawn loadLazy(sound.handle, sound.staticData) -> sound.loaded
+        else:
+          exec.spawn loadLazy(sound.handle, sound.file.assetFile) -> sound.loaded
 
 proc hasSoundByName*(name: string): bool = soundTable.hasKey(name)
 
@@ -106,15 +137,6 @@ proc registerSound*(name: string, sound: Sound) =
   allSounds.add sound
 
 proc getAllSounds*(): seq[Sound] {.inline.} = allSounds
-
-template checkErr(details: string, body: untyped): bool =
-  let err = body
-  #the game shouldn't crash when an audio error happens, but it would be nice to log to stderr
-  var success = true
-  if err != 0: 
-    echo "[Audio] ", details, ": ", so.SoloudGetErrorString(err)
-    success = false
-  success
 
 proc stop*(v: Voice) {.inline.} = 
   if initialized and v.int > 0: so.SoloudStop(v.cuint)
@@ -255,7 +277,7 @@ proc getFft*(): array[256, float32] =
 
 proc unload*(sound: Sound) =
   ## If a sound has a lazy loader, unloads it.
-  if sound.hasHandle and sound.loader != nil and sound.loaded and sound.usedLoader:
+  if sound.hasHandle and sound.lazy and sound.loaded and sound.usedLoader:
     sound.voice = NoVoice
     sound.usedLoader = false
     sound.loaded = false
@@ -480,8 +502,10 @@ macro defineAudio*() =
             when lazyLoad:
               outerBody.insert(0, quote do:
                 `nameid` = newEmptySound(`file`)
+                `nameid`.lazy = true
                 registerSound(`name`, `nameid`)
-                `nameid`.loader = proc(sound: ptr AudioSource): bool = loadSoundHandle(`file`, sound)
+                when staticAssets:
+                  `nameid`.staticData = assetReadStatic(`file`)
               )
             else:
               loadBody.add quote do:
