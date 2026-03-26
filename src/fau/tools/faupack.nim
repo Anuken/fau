@@ -1,6 +1,6 @@
 import ../g2/packer, ../util/[aseprite, tiled]
 import std/[os, algorithm, strformat, tables, math, streams, times, strutils]
-import pkg/[pixie, jsony, chroma]
+import pkg/[pixie, jsony, chroma, malebolgia, pixie/fileformats/png, pixie/internal]
 
 type FolderSettings = object
   outlineColor: ColorRGBA
@@ -365,65 +365,73 @@ proc packImages(path: string, output: string = "atlas", tilemapFolder = "", verb
 
   if not silent:
     echo &"Saving {positions.len} images..."
+
   
-  #blit packed images and write them to the stream
-  for imageIndex, entries in positionsByImage:
-    var 
-      image = newImage(packers[imageIndex].w, packers[imageIndex].h)
-      packer = packers[imageIndex]
+  proc writeImageData(data: seq[ColorRGBX], width, height: int, path: string) =
+    var copy = data
+    copy.toStraightAlpha()
+    writeFile(path, encodePng(width, height, 4, addr copy[0], copy.len * 4))
+  
+  var exec = createMaster()
+  exec.awaitAll:
+    #blit packed images and write them to the stream
+    for imageIndex, entries in positionsByImage:
+      var 
+        image = newImage(packers[imageIndex].w, packers[imageIndex].h)
+        packer = packers[imageIndex]
 
-    stream.write(entries.len.int32)
-    #writing the size of the image is necessary to make it load in parallel properly
-    stream.write(packer.w.int16)
-    stream.write(packer.h.int16)
+      stream.write(entries.len.int32)
+      #writing the size of the image is necessary to make it load in parallel properly
+      stream.write(packer.w.int16)
+      stream.write(packer.h.int16)
 
-    for region in entries:
+      for region in entries:
 
-      image.draw(region.image, vmath.translate(vmath.vec2(region.pos.x.float32, region.pos.y.float32)))
+        image.draw(region.image, vmath.translate(vmath.vec2(region.pos.x.float32, region.pos.y.float32)))
 
-      let bleed = region.settings.bleed
+        let bleed = region.settings.bleed
 
-      #apply bleeding/gutters
-      if bleed > 0:
-        let
-          ix = region.pos.x
-          iy = region.pos.y
-          iw = region.image.width
-          ih = region.image.height
+        #apply bleeding/gutters
+        if bleed > 0:
+          let
+            ix = region.pos.x
+            iy = region.pos.y
+            iw = region.image.width
+            ih = region.image.height
+          
+          for i in 0..<region.image.height:
+            for s in 1..bleed:
+              #left
+              image[ix - s, iy + i] = region.image[0, i]
+              #right
+              image[ix + s + iw - 1, iy + i] = region.image[iw - 1, i]
+          
+          for i in 0..<region.image.width:
+            for s in 1..bleed:
+              #bottom
+              image[ix + i, iy - s] = region.image[i, 0]
+              #top
+              image[ix + i, iy + s + ih - 1] = region.image[i, ih - 1]
+
+        stream.write region.file.splitFile.name.len.int16
+        stream.write region.file.splitFile.name
+        stream.write region.pos.x.int16
+        stream.write region.pos.y.int16
+        stream.write region.image.width.int16
+        stream.write region.image.height.int16
+
+        #write splits if present (-1 considered invalid value)
+        if region.splits[0] != -1:
+          stream.write true
+          for val in region.splits:
+            stream.write val.int16
+        else:
+          stream.write false
         
-        for i in 0..<region.image.height:
-          for s in 1..bleed:
-            #left
-            image[ix - s, iy + i] = region.image[0, i]
-            #right
-            image[ix + s + iw - 1, iy + i] = region.image[iw - 1, i]
-        
-        for i in 0..<region.image.width:
-          for s in 1..bleed:
-            #bottom
-            image[ix + i, iy - s] = region.image[i, 0]
-            #top
-            image[ix + i, iy + s + ih - 1] = region.image[i, ih - 1]
-
-      stream.write region.file.splitFile.name.len.int16
-      stream.write region.file.splitFile.name
-      stream.write region.pos.x.int16
-      stream.write region.pos.y.int16
-      stream.write region.image.width.int16
-      stream.write region.image.height.int16
-
-      #write splits if present (-1 considered invalid value)
-      if region.splits[0] != -1:
-        stream.write true
-        for val in region.splits:
-          stream.write val.int16
-      else:
-        stream.write false
+        stream.write region.duration.uint16
       
-      stream.write region.duration.uint16
+      exec.spawn writeImageData(image.data, image.width, image.height, &"{output}{imageIndex}.png")
     
-    image.writeFile(&"{output}{imageIndex}.png")
-  
   stream.close()
 
   if not silent:
