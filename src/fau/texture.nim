@@ -61,13 +61,10 @@ proc heightf*(texture: Texture): float32 {.inline.} = texture.size.y.float32
 proc loadRawImageMem*(buffer: openArray[byte] | openArray[char] | string, channels = 4): RawImage {.gcsafe.}
 proc freeRawImage*(img: pointer)
 
-#binds the texture
-#TODO do not export, textures should not be used manually.
-proc use*(texture: Texture, unit: int = 0) =
+proc preload*(texture: Texture) =
   if not texture.loaded and texture.dataSource != "":
     #load the texture the first time it's bound
     texture.handle = glGenTexture()
-    glActiveTexture((GlTexture0.int + unit).GLenum)
     glBindTexture(texture.target, texture.handle)
 
     let (data, width, height) = loadRawImageMem(texture.dataSource)
@@ -83,9 +80,21 @@ proc use*(texture: Texture, unit: int = 0) =
     glTexParameteri(texture.target, GlTextureMagFilter, if texture.magFilter == tfMipMap: GlLinear.GLint else: texture.magfilter.toGlEnum.GLint)
     glTexParameteri(texture.target, GlTextureWrapS, texture.uwrap.toGlEnum.GLint)
     glTexParameteri(texture.target, GlTextureWrapT, texture.vwrap.toGlEnum.GLint)
-  else:
-    glActiveTexture((GlTexture0.int + unit).GLenum)
-    glBindTexture(texture.target, texture.handle)
+
+#binds the texture
+#TODO do not export, textures should not be used manually.
+proc use*(texture: Texture, unit: int = 0) =
+  #load the texture the first time it's bound
+  texture.preload()
+
+  glActiveTexture((GlTexture0.int + unit).GLenum)
+  glBindTexture(texture.target, texture.handle)
+
+#Unloads a lazy texture, if it is loaded.
+proc unload*(texture: Texture) =
+  if texture.loaded and texture.dataSource != "" and glInitialized:
+    glDeleteTexture(texture.handle)
+    texture.handle = 0
 
 proc `filterMin=`*(texture: Texture, filter: TextureFilter) =
   if texture.minfilter != filter:
