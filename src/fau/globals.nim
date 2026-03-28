@@ -141,9 +141,14 @@ type FauInitParams* = object
   mousePassthrough*: bool
   #default background clear color
   clearColor*: Color
+  #application name
+  appName*: string = ""
 
-proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, floating = false, depth = false, undecorated = false, transparent = false, mousePassthrough = false, clearColor = colorClear): FauInitParams =
-  FauInitParams(size: size, title: title, maximize: maximize, depth: depth, floating: floating, undecorated: undecorated, transparent: transparent, mousePassthrough: mousePassthrough, clearColor: clearColor)
+proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, floating = false, depth = false, undecorated = false, transparent = false, mousePassthrough = false, clearColor = colorClear, appName = ""): FauInitParams =
+  FauInitParams(
+    size: size, title: title, maximize: maximize, depth: depth, floating: floating, undecorated: undecorated, 
+    transparent: transparent, mousePassthrough: mousePassthrough, clearColor: clearColor, appName: if appName.len == 0: title else: appName
+  )
 
 #Hold all the graphics state.
 type FauState* = object

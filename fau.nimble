@@ -7,7 +7,7 @@ bin           = @["fau/tools/faupack", "fau/tools/bleed"]
 binDir        = "build"
 
 requires "nim >= 2.0.0"
-requires "https://github.com/Anuken/staticglfw#9fa998cae81a5c795063e0c4e2476747d0257cd3"
+requires "https://github.com/Anuken/staticglfw#e4b204f5cbce497c2681fdd61b5d5f75a88ccb5f"
 requires "https://github.com/Anuken/glfm#8f1e2fa5ec6f6a96fc7eeb2bb6727d921a9259c4"
 requires "https://github.com/Anuken/nimsoloud#7e23039c4790f36f233733171845bae02044708c"
 requires "https://github.com/Anuken/polymorph#170f1b22c1d13828ad9ef84237b9d4d408b77cc6"

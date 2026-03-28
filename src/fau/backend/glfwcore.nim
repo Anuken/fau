@@ -226,6 +226,56 @@ proc fixMouse(x, y: cdouble): Vec2 =
 
   return pos
 
+when isLinux:
+  import os
+  from posix import nil
+
+  proc createDesktopFile*(appName: string, hidden = false) =
+    let dir = getHomeDir() / ".local/share/applications"
+
+    when assetExistsStatic("icon.png"):
+      if dir.dirExists:
+        try:
+          const len = 2000
+
+          var path = newString(len)
+          
+          #grab the current executable path
+          let read = posix.readlink("/proc/self/exe", cast[cstring](addr path[0]).cstring, len)
+
+          if read != -1:
+            path.setLen(read)
+
+            let 
+              appFile = dir / (appName & ".desktop")
+              iconPath = dir / (appName & ".png")
+            
+            if not iconPath.fileExists:
+              writeFile(iconPath, assetReadStatic("icon.png"))
+
+            const temp = """
+            [Desktop Entry] 
+            Version=1.0
+            Type=Application
+            Terminal=false
+            Icon=%ICON_PATH%
+            Name=%APP_NAME%
+            Exec=%APP_PATH%
+            Hidden=%HIDDEN%
+            StartupWMClass=%APP_CLASS_NAME%
+            """.unindent
+
+            let formatted = temp
+            .replace("%APP_NAME%", appName)
+            .replace("%APP_PATH%", path)
+            .replace("%ICON_PATH%", iconPath)
+            .replace("%HIDDEN%", $hidden)
+            .replace("%APP_CLASS_NAME%", appName.toLowerAscii())
+
+            writeFile(appFile, formatted)
+        except:
+          echo "Failed to create .desktop file: ", getCurrentExceptionMsg()
+
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: FauInitParams) =
   
   discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
@@ -258,6 +308,13 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
     windowHint(CONTEXT_VERSION_MINOR, 2)
     windowHint(OPENGL_PROFILE, OPENGL_CORE_PROFILE)
     windowHint(OPENGL_FORWARD_COMPAT, 1)
+  
+  if params.appName != "":
+    when isLinux:
+      windowHintString(X11_CLASS_NAME, params.appName)
+      
+      when defined(linuxCreateDesktopFile):
+        createDesktopFile(params.appName)
 
   window = createWindow(params.size.x.cint, params.size.y.cint, params.title.cstring, nil, nil)
   window.makeContextCurrent()
