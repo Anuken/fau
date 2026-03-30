@@ -567,13 +567,16 @@ proc setFullscreen*(on: bool) =
   if isFullscreen() == on or defined(emscripten):
     return
 
-  let mode = getVideoMode(getPrimaryMonitor())
+  var curMonitor = window.getWindowMonitor()
+  if curMonitor == nil: curMonitor = getPrimaryMonitor()
+
+  let mode = getVideoMode(curMonitor)
   if on:
     #save fullscreen rectangle
     window.getWindowPos(addr windowedRect[0], addr windowedRect[1])
     window.getWindowSize(addr windowedRect[2], addr windowedRect[3])
 
-    window.setWindowMonitor(getPrimaryMonitor(), 0, 0, mode.width, mode.height, mode.refreshRate)
+    window.setWindowMonitor(curMonitor, 0, 0, mode.width, mode.height, mode.refreshRate)
   else:
     window.setWindowMonitor(nil, windowedRect[0], windowedRect[1], windowedRect[2], windowedRect[3], 0)
 
