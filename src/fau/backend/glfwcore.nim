@@ -9,6 +9,7 @@ type
 
 var 
   running: bool = true
+  windowFullscreen: bool
   window: Window
   windowedRect: (cint, cint, cint, cint) = (0, 0, 480, 320)
 
@@ -560,25 +561,33 @@ proc isMaximized*(): bool = window.getWindowAttrib(Maximized).bool
 proc isFocused*(): bool = window.getWindowAttrib(Focused).bool
 
 proc isFullscreen*(): bool =
-  return window.getWindowMonitor() != nil
+  return window.getWindowMonitor() != nil or windowFullscreen
 
 proc setFullscreen*(on: bool) =
   #pointless
   if isFullscreen() == on or defined(emscripten):
     return
 
-  var curMonitor = window.getWindowMonitor()
-  if curMonitor == nil: curMonitor = getPrimaryMonitor()
+  var curMonitor = getPrimaryMonitor()
 
   let mode = getVideoMode(curMonitor)
   if on:
+    windowFullscreen = true
     #save fullscreen rectangle
     window.getWindowPos(addr windowedRect[0], addr windowedRect[1])
     window.getWindowSize(addr windowedRect[2], addr windowedRect[3])
 
-    window.setWindowMonitor(curMonitor, 0, 0, mode.width, mode.height, mode.refreshRate)
+    when not isWindows:
+      window.setWindowMonitor(curMonitor, 0, 0, mode.width, mode.height, mode.refreshRate)
+    else:
+      window.setWindowAttrib(DECORATED, 0.cint)
+      window.setWindowMonitor(nil, 0, 0, mode.width, mode.height, mode.refreshRate)
   else:
-    window.setWindowMonitor(nil, windowedRect[0], windowedRect[1], windowedRect[2], windowedRect[3], 0)
+    windowFullscreen = false
+    when isWindows:
+      window.setWindowAttrib(DECORATED, 1.cint)
+
+    window.setWindowMonitor(nil, windowedRect[0], windowedRect[1], windowedRect[2], windowedRect[3], DontCare)
 
 proc toggleFullscreen*() =
   setFullscreen(not isFullscreen())
