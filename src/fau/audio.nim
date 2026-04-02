@@ -140,12 +140,15 @@ proc getAllSounds*(): seq[Sound] {.inline.} = allSounds
 
 proc stop*(v: Voice) {.inline.} = 
   if initialized and v.int > 0: so.SoloudStop(v.cuint)
-proc pause*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 1)
-proc resume*(v: Voice) {.inline.} = so.SoloudSetPause(v.cuint, 0)
-proc seek*(v: Voice, pos: float) {.inline.} = discard so.SoloudSeek(v.cuint, pos.cdouble)
+proc pause*(v: Voice) {.inline.} = 
+  if initialized and v.int > 0: so.SoloudSetPause(v.cuint, 1)
+proc resume*(v: Voice) {.inline.} = 
+  if initialized and v.int > 0: so.SoloudSetPause(v.cuint, 0)
+proc seek*(v: Voice, pos: float) {.inline.} = 
+  if initialized and v.int > 0: discard so.SoloudSeek(v.cuint, pos.cdouble)
 
-proc valid*(v: Voice): bool {.inline.} = v.int > 0 and so.SoloudIsValidVoiceHandle(v.cuint).bool
-proc paused*(v: Voice): bool {.inline.} = v.int > 0 and so.SoloudGetPause(v.cuint).bool
+proc valid*(v: Voice): bool {.inline.} = v.int > 0 and initialized and so.SoloudIsValidVoiceHandle(v.cuint).bool
+proc paused*(v: Voice): bool {.inline.} = v.int > 0 and initialized and so.SoloudGetPause(v.cuint).bool
 proc playing*(v: Voice): bool {.inline.} = not v.paused
 proc volume*(v: Voice): float32 {.inline.} = 
   if v.int > 0: so.SoloudGetVolume(v.cuint).float32 else: 0f
@@ -206,7 +209,7 @@ proc length*(sound: Sound): float =
     return WavGetLength(cast[ptr Wav](sound.handle)).float
 
 proc stop*(sound: Sound) =
-  if not sound.valid: return
+  if not sound.valid or not initialized : return
 
   if sound.stream:
     cast[ptr WavStream](sound.handle).WavStreamStop()
@@ -217,7 +220,7 @@ proc newAudioBus*(): AudioBus =
   AudioBus(handle: BusCreate())
 
 proc play*(bus: AudioBus) =
-  if not bus.voice.valid: 
+  if not bus.voice.valid and initialized: 
     bus.voice = so.SoloudPlay(bus.handle).Voice
 
 proc stop*(bus: AudioBus) =
@@ -292,11 +295,11 @@ proc unload*(sound: Sound) =
     if sound.minInterruptValue > 0: sound.minInterrupt = sound.minInterruptValue
 
 proc newEmptySound*(path = ""): Sound = 
-  result = Sound(handle: WavCreate(), stream: false, loaded: false, filePath: path, useSoundBus: true)
+  result = Sound(handle: if initialized: WavCreate() else: nil, stream: false, loaded: false, filePath: path, useSoundBus: true)
   result.maxConcurrent = defaultMaxConcurrent
 
 proc newEmptyMusic*(path = "", useSoundBus = false): Sound = 
-  result = Sound(handle: WavStreamCreate(), protect: true, stream: true, loaded: false, filePath: path, useSoundBus: useSoundBus)
+  result = Sound(handle: if initialized: WavStreamCreate() else: nil, protect: true, stream: true, loaded: false, filePath: path, useSoundBus: useSoundBus)
   if useSoundBus:
     result.maxConcurrent = defaultMaxConcurrent
 
@@ -329,6 +332,7 @@ proc loadMusic*(path: static[string]): Sound =
     return loadMusicAsset(path)
 
 proc loadMusicHandle(path: static[string], handle: pointer): bool {.gcsafe.}  =
+  if handle.isNil: return false
   ## Loads a music file from a raw ptr handle. Used for parallel loading.
   when defined(skipSoundLoad):
     false #don't load anything
@@ -362,6 +366,7 @@ proc loadSound*(path: static[string]): Sound =
     return loadSoundFile(path.assetFile)
 
 proc loadSoundHandle(path: static[string], handle: pointer): bool {.gcsafe.} =
+  if handle.isNil: return false
   ## Loads a sound from a raw ptr handle. Used for parallel loading.
   when defined(skipSoundLoad):
     false #don't load anything
