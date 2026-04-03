@@ -1,5 +1,5 @@
 import fau/[fmath, globals, color, framebuffer, mesh, assets, patch, shader, texture, batch, atlas, draw, input, screenbuffer]
-import os, times, random
+import std/[os, times, random, monotimes]
 
 const isDebug* = defined(debug)
 
@@ -22,7 +22,7 @@ var
   lastFrameTime: int64 = -1
   frameCounterStart: int64
   frames: int
-  startTime: Time
+  startTime: MonoTime
 
 #TODO all of these should be struct parameters!
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = initParams()) =
@@ -75,7 +75,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
 
   initCore(
   (proc() =
-    var time = (times.getTime() - startTime).inNanoseconds
+    var time = (getMonoTime() - startTime).inNanoseconds
     #at the start of the game, delta is assumed to be 1/60
     if lastFrameTime == -1: lastFrameTime = time - 16666666
 
@@ -89,7 +89,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
         #sleep and update time
         sleep(((targetDelay - actualDelay) * 1e-6).int)
 
-        time = (times.getTime() - startTime).inNanoseconds
+        time = (getMonoTime() - startTime).inNanoseconds
 
     fau.rawDelta = float(time - lastFrameTime) / 1000000000.0
     fau.delta = min(fau.rawDelta, fau.maxDelta)
