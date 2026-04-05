@@ -73,6 +73,12 @@ proc gamepadAxis2*(axes: GamepadAxis2): Vec2 =
     let val = pad.axis2(axes)
     if not val.zero: return val
 
+proc gamepadDpadTap*(): Vec2 = 
+  vec2(
+    GamepadButton.dpadRight.gamepadTapped.float32 - GamepadButton.dpadLeft.gamepadTapped.float32,
+    GamepadButton.dpadUp.gamepadTapped.float32 - GamepadButton.dpadDown.gamepadTapped.float32
+  )
+
 proc name*(button: GamepadButton): string =
   return case button
   of a: "A"
