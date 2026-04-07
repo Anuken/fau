@@ -79,6 +79,17 @@ proc gamepadDpadTap*(): Vec2 =
     GamepadButton.dpadUp.gamepadTapped.float32 - GamepadButton.dpadDown.gamepadTapped.float32
   )
 
+proc rumble*(gamepad: Gamepad, slowIntensity, fastIntensity: float32, duration: float32 = 0.3f) =
+  gamepad.rumbleDuration = max(gamepad.rumbleDuration, duration)
+  gamepad.rumbleDurationMax = max(gamepad.rumbleDurationMax, duration)
+  
+  gamepad.rumbleIntensityFast = max(gamepad.rumbleIntensityFast, slowIntensity)
+  gamepad.rumbleIntensitySlow = max(gamepad.rumbleIntensitySlow, fastIntensity)
+
+proc gamepadRumble*(slowIntensity, fastIntensity: float32, duration = 0.3f) =
+  for pad in fau.gamepads:
+    pad.rumble(slowIntensity, fastIntensity, duration)
+
 proc name*(button: GamepadButton): string =
   return case button
   of a: "A"

@@ -494,6 +494,16 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
           
           pad.buttons = buttons
 
+          if pad.rumbleDuration > 0f:
+            pad.rumbleDuration -= fau.rawDelta
+            let scl = clamp(pad.rumbleDuration/pad.rumbleDurationMax).powout(2f)
+            discard setJoystickRumble(pad.index.cint, (pad.rumbleIntensitySlow * scl).cfloat, (pad.rumbleIntensityFast * scl).cfloat)
+          else:
+            pad.rumbleIntensityFast = 0f
+            pad.rumbleIntensitySlow = 0f
+            pad.rumbleDuration = 0f
+            pad.rumbleDurationMax = 0f
+
     loopProc()
     window.swapBuffers()
   )

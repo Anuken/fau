@@ -46,6 +46,8 @@ type GamepadButton* = enum
 type Gamepad* = ref object
   name*: string
   index*: int
+  rumbleIntensitySlow*, rumbleIntensityFast*: float32
+  rumbleDuration*, rumbleDurationMax*: float32
   buttons*, buttonsJustDown*, buttonsJustUp*: array[GamepadButton, bool]
   axes*: array[GamepadAxis, float]
 
