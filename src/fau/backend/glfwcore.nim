@@ -313,6 +313,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if params.appName != "":
     when isLinux:
       windowHintString(X11_CLASS_NAME, params.appName)
+      windowHintString(X11_INSTANCE_NAME, params.appName)
       
       when defined(linuxCreateDesktopFile):
         createDesktopFile(params.appName)
