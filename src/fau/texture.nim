@@ -142,7 +142,7 @@ proc loadRawImageMem*(buffer: openArray[byte] | openArray[char] | string, channe
     height: cint
     components: cint
 
-  let data = stbi.stbi_load_from_memory(cast[ptr cuchar](buffer[0].addr), buffer.len.cint, width, height, components, channels.cint)
+  let data = stbi.stbi_load_from_memory(cast[ptr char](buffer[0].addr), buffer.len.cint, width, height, components, channels.cint)
 
   if data == nil:
     raise newException(STBIException, stbi.failureReason())

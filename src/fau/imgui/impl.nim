@@ -333,7 +333,7 @@ proc imguiRenderFau =
         
         indexBufferOffset += pcmd.elemCount.int
 
-proc imguiInitFau*(appName: string = "", useCursor = true, theme: proc() = nil, font: static string = "", fontSize = 22f) =
+proc imguiInitFau*(useCursor = true, theme: proc() = nil, font: static string = "", fontSize = 22f) =
   if initialized: return
 
   initialized = true
@@ -347,6 +347,8 @@ proc imguiInitFau*(appName: string = "", useCursor = true, theme: proc() = nil, 
 
   if useCursor:
     io.backendFlags = (io.backendFlags.int32 or ImGuiBackendFlags.HasMouseCursors.int32).ImGuiBackendFlags
+  
+  let appName = fau.appName
   
   if appName == "":
     io.iniFilename = nil

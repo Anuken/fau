@@ -21,7 +21,7 @@ proc run =
   zoom = clamp(zoom + fau.scroll.y * 0.1f * zoom, 0.2f, 5f)
 
   fau.cam.pos.lerp(pos, 10f * fau.delta)
-  realZoom = realZoom.lerp(zoom, 20f * fau.delta)
+  realZoom.lerp(zoom, 20f * fau.delta)
 
   fau.cam.use(fau.size / realZoom)
 

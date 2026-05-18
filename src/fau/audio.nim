@@ -1,4 +1,4 @@
-import soloud, os, macros, strutils, assets, globals, threading, util/misc, tables, std/monotimes
+import soloud, os, macros, strutils, assets, threading, util/misc, tables, std/monotimes
 
 # High-level soloud wrapper.
 
@@ -97,7 +97,7 @@ proc hasHandle*(sound: Sound): bool {.inline.} = sound != nil and sound.handle !
 
 proc loadLazy*(handle: ptr AudioSource, dataOrFile: string): bool {.gcsafe.} =
   when staticAssets:
-    return cast[ptr Wav](handle).WavLoadMemEx(cast[ptr cuchar](dataOrFile.cstring), dataOrFile.len.cuint, 1, 0) == 0
+    return cast[ptr Wav](handle).WavLoadMemEx(cast[ptr char](dataOrFile.cstring), dataOrFile.len.cuint, 1, 0) == 0
   else:
     return cast[ptr Wav](handle).WavLoad(dataOrFile) == 0
 
@@ -305,7 +305,7 @@ proc newEmptyMusic*(path = "", useSoundBus = false): Sound =
 
 proc loadMusicBytes*(path: string, data: string): Sound =
   result = newEmptyMusic(path)
-  result.loaded = checkErr(path): cast[ptr WavStream](result.handle).WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+  result.loaded = checkErr(path): cast[ptr WavStream](result.handle).WavStreamLoadMemEx(cast[ptr char](data.cstring), data.len.cuint, 1, 0)
 
 proc loadMusicStatic*(path: static[string]): Sound =
   return loadMusicBytes(path, assetReadStatic(path))
@@ -338,13 +338,13 @@ proc loadMusicHandle(path: static[string], handle: pointer): bool {.gcsafe.}  =
     false #don't load anything
   elif staticAssets or defined(Android):
     let data = when staticAssets: assetReadStatic(path) else: assetRead(path)
-    checkErr(path): cast[ptr WavStream](handle).WavStreamLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+    checkErr(path): cast[ptr WavStream](handle).WavStreamLoadMemEx(cast[ptr char](data.cstring), data.len.cuint, 1, 0)
   else:
     checkErr(path): cast[ptr WavStream](handle).WavStreamLoad(path.assetFile)
 
 proc loadSoundBytes*(path: string, data: string): Sound =
   result = newEmptySound(path)
-  result.loaded = checkErr(path): cast[ptr Wav](result.handle).WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+  result.loaded = checkErr(path): cast[ptr Wav](result.handle).WavLoadMemEx(cast[ptr char](data.cstring), data.len.cuint, 1, 0)
 
 proc loadSoundStatic*(path: static[string]): Sound =
   return loadSoundBytes(path, assetReadStatic(path))
@@ -372,7 +372,7 @@ proc loadSoundHandle(path: static[string], handle: pointer): bool {.gcsafe.} =
     false #don't load anything
   elif staticAssets or defined(Android):
     let data = when staticAssets: assetReadStatic(path) else: assetRead(path)
-    checkErr(path): cast[ptr Wav](handle).WavLoadMemEx(cast[ptr cuchar](data.cstring), data.len.cuint, 1, 0)
+    checkErr(path): cast[ptr Wav](handle).WavLoadMemEx(cast[ptr char](data.cstring), data.len.cuint, 1, 0)
   else:
     checkErr(path): cast[ptr Wav](handle).WavLoad(path.assetFile)
 

@@ -143,13 +143,16 @@ type FauInitParams* = object
   mousePassthrough*: bool
   #default background clear color
   clearColor*: Color
-  #application name
-  appName*: string = ""
+  #internal application name; used for the name of the data folder and executable/.desktop file
+  appName*: string
+  #capitalized full application name, usually just the window title
+  appTitle*: string
 
-proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, floating = false, depth = false, undecorated = false, transparent = false, mousePassthrough = false, clearColor = colorClear, appName = ""): FauInitParams =
+proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, floating = false, depth = false, undecorated = false, transparent = false, 
+  mousePassthrough = false, clearColor = colorClear, appName = "", appTitle = title): FauInitParams =
   FauInitParams(
     size: size, title: title, maximize: maximize, depth: depth, floating: floating, undecorated: undecorated, 
-    transparent: transparent, mousePassthrough: mousePassthrough, clearColor: clearColor, appName: if appName.len == 0: title else: appName
+    transparent: transparent, mousePassthrough: mousePassthrough, clearColor: clearColor, appName: if appName.len == 0: title else: appName, appTitle: title,
   )
 
 #Hold all the graphics state.
@@ -219,6 +222,8 @@ type FauState* = object
   captureMouse*: bool
   #If true, the keyboard is captured by UI.
   captureKeyboard*: bool
+  #Internal application name; used for save directories.
+  appName*: string
 
 #Global instance of fau state.
 var fau* = FauState()

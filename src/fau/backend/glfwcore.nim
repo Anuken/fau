@@ -1,4 +1,4 @@
-import staticglfw, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, ../assets, ../util/misc, std/strutils
+import staticglfw, ../gl/[glad, gltypes, glproc], ../util/misc, std/strutils
 
 # Mostly complete GLFW backend, based on treeform/staticglfw
 
@@ -12,6 +12,8 @@ var
   windowFullscreen: bool
   window: Window
   windowedRect: (cint, cint, cint, cint) = (0, 0, 480, 320)
+
+const isWayland = defined(wayland) and defined(Linux)
 
 proc `=destroy`(cursor: var CursorObj) =
   if cursor.handle != nil and glInitialized:
@@ -228,13 +230,12 @@ proc fixMouse(x, y: cdouble): Vec2 =
   return pos
 
 when isLinux:
-  import os
   from posix import nil
 
-  proc createDesktopFile*(appName: string, hidden = false) =
-    let dir = getHomeDir() / ".local/share/applications"
+  proc createDesktopFile*(appName: string, appTitle: string, hidden = false) =
 
     when assetExistsStatic("icon.png"):
+      let dir = getHomeDir() / ".local/share/applications"
       if dir.dirExists:
         try:
           const len = 2000
@@ -260,7 +261,7 @@ when isLinux:
             Type=Application
             Terminal=false
             Icon=%ICON_PATH%
-            Name=%APP_NAME%
+            Name=%APP_TITLE%
             Exec=%APP_PATH%
             Hidden=%HIDDEN%
             StartupWMClass=%APP_CLASS_NAME%
@@ -268,6 +269,7 @@ when isLinux:
 
             let formatted = temp
             .replace("%APP_NAME%", appName)
+            .replace("%APP_TITLE%", appTitle)
             .replace("%APP_PATH%", path)
             .replace("%ICON_PATH%", iconPath)
             .replace("%HIDDEN%", $hidden)
@@ -312,11 +314,12 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   
   if params.appName != "":
     when isLinux:
-      windowHintString(X11_CLASS_NAME, params.appName)
-      windowHintString(X11_INSTANCE_NAME, params.appName)
+      windowHintString(X11_CLASS_NAME, params.appName.cstring)
+      windowHintString(X11_INSTANCE_NAME, params.appName.cstring)
+      windowHintString(WAYLAND_APP_ID, params.appName.cstring)
       
       when defined(linuxCreateDesktopFile):
-        createDesktopFile(params.appName)
+        createDesktopFile(params.appName, params.appTitle)
 
   window = createWindow(params.size.x.cint, params.size.y.cint, params.title.cstring, nil, nil)
   window.makeContextCurrent()
@@ -329,7 +332,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
       monitor = getPrimaryMonitor()
       mode = monitor.getVideoMode()
     
-    if mode != nil:
+    if mode != nil and not isWayland:
       var mx, my: cint
       getMonitorPos(monitor, mx.addr, my.addr)
       window.setWindowPos(mx + (mode.width - params.size.x.cint) div 2, my + (mode.height - params.size.y.cint) div 2)
@@ -545,14 +548,18 @@ proc getCursorPos*(): Vec2 =
   return fixMouse(mouseX, mouseY)
 
 proc setWindowPos*(pos: Vec2i) =
-  window.setWindowPos(pos.x.cint, pos.y.cint)
+  if not isWayland:
+    window.setWindowPos(pos.x.cint, pos.y.cint)
 
 proc getWindowPos*(): Vec2i =
-  var 
-    w: cint
-    h: cint
-  window.getWindowPos(addr w, addr h)
-  return vec2i(w.int, h.int)
+  if not isWayland:
+    var 
+      w: cint
+      h: cint
+    window.getWindowPos(addr w, addr h)
+    return vec2i(w.int, h.int)
+  else:
+    return vec2i()
 
 proc getWindowSize*(): Vec2i =
   var 

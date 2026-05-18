@@ -28,6 +28,7 @@ var
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = initParams()) =
 
   fau.clearColor = params.clearColor
+  fau.appName = params.appName
 
   #handle & update input based on events
   addFauListener(proc(e: FauEvent) =

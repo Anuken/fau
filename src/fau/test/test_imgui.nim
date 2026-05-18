@@ -15,7 +15,7 @@ proc init() =
                                   ImVec4.sizeof().uint32, ImDrawVert.sizeof().uint32,
                                   ImDrawIdx.sizeof().uint32).assert()
                                   
-  imguiInitFau(appName = "imguiTest")
+  imguiInitFau()
 
 proc run() =
   drawMat(ortho(fau.size))
@@ -45,4 +45,4 @@ proc run() =
   igEnd()
   # End simple window
 
-initFau(run, init, initParams())
+initFau(run, init, initParams(title = "ImGUI Test", appName = "imguiTest"))
