@@ -118,9 +118,9 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     if fau.postedCallbacks.len > 0:
       #make sure to iterate on a copy to prevent concurrent modification
       let callbacks = fau.postedCallbacks
+      fau.postedCallbacks.setLen(0)
       for value in callbacks:
         value()
-      fau.postedCallbacks.setLen(0)
 
     loopProc()
 
