@@ -195,7 +195,7 @@ proc getKeyName*(code: globals.Keycode): string =
       let key = toKeyCode(i.Scancode)
       if key != keyUnknown:
         let val = $getScancodeName(i.Scancode)
-        keyNames[i] = (if val.len == 1: capitalizeAscii(val) else: val)
+        keyNames[key.int] = (if val.len == 1: capitalizeAscii(val) else: val)
     
   return keyNames[code.int]
 
