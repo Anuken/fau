@@ -187,7 +187,7 @@ proc mapMouseCode(code: uint8): globals.KeyCode =
   else: keyUnknown
 
 #will return an empty string for unknown keys
-proc getKeyName*(code: Scancode): string = 
+proc getKeyName*(code: globals.Keycode): string = 
   var keyNames {.global.}: array[290, string]
 
   once:
@@ -350,14 +350,13 @@ proc updateGamepads() =
         pad.rumbleDurationMax = 0f
 
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: FauInitParams) =
-  when defined(Linux):
-    if getEnv("FAU_FORCE_WAYLAND", "0") != "1":
-      #Prefer x11, as Wayland seems to be broken on some platforms: https://github.com/Anuken/Mindustry/issues/11657
-      #yes, I know the issue is for Mindustry, but it seems specific to SDL3
-      if "wayland" == getEnv("XDG_SESSION_TYPE", "").toLowerAscii:
-        echo "[Fau] Forcing x11 due to Wayland being broken - see https://github.com/Anuken/Mindustry/issues/11657. Set FAU_FORCE_WAYLAND=1 to disable this behavior."
-        checkError setHint(HintVideoDriver, "x11,wayland");
-  
+  when defined(Linux) and not defined(wayland):
+    #Prefer x11, as Wayland seems to be broken on some platforms: https://github.com/Anuken/Mindustry/issues/11657
+    #yes, I know the issue is for Mindustry, but it seems specific to SDL3
+    if getEnv("FAU_FORCE_WAYLAND", "0") != "1" and "wayland" == getEnv("XDG_SESSION_TYPE", "").toLowerAscii:
+      echo "[Fau] Forcing x11 due to Wayland being broken - see https://github.com/Anuken/Mindustry/issues/11657. Set FAU_FORCE_WAYLAND=1 to disable this behavior."
+      checkError setHint(HintVideoDriver, "x11,wayland");
+
   if params.appName != "":
     checkError setAppMetadata(params.appTitle.cstring, nil, params.appName.cstring)
 
@@ -405,7 +404,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
     let 
       textureBytes = assetReadStatic("icon.png")
       img = loadRawImageMem(textureBytes)
-      surface = createSurfaceFrom(img.width.cint, img.height.cint, pixelFormatRgba32, cast[pointer](img.data), (img.width * 4).cint)
+      surface = createSurfaceFrom(img.width.cint, img.height.cint, PixelFormatRgba32, cast[pointer](img.data), (img.width * 4).cint)
     
     if surface != nil:
       #error isn't important here
