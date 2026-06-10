@@ -1,4 +1,7 @@
 #this is required for imgui
+--path:"../../../../staticglfw/src"
+
+--d:fauUseSdl
 
 when defined(MacOSX):
   switch("clang.linkerexe", "g++")

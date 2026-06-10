@@ -287,7 +287,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   if init() == 0: raise newException(Exception, "Failed to Initialize GLFW")
 
-  echo "Initialized GLFW v", VERSION_MAJOR, ".", VERSION_MINOR, ".", VERSION_REVISION 
+  echo "[Fau] Initialized GLFW v", VERSION_MAJOR, ".", VERSION_MINOR, ".", VERSION_REVISION 
 
   defaultWindowHints()
   windowHint(CONTEXT_VERSION_MINOR, 0)
@@ -340,7 +340,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if not loadGl(getProcAddress, extensionSupported):
     raise Exception.newException("Failed to load OpenGL.")
 
-  echo "Initialized OpenGL v", glVersionMajor, ".", glVersionMinor, " [VAO: ", supportsVertexArrays, "]"
+  echo "[Fau] Initialized OpenGL v", glVersionMajor, ".", glVersionMinor, " [VAO: ", supportsVertexArrays, "]"
 
   #load window icon if possible
   when assetExistsStatic("icon.png") and not defined(macosx) and not defined(wayland):
@@ -436,7 +436,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   #after initializing, log the error instead of crashing
   discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
-    echo "GLFW error: " & $desc & " (error code: " & $code & ")"
+    echo "[Fau] GLFW error: " & $desc & " (error code: " & $code & ")"
   )
 
   #find existing gamepads at game startup

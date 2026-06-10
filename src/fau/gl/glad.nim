@@ -192,7 +192,16 @@ var
   GLAD_GL_ARB_vertex_array_object*: bool
   GLAD_GL_OES_vertex_array_object*: bool
 
-type ExtensionProc*  = proc(extension: cstring): cint {.cdecl.} 
+type ExtensionProcInt* = proc(extension: cstring): cint {.cdecl.}
+type ExtensionProcBool* = proc(extension: cstring): bool {.cdecl.}
+
+var checkExtensionInt*: ExtensionProcInt
+var checkExtensionBool*: ExtensionProcBool
+
+proc checkExtension(name: cstring): bool =
+  if checkExtensionInt != nil: return checkExtensionInt(name) != 0
+  if checkExtensionBool != nil: return checkExtensionBool(name)
+  return false
 
 proc load_GL_VERSION_1_0(load: proc) =
   if not GLAD_GL_VERSION_1_0: return
@@ -585,7 +594,7 @@ proc findCoreGL(glVersion: string) =
   GLAD_GL_VERSION_2_0 = (major == 2 and minor >= 0) or major > 2
 
 
-proc gladLoadGL(load: proc, extensionProc: ExtensionProc): bool =
+proc gladLoadGL(load: proc, extensionProc: proc(name: cstring): bool): bool =
   glGetStringBASE = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
   if glGetStringBASE == nil: return false
 
@@ -601,8 +610,8 @@ proc gladLoadGL(load: proc, extensionProc: ExtensionProc): bool =
   load_GL_VERSION_1_5(load)
   load_GL_VERSION_2_0(load)
 
-  GLAD_GL_EXT_framebuffer_object = extensionProc("GL_EXT_framebuffer_object") != 0
-  GLAD_GL_ARB_vertex_array_object = extensionProc("GL_ARB_vertex_array_object") != 0
+  GLAD_GL_EXT_framebuffer_object = extensionProc("GL_EXT_framebuffer_object")
+  GLAD_GL_ARB_vertex_array_object = extensionProc("GL_ARB_vertex_array_object")
 
   #load fbo extension if not using 3.0
   if glVersionMajor < 3:
@@ -788,7 +797,7 @@ proc findCoreGLES2(glVersion: string) =
 
   GLAD_GL_ES_VERSION_2_0 = (major == 2 and minor >= 0) or major > 2
 
-proc gladLoadGLES2(load: proc, extensionProc: ExtensionProc): bool =
+proc gladLoadGLES2(load: proc, extensionProc: proc(name: cstring): bool): bool =
   glGetStringBASE = cast[proc (name: GLenum): ptr GLubyte {.cdecl, gcsafe.}](load("glGetString"))
   if glGetStringBASE == nil: return false
 
@@ -799,7 +808,7 @@ proc gladLoadGLES2(load: proc, extensionProc: ExtensionProc): bool =
 
   load_GL_ES_VERSION_2_0(load)
 
-  GLAD_GL_OES_vertex_array_object = extensionProc("GL_OES_vertex_array_object") != 0
+  GLAD_GL_OES_vertex_array_object = extensionProc("GL_OES_vertex_array_object")
 
   if glVersionMajor < 3:
     #load extension for GLES < 3.0
@@ -810,8 +819,13 @@ proc gladLoadGLES2(load: proc, extensionProc: ExtensionProc): bool =
   return glVersionMajor != 0 or glVersionMinor != 0
 
 #loads the correct platform-specific version of openGL (ES 2.0 on Android / iOS, standard GL 2.0+ on desktop)
-proc loadGl*(load: proc, extensionProc: ExtensionProc): bool = 
-  when defined(Android) or defined(iOS):
-    return gladLoadGLES2(load, extensionProc)
+proc loadGl*(load: proc, extensionProc: ExtensionProcInt | ExtensionProcBool): bool =
+  when extensionProc is ExtensionProcInt:
+    checkExtensionInt = extensionProc
   else:
-    return gladLoadGL(load, extensionProc)
+    checkExtensionBool = extensionProc
+
+  when defined(Android) or defined(iOS):
+    return gladLoadGLES2(load, checkExtension)
+  else:
+    return gladLoadGL(load, checkExtension)

@@ -5,6 +5,8 @@ const isDebug* = defined(debug)
 
 when isMobile:
   include fau/backend/glfmcore
+elif defined(fauUseSdl):
+  include fau/backend/sdlcore
 else:
   include fau/backend/glfwcore
 
