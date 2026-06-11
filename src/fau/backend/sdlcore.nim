@@ -1,8 +1,9 @@
-import pkg/sdl3
+import pkg/sdl3, std/[strutils, os]
+import ../[texture, globals, fmath, assets, input]
+import ../gl/[glad, glproc], ../util/misc
 
-import ../gl/[glad, glproc], ../util/misc, std/strutils
-
-#SDL3 backend - used in place of the GLFW backend for better support for
+# SDL3 backend - used in place of the GLFW backend for better controller support
+# Define -d:fauUseSdl to use
 
 type 
   CursorObj = object

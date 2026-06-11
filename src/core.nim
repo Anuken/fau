@@ -4,11 +4,17 @@ import std/[os, times, random, monotimes]
 const isDebug* = defined(debug)
 
 when isMobile:
-  include fau/backend/glfmcore
+  import fau/backend/glfmcore
+  export glfmcore
 elif defined(fauUseSdl):
-  include fau/backend/sdlcore
+  import fau/backend/sdlcore
+  export sdlcore
 else:
-  include fau/backend/glfwcore
+  import fau/backend/glfwcore
+  export glfwcore
+
+when isLinux:
+  import fau/backend/linux_desktop
 
 when not defined(noAudio):
   import fau/audio
@@ -28,6 +34,9 @@ var
 
 #TODO all of these should be struct parameters!
 proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = initParams()) =
+
+  when isLinux and defined(linuxCreateDesktopFile):
+    createDesktopFile(params.appName, params.appTitle)
 
   fau.clearColor = params.clearColor
   fau.appName = params.appName

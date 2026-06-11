@@ -1,4 +1,6 @@
-import glfm, ../gl/[glad, gltypes, glproc], ../globals, ../fmath, strutils
+import pkg/glfm, std/[strutils, os]
+import ../[texture, globals, fmath, assets, input]
+import ../gl/[glad, glproc], ../util/misc
 
 # backend for mobile platforms
 # NOTE: this backend is unfinished! keyboard doesn't work

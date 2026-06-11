@@ -1,6 +1,9 @@
-import staticglfw, ../gl/[glad, gltypes, glproc], ../util/misc, std/strutils
+import pkg/staticglfw, std/[strutils, os]
+import ../[texture, globals, fmath, assets, input]
+import ../gl/[glad, glproc], ../util/misc
 
-# Mostly complete GLFW backend, based on treeform/staticglfw
+# GLFW backend, based on treeform/staticglfw. Default on desktop.
+# Use this for faster compilation speed and smaller binaries.
 
 type 
   CursorObj = object
@@ -229,56 +232,6 @@ proc fixMouse(x, y: cdouble): Vec2 =
 
   return pos
 
-when isLinux:
-  from posix import nil
-
-  proc createDesktopFile*(appName: string, appTitle: string, hidden = false) =
-
-    when assetExistsStatic("icon.png"):
-      let dir = getHomeDir() / ".local/share/applications"
-      if dir.dirExists:
-        try:
-          const len = 2000
-
-          var path = newString(len)
-          
-          #grab the current executable path
-          let read = posix.readlink("/proc/self/exe", cast[cstring](addr path[0]).cstring, len)
-
-          if read != -1:
-            path.setLen(read)
-
-            let 
-              appFile = dir / (appName & ".desktop")
-              iconPath = dir / (appName & ".png")
-            
-            if not iconPath.fileExists:
-              writeFile(iconPath, assetReadStatic("icon.png"))
-
-            const temp = """
-            [Desktop Entry] 
-            Version=1.0
-            Type=Application
-            Terminal=false
-            Icon=%ICON_PATH%
-            Name=%APP_TITLE%
-            Exec=%APP_PATH%
-            Hidden=%HIDDEN%
-            StartupWMClass=%APP_CLASS_NAME%
-            """.unindent
-
-            let formatted = temp
-            .replace("%APP_NAME%", appName)
-            .replace("%APP_TITLE%", appTitle)
-            .replace("%APP_PATH%", path)
-            .replace("%ICON_PATH%", iconPath)
-            .replace("%HIDDEN%", $hidden)
-            .replace("%APP_CLASS_NAME%", appName.toLowerAscii())
-
-            writeFile(appFile, formatted)
-        except:
-          echo "Failed to create .desktop file: ", getCurrentExceptionMsg()
-
 proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: FauInitParams) =
   
   discard setErrorCallback(proc(code: cint, desc: cstring) {.cdecl.} =
@@ -317,9 +270,6 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
       windowHintString(X11_CLASS_NAME, params.appName.cstring)
       windowHintString(X11_INSTANCE_NAME, params.appName.cstring)
       windowHintString(WAYLAND_APP_ID, params.appName.cstring)
-      
-      when defined(linuxCreateDesktopFile):
-        createDesktopFile(params.appName, params.appTitle)
 
   window = createWindow(params.size.x.cint, params.size.y.cint, params.title.cstring, nil, nil)
   window.makeContextCurrent()
