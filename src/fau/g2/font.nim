@@ -139,7 +139,10 @@ proc updateTexture(font: Font) =
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 
 proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
-  var font = pixie.newFont(pixie.parseTtf(assetReadStatic(path)))
+  return loadFontBytes(assetReadStatic(path), size, textureSize, outline, outlineColor, diagonalOutline)
+
+proc loadFontBytes*(bytes: string, size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
+  var font = pixie.newFont(pixie.parseTtf(bytes))
 
   font.size = size
 
@@ -245,7 +248,9 @@ proc parseMarkup(color: Color, text: openArray[char]): (string, seq[(Tag, int)])
 
   {.pop.}
 
-proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
+proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), 
+  align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
+  
   var 
     plainText: string
     styles: set[TextStyle] = {}

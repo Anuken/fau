@@ -96,6 +96,9 @@ proc unload*(texture: Texture) =
     glDeleteTexture(texture.handle)
     texture.handle = 0
 
+proc `filterMin`*(texture: Texture): TextureFilter {.inline.} = texture.minfilter
+proc `filterMag`*(texture: Texture): TextureFilter {.inline.} = texture.magfilter
+
 proc `filterMin=`*(texture: Texture, filter: TextureFilter) =
   if texture.minfilter != filter:
     texture.minfilter = filter
@@ -108,7 +111,7 @@ proc `filterMag=`*(texture: Texture, filter: TextureFilter) =
     texture.magfilter = filter
     if texture.loaded:
       texture.use()
-      glTexParameteri(texture.target, GlTextureMagFilter, texture.magfilter.toGlEnum.GLint)
+      glTexParameteri(texture.target, GlTextureMagFilter, if texture.magFilter == tfMipMap: GlLinear.GLint else: texture.magfilter.toGlEnum.GLint)
 
 #assigns min and mag filters
 proc `filter=`*(texture: Texture, filter: TextureFilter) =
