@@ -138,9 +138,6 @@ proc updateTexture(font: Font) =
 
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 
-proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
-  return loadFontBytes(assetReadStatic(path), size, textureSize, outline, outlineColor, diagonalOutline)
-
 proc loadFontBytes*(bytes: string, size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
   var font = pixie.newFont(pixie.parseTtf(bytes))
 
@@ -153,6 +150,9 @@ proc loadFontBytes*(bytes: string, size: float32 = 16f, textureSize = 256, outli
     result.packGlyph(ch.Rune)
 
   result.updateTexture()
+
+proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
+  return loadFontBytes(assetReadStatic(path), size, textureSize, outline, outlineColor, diagonalOutline)
 
 #return (color, length)
 proc parseTag(text: openArray[Rune], start: int): (Tag, int) =
