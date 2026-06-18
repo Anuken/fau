@@ -272,7 +272,6 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
     tbx2 = -Inf.float32
     tby2 = -Inf.float32
 
-  #TODO this will break with non-ASCII text immediately due to the markup parsing using byte indices
   for i, rune in arrangement.runes:
     let ch = arrangement.selectionRects[i]
     let p = arrangement.positions[i]

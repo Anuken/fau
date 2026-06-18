@@ -27,6 +27,8 @@ proc drawSort*(sort: bool) =
 proc drawMat*(mat: Mat) =
   fau.batch.mat(mat)
 
+proc drawGetMat*(): Mat = fau.batch.mat
+
 proc drawViewport*(rect = rect()) =
   fau.batch.viewport(rect)
 
@@ -51,6 +53,15 @@ template drawClipped*(clip: Rect, body: untyped) =
   if drawClip(clip):
     body
     drawClip()
+
+template drawStack*(body: untyped) =
+  let prevState = fau.batch.getState()
+  drawViewport(rect(vec2(), fau.size))
+  drawMat(ortho(fau.size))
+  drawBufferScreen()
+  drawClip()
+  body
+  fau.batch.applyState(prevState)
 
 proc drawBuffer*(buffer: Framebuffer) =
   fau.batch.buffer(buffer)

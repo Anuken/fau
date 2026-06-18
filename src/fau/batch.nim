@@ -31,8 +31,10 @@ type Batch* = ref object
   lastShader: Shader
   lastTexture: Texture
   lastBlend: Blending
+
   buffer: Framebuffer
   clip, viewport: Rect
+  
   index: int
   size: int
   requestVertices: seq[Vert2]
@@ -268,6 +270,8 @@ proc mat*(batch: Batch, mat: Mat) =
   batch.mat = mat
   batch.matInv = mat.inv
 
+proc getMat*(batch: Batch): Mat = batch.mat
+
 proc clip*(batch: Batch, rect: Rect) =
   batch.flush()
   batch.clip = rect
@@ -285,6 +289,15 @@ proc buffer*(batch: Batch, buffer: Framebuffer) =
   batch.buffer = buffer
 
 proc buffer*(batch: Batch): Framebuffer = batch.buffer
+
+proc getState*(batch: Batch): auto = (mat: batch.mat, clip: batch.clip, viewport: batch.viewport, buffer: batch.buffer)
+
+proc applyState*(batch: Batch, state: tuple[mat: Mat, clip: Rect, viewport: Rect, buffer: Framebuffer]) =
+  batch.flush()
+  batch.mat = state.mat
+  batch.clip = state.clip
+  batch.viewport = state.viewport
+  batch.buffer = state.buffer
 
 #draw a pre-cached mesh
 proc draw*(batch: Batch, cache: SpriteCache) =
