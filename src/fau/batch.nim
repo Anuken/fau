@@ -295,6 +295,7 @@ proc getState*(batch: Batch): auto = (mat: batch.mat, clip: batch.clip, viewport
 proc applyState*(batch: Batch, state: tuple[mat: Mat, clip: Rect, viewport: Rect, buffer: Framebuffer]) =
   batch.flush()
   batch.mat = state.mat
+  batch.matInv = state.mat.inv
   batch.clip = state.clip
   batch.viewport = state.viewport
   batch.buffer = state.buffer

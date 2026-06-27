@@ -56,7 +56,7 @@ template drawClipped*(clip: Rect, body: untyped) =
 
 template drawStack*(body: untyped) =
   let prevState = fau.batch.getState()
-  drawViewport(rect(vec2(), fau.size))
+  drawViewport(rect())
   drawMat(ortho(fau.size))
   drawBufferScreen()
   drawClip()
