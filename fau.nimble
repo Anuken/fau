@@ -8,6 +8,7 @@ binDir        = "build"
 
 requires "nim >= 2.0.0"
 requires "https://github.com/Anuken/staticglfw#bdebaf70e0669c130fed2f9b61924611de7fc280"
+requires "https://github.com/nim-lang/sdl3#3d98171f5aea71a29d639049372d4f570b2ddd5c"
 requires "https://github.com/Anuken/glfm#8f1e2fa5ec6f6a96fc7eeb2bb6727d921a9259c4"
 requires "https://github.com/Anuken/nimsoloud#7e23039c4790f36f233733171845bae02044708c"
 requires "https://github.com/Anuken/polymorph#170f1b22c1d13828ad9ef84237b9d4d408b77cc6"

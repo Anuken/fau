@@ -123,7 +123,6 @@ proc `=destroy`*[T](mesh: var MeshObj[T]) =
       lastVertexArray = -1
     mesh.vertexArray = 0
     
-
 proc toGlEnum(face: CullFace): GlEnum {.inline.} =
   case face
   of cfFront: GlFront

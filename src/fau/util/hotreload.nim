@@ -1,51 +1,36 @@
-## This module is completely broken unless you include it. I've tried workarounds. None of them work.
+import ../globals, std/[times, os]
 
-macro loadShaders() =
-  result = newStmtList()
+proc listenFileChange*(file: string, callback: proc()) =
+  var
+    currentModified = file.getFileInfo().lastWriteTime
+    lastChangeTime: Time
+    waiting = false
 
-  var reload = newStmtList()
+  addFauListener(feFrame):
+    if fau.frameId mod 3 == 1:
+      try:
+        let newModified = file.getFileInfo().lastWriteTime
+        if currentModified != newModified:
+          currentModified = newModified
+          lastChangeTime = getTime()
+          waiting = true
+      except OSError:
+        discard
 
-  for name, value in shaders.fieldPairs:
-    let 
-      vertVal = 
-        if fileExists("assets/shaders/" & name & ".vert"):
-          quote do:
-            assetReadStatic("shaders/" & name & ".vert")
-        elif value.hasCustomPragma(screenShader): 
-          "screenspaceVertex".ident 
-        else: 
-          "defaultVertShader".ident
-      
-      fragVal = "shaders/" & name & ".frag"
+    if waiting and (getTime() - lastChangeTime).inMilliseconds >= 100:
+      waiting = false
+      callback()
 
-    result.add quote do:
-      value = newShader(`vertVal`, assetReadStatic(`fragVal`), `name`)
-    
-    when defined(debug):
-      let 
-        writeVal = ("lastWriteTime_" & name).ident
-        fragValFile = "assets/shaders/" & name & ".frag"
+proc listenFileChangeSafe*(file: string, callback: proc()) =
+  ## Listens to file reloads, but handles any exceptions (e.g. due to in-progress writes or invalid data)
+  listenFileChange(file) do():
+    try:
+      callback()
+    except Exception as e:
+      echo "Failed to reload file: ", file, ": ", e.msg
 
-      reload.add quote do:
-        block:
-          let i = getFileInfo(`fragValFile`)
-          if i.lastWriteTime != `writeVal`:
-            `writeVal` = i.lastWriteTime
-            let prev = value
-            try:
-              value = newShader(`vertVal`, assetReadStatic(`fragVal`), `name`)
-            except GLError as e:
-              echo name, ".frag: ", e.msg
-              value = prev
+proc listenFileLoad*(file: string, callback: proc()) =
+  ## Invokes the callback, then calls listenFileChangeSafe.
+  callback()
+  listenFileChangeSafe(file, callback)
   
-  when defined(debug):
-    for name, value in shaders.fieldPairs:
-      let writeVal = ("lastWriteTime_" & name).ident
-
-      result.add quote do:
-        var `writeVal`: Time
-
-    result.add quote do:
-      addFauListener(feFrame):
-        if fau.frameId mod 10 == 0:
-          `reload`
