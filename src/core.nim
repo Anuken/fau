@@ -23,7 +23,7 @@ when not defined(noAudio):
 when isDebug and not defined(noRecorder):
   import fau/util/recorder
 
-export fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, input
+export fmath, globals, color, framebuffer, mesh, patch, shader, texture, batch, atlas, draw, input, assets
 
 #global state for input/time
 var

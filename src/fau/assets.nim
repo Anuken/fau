@@ -20,6 +20,19 @@ proc getSaveDir*(app: string): string =
   else: 
     getDataDir() / app
 
+macro preloadFolderExternal*(path: static[string]): untyped =
+  ## Non-recursively preloads all files in a external (non-assets) directory into the static assets table. This embeds them into the executable for use in assetRead.
+  result = newStmtList()
+
+  when staticAssets:
+    #can't use / because it fails with cross compilation
+    for e in walkDir(path):
+      if e.kind == pcFile:
+        let file = e.path
+        result.add quote do:
+          const data = staticRead(`file`)
+          preloadedAssets[`file`] = data
+
 macro preloadFolder*(path: static[string]): untyped =
   ## Non-recursively preloads all files in a directory into the static assets table. This embeds them into the executable for use in assetRead.
   result = newStmtList()
@@ -84,6 +97,10 @@ template assetReadStatic*(filename: string): string =
     const realDir = rootDir & "/assets/" & filename
     const str = staticRead(realDir)
     str
+
+template staticReadAbsolute*(filename: string): string =
+  const str = staticRead(filename)
+  str
 
 proc assetExistsStatic*(filename: static string): bool =
   const realDir = rootDir & "/assets/" & filename
