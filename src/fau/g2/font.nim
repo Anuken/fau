@@ -30,10 +30,10 @@ type Tag = object
   style: TextStyle
 
 # Creates a new texture packer limited by the specified width/height
-proc newTexturePacker*(size: fmath.Vec2i): TexturePacker =
+proc newTexturePacker*(size: fmath.Vec2i, filter = tfNearest): TexturePacker =
   TexturePacker(
     packer: newPacker(size.x, size.y),
-    texture: newTexture(size),
+    texture: newTexture(size, filter = filter),
     image: newImage(size.x, size.y)
   )
 
@@ -138,12 +138,12 @@ proc updateTexture(font: Font) =
 
 proc `==`*(a, b: Rune): bool {.inline.} = a.int32 == b.int32
 
-proc loadFontBytes*(bytes: string, size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
+proc loadFontBytes*(bytes: string, size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true, filter = tfNearest): Font =
   var font = pixie.newFont(pixie.parseTtf(bytes))
 
   font.size = size
 
-  result = Font(font: font, packer: newTexturePacker(fmath.vec2i(textureSize, textureSize)), outline: outline, outlineColor: outlineColor, diagonalOutline: diagonalOutline)
+  result = Font(font: font, packer: newTexturePacker(fmath.vec2i(textureSize, textureSize), filter = filter), outline: outline, outlineColor: outlineColor, diagonalOutline: diagonalOutline)
 
   #load standard latin characters
   for ch in 0x0020'u16..0x00FF'u16:

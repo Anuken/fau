@@ -335,6 +335,9 @@ template vec2i*(a: array[2, int32]): Vec2i = vec2i(a[0], a[1])
 template opFunc(td: typedesc, op: untyped): untyped =
   func op*(vec: td, other: td): td {.inline.} = vec2(vec.x.op other.x, vec.y.op other.y)
 
+template opFunci(td: typedesc, op: untyped): untyped =
+  func op*(vec: td, other: td): td {.inline.} = vec2i(vec.x.op other.x, vec.y.op other.y)
+
 template op(td: typedesc, comp: typedesc, cons: typed, op1, op2: untyped): untyped =
   func op1*(vec: td, other: td): td {.inline.} = cons(op1(vec.x, other.x), op1(vec.y, other.y))
   func op1*(vec: td, other: comp): td {.inline.} = cons(op1(vec.x, other), op1(vec.y, other))
@@ -359,6 +362,11 @@ op(Vec2i, int, vec2i, `+`, `+=`)
 op(Vec2i, int, vec2i, `-`, `-=`)
 op(Vec2i, int, vec2i, `*`, `*=`)
 op(Vec2i, int, vec2i, `div`, `div=`)
+
+opFunci(Vec2i, `mod`)
+opFunci(Vec2i, emod)
+opFunci(Vec2i, max)
+opFunci(Vec2i, min)
 
 func `/`*(vec: Vec2i, value: float32): Vec2 {.inline.} = vec2(vec.x / value, vec.y / value)
 func `-`*(vec: Vec2i): Vec2i {.inline.} = vec2i(-vec.x, -vec.y)
