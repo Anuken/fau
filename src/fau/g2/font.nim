@@ -249,7 +249,7 @@ proc parseMarkup(color: Color, text: openArray[char]): (string, seq[(Tag, int)])
   {.pop.}
 
 proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), 
-  align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
+  align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false, doDraw = true): fmath.Rect {.discardable.} =
   
   var 
     plainText: string
@@ -319,7 +319,7 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
         skew1 = 0f
         skew2 = 0f
       
-      if Italic in styles:
+      if Italic in styles and doDraw:
         let 
           skewScl = 0.3f
           total = glyph.realSize.y * scale * skewScl
@@ -343,17 +343,18 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
         tbx2 = max(tbx2, glyphPos.x - glyphOffset.x + glyphSize.x)
         tby2 = max(tby2, glyphPos.y - glyphOffset.y + glyphSize.y)
         
-        drawv(patch,
-          glyphPos,
-          [fmath.vec2(-skew1, 0f), fmath.vec2(skew2, 0f), fmath.vec2(skew2, 0f), fmath.vec2(-skew1, 0f)],
-          size = glyphSize, align = daBotLeft, color = glyphColor, z = z
-        )
+        if doDraw:
+          drawv(patch,
+            glyphPos,
+            [fmath.vec2(-skew1, 0f), fmath.vec2(skew2, 0f), fmath.vec2(skew2, 0f), fmath.vec2(-skew1, 0f)],
+            size = glyphSize, align = daBotLeft, color = glyphColor, z = z
+          )
 
         #lineRect(fmath.rect(fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y), patch.size * scale), stroke = 1f, color = colorGreen, z = z)
   result = rect(tbx, tby, tbx2 - tbx, tby2 - tby)
 
   #TODO: if there is one new character per frame, this lags. a lot.
-  font.updateTexture()
+  if doDraw: font.updateTexture()
 
   when debugBounds:
     lineRect(fmath.rect(pos, bounds), stroke = scale, color = colorPurple, z = z)
@@ -361,3 +362,11 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
 
 proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
   return draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier, markup)
+
+proc textBounds*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), 
+  align: Align = daCenter, modifier: GlyphProc = nil, markup = false): fmath.Rect =
+
+  return draw(font, text, pos, scale, bounds, colorBlack, align, 0f, modifier, markup, false)
+
+proc textBounds*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, align: Align = daCenter, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
+  return draw(font, text, bounds.xy, scale, bounds.wh, colorBlack, align, 0f, modifier, markup)

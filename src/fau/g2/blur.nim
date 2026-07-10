@@ -3,6 +3,7 @@ import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../gl
 type Blur* = object
   p1, p2: Framebuffer
   shader: Shader
+  blitShader: Shader
   passes*: int
   scaling*: int
 
@@ -42,6 +43,7 @@ proc newBlur*(scaling: int = 4, passes: int = 1): Blur =
   """,
   """
   uniform lowp sampler2D u_texture;
+  
   varying vec2 v_texCoords0;
   varying vec2 v_texCoords1;
   varying vec2 v_texCoords2;
@@ -61,6 +63,28 @@ proc newBlur*(scaling: int = 4, passes: int = 1): Blur =
   """
   )
 
+  result.blitShader = newShader(
+    """
+    attribute vec4 a_pos;
+    attribute vec2 a_uv;
+    varying vec2 v_uv;
+
+    void main(){
+        v_uv = a_uv;
+        gl_Position = a_pos;
+    }
+    """,
+    """
+    uniform sampler2D u_texture;
+    uniform float u_alphaScale;
+    varying vec2 v_uv;
+
+    void main(){
+      gl_FragColor = texture2D(u_texture, v_uv) * vec4(1.0, 1.0, 1.0, u_alphaScale);
+    }
+    """
+  )
+
 proc buffer*(blur: Blur, clearColor = colorClear, size = fau.sizei): Framebuffer =
   blur.p1.resize(size div blur.scaling)
   blur.p2.resize(size div blur.scaling)
@@ -68,7 +92,7 @@ proc buffer*(blur: Blur, clearColor = colorClear, size = fau.sizei): Framebuffer
   blur.p1.clear(clearColor)
   return blur.p1
 
-proc blit*(blur: Blur, params = meshParams(), strength = 1f) =
+proc blit*(blur: Blur, params = meshParams(), strength = 1f, alphaScale = 1f) =
   
   #no texture
   if blur.p1.texture.isNil: return
@@ -87,6 +111,7 @@ proc blit*(blur: Blur, params = meshParams(), strength = 1f) =
       texture = blur.p2.sampler
       dir = vec2(0, 1) * strength
 
-  blit(fau.screenspace, params):
+  blit(blur.blitShader, params):
+    alphaScale = alphaScale
     texture = blur.p1.sampler(0)
   
