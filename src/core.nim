@@ -63,7 +63,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
       else:
         keysJustUp[e.touchButton] = true
         keysPressed[e.touchButton] = false
-      
+
       #update pointer data for mobile
       if e.touchId < fau.touches.len:
         template t: Touch = fau.touches[e.touchId]
@@ -112,11 +112,11 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
       fau.fps = frames
       frames = 0
       frameCounterStart = time
-    
+
     for t in fau.touches.mitems:
       t.delta = t.pos - t.last
       t.last = t.pos
-      
+
     inc frames
 
     fau.size = fau.sizei.vec2
@@ -151,7 +151,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     fau.scroll = vec2()
     for touch in fau.touches.mitems:
       touch.justDown = false
-  ), 
+  ),
   (proc() =
 
     #standard random init does not work on Android, use time - I don't care about security
@@ -163,7 +163,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
       initAudio()
       #load the necessary audio files (macro generated)
       loadAudio()
-    
+
     #set up default density
     if fau.screenDensity <= 0.0001f:
       fau.screenDensity = 1f

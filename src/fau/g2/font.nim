@@ -46,7 +46,7 @@ proc pack*(packer: TexturePacker, image: Image): Patch =
 proc update*(packer: TexturePacker) =
   packer.texture.load(fmath.vec2i(packer.image.width, packer.image.height), addr packer.image.data[0])
 
-type 
+type
   FontGlyph = object
     patch: Patch
     offset, down, realSize: fmath.Vec2
@@ -91,15 +91,15 @@ proc outline(image: Image, color: chroma.ColorRGBA, diagonal: bool) =
       if copy[x, y].a < 128:
         var found = false
         for (dx, dy) in par:
-          let 
+          let
             wx = x + dx
             wy = y + dy
-          
+
           if wx >= 0 and wy >= 0 and wx < copy.width and wy < copy.height:
             if copy[wx, wy].a > 128:
               found = true
               break
-        
+
         if found:
           image[x, y] = color
 
@@ -107,7 +107,7 @@ proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color
   var path = font.typeface.getGlyphPath(r)
   path.transform(vmath.scale(vmath.vec2(font.scale)))
   let bounds = path.computeBounds()
-  
+
   #no path found
   if bounds.w < 1 or bounds.h < 1: return
   let bxy = -bounds.xy
@@ -161,18 +161,18 @@ proc parseTag(text: openArray[Rune], start: int): (Tag, int) =
   case text[start].char:
   of ']': return (Tag(), 1) #this means '[]', or the white color
   of '#': #color tag
-    
+
     # Parse hex color RRGGBBAA where AA is optional and defaults to 0xFF if less than 6 chars are used.
     var colorInt = 0'u32;
     for i in (start + 1)..<text.len:
       let ch = text[i].char
 
       if ch == ']':
-        if i < start + 2 or i > start + 9 or i == start + 8: 
+        if i < start + 2 or i > start + 9 or i == start + 8:
           break
 
         if i - start <= 7: # RRGGBB or fewer chars.
-          var 
+          var
             ii = 0
             nn = 9 - (i - start)
           while ii < nn:
@@ -180,14 +180,14 @@ proc parseTag(text: openArray[Rune], start: int): (Tag, int) =
             ii.inc
 
           colorInt = colorInt or 0xff
-        
+
         return (Tag(color: colorInt.rgbaToColor), i - start + 1)
-      
+
       if ch >= '0' and ch <= '9': colorInt = colorInt * 16 + (ch.uint32 - '0'.uint32)
       elif ch >= 'a' and ch <= 'f': colorInt = colorInt * 16 + (ch.uint32 - ('a'.uint32 - 10))
       elif ch >= 'A' and ch <= 'F': colorInt = colorInt * 16 + (ch.uint32 - ('A'.uint32 - 10))
       else: break #Unexpected character in hex color.
-    
+
     return (Tag(), -1)
 
   #invalid (custom color names not supported)
@@ -199,7 +199,7 @@ proc parseTag(text: openArray[Rune], start: int): (Tag, int) =
 proc parseMarkup(color: Color, text: openArray[char]): (string, seq[(Tag, int)]) =
   {.push checks: off}
 
-  var 
+  var
     runes = text.toRunes
     i = 0
     builder = newStringOfCap(text.len)
@@ -215,7 +215,7 @@ proc parseMarkup(color: Color, text: openArray[char]): (string, seq[(Tag, int)])
     else:
       #special case: there are two tags right next to each other with no spacing, overwrite the head tag
       let prev = tags[^1][0].style
-      
+
       tags[^1][0].style = if newStyle == prev: None else: newStyle
 
   while i < runes.len:
@@ -232,26 +232,26 @@ proc parseMarkup(color: Color, text: openArray[char]): (string, seq[(Tag, int)])
           #special case: there are two tags right next to each other with no spacing, overwrite the head tag
           tags[^1] = (tag, blen)
         continue
-    
+
     #parse markup character
     if i == 0 or runes[i - 1].char != '\\':
       if runes[i].char == '*':
         applyFormat(i, Italic)
         i.inc
         continue
-    
+
     builder &= $runes[i]
     blen.inc
     i.inc
-  
+
   return (builder, tags)
 
   {.pop.}
 
-proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1), 
+proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1),
   align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false, doDraw = true): fmath.Rect {.discardable.} =
-  
-  var 
+
+  var
     plainText: string
     styles: set[TextStyle] = {}
     colors: seq[(Tag, int)]
@@ -260,11 +260,11 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
     (plainText, colors) = parseMarkup(color, text)
   else:
     plainText = text
-  
+
   let arrangement = font.font.typeset(plainText, hAlign = align.toHAlign, vAlign = align.toVAlign, bounds = vmath.vec2(bounds.x / scale, bounds.y / scale))
 
   #for markup state
-  var 
+  var
     currentColor = color
     markupIndex = 0
     tbx = Inf.float32
@@ -282,31 +282,31 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
       if i >= next[1]:
         currentColor = next[0].color
         currentColor.a = color.a * currentColor.a
-        
+
         let style = next[0].style
         if style != None:
           if style in styles:
             styles.excl style
           else:
             styles.incl style
-        
+
         markupIndex.inc
-    
-    var 
+
+    var
       found = false
       glyph: FontGlyph
-    
+
     font.glyphs.withValue(rune, value):
       glyph = value[]
       found = true
-    
+
     if not found:
       if font.packGlyph(rune):
         found = true
         glyph = font.glyphs[rune]
 
     if found:
-      let 
+      let
         offset = glyph.offset
         patch = glyph.patch
         skewOffset = glyph.down.y
@@ -318,14 +318,14 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
         glyphDraw = true
         skew1 = 0f
         skew2 = 0f
-      
+
       if Italic in styles and doDraw:
-        let 
+        let
           skewScl = 0.3f
           total = glyph.realSize.y * scale * skewScl
           weight = (-skewOffset) / glyph.realSize.y
           off = -(font.font.typeface.ascent * font.font.scale)/2f * skewScl * scale
-        
+
         skew2 = total * (1f - weight) + off
         skew1 = total * (weight) - off
 
@@ -334,15 +334,15 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
 
       if glyphDraw:
 
-        let 
+        let
           glyphPos = fmath.vec2((p.x + offset.x) * scale + pos.x + glyphOffset.x, (bounds.y/scale + 1 - p.y - offset.y - patch.heightf) * scale + pos.y + glyphOffset.y)
           glyphSize = patch.size * scale
-        
+
         tbx = min(tbx, glyphPos.x - glyphOffset.x)
         tby = min(tby, glyphPos.y - glyphOffset.y)
         tbx2 = max(tbx2, glyphPos.x - glyphOffset.x + glyphSize.x)
         tby2 = max(tby2, glyphPos.y - glyphOffset.y + glyphSize.y)
-        
+
         if doDraw:
           drawv(patch,
             glyphPos,
@@ -363,7 +363,7 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
 proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
   return draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier, markup)
 
-proc textBounds*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), 
+proc textBounds*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0),
   align: Align = daCenter, modifier: GlyphProc = nil, markup = false): fmath.Rect =
 
   return draw(font, text, pos, scale, bounds, colorBlack, align, 0f, modifier, markup, false)
