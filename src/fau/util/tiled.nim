@@ -1,4 +1,4 @@
-import jsony, parseutils, tables, zippy, base64, ../fmath, ../assets, ../color, ../mesh
+import pkg/[jsony, zippy], std/[parseutils, tables, base64], ../fmath, ../assets, ../color, ../mesh
 
 type
   TilePropKind* = enum
