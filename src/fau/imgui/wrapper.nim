@@ -27,9 +27,6 @@ type
 
 ## Tentative workaround [end]
 
-const
-  nimcache = querySetting(SingleValueSetting.nimcacheDir)
-
 proc currentSourceDir(): string {.compileTime.} =
   result = currentSourcePath().replace("\\", "/")
   result = result[0 ..< result.rfind("/")]
@@ -38,7 +35,7 @@ proc currentSourceDir(): string {.compileTime.} =
   " -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1" &
   " -DCIMGUI_DEFINE_ENUMS_AND_STRUCTS=1".}
 
-{.compile: "cimgui/cimgui_shim.cpp".}
+{.compile: "cimgui_shim.cpp".}
 
 template compileCpp(file: string) =
   {.compile: "cimgui/" & file.}
