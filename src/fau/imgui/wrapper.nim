@@ -1,8 +1,8 @@
 
 ## Originally Written by Leonardo Mariscal <leo@ldmd.mx>, 2019
-## 
+##
 ## Updated to ImGUI 1.90.7 with the help of code from <https://github.com/nimgl/imgui/pull/10>
-## 
+##
 ## ImGUI Bindings
 ## ====
 ## WARNING: This is a generated file. Do not edit.
@@ -40,7 +40,7 @@ template compileCpp(file: string, name: string) =
   const objectPath = nimcache & "/" & name & "_" & hostOs & hostCPU & ".cpp.o"
 
   static:
-    if not fileExists(objectPath):
+    if not fileExists(objectPath) and not defined(nimCheck):
       createDir(objectPath.parentDir.replace("\\", "/"))
 
       #TODO this is awful and hardcoded and I hate it
