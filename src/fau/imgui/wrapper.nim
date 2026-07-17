@@ -34,34 +34,20 @@ proc currentSourceDir(): string {.compileTime.} =
   result = currentSourcePath().replace("\\", "/")
   result = result[0 ..< result.rfind("/")]
 
-{.passC: "-I" & currentSourceDir() & "/cimgui" & " -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1".}
+{.passC: "-I" & currentSourceDir() & "/cimgui" &
+  " -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1" &
+  " -DCIMGUI_DEFINE_ENUMS_AND_STRUCTS=1".}
 
-template compileCpp(file: string, name: string) =
-  const objectPath = nimcache & "/" & name & "_" & hostOs & hostCPU & ".cpp.o"
+{.compile: "cimgui/cimgui_shim.cpp".}
 
-  static:
-    if not fileExists(objectPath) and not defined(nimCheck):
-      createDir(objectPath.parentDir.replace("\\", "/"))
+template compileCpp(file: string) =
+  {.compile: "cimgui/" & file.}
 
-      #TODO this is awful and hardcoded and I hate it
-
-      const compilerName = when defined(Windows): "x86_64-w64-mingw32-g++" else: "g++"
-
-      const compileCommand = compilerName & " -std=c++14 -c -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1 cimgui/" & file & " -o " & objectPath
-
-      echo "Compiling... ", compileCommand
-      echo staticExec(compileCommand)
-
-  {.passL: objectPath.}
-
-compileCpp("cimgui.cpp", "cimgui.cpp")
-compileCpp("imgui/imgui.cpp", "imgui.cpp")
-compileCpp("imgui/imgui_draw.cpp", "imgui_draw.cpp")
-compileCpp("imgui/imgui_tables.cpp", "imgui_tables.cpp")
-compileCpp("imgui/imgui_widgets.cpp", "imgui_widgets.cpp")
-compileCpp("imgui/imgui_demo.cpp", "imgui_demo.cpp")
-
-{.passc: "-DCIMGUI_DEFINE_ENUMS_AND_STRUCTS".}
+compileCpp("imgui/imgui.cpp")
+compileCpp("imgui/imgui_draw.cpp")
+compileCpp("imgui/imgui_tables.cpp")
+compileCpp("imgui/imgui_widgets.cpp")
+compileCpp("imgui/imgui_demo.cpp")
 {.pragma: imgui_header, header: "cimgui.h".}
 
 const
