@@ -2,6 +2,7 @@ import math, random
 
 #this should be avoided in most cases, but manually turning ints into float32s can be very annoying
 converter toFloat32*(i: int): float32 {.inline.} = i.float32
+converter toFloat32*(i: int32): float32 {.inline.} = i.float32
 
 #TODO angle type, distinct float32
 #TODO make all angle functions use this
@@ -37,15 +38,15 @@ type AnyVec2* = concept t
   t.y is float32
 
 type AnyVec2i* = concept t
-  t.x is int
-  t.y is int
+  t.x is int64 | int32
+  t.y is int64 | int32
 
 ## any type that can fade in linearly
 type Scaleable* = concept s
   s.fin() is float32
 
 type Vec2i* = object
-  x*, y*: int #TODO: use int32
+  x*, y*: int32
 
 type Vec2* = object
   x*, y*: float32
@@ -115,7 +116,7 @@ func fouts*(t: Scaleable): float32 {.inline.} = 2.0 * abs(t.fin - 0.5)
 ## fade in from 1 to 0 to 1
 func fins*(t: Scaleable): float32 {.inline.} = 1.0 - t.fouts
 
-func powout*(a, power: float32): float32 {.inline.} = 
+func powout*(a, power: float32): float32 {.inline.} =
   result = -pow(abs(a - 1), power) + 1
   if isNan(result): result = 0f
 
@@ -203,7 +204,7 @@ proc chance*(c: float32): bool = rand(0f..1f) < c
 proc chance*(r: var Rand, c: float32): bool = r.rand(0f..1f) < c
 proc randRange*[T](r: var Rand, value: T): T = r.rand((-value)..value)
 proc randRange*[T](value: T): T = rand((-value)..value)
-proc randSign*(): int = 
+proc randSign*(): int =
   if rand(0f..1f) < 0.5f: 1 else: -1 #rand(bool) doesn't work
 proc randSign*(r: var Rand): int =
   if r.rand(0f..1f) < 0.5f: 1 else: -1
@@ -215,7 +216,7 @@ proc range*[T](r: var Rand, value: T): T = r.rand((-value)..value)
 
 #angle/degree functions; all are in radians
 
-const 
+const
   pi2* = PI * 2.0
   pi* = PI
 
@@ -226,7 +227,7 @@ func deg*(val: float32): float32 {.inline.} = val / (PI / 180.0)
 func alerp*(fromDegrees, toDegrees, progress: float32): float32 = ((fromDegrees + (((toDegrees - fromDegrees + pi2 + pi) mod pi2) - pi) * progress + pi2)) mod pi2
 
 ## angle dist
-func adist*(angleA, angleB: float32): float32 {.inline.} = 
+func adist*(angleA, angleB: float32): float32 {.inline.} =
   let
     a = angleA.emod(pi2)
     b = angleB.emod(pi2)
@@ -237,7 +238,7 @@ func awithin*(a, b: float32, tolerance = 0.01f): bool {.inline.} = adist(a, b) <
 
 ## angle approach
 func aapproach*(a, b, amount: float32): float32 =
-  let 
+  let
     forw = abs(a - b)
     back = 360.0.rad - forw
     diff = adist(a, b)
@@ -248,7 +249,7 @@ func aapproach*(a, b, amount: float32): float32 =
 
 ## angle sign diff
 func asign*(a, b: float32): int =
-  let 
+  let
     forw = abs(a - b)
     back = 360.0.rad - forw
   
@@ -262,14 +263,14 @@ func aclamp*(angle, dest, dst: float32): float32 =
   else: angle.aapproach(dest, diff - dst)
 
 func dst*(x1, y1, z1, x2, y2, z2: float32): float32 {.inline.} =
-  let 
+  let
     a = x1 - x2
     b = y1 - y2
     c = z1 - z2
   return sqrt(a*a + b*b + c*c)
 
 func dst*(x1, y1, x2, y2: float32): float32 {.inline.} =
-  let 
+  let
     a = x1 - x2
     b = y1 - y2
   return sqrt(a*a + b*b)
@@ -280,17 +281,17 @@ func len2*(x, y: float32): float32 {.inline.} = x*x + y*y
 func odd*(x: int): bool {.inline.} = (x and 1).bool
 func even*(x: int): bool {.inline.} = not (x and 1).bool
 
-func sign*(x: float32): float32 {.inline.} = 
+func sign*(x: float32): float32 {.inline.} =
   if x < 0: -1 else: 1
-func sign*(x: bool): float32 {.inline.} = 
+func sign*(x: bool): float32 {.inline.} =
   if x: 1 else: -1
-func signi*(x: bool): int {.inline.} = 
+func signi*(x: bool): int {.inline.} =
   if x: 1 else: -1
 func sign*(x: int): int {.inline} =
   if x < 0: -1 else: 1
 func signi*(x: float32): int {.inline} =
   if x < 0f: -1 else: 1
-func signodd*(x: int): float32 {.inline.} = 
+func signodd*(x: int): float32 {.inline.} =
   if x.odd: -1 else: 1
 
 func sin*(x, scl, mag: float32): float32 {.inline} = sin(x / scl) * mag
@@ -321,8 +322,8 @@ proc randRangeVec*(r: Vec2): Vec2 {.inline.} = vec2(rand(-r.x..r.x), rand(-r.y..
 
 #vec2i stuff
 
-func vec2i*(x, y: int): Vec2i {.inline.} = Vec2i(x: x, y: y)
-func vec2i*(xy: int): Vec2i {.inline.} = Vec2i(x: xy, y: xy)
+func vec2i*[T: int64 | int32](x, y: T): Vec2i {.inline.} = Vec2i(x: x.int32, y: y.int32)
+func vec2i*[T: int64 | int32](xy: T): Vec2i {.inline.} = Vec2i(x: xy.int32, y: xy.int32)
 func vec2i*(): Vec2i {.inline.} = Vec2i()
 func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
 func vec2i*(v: Vec2): Vec2i {.inline.} = vec2i(v.x.int, v.y.int)
@@ -368,7 +369,7 @@ opFunci(Vec2i, emod)
 opFunci(Vec2i, max)
 opFunci(Vec2i, min)
 
-func `/`*(vec: Vec2i, value: float32): Vec2 {.inline.} = vec2(vec.x / value, vec.y / value)
+func `/`*(vec: Vec2i, value: float32): Vec2 {.inline.} = vec2(vec.x.float32 / value, vec.y.float32 / value)
 func `-`*(vec: Vec2i): Vec2i {.inline.} = vec2i(-vec.x, -vec.y)
 
 #utility methods
@@ -415,7 +416,7 @@ func scaleFill*(source, target: Vec2): Vec2 =
 
 #all angles are in radians
 
-func angle*(vec: Vec2): float32 {.inline.} = 
+func angle*(vec: Vec2): float32 {.inline.} =
   let res = arctan2(vec.y, vec.x)
   return if res < 0: res + PI*2.0 else: res
 
@@ -427,16 +428,16 @@ func angle*(x, y: float32): float32 {.inline.} =
   let res = arctan2(y, x)
   return if res < 0: res + PI*2.0 else: res
 
-func angle*(vec: Vec2, other: Vec2): float32 {.inline.} = 
+func angle*(vec: Vec2, other: Vec2): float32 {.inline.} =
   let res = arctan2(other.y - vec.y, other.x - vec.x)
   return if res < 0: res + PI*2.0 else: res
 
-func rotate*(vec: Vec2, rads: float32): Vec2 = 
+func rotate*(vec: Vec2, rads: float32): Vec2 =
   let co = cos(rads)
   let si = sin(rads)
   return vec2(vec.x * co - vec.y * si, vec.x * si + vec.y * co)
 
-func rotateAround*(base: Vec2, origin: Vec2, rads: float32): Vec2 = 
+func rotateAround*(base: Vec2, origin: Vec2, rads: float32): Vec2 =
   let vec = base - origin
   let co = cos(rads)
   let si = sin(rads)
@@ -455,7 +456,7 @@ func isNan*(vec: Vec2): bool {.inline.} = vec.x.isNan or vec.y.isNan
 
 func len*(vec: Vec2): float32 {.inline.} = sqrt(vec.x * vec.x + vec.y * vec.y)
 func len2*(vec: Vec2): float32 {.inline.} = vec.x * vec.x + vec.y * vec.y
-func `len=`*(vec: var Vec2, b: float32) = 
+func `len=`*(vec: var Vec2, b: float32) =
   let l = vec.len
   if l != 0f:
     vec *= b / l
@@ -466,13 +467,13 @@ func `angle=`*(vec: var Vec2, angle: float32) =
 func angled*(vec: Vec2, angle: float32): Vec2 {.inline.} =
   vec2l(angle, vec.len)
 
-func nor*(vec: Vec2): Vec2 {.inline.} = 
+func nor*(vec: Vec2): Vec2 {.inline.} =
   let len = vec.len
   return if len == 0f: vec else: vec / len
 
 func setLen*(vec: Vec2, b: float32): Vec2 = vec.nor * b
 
-func lim*(vec: Vec2, limit: float32): Vec2 = 
+func lim*(vec: Vec2, limit: float32): Vec2 =
   let l2 = vec.len2
   let limit2 = limit*limit
   return if l2 > limit2: vec * sqrt(limit2 / l2) else: vec
@@ -482,7 +483,7 @@ func lim*(vec: var Vec2, limit: float32) =
   let limit2 = limit*limit
   vec = if l2 > limit2: vec * sqrt(limit2 / l2) else: vec
 
-func dst2*(vec: Vec2, other: Vec2): float32 {.inline.} = 
+func dst2*(vec: Vec2, other: Vec2): float32 {.inline.} =
   let dx = vec.x - other.x
   let dy = vec.y - other.y
   return dx * dx + dy * dy
@@ -494,16 +495,16 @@ func within*(vec: Vec2, other: Vec2, distance: float32): bool {.inline.} = vec.d
 proc `$`*(vec: Vec2): string = $vec.x & ", " & $vec.y
 proc `$`*(vec: Vec2i): string = $vec.x & ", " & $vec.y
 
-func `lerp`*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} = 
+func `lerp`*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} =
   let invAlpha = 1.0f - alpha
   vec = vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
 
-func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} = 
+func `lerp`*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} =
   let invAlpha = 1.0f - alpha
   return vec2((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha))
 
-func approach*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} = 
-  let 
+func approach*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} =
+  let
     d = vec - other
     alpha2 = alpha*alpha
     len2 = d.len2
@@ -587,8 +588,8 @@ proc raycast*(a, b: Vec2i, checker: proc(pos: Vec2i): bool): tuple[hit: bool, po
     y = a.y
     dx = abs(b.x - a.x)
     dy = abs(b.y - a.y)
-    sx = if a.x < b.x: 1 else: -1
-    sy = if a.y < b.y: 1 else: -1
+    sx: int32 = if a.x < b.x: 1 else: -1
+    sy: int32 = if a.y < b.y: 1 else: -1
     e2 = 0
     err = dx - dy
   
@@ -611,11 +612,11 @@ proc raycast*(a, b: Vec2i, checker: proc(pos: Vec2i): bool): tuple[hit: bool, po
 iterator line*(p1, p2: Vec2i): Vec2i =
   ## Implementation of bresenham's line algorithm; iterates through a line connecting the two points.
 
-  let 
+  let
     dx = abs(p2.x - p1.x)
     dy = abs(p2.y - p1.y)
-    sx = if p1.x < p2.x: 1 else: -1
-    sy = if p1.y < p2.y: 1 else: -1
+    sx: int32 = if p1.x < p2.x: 1 else: -1
+    sy: int32 = if p1.y < p2.y: 1 else: -1
 
   var
     startX = p1.x
@@ -639,11 +640,11 @@ iterator line*(p1, p2: Vec2i): Vec2i =
 iterator lineNoDiagonal*(p1, p2: Vec2i): Vec2i =
   ## Implementation of bresenham's line algorithm; iterates through a line connecting the two points. Non-diagonal version.
   
-  let 
+  let
     dx = abs(p2.x - p1.x)
     dy = -abs(p2.y - p1.y)
-    sx = if p1.x < p2.x: 1 else: -1
-    sy = if p1.y < p2.y: 1 else: -1
+    sx: int32 = if p1.x < p2.x: 1 else: -1
+    sy: int32 = if p1.y < p2.y: 1 else: -1
 
   var
     startX = p1.x
@@ -689,11 +690,11 @@ proc area*(r: Rect): float32 {.inline.} = r.w * r.h
 #fixes negative width or height
 proc normalized*(r: Rect): Rect =
   result = r
-  if r.w < 0: 
+  if r.w < 0:
     result.w = -r.w
     result.x -= result.w
   
-  if r.h < 0: 
+  if r.h < 0:
     result.h = -r.h
     result.y -= result.h
 
@@ -753,7 +754,7 @@ proc snap*(r: Rect): Rect =
   result.h = r.h.ceil
 
 proc align*(bounds: Vec2, target: Vec2, align: Align, margin = 0f): Rect =
-  let 
+  let
     alignH = (-(asLeft in align).float32 + (asRight in align).float32) / 2f
     alignV = (-(asBot in align).float32 + (asTop in align).float32) / 2f
   
@@ -780,7 +781,7 @@ proc contains*(r: Rect, pos: Vec2): bool {.inline.} = r.contains(pos.x, pos.y)
 proc overlaps*(a, b: Rect): bool = a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
 
 proc overlaps*(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
-  let 
+  let
     vel = v1 - v2
     #prevent inf
     rv = vec2(if vel.x == 0f: 0.000001f else: vel.x, if vel.y == 0f: 0.000001f else: vel.y)
@@ -801,7 +802,7 @@ proc overlaps*(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
     invEntry.y = (r2.y + r2.h) - r1.y
     invExit.y = r2.y - (r1.y + r1.h)
 
-  let 
+  let
     entry = invEntry / rv
     exit = invExit / rv
     entryTime = max(entry.x, entry.y)
@@ -821,7 +822,7 @@ proc overlaps*(r1: Rect, v1: Vec2, r2: Rect, v2: Vec2, hitPos: var Vec2): bool =
 proc intersectSegmentsOverlap*(p1, p2, p3, p4: Vec2): tuple[hit: bool, intersect: Vec2] =
   let d = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y)
   if d == 0f: return (false, vec2())
-  let 
+  let
     yd = p1.y - p3.y
     xd = p1.x - p3.x
     ua = ((p4.x - p3.x) * yd - (p4.y - p3.y) * xd) / d
@@ -845,16 +846,16 @@ proc intersectSegment*(rect: Rect, p1, p2: Vec2): bool =
 
 #TODO: this is very slow
 proc polyContainsPoint*(center: Vec2, sides: int, radius: float32, rotation: float32, point: Vec2): bool =
-  let 
+  let
     step = pi2 / sides.float32
   
   for i in 0..<sides:
-    let 
+    let
       angle = i * step + rotation
       angle2 = (i + 1) * step + rotation
     
     if intersectSegments(
-      center + vec2l(angle, radius), 
+      center + vec2l(angle, radius),
       center + vec2l(angle2, radius),
       center,
       point
@@ -866,12 +867,12 @@ proc polyContainsPoint*(center: Vec2, sides: int, radius: float32, rotation: flo
 proc polyContainsPoint*(points: openArray[Vec2], point: Vec2): bool =
   var intersects = 0
 
-  let 
+  let
     x = point.x
     y = point.y
 
   for i in 0..<points.len:
-    let 
+    let
       a = points[i]
       b = points[(i + 1) mod points.len]
     
@@ -893,14 +894,14 @@ proc penetrationY*(a, b: Rect): float32 {.inline.} =
 proc penetration*(a, b: Rect): Vec2 = vec2(penetrationX(a, b), penetrationY(a, b))
 
 #moves a hitbox; may be removed later
-proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(xy: Vec2i): bool, seg = 0.1f): Vec2 = 
+proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(xy: Vec2i): bool, seg = 0.1f): Vec2 =
   let
     left = (box.x + 0.5).int - 1
     bottom = (box.y + 0.5).int - 1
     right = (box.x + 0.5 + box.w).int + 1
     top = (box.y + 0.5 + box.h).int + 1
   
-  var 
+  var
     hitbox = box
     segx = vel.x.abs
     segy = vel.y.abs
@@ -930,7 +931,7 @@ proc moveDelta*(box: Rect, vel: Vec2, solidity: proc(xy: Vec2i): bool, seg = 0.1
   return vec2(hitbox.x - box.x, hitbox.y - box.y)
 
 #returns true if the hitbox hits any tiles
-proc collidesTiles*(box: Rect, solidity: proc(x, y: int): bool): bool = 
+proc collidesTiles*(box: Rect, solidity: proc(x, y: int): bool): bool =
   let
     left = (box.x + 0.5).int - 1
     bottom = (box.y + 0.5).int - 1
@@ -975,14 +976,14 @@ proc dst*(r: Rect, point: Vec2): float32 =
 
 #spring
 
-func spring*(damping = 0.1f, frequency = 4f, value = 0f, target = 0f): Spring = 
+func spring*(damping = 0.1f, frequency = 4f, value = 0f, target = 0f): Spring =
   Spring(damping: damping, frequency: frequency, value: value, target: target)
 
 func `valueTarget=`*(s: var Spring, v: float32) =
   s.value = v
   s.target = v
 
-func spring2*(damping = 0.1f, frequency = 4f, value = vec2(), target = vec2()): Spring2 = 
+func spring2*(damping = 0.1f, frequency = 4f, value = vec2(), target = vec2()): Spring2 =
   Spring2(damping: damping, frequency: frequency, value: value, target: target)
 
 func `valueTarget=`*(s: var Spring2, v: Vec2) =
@@ -1034,7 +1035,7 @@ proc update*(spring: var Spring, delta: float32, damping = spring.damping, frequ
   spring.value = detX * detInv
   spring.velocity = detV * detInv
 
-const 
+const
   M00 = 0
   M01 = 3
   M02 = 6
@@ -1080,7 +1081,7 @@ proc ortho*(size: Vec2i): Mat {.inline.} = ortho(size.vec2)
 proc ortho*(bounds: Rect): Mat {.inline.} = ortho(bounds.xy, bounds.size)
 
 proc `*`*(a: Mat, b: Mat): Mat = [
-    a[M00] * b[M00] + a[M01] * b[M10] + a[M02] * b[M20], 
+    a[M00] * b[M00] + a[M01] * b[M10] + a[M02] * b[M20],
     a[M00] * b[M01] + a[M01] * b[M11] + a[M02] * b[M21],
     a[M00] * b[M02] + a[M01] * b[M12] + a[M02] * b[M22],
     a[M10] * b[M00] + a[M11] * b[M10] + a[M12] * b[M20],
@@ -1130,8 +1131,8 @@ proc matScale*(vec: Vec2): Mat = [
     0f, 0f, 1f
   ]
 
-proc matRotate*(rotation: float32): Mat = 
-  let 
+proc matRotate*(rotation: float32): Mat =
+  let
     cos = cos(rotation)
     sin = sin(rotation)
 
@@ -1162,7 +1163,7 @@ proc rotate*(mat: Mat, amount: float32): Mat {.inline.} = mat * matRotate(amount
 template particles*(seed: int, amount: int, ppos: Vec2, radius: float32, body: untyped) =
   var r = initRand(seed)
   for i in 0..<amount:
-    let 
+    let
       rot {.inject.} = r.rand(360f.rad).float32
       v = vec2l(rot, r.rand(radius))
       pos {.inject.} = ppos + v
@@ -1213,7 +1214,7 @@ template particlesLife*(seed: int, amount: int, ppos: Vec2, basefin: float32, ra
 
 template circle*(amount: int, body: untyped) =
   for i in 0..<amount:
-    let 
+    let
       circleAngle {.inject.} = (i.float32 / amount.float32 * pi2)
       circleIndex {.inject, used.} = i
     body
@@ -1234,7 +1235,7 @@ template shotgun*(amount: int, spacing: float32, body: untyped) =
 #TODO remove one of these
 template spread*(shots: int, spread: float32, body: untyped) =
   for i in 0..<shots:
-    let 
+    let
       angleOffset {.inject.} = (i - ((shots - 1f) / 2f).float32) * spread
       spreadIndex {.inject, used.} = i
     body
@@ -1244,14 +1245,14 @@ template spread*(shots: int, spread: float32, body: untyped) =
 proc width*(cam: Cam): float32 {.inline.} = cam.size.x
 proc height*(cam: Cam): float32 {.inline.} = cam.size.y
 
-proc update*(cam: Cam, screenBounds: Rect, size: Vec2 = cam.size, pos = cam.pos) = 
+proc update*(cam: Cam, screenBounds: Rect, size: Vec2 = cam.size, pos = cam.pos) =
   cam.size = size.max(vec2(0.000001f))
   cam.pos = pos
   cam.mat = ortho(cam.pos - cam.size/2f, cam.size)
   cam.inv = cam.mat.inv()
   cam.screenBounds = screenBounds
 
-proc newCam*(size: Vec2 = vec2(0f, 0f)): Cam = 
+proc newCam*(size: Vec2 = vec2(0f, 0f)): Cam =
   result = Cam(pos: vec2(0.0, 0.0), size: size)
   result.update(rect(vec2(), size))
 
