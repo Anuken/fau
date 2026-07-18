@@ -77,6 +77,31 @@ void main(){
 }
 """
 
+const defaultVertShaderNoMix* = """
+attribute vec4 a_pos;
+attribute vec4 a_color;
+attribute vec2 a_uv;
+uniform mat4 u_proj;
+varying vec4 v_color;
+varying vec2 v_uv;
+void main(){
+ v_color = a_color;
+ v_uv = a_uv;
+ gl_Position = u_proj * a_pos;
+}
+"""
+
+const defaultFragShaderNoMix* = """
+varying lowp vec4 v_color;
+varying vec2 v_uv;
+uniform sampler2D u_texture;
+
+void main(){
+  vec4 c = texture2D(u_texture, v_uv);
+  gl_FragColor = texture2D(u_texture, v_uv) * v_color;
+}
+"""
+
 proc flushInternal(batch: Batch) =
   if batch.index == 0: return
 
@@ -122,7 +147,7 @@ proc draw*(batch: Batch, z: float32, callback: proc()) =
 proc drawVertPtr(batch: Batch, src: pointer, len: int, texture: Texture, blend: Blending, shader: Shader) {.inline.} =
   batch.prepare(texture, blend, shader)
 
-  var 
+  var
     total = len
     point = src
 
@@ -205,7 +230,7 @@ proc draw*(batch: Batch, z: float32, patch: Patch, pos, size, origin: Vec2, rota
 
   batch.draw(z, patch.texture, vertices, blend, shader)
 
-proc newBatch*(size: int = 16380): Batch = 
+proc newBatch*(size: int = 16380): Batch =
   let batch = Batch(
     mesh: newMesh(
       vertices = newSeq[Vert2](size * 4),
@@ -265,7 +290,7 @@ proc mat*(batch: Batch): Mat {.inline.} = batch.mat
 proc matInv*(batch: Batch): Mat {.inline.} = batch.matInv
 
 #Sets the matrix used for rendering. This flushes the batch.
-proc mat*(batch: Batch, mat: Mat) = 
+proc mat*(batch: Batch, mat: Mat) =
   batch.flush()
   batch.mat = mat
   batch.matInv = mat.inv
@@ -284,7 +309,7 @@ proc clip*(batch: Batch): Rect = batch.clip
 proc viewport*(batch: Batch): Rect = batch.viewport
 
 #Sets the framebuffer used for rendering. This flushes the batch.
-proc buffer*(batch: Batch, buffer: Framebuffer) = 
+proc buffer*(batch: Batch, buffer: Framebuffer) =
   batch.flush()
   batch.buffer = buffer
 

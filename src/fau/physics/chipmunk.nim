@@ -654,7 +654,7 @@ proc filter*(shape: Shape): ShapeFilter =
   ## Returns the shape filter of the shape.
   cpShapeGetFilter(shape.raw).toRapid
 
-proc `filter=`*(shape: Shape, newFilter: ShapeFilter) =
+proc `filter=`*[T: CircleShape | PolygonShape | SegmentShape](shape: T, newFilter: ShapeFilter) =
   ## Sets the shape filter of the shape.
   cpShapeSetFilter(shape.raw, newFilter.toChipmunk)
 
