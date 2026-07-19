@@ -3,11 +3,7 @@
 ## This wrapper doesn't aim for 100% coverage of the physics engine, but
 ## features may be added as needed.
 
-import std/hashes
-import std/options
-import std/sets
-import std/tables
-import std/typetraits
+import std/hashes, options, sets, tables, typetraits
 import ../fmath
 
 include wrapper

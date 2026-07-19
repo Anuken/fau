@@ -1,4 +1,4 @@
-import macros, tables, strutils, parseutils, os, times
+import std/[macros, tables, strutils, parseutils, os, times]
 
 # Utility macros, templates & sugar.
 

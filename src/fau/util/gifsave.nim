@@ -1,8 +1,8 @@
 import ../draw, ../globals, ../fmath, ../color, os, strformat, times, osproc, math, streams, strutils, ../framebuffer
-from pixie import Image, newImage, writeFile, flipVertical
+from pkg/pixie import Image, newImage, writeFile, flipVertical
 
 export Image, newImage, writeFile, flipVertical
-export os
+export std/os
 
 
 ## Tiny utility functions for saving a gif animation. Require ffmpeg.
@@ -45,7 +45,7 @@ proc finishGif*(frames: seq[pointer], path: string, bounds: Rect, fps = 30) =
     f.dealloc
 
 template makeAnimation*(frameCount: int, fps: int, bounds: Rect, path: string, prefix: string, background = colorClear, body: untyped) =
-  ## Compiles a gif with the specified amount of frames into a file. 
+  ## Compiles a gif with the specified amount of frames into a file.
   ## Body should draw each frame. i is injected as the frame index.
   ## Screen is automatically cleared.
 
@@ -58,7 +58,7 @@ template makeAnimation*(frameCount: int, fps: int, bounds: Rect, path: string, p
     fau.screen.clear(background)
     body
 
-    let 
+    let
       rawData = addGifFrame(frames, bounds)
       img = newImage(bounds.w.int, bounds.h.int)
     copyMem(addr img.data[0], rawData, img.data.len * 4)
@@ -69,7 +69,7 @@ template makeAnimation*(frameCount: int, fps: int, bounds: Rect, path: string, p
 
 
 template makeGifBase*(frameCount: int, fps: int, bounds: Rect, path: string, background = colorClear, pingPong = false, body: untyped) =
-  ## Compiles a gif with the specified amount of frames into a file. 
+  ## Compiles a gif with the specified amount of frames into a file.
   ## Body should draw each frame. i is injected as the frame index.
   ## Screen is automatically cleared.
 

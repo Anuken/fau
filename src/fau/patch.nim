@@ -1,4 +1,4 @@
-import texture, fmath, math
+import texture, fmath, std/math
 
 #region of a texture
 type Patch* = object
@@ -14,7 +14,7 @@ type Patch9* = object
 
 #creates a patch based on pixel coordinates of a texture
 #TODO should be initPatch?
-proc newPatch*(texture: Texture, x, y, width, height: int): Patch = 
+proc newPatch*(texture: Texture, x, y, width, height: int): Patch =
   Patch(texture: texture, u: x / texture.size.x, v: y / texture.size.y, u2: (x + width) / texture.size.x, v2: (y + height) / texture.size.y)
 
 proc initPatch*(texture: Texture, u, v, u2, v2: float32): Patch = Patch(texture: texture, u: u, v: v, u2: u2, v2: v2)
@@ -57,7 +57,7 @@ proc split*(patch: Patch, size: Vec2i): seq[seq[Patch]] =
   result.setLen(dim.x)
 
   while cy < dim.x:
-    var 
+    var
       x = startX
       cx = 0
 
@@ -81,7 +81,7 @@ proc splitHorizontal*(patch: Patch, width: int): seq[Patch] =
 
   while cx < dimx:
     result[cx] = newPatch(patch.texture, x, patch.y, width, patch.height)
-      
+    
     cx += 1
     x += width
 

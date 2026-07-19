@@ -1,5 +1,4 @@
-
-import tables, gl/[glproc, gltypes], strutils, fmath, color, macros, texture, framebuffer
+import gl/[glproc, gltypes], fmath, color, texture, framebuffer, std/[strutils, macros, tables]
 
 #Internal shader attribute.
 type ShaderAttr* = object
@@ -24,17 +23,17 @@ type ShaderUniType = enum
 type ShaderUniform = object
   loc: int
   case kind: ShaderUniType
-  of unil: 
+  of unil:
     discard
-  of u1f: 
+  of u1f:
     v1f: float32
-  of u2f: 
+  of u2f:
     v2f: Vec2
-  of u3f: 
+  of u3f:
     v3f: Vec3
-  of ucolor: 
+  of ucolor:
     vcolor: Color
-  of u4f: 
+  of u4f:
     v4f: (float32, float32, float32, float32)
   of u1i:
     v1i: int
@@ -132,16 +131,16 @@ proc preprocess(source: string, fragment: bool): string =
     raise newException(GlError, "Shader contains explicit version requirement; this should be handled by the preprocessor. Code: \n" & source)
 
   #add GL_ES precision qualifiers
-  let pre = if fragment: 
+  let pre = if fragment:
     """
 
     #ifdef GL_ES
     precision highp float;
     precision mediump int;
     #else
-    #define lowp  
-    #define mediump 
-    #define highp 
+    #define lowp
+    #define mediump
+    #define highp
     #endif
 
     """
@@ -150,9 +149,9 @@ proc preprocess(source: string, fragment: bool): string =
     """
 
     #ifndef GL_ES
-    #define lowp  
-    #define mediump 
-    #define highp 
+    #define lowp
+    #define mediump
+    #define highp
     #endif
 
     """
@@ -160,7 +159,7 @@ proc preprocess(source: string, fragment: bool): string =
   #GL 3.x requires a version qualifier for the core profile, at least on Mac - no reason to risk issues on other platforms
   if glVersionMajor >= 3 and defined(macosx):
     let version = "#version " & (if glVersionMajor == 3 and glVersionMinor < 2: "130" else: "150")
-    result = 
+    result =
       version & "\n" &
       pre &
       (if fragment: "out lowp vec4 fragColor;\n" else: "") &
@@ -197,7 +196,7 @@ proc newShader*(vertexSource, fragmentSource: string, name = "<unknown>"): Shade
       let infoLog = glGetProgramInfoLog(program)
       result.compileLog &= infoLog #append reason to log
       result.compiled = false
-    raise Exception.newException("Failed to link shader: " & result.compileLog) 
+    raise Exception.newException("Failed to link shader: " & result.compileLog)
 
   result.handle = program
 
@@ -215,11 +214,11 @@ proc newShader*(vertexSource, fragmentSource: string, name = "<unknown>"): Shade
 
 #attribute functions
 
-proc getAttributeLoc*(shader: Shader, alias: string): int = 
+proc getAttributeLoc*(shader: Shader, alias: string): int =
   if not shader.attributes.hasKey(alias): return -1
   return shader.attributes[alias].location
 
-proc enableAttribute*(shader: Shader, location: GLuint, size: GLint, gltype: Glenum, normalize: GLboolean, stride: GLsizei, offset: int) = 
+proc enableAttribute*(shader: Shader, location: GLuint, size: GLint, gltype: Glenum, normalize: GLboolean, stride: GLsizei, offset: int) =
   glEnableVertexAttribArray(location)
   glVertexAttribPointer(location, size, gltype, normalize, stride, cast[pointer](offset));
 
@@ -229,7 +228,7 @@ proc enableAttribute*(shader: Shader, location: GLuint, size: GLint, gltype: Gle
 proc findUniform(shader: Shader, name: string): var ShaderUniform =
   if shader.uniforms.hasKey(name):
     return shader.uniforms[name]
-  let 
+  let
     location = glGetUniformLocation(shader.handle, name)
     uni = ShaderUniform(loc: location)
   shader.uniforms[name] = uni
@@ -248,7 +247,7 @@ template withUniform(shader: Shader, name: string, body: untyped) =
     body
 
 proc uniform*(shader: Shader, name: string, value: Sampler) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     value.texture.use(value.index)
 
     if not (uni.kind == u1i and uni.v1i == value.index):
@@ -256,45 +255,45 @@ proc uniform*(shader: Shader, name: string, value: Sampler) =
       shader.uniforms[name] = ShaderUniform(kind: u1i, v1i: value.index, loc: uni.loc)
 
 proc uniform*(shader: Shader, name: string, value: int) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     if not (uni.kind == u1i and uni.v1i == value):
       glUniform1i(loc.GLint, value.GLint)
       shader.uniforms[name] = ShaderUniform(kind: u1i, v1i: value, loc: uni.loc)
 
 proc uniform*(shader: Shader, name: string, value: Vec2i) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     if not (uni.kind == u2i and uni.v2i == value):
       glUniform2i(loc.GLint, value.x.GLint, value.y.GLint)
       shader.uniforms[name] = ShaderUniform(kind: u2i, v2i: value, loc: uni.loc)
 
 #converts a 2D matrix to 3D and sets it
 proc uniform*(shader: Shader, name: string, value: Mat) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     if not (uni.kind == umat3conv and uni.mat == value):
       glUniformMatrix4fv(loc.GLint, 1, false, value.toMat4())
       shader.uniforms[name] = ShaderUniform(kind: umat3conv, mat: value, loc: uni.loc)
 
 #sets a 3D matrix; the input value should be a 4x4 matrix
 proc uniform*(shader: Shader, name: string, value: array[16, float32]) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     if not (uni.kind == umat4 and uni.vmat4 == value):
       glUniformMatrix4fv(loc.GLint, 1, false, value)
       shader.uniforms[name] = ShaderUniform(kind: umat4, vmat4: value, loc: uni.loc)
 
 proc uniform*(shader: Shader, name: string, value: float32) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     if not (uni.kind == u1f and uni.v1f == value):
       glUniform1f(loc.GLint, value)
       shader.uniforms[name] = ShaderUniform(kind: u1f, v1f: value, loc: uni.loc)
 
 proc uniform*(shader: Shader, name: string, value: Vec2) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     if not (uni.kind == u2f and uni.v2f == value):
       glUniform2f(loc.GLint, value.x, value.y)
       shader.uniforms[name] = ShaderUniform(kind: u2f, v2f: value, loc: uni.loc)
 
 proc uniform*(shader: Shader, name: string, value: Vec3) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     if not (uni.kind == u3f and uni.v3f == value):
       glUniform3f(loc.GLint, value.x, value.y, value.z)
       shader.uniforms[name] = ShaderUniform(kind: u3f, v3f: value, loc: uni.loc)
@@ -303,13 +302,13 @@ proc uniform*(shader: Shader, name: string, value: array[3, float32]) =
   uniform(shader, name, Vec3(x: value[0], y: value[1], z: value[2]))
 
 proc uniform*(shader: Shader, name: string, value: Color) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     if not (uni.kind == ucolor and uni.vcolor == value):
       glUniform4f(loc.GLint, value.r, value.g, value.b, value.a)
       shader.uniforms[name] = ShaderUniform(kind: ucolor, vcolor: value, loc: uni.loc)
 
 proc uniform*(shader: Shader, name: string, value: (float32, float32, float32, float32)) =
-  shader.withUniform(name): 
+  shader.withUniform(name):
     if not (uni.kind == u4f and uni.v4f == value):
       glUniform4f(loc.GLint, value[0], value[1], value[2], value[3])
       shader.uniforms[name] = ShaderUniform(kind: u4f, v4f: value, loc: uni.loc)

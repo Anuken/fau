@@ -1,7 +1,6 @@
 ## This module wraps and compiles Chipmunk2D without using CMake. Do not include directly.
 
-import std/macros
-import std/os
+import std/macros, os
 
 # TODO doesn't work on windows because /tmp/
 const

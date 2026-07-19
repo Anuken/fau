@@ -1,7 +1,7 @@
-import pixie, os, math, vmath
+import pkg/[pixie, vmath], std/[os, math]
 
 proc resize(file: string) =
-  let 
+  let
     padding = 2
     img = readImage(file)
   

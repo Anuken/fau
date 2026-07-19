@@ -1,5 +1,5 @@
 
-import math, ../fmath
+import std/math, ../fmath
 export fmath
 
 #region VECTORS
@@ -62,7 +62,7 @@ template vec2*(vec: Vec3): Vec2 = vec2(vec.x, vec.y)
 template vec3*(vec: Vec2, z = 0f): Vec3 = vec3(vec.x, vec.y, z)
 proc vec3*(): Vec3 {.inline.} = Vec3()
 
-const 
+const
   vec3Zero* = vec3(0, 0, 0)
   vec3X* = vec3(1, 0, 0)
   vec3Y* = vec3(0, 1, 0)
@@ -91,11 +91,11 @@ func dot*(vec, other: Vec3): float32 {.inline.} = vec.x * other.x + vec.y * othe
 
 func `zero`*(vec: Vec3): bool {.inline.} = vec.x == 0f and vec.y == 0f and vec.z == 0f
 
-func `lerp`*(vec: var Vec3, other: Vec3, alpha: float32) {.inline.} = 
+func `lerp`*(vec: var Vec3, other: Vec3, alpha: float32) {.inline.} =
   let invAlpha = 1.0f - alpha
   vec = vec3((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha), (vec.z * invAlpha) + (other.z * alpha))
 
-func `lerp`*(vec: Vec3, other: Vec3, alpha: float32): Vec3 {.inline.} = 
+func `lerp`*(vec: Vec3, other: Vec3, alpha: float32): Vec3 {.inline.} =
   let invAlpha = 1.0f - alpha
   return vec3((vec.x * invAlpha) + (other.x * alpha), (vec.y * invAlpha) + (other.y * alpha), (vec.z * invAlpha) + (other.z * alpha))
 
@@ -107,12 +107,12 @@ func `len=`*(vec: var Vec3, b: float32) = vec *= b / vec.len
 
 func nor*(vec: Vec3): Vec3 {.inline.} = vec / vec.len
 
-func lim*(vec: Vec3, limit: float32): Vec3 = 
+func lim*(vec: Vec3, limit: float32): Vec3 =
   let l2 = vec.len2
   let limit2 = limit*limit
   return if l2 > limit2: vec * sqrt(limit2 / l2) else: vec
 
-func dst2*(vec: Vec3, other: Vec3): float32 {.inline.} = 
+func dst2*(vec: Vec3, other: Vec3): float32 {.inline.} =
   let
     dx = vec.x - other.x
     dy = vec.y - other.y
@@ -147,7 +147,7 @@ proc quatAxis*(axis: Vec3, angle: float32): Quat =
   var d = axis.len
   if d == 0f: return quat()
   d = 1f / d
-  let 
+  let
     lang = if angle < 0: pi2 - (-angle.mod pi2) else: angle.mod pi2
     lsin = sin(lang / 2f)
     lcos = cos(lang / 2f)
@@ -164,7 +164,7 @@ proc slerp*(self, other: Quat, alpha: float32): Quat =
   let d = self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
   let absDot = if d < 0f: -d else: d
 
-  var 
+  var
     scale0 = 1f - alpha
     scale1 = alpha
   
@@ -274,15 +274,15 @@ proc rot3*(axis: Vec3, angle: float32): Mat3 = rot3(quatAxis(axis, angle))
 
 #inverts a matrix
 proc inv*(mat: Mat3): Mat3 =
-  let 
-    det = mat[M30] * mat[M21] * mat[M12] * mat[M03] - mat[M20] * mat[M31] * mat[M12] * mat[M03] - mat[M30] * mat[M11] * 
-    mat[M22] * mat[M03] + mat[M10] * mat[M31] * mat[M22] * mat[M03] + mat[M20] * mat[M11] * mat[M32] * mat[M03] - mat[M10] * 
-    mat[M21] * mat[M32] * mat[M03] - mat[M30] * mat[M21] * mat[M02] * mat[M13] + mat[M20] * mat[M31] * mat[M02] * mat[M13] + 
-    mat[M30] * mat[M01] * mat[M22] * mat[M13] - mat[M00] * mat[M31] * mat[M22] * mat[M13] - mat[M20] * mat[M01] * mat[M32] * 
-    mat[M13] + mat[M00] * mat[M21] * mat[M32] * mat[M13] + mat[M30] * mat[M11] * mat[M02] * mat[M23] - mat[M10] * mat[M31] * 
-    mat[M02] * mat[M23] - mat[M30] * mat[M01] * mat[M12] * mat[M23] + mat[M00] * mat[M31] * mat[M12] * mat[M23] + mat[M10] * 
-    mat[M01] * mat[M32] * mat[M23] - mat[M00] * mat[M11] * mat[M32] * mat[M23] - mat[M20] * mat[M11] * mat[M02] * mat[M33] + 
-    mat[M10] * mat[M21] * mat[M02] * mat[M33] + mat[M20] * mat[M01] * mat[M12] * mat[M33] - mat[M00] * mat[M21] * mat[M12] * 
+  let
+    det = mat[M30] * mat[M21] * mat[M12] * mat[M03] - mat[M20] * mat[M31] * mat[M12] * mat[M03] - mat[M30] * mat[M11] *
+    mat[M22] * mat[M03] + mat[M10] * mat[M31] * mat[M22] * mat[M03] + mat[M20] * mat[M11] * mat[M32] * mat[M03] - mat[M10] *
+    mat[M21] * mat[M32] * mat[M03] - mat[M30] * mat[M21] * mat[M02] * mat[M13] + mat[M20] * mat[M31] * mat[M02] * mat[M13] +
+    mat[M30] * mat[M01] * mat[M22] * mat[M13] - mat[M00] * mat[M31] * mat[M22] * mat[M13] - mat[M20] * mat[M01] * mat[M32] *
+    mat[M13] + mat[M00] * mat[M21] * mat[M32] * mat[M13] + mat[M30] * mat[M11] * mat[M02] * mat[M23] - mat[M10] * mat[M31] *
+    mat[M02] * mat[M23] - mat[M30] * mat[M01] * mat[M12] * mat[M23] + mat[M00] * mat[M31] * mat[M12] * mat[M23] + mat[M10] *
+    mat[M01] * mat[M32] * mat[M23] - mat[M00] * mat[M11] * mat[M32] * mat[M23] - mat[M20] * mat[M11] * mat[M02] * mat[M33] +
+    mat[M10] * mat[M21] * mat[M02] * mat[M33] + mat[M20] * mat[M01] * mat[M12] * mat[M33] - mat[M00] * mat[M21] * mat[M12] *
     mat[M33] - mat[M10] * mat[M01] * mat[M22] * mat[M33] + mat[M00] * mat[M11] * mat[M22] * mat[M33]
 
   if det == 0f: raise newException(Exception, "non-invertible matrix")
@@ -325,7 +325,7 @@ proc inv*(mat: Mat3): Mat3 =
   ]
 
 #multiplies two matrices together
-proc `*`*(a, b: Mat3): Mat3 = 
+proc `*`*(a, b: Mat3): Mat3 =
   [
     a[M00] * b[M00] + a[M01] * b[M10] + a[M02] * b[M20] + a[M03] * b[M30],
     a[M10] * b[M00] + a[M11] * b[M10] + a[M12] * b[M20] + a[M13] * b[M30],
@@ -342,7 +342,7 @@ proc `*`*(a, b: Mat3): Mat3 =
     a[M00] * b[M03] + a[M01] * b[M13] + a[M02] * b[M23] + a[M03] * b[M33],
     a[M10] * b[M03] + a[M11] * b[M13] + a[M12] * b[M23] + a[M13] * b[M33],
     a[M20] * b[M03] + a[M21] * b[M13] + a[M22] * b[M23] + a[M23] * b[M33],
-    a[M30] * b[M03] + a[M31] * b[M13] + a[M32] * b[M23] + a[M33] * b[M33] 
+    a[M30] * b[M03] + a[M31] * b[M13] + a[M32] * b[M23] + a[M33] * b[M33]
   ]
 
 proc trans3*(mat: Mat3, vec: Vec3): Mat3 = mat * trans3(vec)
@@ -365,14 +365,14 @@ proc prj*[N](mat: Mat3, vecs: array[N, Vec3]): array[N, Vec3] =
 proc prj*(v: Vec3, mat: Mat3): Vec3 =
   let lw = 1f / (v.x * mat[M30] + v.y * mat[M31] + v.z * mat[M32] + mat[M33])
   return vec3(
-    (v.x * mat[M00] + v.y * mat[M01] + v.z * mat[M02] + mat[M03]) * lw, 
-    (v.x * mat[M10] + v.y * mat[M11] + v.z * mat[M12] + mat[M13]) * lw, 
+    (v.x * mat[M00] + v.y * mat[M01] + v.z * mat[M02] + mat[M03]) * lw,
+    (v.x * mat[M10] + v.y * mat[M11] + v.z * mat[M12] + mat[M13]) * lw,
     (v.x * mat[M20] + v.y * mat[M21] + v.z * mat[M22] + mat[M23]) * lw
   )
 
-#creates a projection matrix with a near and far plane, a field of view in degrees and an aspect ratio. 
+#creates a projection matrix with a near and far plane, a field of view in degrees and an aspect ratio.
 proc projection3*(near, far, fovy, aspectRatio: float32): Mat3 =
-  let 
+  let
     fd = 1f / tan((fovy * (PI / 180f)) / 2f).float32
     a1 = (far + near) / (near - far)
     a2 = (2f * far * near) / (near - far)
@@ -388,7 +388,7 @@ proc ortho3*(left, right, bot, top, near, far: float32): Mat3 =
   
   return [2f / (right - left), 0, 0, 0, 0, 2f / (top - bot), 0, 0, 0, 0, -2f / (far - near), 0, tx, ty, tz, 1f]
 
-#creates a matrix to a look at matrix with a direction and an up vector. 
+#creates a matrix to a look at matrix with a direction and an up vector.
 proc lookAt3*(direction, up: Vec3): Mat3 =
   let vex = direction.nor.crs(up).nor
   let vez = direction.nor
@@ -465,7 +465,7 @@ proc contains*(frustum: Frustum, point: Vec3): bool =
 #returns whether this frustum overlaps a sphere
 proc contains*(self: Frustum, center: Vec3, radius: float32): bool =
   for i in 0..<6:
-    if self.planes[i].normal.x * center.x + self.planes[i].normal.y * center.y + self.planes[i].normal.z * center.z < -radius - self.planes[i].dst: 
+    if self.planes[i].normal.x * center.x + self.planes[i].normal.y * center.y + self.planes[i].normal.z * center.z < -radius - self.planes[i].dst:
       return false
   return true
 

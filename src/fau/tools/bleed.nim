@@ -1,9 +1,9 @@
-import pixie, chroma, os
+import pkg/[pixie, chroma], std/os
 
 const offsets = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 
 proc bleedFull(image: Image, maxIterations = 5) =
-  let 
+  let
     w = image.width
     h = image.height
     total = w * h
@@ -28,7 +28,7 @@ proc bleedFull(image: Image, maxIterations = 5) =
     lastPending = pendingSize
     var index = 0
     while index < pendingSize:
-      let 
+      let
         pixelIndex = pending[index]
         x = pixelIndex mod w
         y = pixelIndex div w

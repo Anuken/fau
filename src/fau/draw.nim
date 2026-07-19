@@ -1,4 +1,4 @@
-import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, tables
+import globals, batch, fmath, color, patch, mesh, shader, framebuffer, math, texture, lenientops, atlas, std/tables
 export batch #for aligns
 
 ## Drawing utilities based on global state.
@@ -102,30 +102,30 @@ proc drawLayer*(z: float32, layerBegin, layerEnd: proc(), spread: float32 = 1) =
   draw(z + spread, layerEnd)
 
 proc draw*(
-  region: Patch, pos: Vec2, 
+  region: Patch, pos: Vec2,
   size = region.size * fau.pixelScl,
   z = 0f,
   scl = vec2(1f),
-  origin = size * 0.5f * scl, 
+  origin = size * 0.5f * scl,
   rotation = 0f, align = daCenter,
-  color = colorWhite, mixColor = colorClear, 
+  color = colorWhite, mixColor = colorClear,
   blend = blendNormal, shader: Shader = nil) {.inline.} =
 
-  let 
+  let
     alignH = (-(asLeft in align).float32 + (asRight in align).float32 + 1f) / 2f
     alignV = (-(asBot in align).float32 + (asTop in align).float32 + 1f) / 2f
 
   fau.batch.draw(
-    z, region, pos - size * vec2(alignH, alignV) * scl, 
+    z, region, pos - size * vec2(alignH, alignV) * scl,
     size * scl, origin,rotation, color, mixColor, blend, shader
   )
 
 proc draw*(
   region: Patch, bounds: Rect,
   z = 0f,
-  origin = bounds.center, 
+  origin = bounds.center,
   rotation = 0f, align = daCenter,
-  color = colorWhite, mixColor = colorClear, 
+  color = colorWhite, mixColor = colorClear,
   blend = blendNormal, shader: Shader = nil) {.inline.} = draw(region, bounds.xy, bounds.size, 0f, vec2(1f), origin, rotation, daBotLeft, color, mixColor, blend, shader)
 
 #draws a region with rotated bits
@@ -166,8 +166,8 @@ proc drawv*(region: Patch, pos: Vec2, corners: array[4, Vec2], z = 0f, scl = vec
 
   fau.batch.draw(
     z,
-    region.texture, 
-    [vert2(cor1.x, cor1.y, u, v, cf, mf), vert2(cor2.x, cor2.y, u, v2, cf, mf), vert2(cor3.x, cor3.y, u2, v2, cf, mf), vert2(cor4.x, cor4.y, u2, v, cf, mf)], 
+    region.texture,
+    [vert2(cor1.x, cor1.y, u, v, cf, mf), vert2(cor2.x, cor2.y, u, v2, cf, mf), vert2(cor3.x, cor3.y, u2, v2, cf, mf), vert2(cor4.x, cor4.y, u2, v, cf, mf)],
     blend, shader
   )
 
@@ -182,7 +182,7 @@ proc drawRect*(region: Patch, rect: Rect, origin = vec2(),
 
   drawRect(region, rect.x, rect.y, rect.w, rect.h, origin.x, origin.y, rotation, color, mixColor, z, blend, shader)
 
-proc drawVert*(texture: Texture, vertices: array[4, Vert2], z: float32 = 0, blend = blendNormal, shader: Shader = nil) {.inline.} = 
+proc drawVert*(texture: Texture, vertices: array[4, Vert2], z: float32 = 0, blend = blendNormal, shader: Shader = nil) {.inline.} =
   fau.batch.draw(z, texture, vertices, blend, shader)
 
 proc draw*(p: Patch9, pos: Vec2, size: Vec2, z: float32 = 0f, color = colorWhite, mixColor = colorClear, scale = 1f, blend = blendNormal) =
@@ -221,14 +221,14 @@ proc drawBlit*(buffer: Framebuffer, color = colorWhite, blend = blendNormal, z =
 
 #TODO does not support mid != 0
 #TODO divs could just be a single float value, arrays unnecessary
-proc drawBend*(p: Patch, pos: Vec2, divs: openArray[float32], mid = 0, rotation = 0f, z: float32 = 0f, size = p.size * fau.pixelScl, scl = vec2(1f, 1f), color = colorWhite, mixColor = colorClear) = 
-  let 
+proc drawBend*(p: Patch, pos: Vec2, divs: openArray[float32], mid = 0, rotation = 0f, z: float32 = 0f, size = p.size * fau.pixelScl, scl = vec2(1f, 1f), color = colorWhite, mixColor = colorClear) =
+  let
     outs = size * scl
     v = p.v
     v2 = p.v2
     segSpace = outs.x / divs.len.float32
 
-  var 
+  var
     cur = rotation
     cpos = pos
 
@@ -243,7 +243,7 @@ proc drawBend*(p: Patch, pos: Vec2, divs: openArray[float32], mid = 0, rotation 
       
     cpos += vec2l(cur, segSpace) * sign
 
-    let 
+    let
       mid2 = cpos
       p1 = mid1 + top1
       p2 = mid2 + top2
@@ -344,7 +344,7 @@ proc fillPoly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, color = co
       )
 
 proc fillDropShadow*(rect: Rect, blur: float32, color = colorBlack, z = 0f) =
-  let 
+  let
     edge = color.withA(0f)
     ir = rect.grow(-blur)
   
@@ -388,7 +388,7 @@ proc fillDropShadow*(rect: Rect, blur: float32, color = colorBlack, z = 0f) =
   )
 
 proc fillLight*(pos: Vec2, radius: float32, sides = 20, centerColor = colorWhite, edgeColor = colorClearWhite, z: float32 = 0, scl = vec2(1f)) =
-  let 
+  let
     sides = ceil(sides.float32 / 2.0).int * 2
     space = PI * 2.0 / sides.float32
 
@@ -408,7 +408,7 @@ proc line*(p1, p2: Vec2, stroke: float32 = 1.px, color = colorWhite, square = tr
   let hstroke = stroke / 2.0
   let diff = (p2 - p1).nor * hstroke
   let side = vec2(-diff.y, diff.x)
-  let 
+  let
     s1 = if square: p1 - diff else: p1
     s2 = if square: p2 + diff else: p2
 
@@ -430,7 +430,7 @@ proc lineAngleCenter*(p: Vec2, angle, len: float32, stroke: float32 = 1.px, colo
 
 proc lineRect*(bounds: Rect, stroke: float32 = 1.px, color = colorWhite, z: float32 = 0, margin = 0f) =
   
-  let 
+  let
     rect = bounds.grow(margin)
 
     offset = 1.414213f * stroke/2f #sqrt 2
@@ -462,14 +462,14 @@ proc spikes*(pos: Vec2, sides: int, radius: float32, len: float32, stroke = 1f.p
     lineAngle(pos + vec2l(ang, radius), ang, len, stroke, color, z = z)
 
 proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f, scl = vec2(1f), blend = blendNormal) =
-  let 
+  let
     space = PI*2 / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)
     r1 = radius - hstep
     r2 = radius + hstep
   
   for i in 0..<sides:
-    let 
+    let
       a = space * i.float32 + rotation
       cosf = cos(a)
       sinf = sin(a)
@@ -503,7 +503,7 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
     arctan2(reference.x * v.y - reference.y * v.x, v.x * reference.x + v.y * reference.y).float32
 
   proc preparePointyJoin(a, b, c: Vec2, hstroke: float32): (Vec2, Vec2) =
-    var 
+    var
       ab = b - a
       bc = c - b
       angle = ab.angleRef(bc)
@@ -511,14 +511,14 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
     if angle.almostEqual(0f) or angle.almostEqual(pi2):
       return prepareStraightJoin(b, ab, hstroke)
       
-    let 
+    let
       len = hstroke / sin(angle)
       bendsLeft = angle < 0
     
     ab.len = len
     bc.len = len
 
-    let 
+    let
       p1 = b - ab + bc
       p2 = b + ab - bc
     
@@ -533,7 +533,7 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
     lq2: Vec2
 
   for i in 1..<(points.len - 1):
-    let 
+    let
       a = points[i - 1]
       b = points[i]
       c = points[i + 1]
@@ -561,13 +561,13 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
     fillQuad(q1, q2, q3, q4, color = color, z = z, blend = blend)
 
 proc arcRadius*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radiusFrom, radiusTo: float32, rotation = 0f, color = colorWhite, z = 0f) =
-  let 
+  let
     space = (angleTo - angleFrom) / sides.float32
     r1 = radiusFrom
     r2 = radiusTo
   
   for i in 0..<sides:
-    let 
+    let
       a = space * i.float32 + rotation + angleFrom
       cosf = cos(a)
       sinf = sin(a)
@@ -583,7 +583,7 @@ proc arcRadius*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radiusFrom, 
     )
 
 proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f) =
-  let 
+  let
     space = (angleTo - angleFrom) / sides.float32
     hstep = stroke / 2.0 / cos(space / 2.0)
     r1 = radius - hstep
@@ -592,11 +592,11 @@ proc arc*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, r
   arcRadius(pos, sides, angleFrom, angleTo, r1, r2, rotation, color, z)
 
 proc crescent*(pos: Vec2, sides: int, angleFrom, angleTo: float32, radius: float32, rotation = 0f, stroke = 1f.px, color = colorWhite, z = 0f, slopePow = 1f) =
-  let 
+  let
     space = (angleTo - angleFrom) / (sides.float32)
   
   for i in 0..<sides:
-    let 
+    let
       hstep = stroke / 2.0 / cos(space / 2.0) * (i / (sides - 1)).slope.powout(slopePow)
       r1 = radius - hstep
       r2 = radius + hstep

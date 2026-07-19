@@ -1,5 +1,4 @@
-
-import gl/[glproc, gltypes], color, fmath, shader, framebuffer, macros, screenbuffer
+import gl/[glproc, gltypes], color, fmath, shader, framebuffer, std/macros, screenbuffer
 
 #TODO this is necessary for macros but very hacky, what's the solution?
 export glproc, gltypes

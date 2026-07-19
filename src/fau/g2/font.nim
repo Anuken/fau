@@ -1,12 +1,11 @@
-import tables, unicode, packer, bitops
-import math
+import std/[tables, unicode, packer, bitops, math]
 import ../texture, ../patch, ../color, ../globals, ../util/misc, ../draw, ../assets
 
 from ../fmath import `+`, `*`, `-`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter, daBotLeft, rect, Rect
-from pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`, dataIndex
-from vmath import x, y, `*`, `-`, `+`, isNaN, translate
-from bumpy import xy
-from chroma import nil
+from pkg/pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`, dataIndex
+from pkg/vmath import x, y, `*`, `-`, `+`, isNaN, translate
+from pkg/bumpy import xy
+from pkg/chroma import nil
 
 const debugBounds = defined(fontBoundsDebug)
 

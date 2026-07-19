@@ -1,4 +1,4 @@
-import os, streams, macros, strutils, tables, util/misc
+import std/[os, streams, macros, strutils, tables], util/misc
 
 #for asset reading
 when defined(Android):
@@ -17,7 +17,7 @@ const assetFolder* = when defined(Android): "" else: "assets/"
 proc getSaveDir*(app: string): string =
   when defined(Android):
     return $glfmFilesDir()
-  else: 
+  else:
     getDataDir() / app
 
 macro preloadFolderExternal*(path: static[string]): untyped =
@@ -64,7 +64,7 @@ proc assetFile*(name: string): string =
   ## Resolves the asset to a specific file by name
   assetFolder / name
 
-proc resolveStaticAssetPath*(filename: string): string = 
+proc resolveStaticAssetPath*(filename: string): string =
   ## Resolves path in assets folder -> path in filesystem on the machine
   rootDir & "/assets/" & filename
 

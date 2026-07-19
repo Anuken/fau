@@ -20,7 +20,7 @@
         https://glad.dav1d.de/#profile=core&language=nim&specification=gl&loader=on&api=gl%3D2.0&api=gles2%3D2.0&extensions=GL_EXT_framebuffer_object
 ]#
 
-import strutils, gltypes
+import std/strutils, gltypes
 
 var glVersionMajor*, glVersionMinor*: int
 
@@ -187,7 +187,7 @@ var
   supportsVertexArrays*: bool
 
 # Extensions
-var 
+var
   GLAD_GL_EXT_framebuffer_object*: bool
   GLAD_GL_ARB_vertex_array_object*: bool
   GLAD_GL_OES_vertex_array_object*: bool
@@ -407,75 +407,75 @@ proc load_GL_vertex_array_object(load: proc, checkExtension: bool) =
 
 #delete
 
-proc glDeleteBuffer*(buffer: GLuint) = 
+proc glDeleteBuffer*(buffer: GLuint) =
   var value = buffer
   glDeleteBuffers(1, addr value)
 
-proc glDeleteFramebuffer*(framebuffer: GLuint) = 
+proc glDeleteFramebuffer*(framebuffer: GLuint) =
   var value = framebuffer
   glDeleteFramebuffers(1, addr value)
 
-proc glDeleteVertexArray*(varray: GLuint) = 
+proc glDeleteVertexArray*(varray: GLuint) =
   var value = varray
   glDeleteVertexArrays(1, addr varray)
 
-proc glDeleteRenderbuffer*(renderbuffer: GLuint) = 
+proc glDeleteRenderbuffer*(renderbuffer: GLuint) =
   var value = renderbuffer
   glDeleteRenderbuffers(1, addr value)
 
-proc glDeleteTexture*(texture: GLuint) = 
+proc glDeleteTexture*(texture: GLuint) =
   var value = texture
   glDeleteTextures(1, addr value)
 
 #gen
 
-proc glGenBuffer*(): GLuint = 
+proc glGenBuffer*(): GLuint =
   var resultVal: GLuint
   glGenBuffers(1, addr resultVal)
   return resultVal
 
-proc glGenFramebuffer*(): GLuint = 
+proc glGenFramebuffer*(): GLuint =
   var resultVal: GLuint
   glGenFramebuffers(1, addr resultVal)
   return resultVal
 
-proc glGenVertexArray*(): GLuint = 
+proc glGenVertexArray*(): GLuint =
   var resultVal: GLuint
   glGenVertexArrays(1, addr resultVal)
   return resultVal
 
-proc glGenRenderbuffer*(): GLuint = 
+proc glGenRenderbuffer*(): GLuint =
   var resultVal: GLuint
   glGenRenderbuffers(1, addr resultVal)
   return resultVal
 
-proc glGenTexture*(): GLuint = 
+proc glGenTexture*(): GLuint =
   var resultVal: GLuint
   glGenTextures(1, addr resultVal)
   return resultVal
 
 #getters, shaders
 
-proc glShaderSource*(shader: GLuint, source: string) = 
+proc glShaderSource*(shader: GLuint, source: string) =
   var srcArray = [source.cstring]
   glShaderSourceBASE(shader, 1, cast[cstringArray](addr srcArray), nil)
 
-proc glGetFloatv*(pname: GLenum): GLfloat = 
+proc glGetFloatv*(pname: GLenum): GLfloat =
   var resultVal: GLfloat
   glGetFloatvBASE(pname, addr resultVal)
   return resultVal
 
-proc glGetIntegerv*(pname: GLenum): GLint = 
+proc glGetIntegerv*(pname: GLenum): GLint =
   var resultVal: GLint
   glGetIntegervBASE(pname, addr resultVal)
   return resultVal
 
-proc glGetProgramiv*(program: GLuint, pname: GLenum): GLint = 
+proc glGetProgramiv*(program: GLuint, pname: GLenum): GLint =
   var resultVal: GLint
   glGetProgramivBASE(program, pname, addr resultVal)
   return resultVal
 
-proc glGetProgramInfoLog*(program: GLuint): string = 
+proc glGetProgramInfoLog*(program: GLuint): string =
   var infoLen: GLint
   glGetProgramivBASE(program, GL_INFO_LOG_LENGTH, addr infoLen)
 
@@ -484,12 +484,12 @@ proc glGetProgramInfoLog*(program: GLuint): string =
   result = $infoLog
   dealloc(infoLog)
 
-proc glGetShaderiv*(shader: GLuint, pname: GLenum): GLint = 
+proc glGetShaderiv*(shader: GLuint, pname: GLenum): GLint =
   var resultVal: GLint
   glGetShaderivBASE(shader, pname, addr resultVal)
   return resultVal
 
-proc glGetShaderInfoLog*(shader: GLuint): string = 
+proc glGetShaderInfoLog*(shader: GLuint): string =
   var infoLen: GLint
   glGetShaderivBASE(shader, GL_INFO_LOG_LENGTH, addr infoLen)
 
@@ -498,22 +498,22 @@ proc glGetShaderInfoLog*(shader: GLuint): string =
   result = $infoLog
   dealloc(infoLog)
 
-proc glGetString*(name: GLenum): string = 
+proc glGetString*(name: GLenum): string =
   return $cast[cstring](glGetStringBASE(name))
 
-proc glGetVertexAttribfv*(index: GLuint, pname: GLenum): GLfloat = 
+proc glGetVertexAttribfv*(index: GLuint, pname: GLenum): GLfloat =
   var resultVal: GLfloat
   glGetVertexAttribfvBASE(index, pname, addr resultVal)
   return resultVal
 
-proc glGetVertexAttribiv*(index: GLuint, pname: GLenum): GLint = 
+proc glGetVertexAttribiv*(index: GLuint, pname: GLenum): GLint =
   var resultVal: GLint
   glGetVertexAttribivBASE(index, pname, addr resultVal)
   return resultVal
 
 #attributes
 
-proc glGetActiveAttrib*(program: GLuint, index: GLuint, length: var GLsizei, size: var GLint, `type`: var GLenum, name: var string) = 
+proc glGetActiveAttrib*(program: GLuint, index: GLuint, length: var GLsizei, size: var GLint, `type`: var GLenum, name: var string) =
   var alen: GLsizei
   var asize: GLint
   var atype: GLenum
@@ -525,7 +525,7 @@ proc glGetActiveAttrib*(program: GLuint, index: GLuint, length: var GLsizei, siz
   name = $aname
   dealloc aname
 
-proc glGetActiveUniform*(program: GLuint, index: GLuint, length: var GLsizei, size: var GLint, `type`: var GLenum, name: var string) = 
+proc glGetActiveUniform*(program: GLuint, index: GLuint, length: var GLsizei, size: var GLint, `type`: var GLenum, name: var string) =
   var alen: GLsizei
   var asize: GLint
   var atype: GLenum
@@ -558,12 +558,12 @@ proc glUniformMatrix4fv*(location: GLint, count: GLsizei, transpose: GLboolean, 
 
 #textures
 
-proc glTexParameterfv*(target: GLenum, pname: GLenum): GLfloat = 
+proc glTexParameterfv*(target: GLenum, pname: GLenum): GLfloat =
   var varResult: GLfloat
   glTexParameterfvBASE(target, pname, addr varResult)
   return varResult
 
-proc glTexParameteriv*(target: GLenum, pname: GLenum): GLint = 
+proc glTexParameteriv*(target: GLenum, pname: GLenum): GLint =
   var varResult: GLint
   glTexParameterivBASE(target, pname, addr varResult)
   return varResult

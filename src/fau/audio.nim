@@ -1,4 +1,6 @@
-import soloud, os, macros, strutils, assets, threading, util/misc, tables, std/monotimes
+import pkg/soloud
+import std/[monotimes, os, macros, strutils, tables]
+import assets, threading, util/misc
 
 # High-level soloud wrapper.
 
@@ -50,7 +52,7 @@ const
 
 let soundNone* = Sound()
 
-var 
+var
   so: ptr Soloud
   initialized: bool
   soundTable: Table[string, Sound]
@@ -61,7 +63,7 @@ template checkErr(details: string, body: untyped): bool =
   let err = body
   #the game shouldn't crash when an audio error happens, but it would be nice to log to stderr
   var success = true
-  if err != 0: 
+  if err != 0:
     echo "[Audio] ", details, ": ", so.SoloudGetErrorString(err)
     success = false
   success
@@ -132,46 +134,46 @@ proc hasSoundByName*(name: string): bool = soundTable.hasKey(name)
 
 proc getSoundByName*(name: string): Sound = soundTable.getOrDefault(name, soundNone)
 
-proc registerSound*(name: string, sound: Sound) = 
+proc registerSound*(name: string, sound: Sound) =
   soundTable[name] = sound
   allSounds.add sound
 
 proc getAllSounds*(): seq[Sound] {.inline.} = allSounds
 
-proc stop*(v: Voice) {.inline.} = 
+proc stop*(v: Voice) {.inline.} =
   if initialized and v.int > 0: so.SoloudStop(v.cuint)
-proc pause*(v: Voice) {.inline.} = 
+proc pause*(v: Voice) {.inline.} =
   if initialized and v.int > 0: so.SoloudSetPause(v.cuint, 1)
-proc resume*(v: Voice) {.inline.} = 
+proc resume*(v: Voice) {.inline.} =
   if initialized and v.int > 0: so.SoloudSetPause(v.cuint, 0)
-proc seek*(v: Voice, pos: float) {.inline.} = 
+proc seek*(v: Voice, pos: float) {.inline.} =
   if initialized and v.int > 0: discard so.SoloudSeek(v.cuint, pos.cdouble)
 
 proc valid*(v: Voice): bool {.inline.} = v.int > 0 and initialized and so.SoloudIsValidVoiceHandle(v.cuint).bool
 proc paused*(v: Voice): bool {.inline.} = v.int > 0 and initialized and so.SoloudGetPause(v.cuint).bool
 proc playing*(v: Voice): bool {.inline.} = not v.paused
-proc volume*(v: Voice): float32 {.inline.} = 
+proc volume*(v: Voice): float32 {.inline.} =
   if v.int > 0: so.SoloudGetVolume(v.cuint).float32 else: 0f
-proc pitch*(v: Voice): float32 {.inline.} = 
+proc pitch*(v: Voice): float32 {.inline.} =
   if v.int > 0: so.SoloudGetRelativePlaySpeed(v.cuint).float32 else: 0f
-proc loopCount*(v: Voice): int {.inline.} = 
+proc loopCount*(v: Voice): int {.inline.} =
   if v.int > 0: so.SoloudGetLoopCount(v.cuint).int else: 0
-proc streamTime*(v: Voice): float {.inline.} = 
+proc streamTime*(v: Voice): float {.inline.} =
   if v.int > 0: so.SoloudGetStreamTime(v.cuint).float else: 0f
 #TODO what is the difference?
-proc streamPos*(v: Voice): float {.inline.} = 
+proc streamPos*(v: Voice): float {.inline.} =
   if v.int > 0: so.SoloudGetStreamPosition(v.cuint).float else: 0f
 
-proc `paused=`*(v: Voice, value: bool) {.inline.} = 
+proc `paused=`*(v: Voice, value: bool) {.inline.} =
   if v.int > 0: so.SoloudSetPause(v.cuint, value.cint)
-proc `volume=`*(v: Voice, value: float32) {.inline.} = 
+proc `volume=`*(v: Voice, value: float32) {.inline.} =
   if v.int > 0: so.SoloudSetVolume(v.cuint, value)
-proc `pitch=`*(v: Voice, value: float32) {.inline.} = 
+proc `pitch=`*(v: Voice, value: float32) {.inline.} =
   if v.int > 0: discard so.SoloudSetRelativePlaySpeed(v.cuint, value)
-proc `pan=`*(v: Voice, value: float32) {.inline.} = 
+proc `pan=`*(v: Voice, value: float32) {.inline.} =
   if v.int > 0: so.SoloudSetPan(v.cuint, value)
 
-proc fadeVolume*(v: Voice, value: float32, time: float) {.inline.} = 
+proc fadeVolume*(v: Voice, value: float32, time: float) {.inline.} =
   if v.int > 0: so.SoloudFadeVolume(v.cuint, value, time)
 
 proc `loopPoint=`*(sound: Sound, value: float) {.inline.} =
@@ -220,7 +222,7 @@ proc newAudioBus*(): AudioBus =
   AudioBus(handle: BusCreate())
 
 proc play*(bus: AudioBus) =
-  if not bus.voice.valid and initialized: 
+  if not bus.voice.valid and initialized:
     bus.voice = so.SoloudPlay(bus.handle).Voice
 
 proc stop*(bus: AudioBus) =
@@ -294,11 +296,11 @@ proc unload*(sound: Sound) =
     if sound.maxConcurrentValue > 0: sound.maxConcurrent = sound.maxConcurrentValue
     if sound.minInterruptValue > 0: sound.minInterrupt = sound.minInterruptValue
 
-proc newEmptySound*(path = ""): Sound = 
+proc newEmptySound*(path = ""): Sound =
   result = Sound(handle: if initialized: WavCreate() else: nil, stream: false, loaded: false, filePath: path, useSoundBus: true)
   result.maxConcurrent = defaultMaxConcurrent
 
-proc newEmptyMusic*(path = "", useSoundBus = false): Sound = 
+proc newEmptyMusic*(path = "", useSoundBus = false): Sound =
   result = Sound(handle: if initialized: WavStreamCreate() else: nil, protect: true, stream: true, loaded: false, filePath: path, useSoundBus: useSoundBus)
   if useSoundBus:
     result.maxConcurrent = defaultMaxConcurrent
@@ -481,7 +483,7 @@ macro defineAudio*() =
       exec.awaitAll:
         discard
   
-  let 
+  let
     loadBody = loadProc[6].last[1]
     outerBody = loadProc[6]
 

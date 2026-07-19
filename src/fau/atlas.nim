@@ -1,4 +1,3 @@
-
 import strformat, tables, texture, patch, assets, streams, fmath, color, util/misc, threading
 
 #A single-texture atlas.
@@ -37,12 +36,12 @@ proc loadAtlas*(path: static[string]): Atlas =
   #number of images - ignored because it's read at compile time
   discard stream.readUint8()
 
-  const 
+  const
     lazyLoading = defined(atlasLazyLoad)
     threadedLoading = not lazyLoading
 
   when threadedLoading:
-    var 
+    var
       dataPointers: array[imageCountConst, RawImage]
       exec = createMaster()
   
@@ -51,7 +50,7 @@ proc loadAtlas*(path: static[string]): Atlas =
     unroll(0..<imageCountConst, img):
       const imgPath = path & $img & ".png"
       
-      let 
+      let
         amount = stream.readInt32()
         texWidth = stream.readInt16()
         texHeight = stream.readInt16()
@@ -63,7 +62,7 @@ proc loadAtlas*(path: static[string]): Atlas =
       result.textures.add texture
       
       for i in 0..<amount:
-        let 
+        let
           nameLen = stream.readInt16()
           name = stream.readStr(nameLen)
           x = stream.readInt16()
