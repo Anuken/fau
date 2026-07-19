@@ -184,6 +184,47 @@ proc `=`*(dest: var Arbiter, source: Arbiter) {.error.} =
 
 # body
 
+proc `=destroy`(body: var BodyObj) =
+  if body.raw != nil:
+    cpBodyFree(body.raw)
+    body.raw = nil
+
+proc `=destroy`(constraint: var ConstraintObj) =
+  if constraint.raw != nil:
+    cpConstraintFree(constraint.raw)
+    constraint.raw = nil
+  `=destroy`(constraint.a)
+  `=destroy`(constraint.b)
+
+proc `=destroy`(shape: var ShapeObj) =
+  if shape.raw != nil:
+    cpShapeFree(shape.raw)
+    shape.raw = nil
+
+proc `=destroy`(s: var SpaceObj) =
+  for c in s.constraints:
+    cpSpaceRemoveConstraint(s.raw, c.raw)
+    cpConstraintFree(c.raw)
+    c.raw = nil
+  
+  for sh in s.shapes:
+    cpSpaceRemoveShape(s.raw, sh.raw)
+    cpShapeFree(sh.raw)
+    sh.raw = nil
+    
+  for b in s.bodies:
+    cpSpaceRemoveBody(s.raw, b.raw)
+    cpBodyFree(b.raw)
+    b.raw = nil
+  
+  `=destroy`(s.constraints)
+  `=destroy`(s.shapes)
+  `=destroy`(s.bodies)
+  
+  if s.raw != nil:
+    cpSpaceFree(s.raw)
+    s.raw = nil
+
 {.push inline.}
 
 proc kind*(body: Body): BodyKind =
@@ -397,12 +438,9 @@ proc eachArbiter*(body: Body, callback: proc (arbiter: Arbiter)) =
 
   cpBodyEachArbiter(body.raw, iterate, callback.unsafeAddr)
 
-proc deinit[T: Body](body: T) =
-  cpBodyFree(body.raw)
-
 proc new[T: Body](body: var T, raw: ptr cpBody) =
 
-  new(body, deinit[T])
+  new(body)
 
   body.raw = raw
   cpBodySetUserData(body.raw, cast[ptr BodyObj](body))
@@ -479,18 +517,7 @@ proc newStaticBody*[T](user: T): UserBody[T] =
 
   result.initStatic()
   result.user = user
-
-# constraint
-
-proc `=destroy`(constraint: var ConstraintObj) =
-  if constraint.raw != nil:
-    cpConstraintFree(constraint.raw)
-    constraint.raw = nil
-
-#proc destroy(constraint: var ConstraintObj) =
-#  if constraint.raw != nil:
-#    cpConstraintDestroy(constraint.raw)
-
+  
 proc newDampedSpring*(a, b: Body, anchorA, anchorB: Vec2, restLength: float32, stiffness: float32, damping: float32): DampedSpring =
   result = DampedSpring(a: a, b: b, raw: cpDampedSpringNew(a.raw, b.raw, anchorA, anchorB, restLength, stiffness, damping))
   cpConstraintSetUserData(result.raw, cast[ptr Constraint](result))
@@ -654,7 +681,7 @@ proc filter*(shape: Shape): ShapeFilter =
   ## Returns the shape filter of the shape.
   cpShapeGetFilter(shape.raw).toRapid
 
-proc `filter=`*(shape: Shape, newFilter: ShapeFilter) =
+proc `filter=`*[T: CircleShape | PolygonShape | SegmentShape](shape: T, newFilter: ShapeFilter) =
   ## Sets the shape filter of the shape.
   cpShapeSetFilter(shape.raw, newFilter.toChipmunk)
 
@@ -1061,8 +1088,7 @@ proc update*(space: Space, deltaTime: float32) =
 proc newSpace*(gravity: Vec2, iterations = 10.Natural): Space =
   ## Creates a new space with the given gravity and iteration count.
 
-  new(result) do (space: Space):
-    cpSpaceFree(space.raw)
+  new(result)
 
   result.raw = cpSpaceNew()
   result.gravity = gravity

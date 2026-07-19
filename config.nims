@@ -1,4 +1,4 @@
---gc:arc
+--mm:arc
 
 when not defined(fauTests):
   --d:strip

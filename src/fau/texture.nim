@@ -1,4 +1,4 @@
-import gl/[glproc, gltypes], fmath, assets, os
+import gl/[glproc, gltypes], fmath, assets, os, color
 
 import stb_image/read {.all.} as stbi
 
@@ -61,6 +61,9 @@ proc heightf*(texture: Texture): float32 {.inline.} = texture.size.y.float32
 proc loadRawImageMem*(buffer: openArray[byte] | openArray[char] | string, channels = 4): RawImage {.gcsafe.}
 proc freeRawImage*(img: pointer)
 
+proc `[]`*(img: RawImage, x, y: int): Color =
+  (cast[ptr UncheckedArray[Color]](img.data))[(x + y * img.width)]
+
 proc preload*(texture: Texture) =
   if not texture.loaded and texture.dataSource != "":
     #load the texture the first time it's bound
@@ -75,7 +78,7 @@ proc preload*(texture: Texture) =
 
     if texture.mipmaps:
       glGenerateMipmap(texture.target)
-    
+
     glTexParameteri(texture.target, GlTextureMinFilter, texture.minfilter.toGlEnum.GLint)
     glTexParameteri(texture.target, GlTextureMagFilter, if texture.magFilter == tfMipMap: GlLinear.GLint else: texture.magfilter.toGlEnum.GLint)
     glTexParameteri(texture.target, GlTextureWrapS, texture.uwrap.toGlEnum.GLint)
@@ -171,7 +174,7 @@ proc loadRawImage*(path: static[string]): RawImage {.gcsafe.} =
   elif defined(Android): #android -> load asset
     loadRawImageMem(assetRead(path))
   else: #load from filesystem
-    loadRawImageFile(path.assetFile)   
+    loadRawImageFile(path.assetFile)
 
 proc freeRawImage*(img: RawImage) =
   stbi.stbi_image_free(img.data)
@@ -195,11 +198,11 @@ proc update*(texture: Texture, pos: Vec2i, size: Vec2i, pixels: pointer) =
   glTexSubImage2D(texture.target, 0, pos.x.GLint, pos.y.GLint, size.x.GLsizei, size.y.GLsizei, GlRGBA, GlUnsignedByte, pixels)
 
 #creates a texture with no handle that will be loaded from the string once used
-proc newLazyTexture*(size: Vec2i, data: string, filter = tfNearest, wrap = twClamp, mipmaps = false, path = ""): Texture = 
+proc newLazyTexture*(size: Vec2i, data: string, filter = tfNearest, wrap = twClamp, mipmaps = false, path = ""): Texture =
   Texture(uwrap: wrap, vwrap: wrap, minfilter: filter, magfilter: filter, target: GlTexture2D, size: size, mipmaps: mipmaps, dataSource: data, path: path)
 
 #creates a base texture with no data uploaded
-proc newTexture*(size: Vec2i = vec2i(1), filter = tfNearest, wrap = twClamp, mipmaps = false, path = ""): Texture = 
+proc newTexture*(size: Vec2i = vec2i(1), filter = tfNearest, wrap = twClamp, mipmaps = false, path = ""): Texture =
   result = Texture(handle: glGenTexture(), uwrap: wrap, vwrap: wrap, minfilter: filter, magfilter: filter, target: GlTexture2D, size: size, mipmaps: mipmaps, path: path)
   result.use()
 
@@ -228,9 +231,9 @@ proc loadTextureBytes*(bytes: string, filter = tfNearest, wrap = twClamp, mipmap
   freeRawImage(data)
 
 #load texture from path
-proc loadTextureFile*(path: string, filter = tfNearest, wrap = twClamp, mipmaps = false): Texture = 
+proc loadTextureFile*(path: string, filter = tfNearest, wrap = twClamp, mipmaps = false): Texture =
   result = newTexture(filter = filter, wrap = wrap, mipmaps = mipmaps, path = path)
-  
+
   try:
     let (data, width, height) = loadRawImageFile(path)
 

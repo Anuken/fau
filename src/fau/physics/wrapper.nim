@@ -15,7 +15,7 @@ static:
   if not dirExists(baseDir) or defined(clearCache):
     echo "Fetching Chipmunk repo..."
     if dirExists(baseDir): echo staticExec("rm -rf " & baseDir)
-    #--branch Chipmunk-7.0.3 
+    #--branch Chipmunk-7.0.3
     echo staticExec("git clone --depth 1 https://github.com/slembcke/Chipmunk2D " & baseDir)
 
 # set up types
@@ -652,12 +652,12 @@ proc cpTransformAxialScale*(axis: cpVect; pivot: cpVect; scale: cpFloat): cpTran
 ## 	and spatial queries. Chipmunk provides a number of spatial index algorithms to pick from
 ## 	and they are programmed in a generic way so that you can use them for holding more than
 ## 	just cpShape structs.
-## 	
+##
 ## 	It works by using @c void pointers to the objects you add and using a callback to ask your code
 ## 	for bounding boxes when it needs them. Several types of queries can be performed an index as well
 ## 	as reindexing and full collision information. All communication to the spatial indexes is performed
 ## 	through callback functions.
-## 	
+##
 ## 	Spatial indexes should be treated as opaque structs.
 ## 	This meanns you shouldn't be reading any of the struct fields.
 ##
@@ -2516,7 +2516,7 @@ proc cpMomentForBox2*(m: cpFloat; box: cpBB): cpFloat {.importc: "cpMomentForBox
 proc cpConvexHull*(count: cint; verts: ptr cpVect; result: ptr cpVect; first: ptr cint;
                   tol: cpFloat): cint {.importc: "cpConvexHull", header: "<chipmunk/chipmunk.h>".}
 
-proc cpClosetPointOnSegment*(p: cpVect; a: cpVect; b: cpVect): cpVect {.inline.} =
+proc cpClosestPointOnSegment*(p: cpVect; a: cpVect; b: cpVect): cpVect {.inline.} =
   var delta: cpVect
   var t: cpFloat
   return cpvadd(b, cpvmult(delta, t))

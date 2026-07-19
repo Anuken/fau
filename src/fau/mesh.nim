@@ -122,7 +122,7 @@ proc `=destroy`*[T](mesh: var MeshObj[T]) =
       glBindVertexArray(0)
       lastVertexArray = -1
     mesh.vertexArray = 0
-    
+
 proc toGlEnum(face: CullFace): GlEnum {.inline.} =
   case face
   of cfFront: GlFront
@@ -130,14 +130,14 @@ proc toGlEnum(face: CullFace): GlEnum {.inline.} =
   of cfFrontAndBack: GlFrontAndBack
 
 #creates a new set of mesh parameters
-proc meshParams*(buffer: Framebuffer = screenBufferHack, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled, cullFace = cfBack, clip = rect(), viewport = rect()): MeshParam {.inline.} = 
+proc meshParams*(buffer: Framebuffer = screenBufferHack, offset = 0, count = -1, depth = false, writeDepth = true, blend = blendDisabled, cullFace = cfBack, clip = rect(), viewport = rect()): MeshParam {.inline.} =
   MeshParam(buffer: buffer, offset: offset, count: count, depth: depth, writeDepth: writeDepth, blend: blend, cullFace: cullFace, clip: clip, viewport: viewport)
 
 #returns the unique ID of the shader - currently this is just the GL handle to the vertex buffer
 proc id*(mesh: Mesh): int {.inline.} = mesh.vertexBuffer.int
 
 #marks a mesh as modified, so ALL its vertices get reuploaded
-proc update*[T](mesh: Mesh[T]) = 
+proc update*[T](mesh: Mesh[T]) =
   mesh.modifiedVert = true
   mesh.modifiedInd = true
 
@@ -160,11 +160,11 @@ proc updateIndices*[T](mesh: Mesh[T], slice: Slice[int]) =
 proc vertexSize*[T](mesh: Mesh[T]): int = T.sizeOf
 
 #creates a mesh with a set of attributes
-proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[T] = @[], indices: seq[Index] = @[], update = true, indexed = false): Mesh[T] = 
+proc newMesh*[T](isStatic: bool = false, primitiveType: Glenum = GlTriangles, vertices: seq[T] = @[], indices: seq[Index] = @[], update = true, indexed = false): Mesh[T] =
   result = Mesh[T](
-    isStatic: isStatic, 
-    primitiveType: primitiveType, 
-    vertices: vertices, 
+    isStatic: isStatic,
+    primitiveType: primitiveType,
+    vertices: vertices,
     indices: indices,
     modifiedVert: update,
     modifiedInd: update,
@@ -202,16 +202,16 @@ proc getVertType(typeName: string): tuple[components: int, componentType: GLenum
     normalized = true
     componentType = GlUnsignedByte
   elif typeName == "float32": discard #nothing different here
-  elif typeName == "uint16": 
+  elif typeName == "uint16":
     componentType = GlUnsignedShort
     normalized = true
-  elif typeName == "int16": 
+  elif typeName == "int16":
     componentType = cGlShort
     normalized = true
-  elif typeName == "uint8": 
+  elif typeName == "uint8":
     componentType = GlUnsignedByte
     normalized = true
-  elif typeName == "int8": 
+  elif typeName == "int8":
     componentType = cGlByte
     normalized = true
   else: error("Unknown vertex component type: " & $typeName)
@@ -242,7 +242,7 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
       let field = if identDefs[i].kind == nnkPostfix: identDefs[i][1] else: identDefs[i]
       let name = $field
       let alias = "a_" & name
-      
+
       var (components, componentType, normalized) = getVertType(typeName)
 
       resultBody.add quote do:
@@ -253,9 +253,9 @@ macro enableAttributes(shader: Shader, vert: typed): untyped =
           glVertexAttribPointer(loc.GLuint, `components`.GLint, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
         else:
           activeAttribs[`attribIndex`] = -1
-      
+
       attribIndex.inc
-  
+
   resultBody.add quote do:
     totalActive = `attribIndex`
 
@@ -264,7 +264,7 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
   result = newStmtList()
   var attribIndex = 0
 
-  var 
+  var
     disableBody = newStmtList()
     enableBody = newStmtList()
 
@@ -286,7 +286,7 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
       let field = if identDefs[i].kind == nnkPostfix: identDefs[i][1] else: identDefs[i]
       let name = $field
       let alias = "a_" & name
-      
+
       var (components, componentType, normalized) = getVertType(typeName)
 
       checkBody.add quote do:
@@ -307,9 +307,9 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
           `mesh`.activeAttribs[`attribIndex`] = loc + 1
           glEnableVertexAttribArray(loc.GLuint)
           glVertexAttribPointer(loc.GLuint, `components`.GLint, `componentType`, `normalized`.GLboolean, vsize.GLsizei, cast[pointer](`vertexType`.offsetOf(`field`)))
-    
+
       attribIndex.inc
-  
+
   result.add quote do:
     `checkOuter`
     if not `mesh`.attribsValid:
@@ -321,7 +321,7 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
 #this binds the VAO (if applicable)
 proc updateData*[T](mesh: Mesh[T], vertSlice, indSlice: Slice[int], vertexPtr: pointer = nil, indexPtr: pointer = nil) =
 
-  let 
+  let
     vsize = mesh.vertexSize
     usage = if mesh.isStatic: GlStaticDraw else: GlStreamDraw
 
@@ -351,7 +351,7 @@ proc updateData*[T](mesh: Mesh[T], vertSlice, indSlice: Slice[int], vertexPtr: p
   #update indices if relevant and modified
   if updateIndices:
     glBufferData(GlElementArrayBuffer, (indSlice.b - indSlice.a + 1) * 2, if indexPtr != nil: indexPtr else: mesh.indices[indSlice.a].addr, usage)
-  
+
   mesh.vertSlice = 0..0
   mesh.indSlice = 0..0
   mesh.modifiedVert = false
@@ -369,7 +369,7 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
     args.buffer.use(args.viewport.xy.vec2i, args.viewport.wh.vec2i)
   else:
     args.buffer.use()
-  
+
   #enable clipping if necessary, disable if not.
   if args.clip.w.int > 0 and args.clip.h.int > 0:
     glEnable(GlScissorTest)
@@ -400,7 +400,7 @@ proc renderInternal[T](mesh: Mesh[T], shader: Shader, args: MeshParam) =
 
   #note: this binds the VAO regardless of whether anything is actually updated
   updateData(mesh, mesh.vertSlice, mesh.indSlice)
-  
+
   if supportsVertexArrays:
     enableAttributesVao(shader, mesh, T)
   else:
@@ -422,10 +422,10 @@ template vert2*(x, y, u, v: float32, acolor = colorWhite, amixcolor = colorClear
 template svert2*(x, y, u, v: float32): SVert2 = SVert2(pos: vec2(x, y), uv: vec2(u, v))
 
 #creates a mesh with position and tex coordinate attributes that covers the screen.
-proc newScreenMesh*(): SMesh = 
+proc newScreenMesh*(): SMesh =
   newMesh[SVert2](isStatic = true, primitiveType = GlTriangleFan, vertices = @[
-    svert2(-1, -1, 0, 0), 
-    svert2(1, -1, 1, 0), 
-    svert2(1, 1, 1, 1), 
+    svert2(-1, -1, 0, 0),
+    svert2(1, -1, 1, 0),
+    svert2(1, 1, 1, 1),
     svert2(-1, 1, 0, 1)
   ])
