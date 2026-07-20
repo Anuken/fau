@@ -1,6 +1,6 @@
 import gl/[glproc, gltypes], fmath, assets, os, color
 
-import stb_image/read {.all.} as stbi
+import pkg/stb_image/read {.all.} as stbi
 
 type TextureFilter* = enum
   tfNearest,
@@ -164,7 +164,7 @@ proc loadRawImageFile*(filename: string, channels = 4): RawImage {.gcsafe.} =
   let data = stbi.stbi_load(filename.cstring, width, height, components, channels.cint)
 
   if data == nil:
-    raise newException(STBIException, stbi.failureReason())
+    raise newException(STBIException, "Failed to load file: " & filename & ": " & $stbi.failureReason())
 
   return (data.pointer, width.int, height.int)
 
