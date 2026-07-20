@@ -5,12 +5,12 @@ import ../gl/[glad, glproc], ../util/misc
 # SDL3 backend - used in place of the GLFW backend for better controller support
 # Define -d:fauUseSdl to use
 
-type 
+type
   CursorObj = object
     handle: sdl3.Cursor
   Cursor* = ref CursorObj
 
-var 
+var
   running: bool = true
   window: Window
   glContext: GLContext
@@ -26,7 +26,7 @@ template checkError(val: bool): untyped =
     raise newException(Exception, "SDL error: " & $error)
 
 proc newCursor*(path: static string): Cursor =
-  let 
+  let
     img = loadRawImage(path)
     surface = createSurfaceFrom(img.width.cint, img.height.cint, PixelFormatRgba32, cast[pointer](img.data), (img.width * 4).cint)
   
@@ -40,7 +40,7 @@ proc newCursor*(path: static string): Cursor =
 
   return Cursor(handle: handle)
 
-proc newCursor*(standardType: CursorType): Cursor = 
+proc newCursor*(standardType: CursorType): Cursor =
   let mapped = case standardType:
   of cursorArrow: SystemCursorDefault
   of cursorIbeam: SystemCursorText
@@ -59,7 +59,7 @@ proc newCursor*(standardType: CursorType): Cursor =
 
 proc getSdlWindow*(): Window = window
 
-proc toKeyCode(keycode: Scancode): globals.KeyCode = 
+proc toKeyCode(keycode: Scancode): globals.KeyCode =
   result = case keycode:
     of SCANCODE_SPACE: keySpace
     of SCANCODE_APOSTROPHE: keyApostrophe
@@ -178,7 +178,7 @@ proc toKeyCode(keycode: Scancode): globals.KeyCode =
     of SCANCODE_MENU: keyMenu
     else: keyUnknown
 
-proc mapMouseCode(code: uint8): globals.KeyCode = 
+proc mapMouseCode(code: uint8): globals.KeyCode =
   result = case code:
   of ButtonLeft: keyMouseLeft
   of ButtonRight: keyMouseRight
@@ -188,7 +188,7 @@ proc mapMouseCode(code: uint8): globals.KeyCode =
   else: keyUnknown
 
 #will return an empty string for unknown keys
-proc getKeyName*(code: globals.Keycode): string = 
+proc getKeyName*(code: globals.Keycode): string =
   var keyNames {.global.}: array[290, string]
 
   once:
@@ -354,6 +354,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   when defined(Linux) and not defined(wayland):
     #Prefer x11, as Wayland seems to be broken on some platforms: https://github.com/Anuken/Mindustry/issues/11657
     #yes, I know the issue is for Mindustry, but it seems specific to SDL3
+    #this doesn't always work (even when setHint is passed, wayland is used even when xwayland is available, seems SDL version specific, at least 3.4.0 has this bug)
+    #seriously though, wayland is a mess: https://github.com/libsdl-org/sdl/issues/13763 (how is it THIS HARD to give a window a border, it's been more than a decade)
     if getEnv("FAU_FORCE_WAYLAND", "0") != "1" and "wayland" == getEnv("XDG_SESSION_TYPE", "").toLowerAscii:
       echo "[Fau] Forcing x11 due to Wayland being broken - see https://github.com/Anuken/Mindustry/issues/11657. Set FAU_FORCE_WAYLAND=1 to disable this behavior."
       checkError setHint(HintVideoDriver, "x11,wayland");
@@ -361,7 +363,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   if params.appName != "":
     checkError setAppMetadata(params.appTitle.cstring, nil, params.appName.cstring)
 
-  if not init(InitVideo or InitGamepad): 
+  if not init(InitVideo or InitGamepad):
     raise newException(Exception, "Failed to Initialize SDL3: " & $getError())
 
   echo "[Fau] Initialized ", getRevision(), " [", getCurrentVideoDriver(), "]"
@@ -370,7 +372,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   checkError glSetAttribute(GlContextMinorVersion, 0)
   checkError glSetAttribute(GlDoublebuffer, 1)
   
-  if params.depth: 
+  if params.depth:
     checkError glSetAttribute(GlDepthSize, 16)
 
   if (paramCount() > 0 and paramStr(1) == "-coreProfile") or isMac or defined(fauGlCoreProfile):
@@ -402,7 +404,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   #load window icon
   when assetExistsStatic("icon.png") and not defined(macosx):
-    let 
+    let
       textureBytes = assetReadStatic("icon.png")
       img = loadRawImageMem(textureBytes)
       surface = createSurfaceFrom(img.width.cint, img.height.cint, PixelFormatRgba32, cast[pointer](img.data), (img.width * 4).cint)
@@ -413,7 +415,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
       destroySurface(surface)
     freeRawImage(img)
 
-  var 
+  var
     inMouseX: float32 = 0
     inMouseY: float32 = 0
     inWidth: cint = 0
@@ -461,7 +463,7 @@ proc setCursor*(cursor: Cursor) =
   discard setCursor(cursor.handle)
 
 proc getCursorPos*(): Vec2 =
-  var 
+  var
     mouseX: float32 = 0
     mouseY: float32 = 0
   discard getMouseState(mouseX,mouseY)
@@ -488,10 +490,10 @@ proc setWindowSize*(size: Vec2i) =
 proc setVsync*(on: bool) =
   discard glSetSwapInterval(on.cint)
 
-proc isMaximized*(): bool = 
+proc isMaximized*(): bool =
   return (window.getWindowFlags() and WindowMaximized) != 0
 
-proc isFocused*(): bool = 
+proc isFocused*(): bool =
   return (window.getWindowFlags() and WindowInputFocus) != 0
 
 proc isFullscreen*(): bool =
@@ -512,5 +514,5 @@ proc toggleFullscreen*() =
 proc setCursorHidden*(hidden: bool) =
   if hidden: discard hideCursor() else: discard showCursor()
 
-proc quitApp*() = 
+proc quitApp*() =
   running = false
