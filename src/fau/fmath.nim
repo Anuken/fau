@@ -310,7 +310,7 @@ func abtriangle*(x: float32, phase = 1f, mag = 1f): float32 =
   (abs((x mod phase * 2) - phase) / phase) * mag
 
 template vec2*(cx, cy: float32): Vec2 = Vec2(x: cx, y: cy)
-template vec2*(cx, cy: int): Vec2 = Vec2(x: cx.float32, y: cy.float32)
+template vec2*[T: int32 | int64](cx, cy: T): Vec2 = Vec2(x: cx.float32, y: cy.float32)
 template vec2*(a: array[2, float32]): Vec2 = vec2(a[0], a[1])
 proc vec2*(xy: float32): Vec2 {.inline.} = Vec2(x: xy, y: xy)
 proc vec2*(pos: AnyVec2): Vec2 {.inline.} = Vec2(x: pos.x, y: pos.y)
