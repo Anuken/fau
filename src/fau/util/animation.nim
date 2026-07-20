@@ -1,4 +1,4 @@
-import ../[atlas, patch, globals, fmath], math
+import ../[atlas, patch, globals, fmath], std/math
 
 type Animation* = object
   frames*: seq[Patch]
@@ -32,7 +32,7 @@ proc len*(anim: Animation): int = anim.frames.len
 
 proc loadAnimation*(atlas: Atlas, name: string, delay = 0f, startFrame = 0): Animation =
   result.delay = delay
-  var 
+  var
     i = startFrame
     lastDelay = -1
     allSame = true

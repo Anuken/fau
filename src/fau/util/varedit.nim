@@ -1,6 +1,6 @@
 ## Requires --d:debugVarEdit to function.
 
-import macros
+import std/macros
 
 var
   allFields {.compileTime.}: seq[NimNode]
@@ -61,7 +61,7 @@ template editFieldUi*(field: string, value: untyped): untyped =
     else:
       igText(fieldLabel)
 
-template listFieldsUi*(obj: untyped): untyped = 
+template listFieldsUi*(obj: untyped): untyped =
   for field, value in obj.fieldpairs:
     editFieldUi(field, value)
 
@@ -101,7 +101,7 @@ when defined(debugVarEdit):
   import ../g2/imgui, strutils
   export imgui
 
-  var 
+  var
     showDemo = true
     searchText: string = ""
 

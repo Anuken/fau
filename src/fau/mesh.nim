@@ -1,5 +1,4 @@
-
-import gl/[glproc, gltypes], color, fmath, shader, framebuffer, macros, screenbuffer
+import gl/[glproc, gltypes], color, fmath, shader, framebuffer, std/macros, screenbuffer
 
 #TODO this is necessary for macros but very hacky, what's the solution?
 export glproc, gltypes
@@ -106,7 +105,7 @@ proc `$`*(blend: Blending): string =
 #global vertex array state for optimization
 var lastVertexArray = 0
 
-proc `=destroy`*[T](mesh: var MeshObj[T]) =
+proc `=destroy`*[T](mesh: var MeshObj[T]) {.raises: [Exception].} =
   `=destroy`(mesh.vertices)
   `=destroy`(mesh.indices)
 
@@ -267,10 +266,12 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
   var
     disableBody = newStmtList()
     enableBody = newStmtList()
+  
+  let checkBlockLabel = genSym(nskLabel, "checkLoop")
 
   var checkOuter = newStmtList()
   checkOuter.add quote do:
-    block:
+    block `checkBlockLabel`:
       `mesh`.attribsValid = true
 
   var checkBody = checkOuter[0][1]
@@ -293,7 +294,7 @@ macro enableAttributesVao(shader: Shader, mesh: typed, vert: typed): untyped =
         let loc = shader.getAttributeLoc(`alias`)
         if `mesh`.activeAttribs[`attribIndex`] != loc + 1:
           `mesh`.attribsValid = false
-          break
+          break `checkBlockLabel`
 
       disableBody.add quote do:
         if `mesh`.activeAttribs[`attribIndex`] != 0:

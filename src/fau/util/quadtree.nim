@@ -1,4 +1,4 @@
-import ../fmath, sequtils
+import ../fmath, std/sequtils
 
 const maxInQuadrant = 5
 
@@ -68,7 +68,7 @@ proc fittingChild[E: Quadable](tree: Quadtree[E], rect: Rect): Quadtree[E] =
 proc split[E: Quadable](tree: Quadtree[E]) =
   if not tree.leaf: return
 
-  let 
+  let
     subW = tree.bounds.w / 2.0
     subH = tree.bounds.h / 2.0
 
@@ -93,7 +93,7 @@ proc insert*[E: Quadable](tree: Quadtree[E], obj: E) =
   if not tree.bounds.overlaps(obounds):
     return
 
-  if tree.leaf and tree.elems.len + 1 > maxInQuadrant: 
+  if tree.leaf and tree.elems.len + 1 > maxInQuadrant:
     tree.split()
 
   if tree.leaf:

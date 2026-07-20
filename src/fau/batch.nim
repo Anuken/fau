@@ -1,4 +1,4 @@
-import color, mesh, texture, framebuffer, patch, shader, fmath, math, util/misc, sugar, algorithm, screenbuffer
+import color, mesh, texture, framebuffer, patch, shader, fmath, screenbuffer, util/misc, std/[math, sugar, algorithm]
 
 ## "Low-level" sprite batcher.
 

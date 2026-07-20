@@ -1,6 +1,6 @@
 import fmath, framebuffer, shader, batch, color, patch, texture, mesh, atlas
 
-const 
+const
   isMobile* = defined(ios) or defined(Android)
   isLinux* = defined(Linux)
   isWindows* = defined(Windows)
@@ -37,7 +37,7 @@ type GamepadAxis2* = enum
   left, right
 
 type GamepadButton* = enum
-  a, b, x, y, leftBumper, rightBumper, back, start, guide, 
+  a, b, x, y, leftBumper, rightBumper, back, start, guide,
   leftThumb, rightThumb, dpadUp, dpadRight, dpadDown, dpadLeft,
   leftTrigger, rightTrigger, #these are not buttons, but it is useful to treat them as such
   unset #unset/unkown
@@ -52,7 +52,7 @@ type Gamepad* = ref object
   axes*: array[GamepadAxis, float]
 
 type CursorType* = enum
-  cursorArrow, cursorIbeam, cursorCrosshair, cursorHand, cursorResizeH, 
+  cursorArrow, cursorIbeam, cursorCrosshair, cursorHand, cursorResizeH,
   cursorResizeV, cursorResizeNwse, cursorResizeNesw, cursorResizeAll, cursorNotAllowed
 
 #discriminator for the various types of input events
@@ -148,10 +148,10 @@ type FauInitParams* = object
   #capitalized full application name, usually just the window title
   appTitle*: string
 
-proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, floating = false, depth = false, undecorated = false, transparent = false, 
+proc initParams*(size = vec2i(800, 600), title = "frog", maximize = true, floating = false, depth = false, undecorated = false, transparent = false,
   mousePassthrough = false, clearColor = colorClear, appName = "", appTitle = title): FauInitParams =
   FauInitParams(
-    size: size, title: title, maximize: maximize, depth: depth, floating: floating, undecorated: undecorated, 
+    size: size, title: title, maximize: maximize, depth: depth, floating: floating, undecorated: undecorated,
     transparent: transparent, mousePassthrough: mousePassthrough, clearColor: clearColor, appName: if appName.len == 0: title else: appName, appTitle: title,
   )
 
@@ -225,7 +225,7 @@ type FauState* = object
   #Internal application name; used for save directories.
   appName*: string
 
-#Global instance of fau state.
+## Global state of the fau framework.
 var fau* = FauState()
 
 proc fireFauEvent*(ev: FauEvent) =

@@ -3,11 +3,7 @@
 ## This wrapper doesn't aim for 100% coverage of the physics engine, but
 ## features may be added as needed.
 
-import std/hashes
-import std/options
-import std/sets
-import std/tables
-import std/typetraits
+import std/hashes, options, sets, tables, typetraits
 import ../fmath
 
 include wrapper
@@ -466,7 +462,7 @@ proc newDynamicBody*(mass, moment = 0.0f): Body =
 
   result.initDynamic(mass, moment)
 
-proc newDynamicBody*[T](user: T, mass, moment = 0.0f): UserBody[T] =
+proc newDynamicBodyUser*[T](user: T, mass, moment = 0.0f): UserBody[T] =
   ## Creates a new dynamic body with user data.
 
   result.initDynamic(mass, moment)
@@ -489,7 +485,7 @@ proc newKinematicBody*(): Body =
 
   result.initKinematic()
 
-proc newKinematicBody*[T](user: T): UserBody[T] =
+proc newKinematicBodyUser*[T](user: T): UserBody[T] =
   ## Creates a new kinematic body with user data.
 
   result.initKinematic()
@@ -512,7 +508,7 @@ proc newStaticBody*(): Body =
 
   result.initStatic()
 
-proc newStaticBody*[T](user: T): UserBody[T] =
+proc newStaticBodyUser*[T](user: T): UserBody[T] =
   ## Creates a new static body with user data.
 
   result.initStatic()
@@ -681,7 +677,7 @@ proc filter*(shape: Shape): ShapeFilter =
   ## Returns the shape filter of the shape.
   cpShapeGetFilter(shape.raw).toRapid
 
-proc `filter=`*[T: CircleShape | PolygonShape | SegmentShape](shape: T, newFilter: ShapeFilter) =
+proc `filter=`*[T: CircleShape | PolygonShape | SegmentShape | Shape](shape: T, newFilter: ShapeFilter) =
   ## Sets the shape filter of the shape.
   cpShapeSetFilter(shape.raw, newFilter.toChipmunk)
 

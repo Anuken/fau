@@ -1,4 +1,4 @@
-import math, random
+import std/[math, random]
 
 #this should be avoided in most cases, but manually turning ints into float32s can be very annoying
 converter toFloat32*(i: int): float32 {.inline.} = i.float32

@@ -1,4 +1,4 @@
-import ../draw, ../globals, ../fmath, ../input, ../color, ../framebuffer, os, strformat, times, osproc, math, streams, strutils
+import ../draw, ../globals, ../fmath, ../input, ../color, ../framebuffer, std/[os, strformat, times, osproc, math, streams, strutils]
 
 const
   resizeKey = keyLctrl
@@ -53,7 +53,7 @@ proc record*() =
 
         try:
           let outFile = &"{gifOutDir}/{dateStr}.{ext}"
-            
+          
           var
             p = startProcess(
               &"ffmpeg -r {recordFps} -s {w}x{h} -f rawvideo -pix_fmt rgba -i - -frames:v {frames.len} -filter:v \"vflip{filters}\" -c:v libx264 -pix_fmt yuv420p {outFile}",

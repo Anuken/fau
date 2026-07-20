@@ -1,4 +1,4 @@
-import os, strformat, cligen, strutils, tables, sequtils
+import std/[os, strformat, strutils, tables, sequtils], pkg/cligen
 
 const projectPresets = {
   "ecs": """
@@ -40,7 +40,7 @@ static: echo staticExec("faupack -p:assets-raw/sprites -o:assets/atlas")
 
 const scl = 4.0
 
-proc init() = 
+proc init() =
   discard
 
 proc run() =
@@ -232,7 +232,7 @@ task deploy, "Build for all platforms":
 
 """
 
-template assetReadStatic*(filename: string): string = 
+template assetReadStatic*(filename: string): string =
   const str = staticRead(filename)
   str
 

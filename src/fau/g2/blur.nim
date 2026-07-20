@@ -1,4 +1,4 @@
-import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../globals, ../draw, strutils
+import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../globals, ../draw, std/strutils
 
 type Blur* = object
   p1, p2: Framebuffer
@@ -14,9 +14,9 @@ proc newBlur*(scaling: int = 4, passes: int = 1): Blur =
   result.passes = passes
 
   result.shader = newShader(
-  """ 
+  """
   attribute vec4 a_pos;
-  attribute vec2 a_uv; 
+  attribute vec2 a_uv;
   uniform vec2 u_dir;
   uniform vec2 u_size;
   varying vec2 v_texCoords0;

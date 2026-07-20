@@ -1,11 +1,11 @@
-import streams, zippy
+import std/streams, pkg/zippy
 
 ## Utility for reading Aseprite files - https://github.com/aseprite/aseprite/blob/main/docs/ase-file-specs.md
 ## Does not support any advanced features whatsoever, only the very basics. Indexed colors, palettes and tilemaps are not supported.
 
 type
   AseLayerFlags* = enum
-    afVisible, afEditable, afLockMovement, afBackground, 
+    afVisible, afEditable, afLockMovement, afBackground,
     afPreferLinkedCels, afCollapsed, afReference
   AseLayerType* = enum
     alImage, alGroup, alTilemap
@@ -59,7 +59,7 @@ proc readAseStream*(s: Stream): AseImage =
   if s.readUint16() != 0xA5E0'u16:
     error("Invalid header, not an ASE file?")
   
-  let 
+  let
     frames = s.readUint16()
     width = s.readUint16()
     height = s.readUint16()
@@ -86,7 +86,7 @@ proc readAseStream*(s: Stream): AseImage =
   #header padding
   skip(84)
 
-  var 
+  var
     layerData: seq[AseLayer]
     rootLayers: seq[AseLayer]
     tags: seq[AseTag]
@@ -108,14 +108,14 @@ proc readAseStream*(s: Stream): AseImage =
     #unused
     discard s.readUint16()
 
-    let 
+    let
       chunksNew = s.readUint32()
       chunks = if chunksNew == 0: chunksOld.uint32 else: chunksNew
 
     var readImage = false
 
     for chunkId in 0..<chunks.int:
-      let 
+      let
         chunkSize = s.readUint32()
         chunkType = s.readUint16()
       
@@ -167,7 +167,7 @@ proc readAseStream*(s: Stream): AseImage =
         skip(8)
         for i in 0..<count:
 
-          let 
+          let
             fromFrame = s.readUint16()
             toFrame = s.readUint16()
             loopDirection = s.readUint8()
@@ -204,7 +204,7 @@ proc readAseStream*(s: Stream): AseImage =
         justReadTags = false
         readImage = true
 
-        let 
+        let
           layerIndex = s.readUint16()
           x = s.readInt16()
           y = s.readInt16()
@@ -230,7 +230,7 @@ proc readAseStream*(s: Stream): AseImage =
           #instead of frames containing layers, it's layers containing frames (more intuitive to me)
 
           layerData[layerIndex].frames.add AseFrame(
-            data: uncompress(addr compressedData[0], compressedLength.int, dataFormat = dfZlib), 
+            data: uncompress(addr compressedData[0], compressedLength.int, dataFormat = dfZlib),
             duration: durationMs.int,
             x: x.int,
             y: y.int,

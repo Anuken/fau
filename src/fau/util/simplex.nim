@@ -1,4 +1,4 @@
-import math, random
+import std/[math, random]
 
 const perm = [151, 160, 137, 91, 90, 15,
 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23,
@@ -223,14 +223,14 @@ proc noise*(x: float, y: float, z: float, seed: int32 = 0): float =
     n1 = 0.0
   else:
     t1 *= t1
-    n1 = t1 * t1 * grad(gi1, x1, y1, z1) 
+    n1 = t1 * t1 * grad(gi1, x1, y1, z1)
   
   var t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2
   if t2 < 0:
     n2 = 0.0
   else:
     t2 *= t2
-    n2 = t2 * t2 * grad(gi2, x2, y2, z2) 
+    n2 = t2 * t2 * grad(gi2, x2, y2, z2)
 
   
   var t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3

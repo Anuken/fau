@@ -1,4 +1,4 @@
-import pixie, chroma, os, algorithm
+import pkg/[pixie, chroma], std/[os, algorithm]
 
 # This file contains an implementation of an antialiasing algorithm.
 # It's not very fast, but definitely faster than my previous Groovy version.
@@ -17,7 +17,7 @@ proc `*=`(color: var Color, val: float32) {.inline.} =
   color.a *= val
 
 proc antialias*(file: string) =
-  let 
+  let
     image = readImage(file)
     output = readImage(file)
 
@@ -29,7 +29,7 @@ proc antialias*(file: string) =
     for y in 0..<image.height:
 
       #perform scale3x algorithm
-      let 
+      let
         A = getRGB(x - 1, y + 1)
         B = getRGB(x, y + 1)
         C = getRGB(x + 1, y + 1)

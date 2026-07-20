@@ -1,8 +1,8 @@
-import polymorph, ../../core, ../g2/imgui, varedit
-import sequtils, strutils
+import pkg/polymorph, ../../core, ../g2/imgui, varedit
+import std/[sequtils, strutils]
 
 onEcsBuilt:
-  var 
+  var
     entityEditorShown: bool
     searchText: string = ""
 
@@ -56,7 +56,7 @@ onEcsBuilt:
                     igBeginDisabled(disabled)
                     
                     if igTreeNode($typeof(data)):
-                          
+                      
                       listFieldsUi(data)
 
                       ent.addOrUpdate data

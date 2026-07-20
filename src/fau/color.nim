@@ -1,5 +1,4 @@
-
-import fmath, math, strutils, endians
+import fmath, std/[math, strutils, endians]
 
 #defines a RGBA 32-bit color
 type Color* = object
@@ -30,7 +29,7 @@ func withA*(col: Color, val: float32): Color {.inline.} =
 
 func mulA*(col: Color, val: float32): Color {.inline.} =
   result = col
-  result.a = result.a * val 
+  result.a = result.a * val
 
 func rgba*(r: float32, g: float32, b: float32, a: float32 = 1.0): Color {.inline.} = Color(rv: (clamp(r.float32) * 255f).uint8, gv: (clamp(g) * 255f).uint8, bv: (clamp(b) * 255f).uint8, av: (clamp(a) * 255f).uint8)
 
@@ -46,7 +45,7 @@ func inv*(c: Color): Color = rgba(1f - c.r, 1f - c.g, 1f - c.b, 1f)
 
 #H, S, V are all floats from 0 to 1
 func hsv*(h, s, v: float32, a = 1f): Color =
-  let 
+  let
     x = (h * 6f + 6f).mod(6f)
     i = x.floor
     f = x - i
@@ -63,7 +62,7 @@ func hsv*(h, s, v: float32, a = 1f): Color =
   else: rgba(v, p, q, a)
 
 func toHsv*(color: Color): tuple[h: float32, s: float32, v: float32] =
-  let 
+  let
     max = max(max(color.r, color.g), color.b)
     min = min(min(color.r, color.g),color.b)
     ran = max - min
@@ -119,9 +118,9 @@ proc parseColor*(str: string, invalid = Color()): Color =
   try:
 
     Color(
-      rv: str[(0+offset)..(1+offset)].parseHexInt.uint8, 
-      gv: str[(2+offset)..(3+offset)].parseHexInt.uint8, 
-      bv: str[(4+offset)..(5+offset)].parseHexInt.uint8, 
+      rv: str[(0+offset)..(1+offset)].parseHexInt.uint8,
+      gv: str[(2+offset)..(3+offset)].parseHexInt.uint8,
+      bv: str[(4+offset)..(5+offset)].parseHexInt.uint8,
       av: if str.len > 6 + offset: str[(6+offset)..(7+offset)].parseHexInt.uint8 else: 255'u8
     )
 

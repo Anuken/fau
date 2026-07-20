@@ -1,8 +1,8 @@
-import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../globals, ../draw, strutils
+import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../globals, ../draw, std/strutils
 
 const screenspace = """
 attribute vec4 a_pos;
-attribute vec2 a_uv; 
+attribute vec2 a_uv;
 varying vec2 v_uv;
 
 void main(){
@@ -26,7 +26,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
   result.blurPasses = passes
 
   result.thresh = newShader(screenspace,
-  """ 
+  """
   uniform lowp sampler2D u_texture;
   uniform float u_threshold;
   varying vec2 v_uv;
@@ -51,7 +51,7 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
   (if alpha: "#define ALPHA_BLEND\n" else: "") &
   (if maxAlpha: "#define MAX_ALPHA\n" else: "") &
   (if combined: "#define COMBINE_RESULT\n" else: "") &
-  """ 
+  """
   uniform lowp sampler2D u_texture0;
   uniform lowp sampler2D u_texture1;
   uniform lowp float u_bloomIntensity;
@@ -86,9 +86,9 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
   )
 
   result.blur = newShader(
-  """ 
+  """
   attribute vec4 a_pos;
-  attribute vec2 a_uv; 
+  attribute vec2 a_uv;
   uniform vec2 u_dir;
   uniform vec2 u_size;
   varying vec2 v_texCoords0;
