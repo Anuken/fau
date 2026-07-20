@@ -1,5 +1,5 @@
-import std/[tables, unicode, packer, bitops, math]
-import ../texture, ../patch, ../color, ../globals, ../util/misc, ../draw, ../assets
+import std/[tables, unicode, bitops, math]
+import ../texture, ../patch, ../color, ../globals, ../util/misc, ../draw, ../assets, packer
 
 from ../fmath import `+`, `*`, `-`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter, daBotLeft, rect, Rect
 from pkg/pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`, dataIndex
