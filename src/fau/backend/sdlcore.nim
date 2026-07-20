@@ -355,7 +355,13 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
     #Prefer x11, as Wayland seems to be broken on some platforms: https://github.com/Anuken/Mindustry/issues/11657
     #yes, I know the issue is for Mindustry, but it seems specific to SDL3
     #this doesn't always work (even when setHint is passed, wayland is used even when xwayland is available, seems SDL version specific, at least 3.4.0 has this bug)
-    #seriously though, wayland is a mess: https://github.com/libsdl-org/sdl/issues/13763 (how is it THIS HARD to give a window a border, it's been more than a decade)
+    
+    #seriously though, wayland (especially on GNOME) is a mess:
+    # - https://github.com/libsdl-org/sdl/issues/13763
+    # - https://github.com/glfw/glfw/issues/2493#issuecomment-3905045941
+    # - https://gitlab.freedesktop.org/libdecor/libdecor/-/work_items/37 (4 years ago as of this writing!)
+    #how is it THIS HARD to give a window a border, it's been more than a decade
+    #regardless of whether these issues only occur only on GNOME, it is very popular in the Linux community, and I can't simply tell people 'stop using GNOME'
     if getEnv("FAU_FORCE_WAYLAND", "0") != "1" and "wayland" == getEnv("XDG_SESSION_TYPE", "").toLowerAscii:
       echo "[Fau] Forcing x11 due to Wayland being broken - see https://github.com/Anuken/Mindustry/issues/11657. Set FAU_FORCE_WAYLAND=1 to disable this behavior."
       checkError setHint(HintVideoDriver, "x11,wayland");

@@ -1,15 +1,14 @@
 # Taken from: https://github.com/nimgl/imgui
 # Originally written by Leonardo Mariscal <leo@ldmd.mx>, 2019
 
-import strutils, json, strformat, tables,
-       algorithm, sets, re, os
+import std/[strutils, json, strformat, tables, algorithm, sets, re, os]
 
 const srcHeader = """
 
 ## Originally Written by Leonardo Mariscal <leo@ldmd.mx>, 2019
-## 
+##
 ## Updated to ImGUI 1.90.7 with the help of code from <https://github.com/nimgl/imgui/pull/10>
-## 
+##
 ## ImGUI Bindings
 ## ====
 ## WARNING: This is a generated file. Do not edit.

@@ -1,7 +1,8 @@
+# press F2 to actually edit entities
 
-import polymorph, ../../core, ../g2/imgui, ../util/entityedit, ../assets, ../util/animation
+import pkg/polymorph, ../../core, ../g2/imgui, ../util/entityedit, ../assets, ../util/animation
 
-type 
+type
   aNestedObject = object
     thing: int
     thing2: int
@@ -49,8 +50,7 @@ makeSystem "draw", [Pos, VariousProperties]:
 makeEcsCommit "runSystems"
 
 proc init() =
-  assetFolder = "res"
-  imguiInitFau(theme = themeMaterialFlat, appName = "imguiTest", font = "Ubuntu-Light.ttf")
+  imguiInitFau(theme = themeMaterialFlat, font = "Ubuntu-Light.ttf")
 
   for i in 0..<3:
     discard newEntityWith(
