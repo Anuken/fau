@@ -5,12 +5,12 @@ import ../gl/[glad, glproc], ../util/misc
 # GLFW backend, based on treeform/staticglfw. Default on desktop.
 # Use this for faster compilation speed and smaller binaries.
 
-type 
+type
   CursorObj = object
     handle: CursorHandle
   Cursor* = ref CursorObj
 
-var 
+var
   running: bool = true
   windowFullscreen: bool
   window: Window
@@ -26,7 +26,7 @@ proc `=destroy`(cursor: var CursorObj) =
 proc toGlfwImage(img: RawImage): GlfwImage = GlfwImage(width: img.width.cint, height: img.height.cint, pixels: cast[cstring](img.data))
 
 proc newCursor*(path: static string): Cursor =
-  let 
+  let
     img = loadRawImage(path)
     glfwImage = img.toGlfwImage
     handle = createCursor(addr glfwImage, (img.width div 2).cint, (img.height div 2).cint)
@@ -35,7 +35,7 @@ proc newCursor*(path: static string): Cursor =
 
   return Cursor(handle: handle)
 
-proc newCursor*(standardType: CursorType): Cursor = 
+proc newCursor*(standardType: CursorType): Cursor =
   let mapped = case standardType:
   of cursorArrow: ARROW_CURSOR
   of cursorIbeam: IBEAM_CURSOR
@@ -55,7 +55,7 @@ proc newCursor*(standardType: CursorType): Cursor =
 
 proc getGlfwWindow*(): Window = window
 
-proc toKeyCode(keycode: cint): KeyCode = 
+proc toKeyCode(keycode: cint): KeyCode =
   result = case keycode:
     of KEY_SPACE: keySpace
     of KEY_APOSTROPHE: keyApostrophe
@@ -174,7 +174,7 @@ proc toKeyCode(keycode: cint): KeyCode =
     of KEY_MENU: keyMenu
     else: keyUnknown
 
-proc mapMouseCode(code: cint): KeyCode = 
+proc mapMouseCode(code: cint): KeyCode =
   result = case code:
     of MOUSE_BUTTON_LEFT: keyMouseLeft
     of MOUSE_BUTTON_RIGHT: keyMouseRight
@@ -184,7 +184,7 @@ proc mapMouseCode(code: cint): KeyCode =
     else: keyUnknown
 
 # will return an empty string for unknown keys
-proc getKeyName*(code: KeyCode): string = 
+proc getKeyName*(code: KeyCode): string =
   var keyNames {.global.}: array[KeyCode, string]
 
   once:
@@ -240,7 +240,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   if init() == 0: raise newException(Exception, "Failed to Initialize GLFW")
 
-  echo "[Fau] Initialized GLFW v", VERSION_MAJOR, ".", VERSION_MINOR, ".", VERSION_REVISION 
+  echo "[Fau] Initialized GLFW v", VERSION_MAJOR, ".", VERSION_MINOR, ".", VERSION_REVISION
 
   defaultWindowHints()
   windowHint(CONTEXT_VERSION_MINOR, 0)
@@ -294,7 +294,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   #load window icon if possible
   when assetExistsStatic("icon.png") and not defined(macosx) and not defined(wayland):
-    let 
+    let
       textureBytes = assetReadStatic("icon.png")
       img = loadRawImageMem(textureBytes)
       glfwImage = img.toGlfwImage
@@ -305,18 +305,18 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   #listen to window size changes and relevant events.
 
-  discard window.setFramebufferSizeCallback(proc(window: Window, width: cint, height: cint) {.cdecl.} = 
+  discard window.setFramebufferSizeCallback(proc(window: Window, width: cint, height: cint) {.cdecl.} =
     fireFauEvent(FauEvent(kind: feResize, size: vec2i(width.int, height.int)))
   )
 
-  discard window.setCursorPosCallback(proc(window: Window, x: cdouble, y: cdouble) {.cdecl.} = 
+  discard window.setCursorPosCallback(proc(window: Window, x: cdouble, y: cdouble) {.cdecl.} =
     fireFauEvent FauEvent(kind: feDrag, dragPos: fixMouse(x, y))
   )
 
-  discard window.setCharCallback(proc(window: Window, character: cuint) {.cdecl.} = 
+  discard window.setCharCallback(proc(window: Window, character: cuint) {.cdecl.} =
     fireFauEvent FauEvent(kind: feText, text: character.uint32)
   )
-  discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} = 
+  discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} =
     let code = toKeyCode(key)
     
     case action:
@@ -325,15 +325,15 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
       else: discard
   )
 
-  discard window.setScrollCallback(proc(window: Window, xoffset: cdouble, yoffset: cdouble) {.cdecl.} = 
+  discard window.setScrollCallback(proc(window: Window, xoffset: cdouble, yoffset: cdouble) {.cdecl.} =
     #emscripten flips the scrollwheel for some reason: https://github.com/emscripten-core/emscripten/issues/8281
     fireFauEvent FauEvent(kind: feScroll, scroll: vec2(xoffset.float32, when defined(emscripten): -yoffset.float32 else: yoffset.float32))
   )
 
-  discard window.setMouseButtonCallback(proc(window: Window, button: cint, action: cint, modifiers: cint) {.cdecl.} = 
+  discard window.setMouseButtonCallback(proc(window: Window, button: cint, action: cint, modifiers: cint) {.cdecl.} =
     let code = mapMouseCode(button)
 
-    var 
+    var
       mouseX: cdouble = 0
       mouseY: cdouble = 0
 
@@ -369,7 +369,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
     )
 
   #grab the state at application start
-  var 
+  var
     inMouseX: cdouble = 0
     inMouseY: cdouble = 0
     inWidth: cint = 0
@@ -489,7 +489,7 @@ proc setCursor*(cursor: Cursor) =
   window.setCursor(cursor.handle)
 
 proc getCursorPos*(): Vec2 =
-  var 
+  var
     mouseX: cdouble = 0
     mouseY: cdouble = 0
 
@@ -503,7 +503,7 @@ proc setWindowPos*(pos: Vec2i) =
 
 proc getWindowPos*(): Vec2i =
   if not isWayland:
-    var 
+    var
       w: cint
       h: cint
     window.getWindowPos(addr w, addr h)
@@ -512,7 +512,7 @@ proc getWindowPos*(): Vec2i =
     return vec2i()
 
 proc getWindowSize*(): Vec2i =
-  var 
+  var
     w: cint
     h: cint
   window.getWindowSize(addr w, addr h)
