@@ -72,13 +72,17 @@ type MeshParam* = object
 
 const
   blendNormal* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha, srcAlpha: GlOne, dstAlpha: GlOneMinusSrcAlpha)
+  blendPremultiplied* = Blending(src: GlOne, dst: GlOneMinusSrcAlpha, srcAlpha: GlOne, dstAlpha: GlOneMinusSrcAlpha)
   blendMaxAlpha* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha, eqAlpha: GlMax)
   blendAdditive* = Blending(src: GlSrcAlpha, dst: GlOne)
-  blendPremultiplied* = Blending(src: GlOne, dst: GlOneMinusSrcAlpha)
   blendErase* = Blending(src: GlZero, dst: GlOneMinusSrcAlpha, eqAlpha: GlFuncReverseSubtract)
   #implies glDisable(GlBlend)
   blendDisabled* = Blending(src: GlZero, dst: GlZero)
   blendClip* = Blending(src: GlSrcAlpha, dst: GlOneMinusSrcAlpha, srcAlpha: GlDstAlpha, dstAlpha: GlOneMinusSrcAlpha)
+
+proc premultiplied*(blend: Blending): Blending =
+  result = blend
+  result.src = GlOne
 
 #TODO maybe blending should become an enum
 proc blendFromString*(name: string): Blending =
