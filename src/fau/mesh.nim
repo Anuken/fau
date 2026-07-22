@@ -133,7 +133,7 @@ proc meshParams*(buffer: Framebuffer = screenBufferHack, offset = 0, count = -1,
   MeshParam(buffer: buffer, offset: offset, count: count, depth: depth, writeDepth: writeDepth, blend: blend, cullFace: cullFace, clip: clip, viewport: viewport)
 
 #returns the unique ID of the shader - currently this is just the GL handle to the vertex buffer
-proc id*(mesh: Mesh): int {.inline.} = mesh.vertexBuffer.int
+proc id*[T](mesh: Mesh[T]): int {.inline.} = mesh.vertexBuffer.int
 
 #marks a mesh as modified, so ALL its vertices get reuploaded
 proc update*[T](mesh: Mesh[T]) =
