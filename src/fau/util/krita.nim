@@ -17,6 +17,7 @@ type KritaLayer* = ref object
   name*: string
   blend*: string
   alphaClip*: bool
+  # x/y are in image coordinates (Y-down)
   x*, y*: int32
   id*: string
   
@@ -44,25 +45,28 @@ proc readLineAt(data: string, pos: var int): string =
   result = data[start ..< p]
   pos = p + 1 #skip the '\n'
  
-proc readImageData(data: string, offsetX, offsetY, width, height: int32): seq[uint8] =
+proc readImageData(data: string, offsetX, offsetY, width, height: int32, clipLayers: bool): tuple[data: seq[uint8], x, y, w, h: int32] =
   ## should return data as RGBA 4-byte pixel values (OpenGL RGBA8)
   var pos = 0
  
   let versionLine = readLineAt(data, pos)
   doAssert versionLine.startsWith("VERSION"), "Unexpected header: " & versionLine
  
-  let tileWidth  = readLineAt(data, pos).split(' ')[1].parseInt()
-  let tileHeight = readLineAt(data, pos).split(' ')[1].parseInt()
+  let tileWidth  = readLineAt(data, pos).split(' ')[1].parseInt().int32
+  let tileHeight = readLineAt(data, pos).split(' ')[1].parseInt().int32
   let pixelSize  = readLineAt(data, pos).split(' ')[1].parseInt()
   let numTiles   = readLineAt(data, pos).split(' ')[1].parseInt()
  
   doAssert pixelSize == 4, "Only 4-byte (RGBA8/BGRA8) pixels are supported"
  
-  let w = width.int
-  let h = height.int
-  result = newSeq[uint8](w * h * 4)
- 
   let planePixels = tileWidth * tileHeight
+  
+  var
+    minX = 999999999'i32
+    minY = 999999999'i32
+    maxX = -999999999'i32
+    maxY = -999999999'i32
+    tiles: seq[tuple[x: int32, y: int32, payload: string]]
  
   for t in 0 ..< numTiles:
     #tile header: "<x>,<y>,LZF,<length>\n"
@@ -70,8 +74,8 @@ proc readImageData(data: string, offsetX, offsetY, width, height: int32): seq[ui
     let parts = tileHeader.split(',')
     doAssert parts.len == 4, "Unexpected tile header: " & tileHeader
  
-    let tileX = parts[0].parseInt()
-    let tileY = parts[1].parseInt()
+    let tileX = parts[0].parseInt().int32
+    let tileY = parts[1].parseInt().int32
     let length = parts[3].parseInt()
  
     doAssert pos + length <= data.len, "Tile data runs past end of buffer"
@@ -95,32 +99,60 @@ proc readImageData(data: string, offsetX, offsetY, width, height: int32): seq[ui
       doAssert plane.len == uncompressedSize, "Decompressed tile size mismatch"
     else:
       raiseAssert "Unknown tile compression flag: " & $compressionFlag
- 
-    let bPlaneOff = 0 * planePixels
-    let gPlaneOff = 1 * planePixels
-    let rPlaneOff = 2 * planePixels
-    let aPlaneOff = 3 * planePixels
- 
-    #blit tile onto buffer with clipping
-    for ly in 0 ..< tileHeight:
-      let gy = tileY + ly + offsetY
-      if gy < 0 or gy >= h:
-        continue
-      let rowLocalBase = ly * tileWidth
-      let rowOutBase = gy * w
-      for lx in 0 ..< tileWidth:
-        let gx = tileX + lx + offsetX
-        if gx < 0 or gx >= w:
+    
+    minX = min(tileX + offsetX, minX)
+    minY = min(tileY + offsetY, minY)
+    maxX = max(tileX + offsetX + tileWidth, maxX)
+    maxY = max(tileY + offsetY + tileHeight, maxY)
+    
+    tiles.add (tileX, tileY, plane)
+  
+  if not clipLayers:
+    minX = 0
+    minY = 0
+    maxX = width
+    maxY = height
+  
+  if numTiles > 0:
+    let w = (maxX - minX).int32
+    let h = (maxY - minY).int32
+    result.data = newSeq[uint8](w * h * 4)
+    result.w = w
+    result.h = h
+    result.x = minX
+    result.y = minY
+    
+    for (tileX, tileY, plane) in tiles:
+      let bPlaneOff = 0 * planePixels
+      let gPlaneOff = 1 * planePixels
+      let rPlaneOff = 2 * planePixels
+      let aPlaneOff = 3 * planePixels
+   
+      #blit tile onto buffer with clipping
+      for ly in 0 ..< tileHeight:
+        let gy = tileY + ly + offsetY - minY
+        if gy < 0 or gy >= h:
           continue
-        let localIdx = rowLocalBase + lx
-        let outIdx = (rowOutBase + gx) * 4
- 
-        result[outIdx + 0] = plane[rPlaneOff + localIdx].uint8 # R
-        result[outIdx + 1] = plane[gPlaneOff + localIdx].uint8 # G
-        result[outIdx + 2] = plane[bPlaneOff + localIdx].uint8 # B
-        result[outIdx + 3] = plane[aPlaneOff + localIdx].uint8 # A
+        let rowLocalBase = ly * tileWidth
+        let rowOutBase = gy * w
+        for lx in 0 ..< tileWidth:
+          let gx = tileX + lx + offsetX - minX
+          if gx < 0 or gx >= w:
+            continue
+          let localIdx = rowLocalBase + lx
+          let outIdx = (rowOutBase + gx) * 4
+   
+          result.data[outIdx + 0] = plane[rPlaneOff + localIdx].uint8 # R
+          result.data[outIdx + 1] = plane[gPlaneOff + localIdx].uint8 # G
+          result.data[outIdx + 2] = plane[bPlaneOff + localIdx].uint8 # B
+          result.data[outIdx + 3] = plane[aPlaneOff + localIdx].uint8 # A
+  else: #empty layer
+    discard
+  
+proc readKritaFile*(path: string, clipLayers: bool = true): KritaDocument =
+  ## Loads a krita file from the specified filesystem path.
+  ## If clipLayers is false, every single layer is sized to the entire canvas. This dramatically increases memory usage, but may be convenient for some image I/O operations.
 
-proc readKritaFile*(path: string): KritaDocument =
   result = KritaDocument()
 
   var archive = openZipArchive(path)
@@ -160,9 +192,10 @@ proc readKritaFile*(path: string): KritaDocument =
         layerPath = folderName & "/layers/" & filename
         x = node.attr("x").parseInt.int32
         y = node.attr("y").parseInt.int32
-        data = readImageData(archive.extractFile(layerPath), x, y, docWidth, docHeight)
       
-      result = KritaLayer(kind: klImage, data: data, width: docWidth, height: docHeight)
+      let (data, rx, ry, w, h) = readImageData(archive.extractFile(layerPath), x, y, docWidth, docHeight, clipLayers)
+      
+      result = KritaLayer(kind: klImage, data: data, width: w, height: h, x: rx, y: ry)
     elif ntype == "clonelayer":
         let
           cloneId = node.attr("clonefromuuid")
