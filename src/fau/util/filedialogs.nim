@@ -4,9 +4,9 @@ proc saveFileDialog*(title = "Save File", defaultPathAndFile = "", patterns: seq
   var patList = patterns
   #does not work properly on macos
   when defined(macosx): patList.insert("", 0)
-  
+
   when defined(Windows):
-    var 
+    var
       pats: seq[WideCString]
       #needed to delay destruction, otherwise the WideCString gets dealloc'd
       patsdata: seq[WideCStringObj]
@@ -26,9 +26,9 @@ proc openFileDialog*(title = "Open File", defaultPathAndFile = "", patterns: seq
   var patList = patterns
   #does not work properly on macos
   when defined(macosx): patList.insert("", 0)
-  
+
   when defined(Windows):
-    var 
+    var
       pats: seq[WideCString]
       #needed to delay destruction, otherwise the WideCString gets dealloc'd
       patsdata: seq[WideCStringObj]
@@ -36,7 +36,7 @@ proc openFileDialog*(title = "Open File", defaultPathAndFile = "", patterns: seq
     for s in patList:
       patsdata.add s.newWideCString
       pats.add patsdata[^1].toWideCString
-    
+
     let data = tinyfd_openFileDialogW(title.newWideCString, defaultPathAndFile.newWideCString, pats.len.cint, addr pats[0], filterDescription.newWideCString, multiSelect.cint)
     result = if data == nil: "" else: $data
   else:
