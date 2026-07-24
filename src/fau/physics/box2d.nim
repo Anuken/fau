@@ -18,20 +18,24 @@ type
   WorldObj = object
     raw: b2WorldId
     bodies: seq[Body]
+    shapes: seq[Shape]
+    joints: seq[Joint]
 
   World* = ref WorldObj
 
   BodyObj = object of RootObj
     raw: b2BodyId
+    world {.cursor.}: World
 
   Body* = ref BodyObj
 
   UserBody*[T] {.final.} = ref object of BodyObj
-    user*: T  ## user data, set this to whatever you like
+    # user data, set this to whatever you like
+    user*: T
 
   ShapeObj = object of RootObj
     raw: b2ShapeId
-    body: Body
+    body {.cursor.}: Body
 
   Shape* = ref ShapeObj
   CircleShape* = ref ShapeObj
@@ -42,7 +46,6 @@ type
 
   JointObj = object of RootObj
     raw: b2JointId
-    bodyA, bodyB: Body
 
   Joint* = ref JointObj
   DistanceJoint* = ref JointObj
@@ -77,7 +80,7 @@ converter toB2Vec2*(v: Vec2): b2Vec2 {.inline.} = b2Vec2(x: v.x.cfloat, y: v.y.c
 converter toVec2*(v: b2Vec2): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
 
 # ---------------------------------------------------------------------------
-# destructors - no manual destroy() calls needed anywhere
+# destructors
 # ---------------------------------------------------------------------------
 
 proc `=destroy`(s: var ShapeObj) =
@@ -93,8 +96,13 @@ proc `=destroy`(b: var BodyObj) =
     b2DestroyBody(b.raw)
 
 proc `=destroy`(w: var WorldObj) =
+  `=destroy`(w.joints)
+  `=destroy`(w.shapes)
+  `=destroy`(w.bodies)
+
   if b2World_IsValid(w.raw):
     b2DestroyWorld(w.raw)
+
 
 # ---------------------------------------------------------------------------
 # world
@@ -104,7 +112,7 @@ proc newWorld*(gravity: Vec2 = vec2(0, -10)): World =
   ## Creates a new physics world with the given gravity vector.
   var def = b2DefaultWorldDef()
   def.gravity = gravity
-  result = World(raw: b2CreateWorld(def.addr), bodies: @[])
+  result = World(raw: b2CreateWorld(def.addr), bodies: @[], shapes: @[], joints: @[])
 
 proc gravity*(world: World): Vec2 {.inline.} =
   b2World_GetGravity(world.raw)
@@ -152,7 +160,7 @@ proc newBody*(world: World, kind: BodyKind = bkStatic, position: Vec2 = vec2(0, 
   def.position = position
   def.rotation = b2MakeRot(angle.cfloat)
   def.fixedRotation = fixedRotation
-  result = Body(raw: b2CreateBody(world.raw, def.addr))
+  result = Body(raw: b2CreateBody(world.raw, def.addr), world: world)
   world.bodies.add(result)
 
 proc newUserBody*[T](world: World, user: T, kind: BodyKind = bkStatic,
@@ -164,7 +172,7 @@ proc newUserBody*[T](world: World, user: T, kind: BodyKind = bkStatic,
   def.position = position
   def.rotation = b2MakeRot(angle.cfloat)
   def.fixedRotation = fixedRotation
-  result = UserBody[T](raw: b2CreateBody(world.raw, def.addr), user: user)
+  result = UserBody[T](raw: b2CreateBody(world.raw, def.addr), world: world, user: user)
   world.bodies.add(Body(result))
 
 {.push inline.}
@@ -279,6 +287,7 @@ proc newCircleShape*(body: Body, radius: float32, center = vec2(0, 0),
   var circle = b2Circle(center: center, radius: radius.cfloat)
   result = CircleShape(raw: b2CreateCircleShape(body.raw, def.addr, circle.addr),
                         body: body)
+  body.world.shapes.add(result)
 
 proc newSegmentShape*(body: Body, p1, p2: Vec2, density = 1.0f, friction = 0.6f,
                        restitution = 0.0f, isSensor = false,
@@ -288,6 +297,7 @@ proc newSegmentShape*(body: Body, p1, p2: Vec2, density = 1.0f, friction = 0.6f,
   var segment = b2Segment(point1: p1, point2: p2)
   result = SegmentShape(raw: b2CreateSegmentShape(body.raw, def.addr, segment.addr),
                          body: body)
+  body.world.shapes.add(result)
 
 proc newCapsuleShape*(body: Body, p1, p2: Vec2, radius: float32, density = 1.0f,
                        friction = 0.6f, restitution = 0.0f, isSensor = false,
@@ -297,6 +307,7 @@ proc newCapsuleShape*(body: Body, p1, p2: Vec2, radius: float32, density = 1.0f,
   var capsule = b2Capsule(center1: p1, center2: p2, radius: radius.cfloat)
   result = CapsuleShape(raw: b2CreateCapsuleShape(body.raw, def.addr, capsule.addr),
                          body: body)
+  body.world.shapes.add(result)
 
 proc newBoxShape*(body: Body, width, height: float32, center = vec2(0, 0),
                    angle: float32 = 0, density = 1.0f, friction = 0.6f,
@@ -306,6 +317,7 @@ proc newBoxShape*(body: Body, width, height: float32, center = vec2(0, 0),
   var def = defaultShapeDef(density, friction, restitution, filter, isSensor)
   var box = b2MakeOffsetBox(width * 0.5f, height * 0.5f, center, b2MakeRot(angle.cfloat))
   result = PolygonShape(raw: b2CreatePolygonShape(body.raw, def.addr, box.addr), body: body)
+  body.world.shapes.add(result)
 
 proc newPolygonShape*(body: Body, points: openArray[Vec2], radius: float32 = 0,
                        density = 1.0f, friction = 0.6f, restitution = 0.0f,
@@ -320,6 +332,7 @@ proc newPolygonShape*(body: Body, points: openArray[Vec2], radius: float32 = 0,
   var hull = b2ComputeHull(raw[0].addr, points.len.cint)
   var polygon = b2MakePolygon(hull.addr, radius.cfloat)
   result = PolygonShape(raw: b2CreatePolygonShape(body.raw, def.addr, polygon.addr), body: body)
+  body.world.shapes.add(result)
 
 {.push inline.}
 
@@ -357,13 +370,6 @@ proc testPoint*(shape: Shape, point: Vec2): bool = b2Shape_TestPoint(shape.raw, 
 
 {.pop.}
 
-iterator shapes*(body: Body): Shape =
-  ## Iterates over all shapes attached to `body`.
-  var buf: array[64, b2ShapeId]
-  let count = b2Body_GetShapes(body.raw, buf[0].addr, 64)
-  for i in 0 ..< count.int:
-    yield Shape(raw: buf[i], body: body)
-
 # ---------------------------------------------------------------------------
 # joints
 # ---------------------------------------------------------------------------
@@ -371,8 +377,10 @@ iterator shapes*(body: Body): Shape =
 proc newDistanceJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
                         length: float32 = -1, minLength = 0.0f,
                         maxLength = float32.high, enableSpring = false,
-                        hertz = 0.0f, dampingRatio = 0.0f, enableLimit = false): DistanceJoint =
+                        hertz = 0.0f, dampingRatio = 0.0f,
+                        enableLimit = false): DistanceJoint =
   ## Constrains two anchor points on `bodyA`/`bodyB` to a fixed (or spring-y, clamped) distance apart. If `length` is negative, it's computed from the current anchor positions.
+  ## `minLength`/`maxLength` are only enforced when `enableLimit` is true.
   var def = b2DefaultDistanceJointDef()
   def.bodyIdA = bodyA.raw
   def.bodyIdB = bodyB.raw
@@ -385,8 +393,8 @@ proc newDistanceJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
   def.hertz = hertz.cfloat
   def.dampingRatio = dampingRatio.cfloat
   def.enableLimit = enableLimit
-  result = DistanceJoint(raw: b2CreateDistanceJoint(b2Body_GetWorld(bodyA.raw), def.addr),
-                          bodyA: bodyA, bodyB: bodyB)
+  result = DistanceJoint(raw: b2CreateDistanceJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  bodyA.world.joints.add(result)
 
 proc newRevoluteJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
                         enableLimit = false, lowerAngle = 0.0f, upperAngle = 0.0f,
@@ -404,8 +412,8 @@ proc newRevoluteJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
   def.enableMotor = enableMotor
   def.motorSpeed = motorSpeed.cfloat
   def.maxMotorTorque = maxMotorTorque.cfloat
-  result = RevoluteJoint(raw: b2CreateRevoluteJoint(b2Body_GetWorld(bodyA.raw), def.addr),
-                          bodyA: bodyA, bodyB: bodyB)
+  result = RevoluteJoint(raw: b2CreateRevoluteJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  bodyA.world.joints.add(result)
 
 proc newPrismaticJoint*(bodyA, bodyB: Body, anchorA, anchorB, axis: Vec2,
                          enableLimit = false, lowerTranslation = 0.0f,
@@ -424,8 +432,8 @@ proc newPrismaticJoint*(bodyA, bodyB: Body, anchorA, anchorB, axis: Vec2,
   def.enableMotor = enableMotor
   def.motorSpeed = motorSpeed.cfloat
   def.maxMotorForce = maxMotorForce.cfloat
-  result = PrismaticJoint(raw: b2CreatePrismaticJoint(b2Body_GetWorld(bodyA.raw), def.addr),
-                           bodyA: bodyA, bodyB: bodyB)
+  result = PrismaticJoint(raw: b2CreatePrismaticJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  bodyA.world.joints.add(result)
 
 proc newWeldJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
                     linearHertz = 0.0f, angularHertz = 0.0f,
@@ -440,8 +448,8 @@ proc newWeldJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
   def.angularHertz = angularHertz.cfloat
   def.linearDampingRatio = linearDampingRatio.cfloat
   def.angularDampingRatio = angularDampingRatio.cfloat
-  result = WeldJoint(raw: b2CreateWeldJoint(b2Body_GetWorld(bodyA.raw), def.addr),
-                      bodyA: bodyA, bodyB: bodyB)
+  result = WeldJoint(raw: b2CreateWeldJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  bodyA.world.joints.add(result)
 
 proc newMouseJoint*(bodyA, bodyB: Body, target: Vec2, hertz = 5.0f,
                      dampingRatio = 0.7f, maxForce = 1000.0f): MouseJoint =
@@ -453,8 +461,8 @@ proc newMouseJoint*(bodyA, bodyB: Body, target: Vec2, hertz = 5.0f,
   def.hertz = hertz.cfloat
   def.dampingRatio = dampingRatio.cfloat
   def.maxForce = maxForce.cfloat
-  result = MouseJoint(raw: b2CreateMouseJoint(b2Body_GetWorld(bodyA.raw), def.addr),
-                       bodyA: bodyA, bodyB: bodyB)
+  result = MouseJoint(raw: b2CreateMouseJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  bodyA.world.joints.add(result)
 
 {.push inline.}
 
