@@ -290,7 +290,6 @@ proc findLayer*(map: Tilemap, name: string): TileLayer =
   for layer in map.layers:
     if layer.name == name:
       return layer
-  #TODO how
   raise Defect.newException("Layer not found: " & $name)
 
 proc size*(map: Tilemap): Vec2i = vec2i(map.width, map.height)
@@ -324,8 +323,3 @@ template loadFromProperties*(obj: typed, properties: TiledProps): untyped =
         elif value is Color: value = props.getColor(field)
 
   result
-
-when isMainModule:
-  import print
-
-  print readTilemapFile("/home/anuke/Projects/Inferno/core/assets/maps/map.tmj")
