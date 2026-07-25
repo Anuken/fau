@@ -6,7 +6,7 @@
 import std/hashes, options, sets, tables, typetraits
 import ../fmath
 
-include wrapper
+include chipmunk_wrapper
 
 # stuff
 
