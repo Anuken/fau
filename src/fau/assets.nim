@@ -7,8 +7,10 @@ when defined(Android):
 ## if true, assets are loaded statically instead of from a local folder
 ## this is always false by default on emscripten
 const staticAssets* = not defined(localAssets) and not defined(emscripten) and not defined(Android)
+## override of asset directory
+const fauAssetDir {.strdefine.} = ""
 ## project root directory
-const rootDir = if getProjectPath().endsWith("src"): getProjectPath()[0..^5] else: getProjectPath()
+const rootDir = if fauAssetDir != "": fauAssetDir elif getProjectPath().endsWith("src"): getProjectPath()[0..^5] else: getProjectPath()
 ## maps asset names relative to the asset folder to static string data
 let preloadedAssets* = newTable[string, string]()
 ## if staticAssets is false, assets are loaded from this directory relative to the executable.
