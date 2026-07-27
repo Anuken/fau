@@ -466,9 +466,6 @@ proc newMouseJoint*(bodyA, bodyB: Body, target: Vec2, hertz = 5.0f,
 
 {.push inline.}
 
-proc bodyA*(joint: Joint): Body = joint.bodyA
-proc bodyB*(joint: Joint): Body = joint.bodyB
-
 proc collideConnected*(joint: Joint): bool = b2Joint_GetCollideConnected(joint.raw)
 proc `collideConnected=`*(joint: Joint, v: bool) = b2Joint_SetCollideConnected(joint.raw, v)
 
