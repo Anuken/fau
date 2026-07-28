@@ -408,7 +408,7 @@ proc newDistanceJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
                         length: float32 = -1, minLength = 0.0f,
                         maxLength = float32.high, enableSpring = false,
                         hertz = 0.0f, dampingRatio = 0.0f,
-                        enableLimit = false): DistanceJoint =
+                        enableLimit = false, collideConnected = false): DistanceJoint =
   ## Constrains two anchor points on `bodyA`/`bodyB` to a fixed (or spring-y, clamped) distance apart. If `length` is negative, it's computed from the current anchor positions.
   ## `minLength`/`maxLength` are only enforced when `enableLimit` is true.
   var def = b2DefaultDistanceJointDef()
@@ -421,6 +421,7 @@ proc newDistanceJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
   def.maxLength = maxLength.cfloat
   def.enableSpring = enableSpring
   def.hertz = hertz.cfloat
+  def.collideConnected = collideConnected
   def.dampingRatio = dampingRatio.cfloat
   def.enableLimit = enableLimit
   result = DistanceJoint(raw: b2CreateDistanceJoint(b2Body_GetWorld(bodyA.raw), def.addr),
