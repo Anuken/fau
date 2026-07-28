@@ -26,36 +26,40 @@ type
   BodyObj = object of RootObj
     raw: b2BodyId
     world {.cursor.}: World
+    indexInWorld: int
 
   Body* = ref BodyObj
 
-  UserBody*[T] {.final.} = ref object of BodyObj
+  UserBody*[T] {.final.} = ref object of Body
     # user data, set this to whatever you like
     user*: T
 
   ShapeObj = object of RootObj
     raw: b2ShapeId
     body {.cursor.}: Body
+    indexInWorld: int
 
   Shape* = ref ShapeObj
-  CircleShape* = ref ShapeObj
-  SegmentShape* = ref ShapeObj
-  CapsuleShape* = ref ShapeObj
-  PolygonShape* = ref ShapeObj
-  ChainShape* = ref ShapeObj
+  CircleShape* = ref object of Shape
+  SegmentShape* = ref object of Shape
+  CapsuleShape* = ref object of Shape
+  PolygonShape* = ref object of Shape
+  ChainShape* = ref object of Shape
 
   JointObj = object of RootObj
     raw: b2JointId
+    world {.cursor.}: World
+    indexInWorld: int
 
-  Joint* = ref JointObj
-  DistanceJoint* = ref JointObj
-  RevoluteJoint* = ref JointObj
-  PrismaticJoint* = ref JointObj
-  WeldJoint* = ref JointObj
-  WheelJoint* = ref JointObj
-  MotorJoint* = ref JointObj
-  MouseJoint* = ref JointObj
-  FilterJoint* = ref JointObj
+  Joint* = ref object of JointObj
+  DistanceJoint* = ref object of Joint
+  RevoluteJoint* = ref object of Joint
+  PrismaticJoint* = ref object of Joint
+  WeldJoint* = ref object of Joint
+  WheelJoint* = ref object of Joint
+  MotorJoint* = ref object of Joint
+  MouseJoint* = ref object of Joint
+  FilterJoint* = ref object of Joint
 
   ShapeFilter* = object
     ## Collision filter: shapes collide if `(a.category and b.mask) != 0` and `(b.category and a.mask) != 0`, unless they share a nonzero `group` (positive: always collide, negative: never collide).
@@ -96,6 +100,10 @@ proc `=destroy`(b: var BodyObj) =
     b2DestroyBody(b.raw)
 
 proc `=destroy`(w: var WorldObj) =
+  for j in w.joints: j.indexInWorld = -1
+  for j in w.bodies: j.indexInWorld = -1
+  for j in w.shapes: j.indexInWorld = -1
+  
   `=destroy`(w.joints)
   `=destroy`(w.shapes)
   `=destroy`(w.bodies)
@@ -160,7 +168,7 @@ proc newBody*(world: World, kind: BodyKind = bkStatic, position: Vec2 = vec2(0, 
   def.position = position
   def.rotation = b2MakeRot(angle.cfloat)
   def.fixedRotation = fixedRotation
-  result = Body(raw: b2CreateBody(world.raw, def.addr), world: world)
+  result = Body(raw: b2CreateBody(world.raw, def.addr), world: world, indexInWorld: world.bodies.len)
   world.bodies.add(result)
 
 proc newUserBody*[T](world: World, user: T, kind: BodyKind = bkStatic,
@@ -172,8 +180,8 @@ proc newUserBody*[T](world: World, user: T, kind: BodyKind = bkStatic,
   def.position = position
   def.rotation = b2MakeRot(angle.cfloat)
   def.fixedRotation = fixedRotation
-  result = UserBody[T](raw: b2CreateBody(world.raw, def.addr), world: world, user: user)
-  world.bodies.add(Body(result))
+  result = UserBody[T](raw: b2CreateBody(world.raw, def.addr), world: world, user: user, indexInWorld: world.bodies.len)
+  world.bodies.add(result)
 
 {.push inline.}
 
@@ -262,6 +270,16 @@ iterator bodies*(world: World): Body =
   ## Iterates over all bodies created in `world`.
   for b in world.bodies: yield b
 
+proc removeBody*(body: Body) =
+  ## Destroys `body` and removes it from its world.
+  if body.indexInWorld < 0: return
+  let world = body.world
+  b2DestroyBody(body.raw)
+  world.bodies[body.indexInWorld] = world.bodies[^1]
+  world.bodies[body.indexInWorld].indexInWorld = body.indexInWorld
+  world.bodies.setLen(world.bodies.len - 1)
+  body.indexInWorld = -1
+
 # ---------------------------------------------------------------------------
 # shapes
 # ---------------------------------------------------------------------------
@@ -286,7 +304,7 @@ proc newCircleShape*(body: Body, radius: float32, center = vec2(0, 0),
   var def = defaultShapeDef(density, friction, restitution, filter, isSensor)
   var circle = b2Circle(center: center, radius: radius.cfloat)
   result = CircleShape(raw: b2CreateCircleShape(body.raw, def.addr, circle.addr),
-                        body: body)
+                        body: body, indexInWorld: body.world.shapes.len)
   body.world.shapes.add(result)
 
 proc newSegmentShape*(body: Body, p1, p2: Vec2, density = 1.0f, friction = 0.6f,
@@ -296,7 +314,7 @@ proc newSegmentShape*(body: Body, p1, p2: Vec2, density = 1.0f, friction = 0.6f,
   var def = defaultShapeDef(density, friction, restitution, filter, isSensor)
   var segment = b2Segment(point1: p1, point2: p2)
   result = SegmentShape(raw: b2CreateSegmentShape(body.raw, def.addr, segment.addr),
-                         body: body)
+                         body: body, indexInWorld: body.world.shapes.len)
   body.world.shapes.add(result)
 
 proc newCapsuleShape*(body: Body, p1, p2: Vec2, radius: float32, density = 1.0f,
@@ -306,7 +324,7 @@ proc newCapsuleShape*(body: Body, p1, p2: Vec2, radius: float32, density = 1.0f,
   var def = defaultShapeDef(density, friction, restitution, filter, isSensor)
   var capsule = b2Capsule(center1: p1, center2: p2, radius: radius.cfloat)
   result = CapsuleShape(raw: b2CreateCapsuleShape(body.raw, def.addr, capsule.addr),
-                         body: body)
+                         body: body, indexInWorld: body.world.shapes.len)
   body.world.shapes.add(result)
 
 proc newBoxShape*(body: Body, width, height: float32, center = vec2(0, 0),
@@ -316,7 +334,8 @@ proc newBoxShape*(body: Body, width, height: float32, center = vec2(0, 0),
   ## Attaches a rectangular polygon shape (`width` x `height`) to `body`.
   var def = defaultShapeDef(density, friction, restitution, filter, isSensor)
   var box = b2MakeOffsetBox(width * 0.5f, height * 0.5f, center, b2MakeRot(angle.cfloat))
-  result = PolygonShape(raw: b2CreatePolygonShape(body.raw, def.addr, box.addr), body: body)
+  result = PolygonShape(raw: b2CreatePolygonShape(body.raw, def.addr, box.addr), body: body,
+                         indexInWorld: body.world.shapes.len)
   body.world.shapes.add(result)
 
 proc newPolygonShape*(body: Body, points: openArray[Vec2], radius: float32 = 0,
@@ -331,7 +350,8 @@ proc newPolygonShape*(body: Body, points: openArray[Vec2], radius: float32 = 0,
   for i, p in points: raw[i] = p
   var hull = b2ComputeHull(raw[0].addr, points.len.cint)
   var polygon = b2MakePolygon(hull.addr, radius.cfloat)
-  result = PolygonShape(raw: b2CreatePolygonShape(body.raw, def.addr, polygon.addr), body: body)
+  result = PolygonShape(raw: b2CreatePolygonShape(body.raw, def.addr, polygon.addr), body: body,
+                         indexInWorld: body.world.shapes.len)
   body.world.shapes.add(result)
 
 {.push inline.}
@@ -370,6 +390,16 @@ proc testPoint*(shape: Shape, point: Vec2): bool = b2Shape_TestPoint(shape.raw, 
 
 {.pop.}
 
+proc removeShape*(shape: Shape) =
+  ## Destroys `shape` and removes it from its body's world.
+  if shape.indexInWorld < 0: return
+  let world = shape.body.world
+  b2DestroyShape(shape.raw, true)
+  world.shapes[shape.indexInWorld] = world.shapes[^1]
+  world.shapes[shape.indexInWorld].indexInWorld = shape.indexInWorld
+  world.shapes.setLen(world.shapes.len - 1)
+  shape.indexInWorld = -1
+
 # ---------------------------------------------------------------------------
 # joints
 # ---------------------------------------------------------------------------
@@ -393,7 +423,8 @@ proc newDistanceJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
   def.hertz = hertz.cfloat
   def.dampingRatio = dampingRatio.cfloat
   def.enableLimit = enableLimit
-  result = DistanceJoint(raw: b2CreateDistanceJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  result = DistanceJoint(raw: b2CreateDistanceJoint(b2Body_GetWorld(bodyA.raw), def.addr),
+                          world: bodyA.world, indexInWorld: bodyA.world.joints.len)
   bodyA.world.joints.add(result)
 
 proc newRevoluteJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
@@ -412,7 +443,8 @@ proc newRevoluteJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
   def.enableMotor = enableMotor
   def.motorSpeed = motorSpeed.cfloat
   def.maxMotorTorque = maxMotorTorque.cfloat
-  result = RevoluteJoint(raw: b2CreateRevoluteJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  result = RevoluteJoint(raw: b2CreateRevoluteJoint(b2Body_GetWorld(bodyA.raw), def.addr),
+                          world: bodyA.world, indexInWorld: bodyA.world.joints.len)
   bodyA.world.joints.add(result)
 
 proc newPrismaticJoint*(bodyA, bodyB: Body, anchorA, anchorB, axis: Vec2,
@@ -432,7 +464,8 @@ proc newPrismaticJoint*(bodyA, bodyB: Body, anchorA, anchorB, axis: Vec2,
   def.enableMotor = enableMotor
   def.motorSpeed = motorSpeed.cfloat
   def.maxMotorForce = maxMotorForce.cfloat
-  result = PrismaticJoint(raw: b2CreatePrismaticJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  result = PrismaticJoint(raw: b2CreatePrismaticJoint(b2Body_GetWorld(bodyA.raw), def.addr),
+                           world: bodyA.world, indexInWorld: bodyA.world.joints.len)
   bodyA.world.joints.add(result)
 
 proc newWeldJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
@@ -448,7 +481,8 @@ proc newWeldJoint*(bodyA, bodyB: Body, anchorA, anchorB: Vec2,
   def.angularHertz = angularHertz.cfloat
   def.linearDampingRatio = linearDampingRatio.cfloat
   def.angularDampingRatio = angularDampingRatio.cfloat
-  result = WeldJoint(raw: b2CreateWeldJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  result = WeldJoint(raw: b2CreateWeldJoint(b2Body_GetWorld(bodyA.raw), def.addr),
+                      world: bodyA.world, indexInWorld: bodyA.world.joints.len)
   bodyA.world.joints.add(result)
 
 proc newMouseJoint*(bodyA, bodyB: Body, target: Vec2, hertz = 5.0f,
@@ -461,7 +495,56 @@ proc newMouseJoint*(bodyA, bodyB: Body, target: Vec2, hertz = 5.0f,
   def.hertz = hertz.cfloat
   def.dampingRatio = dampingRatio.cfloat
   def.maxForce = maxForce.cfloat
-  result = MouseJoint(raw: b2CreateMouseJoint(b2Body_GetWorld(bodyA.raw), def.addr))
+  result = MouseJoint(raw: b2CreateMouseJoint(b2Body_GetWorld(bodyA.raw), def.addr),
+                       world: bodyA.world, indexInWorld: bodyA.world.joints.len)
+  bodyA.world.joints.add(result)
+
+proc newFilterJoint*(bodyA, bodyB: Body): FilterJoint =
+  ## Disables collision between `bodyA` and `bodyB` without otherwise constraining them.
+  var def = b2DefaultFilterJointDef()
+  def.bodyIdA = bodyA.raw
+  def.bodyIdB = bodyB.raw
+  result = FilterJoint(raw: b2CreateFilterJoint(b2Body_GetWorld(bodyA.raw), def.addr),
+                        world: bodyA.world, indexInWorld: bodyA.world.joints.len)
+  bodyA.world.joints.add(result)
+
+proc newMotorJoint*(bodyA, bodyB: Body, linearOffset = vec2(0, 0), angularOffset = 0.0f,
+                     maxForce = 1.0f, maxTorque = 1.0f, correctionFactor = 0.3f): MotorJoint =
+  ## Drives `bodyB` towards a fixed offset from `bodyA`, useful for animated/scripted motion.
+  var def = b2DefaultMotorJointDef()
+  def.bodyIdA = bodyA.raw
+  def.bodyIdB = bodyB.raw
+  def.linearOffset = linearOffset
+  def.angularOffset = angularOffset.cfloat
+  def.maxForce = maxForce.cfloat
+  def.maxTorque = maxTorque.cfloat
+  def.correctionFactor = correctionFactor.cfloat
+  result = MotorJoint(raw: b2CreateMotorJoint(b2Body_GetWorld(bodyA.raw), def.addr),
+                       world: bodyA.world, indexInWorld: bodyA.world.joints.len)
+  bodyA.world.joints.add(result)
+
+proc newWheelJoint*(bodyA, bodyB: Body, anchorA, anchorB, axis: Vec2,
+                     enableSpring = false, hertz = 0.0f, dampingRatio = 0.0f,
+                     enableLimit = false, lowerTranslation = 0.0f, upperTranslation = 0.0f,
+                     enableMotor = false, motorSpeed = 0.0f, maxMotorTorque = 0.0f): WheelJoint =
+  ## A wheel/suspension joint: slides `bodyB` along `axis` relative to `bodyA`, with an optional spring.
+  var def = b2DefaultWheelJointDef()
+  def.bodyIdA = bodyA.raw
+  def.bodyIdB = bodyB.raw
+  def.localAnchorA = anchorA
+  def.localAnchorB = anchorB
+  def.localAxisA = axis
+  def.enableSpring = enableSpring
+  def.hertz = hertz.cfloat
+  def.dampingRatio = dampingRatio.cfloat
+  def.enableLimit = enableLimit
+  def.lowerTranslation = lowerTranslation.cfloat
+  def.upperTranslation = upperTranslation.cfloat
+  def.enableMotor = enableMotor
+  def.motorSpeed = motorSpeed.cfloat
+  def.maxMotorTorque = maxMotorTorque.cfloat
+  result = WheelJoint(raw: b2CreateWheelJoint(b2Body_GetWorld(bodyA.raw), def.addr),
+                       world: bodyA.world, indexInWorld: bodyA.world.joints.len)
   bodyA.world.joints.add(result)
 
 {.push inline.}
@@ -478,4 +561,24 @@ proc `motorSpeed=`*(joint: RevoluteJoint, s: float32) =
 
 proc angle*(joint: RevoluteJoint): float32 = b2RevoluteJoint_GetAngle(joint.raw)
 
+proc linearOffset*(joint: MotorJoint): Vec2 = b2MotorJoint_GetLinearOffset(joint.raw)
+proc `linearOffset=`*(joint: MotorJoint, v: Vec2) = b2MotorJoint_SetLinearOffset(joint.raw, v)
+
+proc angularOffset*(joint: MotorJoint): float32 = b2MotorJoint_GetAngularOffset(joint.raw)
+proc `angularOffset=`*(joint: MotorJoint, a: float32) =
+  b2MotorJoint_SetAngularOffset(joint.raw, a.cfloat)
+
+proc motorSpeed*(joint: WheelJoint): float32 = b2WheelJoint_GetMotorSpeed(joint.raw)
+proc `motorSpeed=`*(joint: WheelJoint, s: float32) = b2WheelJoint_SetMotorSpeed(joint.raw, s.cfloat)
+
 {.pop.}
+
+proc removeJoint*(joint: Joint) =
+  ## Destroys `joint` and removes it from its world.
+  if joint.indexInWorld < 0: return
+  let world = joint.world
+  b2DestroyJoint(joint.raw)
+  world.joints[joint.indexInWorld] = world.joints[^1]
+  world.joints[joint.indexInWorld].indexInWorld = joint.indexInWorld
+  world.joints.setLen(world.joints.len - 1)
+  joint.indexInWorld = -1
