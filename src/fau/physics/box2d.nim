@@ -77,8 +77,8 @@ type
 
 proc hash*(b: Body): Hash {.inline.} = hash(cast[pointer](b))
 proc hash*(s: Shape): Hash {.inline.} = hash(cast[pointer](s))
-proc `==`*(a, b: Body): bool {.inline.} = a.raw == b.raw
-proc `==`*(a, b: Shape): bool {.inline.} = a.raw == b.raw
+proc `==`*(a, b: Body): bool {.inline.} = (a.isNil and b.isNil) or (not a.isNil and not b.isNil and a.raw == b.raw)
+proc `==`*(a, b: Shape): bool {.inline.} = (a.isNil and b.isNil) or (not a.isNil and not b.isNil and a.raw == b.raw)
 
 converter toB2Vec2*(v: Vec2): b2Vec2 {.inline.} = b2Vec2(x: v.x.cfloat, y: v.y.cfloat)
 converter toVec2*(v: b2Vec2): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
