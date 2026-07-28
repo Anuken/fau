@@ -25,11 +25,12 @@ proc capitalize*(str: openArray[char], spaces = false, camel = false): string =
         result.add ' '
       result.add(c)
 
-#walkDirRec implementation that actually works when cross-compiling (avoid usage of the `/` proc)
+
 iterator walkDirRec2*(dir: string,
                      yieldFilter = {pcFile}, followFilter = {pcDir},
                      relative = false, checkDir = false, skipSpecial = false):
                     string {.tags: [ReadDirEffect].} =
+  ## walkDirRec implementation that actually works when cross-compiling (avoids usage of the `/` proc)
   var stack = @[""]
   var checkDir = checkDir
   while stack.len > 0:
@@ -104,8 +105,8 @@ template findMin*[T](list: openArray[T], op: untyped, predicate: untyped): untyp
         result = it
   result
 
-## copies an array into a seq, element by element.
 macro minsert*(dest: untyped, index: int, data: untyped): untyped =
+  ## copies an array into a seq, element by element.
   result = newStmtList()
   
   if data.kind == nnkBracket:
@@ -129,8 +130,8 @@ macro loadProc*(varType: typedesc, name: untyped, body: untyped) =
     proc `name`*() =
       `body`
 
-## exports all types/variables in the macro body
 macro exportAll*(body: untyped) =
+  ## exports all types/variables in the macro body
   proc traverse(parent: NimNode) =
     if parent.kind == nnkTypeDef:
       if parent[0].kind == nnkIdent:
@@ -153,8 +154,8 @@ macro exportAll*(body: untyped) =
 
   result = body
 
-## macro to import all files in the current directory non-recursively
 template importAll*(): untyped =
+  ## macro to import all files in the current directory non-recursively
   macro importAllDef(filename: static[string]): untyped =
     result = newNimNode(nnkImportStmt)
     

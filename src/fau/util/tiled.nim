@@ -223,7 +223,7 @@ proc postHook*(map: var Tilemap) =
 
     layer.hasTiles = layer.tiles.len > 0
 
-# TiledProps CAN BE NIL. Why? Because ensuring that it isn't, or making it a Table (non-ref) crashes emscripten.
+# TiledProps CAN BE NIL. This is mostly for historical reasons, but it probably saves memory too.
 
 proc has*(props: TiledProps, key: string): bool = not props.isNil and props.hasKey(key)
 

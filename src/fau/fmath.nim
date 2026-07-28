@@ -190,8 +190,8 @@ func round*(value, space: float32): float32 {.inline.} = round(value / space) * 
 
 func floor*(value, space: float32): float32 {.inline.} = floor(value / space) * space
 
-## hashes an integer to a random positive integer
 func hashInt*(value: int64): int {.inline.} =
+  ## hashes an integer to a random positive integer
   var x = value.uint64
   x = x xor (x shr 33)
   x *= 0xff51afd7ed558ccd'u64
