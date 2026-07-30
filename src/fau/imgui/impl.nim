@@ -1,4 +1,4 @@
-import core, fau/assets, os
+import fau/[assets, core], os
 import wrapper
 
 #loosely based on https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_glfw.cpp
@@ -7,8 +7,8 @@ converter toImVec2*(vec: Vec2): ImVec2 = cast[ImVec2](vec)
 converter toFauVec2*(vec: ImVec2): Vec2 = cast[Vec2](vec)
 converter toImVec4*(color: Color): ImVec4 = ImVec4(x: color.r, y: color.g, z: color.b, w: color.a)
 
-proc imvec4*(x, y, z, w: float32): ImVec4 = ImVec4(x: x, y: y, z: z, w: w) 
-proc imvec2*(x, y: float32): ImVec2 = ImVec2(x: x, y: y) 
+proc imvec4*(x, y, z, w: float32): ImVec4 = ImVec4(x: x, y: y, z: z, w: w)
+proc imvec2*(x, y: float32): ImVec2 = ImVec2(x: x, y: y)
 
 proc `or`*(f1, f2: ImguiWindowFlags): ImguiWindowFlags =
   ((f1.int32) or (f2.int32)).ImguiWindowFlags
@@ -76,7 +76,7 @@ proc igCombo*(label: cstring, current_item: ptr int, items: openArray[string], p
   deallocCStringArray(itemArray)
 
 proc igComboEnum*[T: Ordinal](label: cstring, current: var T, popup_max_height_in_items: int32 = -1): bool =
-  var 
+  var
     values: seq[string]
     index = current.int
   for i, val in low(T)..high(T):
@@ -191,7 +191,7 @@ proc igGlfwSetClipboardText(userData: pointer, text: cstring): void {.cdecl.} =
 proc reloadFontTexture =
   let io = igGetIO()
 
-  var 
+  var
     pixels: ptr uint8
     width: int32
     height: int32
@@ -287,13 +287,13 @@ proc imguiRenderFau =
   #does this need to be called multiple times...? should it be moved out?
   igRender()
 
-  let 
+  let
     io = igGetIO()
     data = igGetDrawData()
 
   data.scaleClipRects(io.displayFramebufferScale)
 
-  let 
+  let
     #It's flipped and I don't know why.
     matrix = ortho(data.displayPos + vec2(0f, data.displaySize.y), data.displaySize * vec2(1f, -1f))
     pos = data.displayPos
@@ -305,7 +305,7 @@ proc imguiRenderFau =
     mesh.updateData(
       0..commands.vtxBuffer.size.int,
       0..commands.idxBuffer.size.int,
-      vertexPtr = commands.vtxBuffer.data[0].addr, 
+      vertexPtr = commands.vtxBuffer.data[0].addr,
       indexPtr = commands.idxBuffer.data[0].addr
     )
 

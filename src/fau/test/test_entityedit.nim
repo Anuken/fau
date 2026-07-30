@@ -1,6 +1,6 @@
 # press F2 to actually edit entities
 
-import pkg/polymorph, ../../core, ../g2/imgui, ../util/entityedit, ../assets, ../util/animation
+import pkg/polymorph, ../core, ../g2/imgui, ../util/entityedit, ../assets, ../util/animation
 
 type
   aNestedObject = object

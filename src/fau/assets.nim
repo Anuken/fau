@@ -71,10 +71,11 @@ proc resolveStaticAssetPath*(filename: string): string =
   rootDir & "/assets/" & filename
 
 proc assetRead*(fname: string): string =
+  ## Non-static version of asset reading; uses the preloaded assets table if static, filesystem if not.
+  
   #fix windows being dumb
   let filename = fname.replace('\\', '/')
 
-  ## Non-static version of asset reading; uses the preloaded assets table if static, filesystem if not.
   when staticAssets:
     if filename notin preloadedAssets:
       raise newException(IOError, "Asset not found (did you forget to pre-load it?): " & filename)

@@ -1,4 +1,4 @@
-import ../../core
+import ../core
 
 proc run =
   if keyEscape.tapped:
