@@ -1,6 +1,6 @@
 ## basic components, such as position
 
-import ../../core, strutils
+import ../core, strutils
 import pkg/polymorph
 
 register(defaultComponentOptions):

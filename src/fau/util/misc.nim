@@ -25,11 +25,12 @@ proc capitalize*(str: openArray[char], spaces = false, camel = false): string =
         result.add ' '
       result.add(c)
 
-#walkDirRec implementation that actually works when cross-compiling (avoid usage of the `/` proc)
+
 iterator walkDirRec2*(dir: string,
                      yieldFilter = {pcFile}, followFilter = {pcDir},
                      relative = false, checkDir = false, skipSpecial = false):
                     string {.tags: [ReadDirEffect].} =
+  ## walkDirRec implementation that actually works when cross-compiling (avoids usage of the `/` proc)
   var stack = @[""]
   var checkDir = checkDir
   while stack.len > 0:
@@ -104,8 +105,8 @@ template findMin*[T](list: openArray[T], op: untyped, predicate: untyped): untyp
         result = it
   result
 
-## copies an array into a seq, element by element.
 macro minsert*(dest: untyped, index: int, data: untyped): untyped =
+  ## copies an array into a seq, element by element.
   result = newStmtList()
   
   if data.kind == nnkBracket:
@@ -129,8 +130,8 @@ macro loadProc*(varType: typedesc, name: untyped, body: untyped) =
     proc `name`*() =
       `body`
 
-## exports all types/variables in the macro body
 macro exportAll*(body: untyped) =
+  ## exports all types/variables in the macro body
   proc traverse(parent: NimNode) =
     if parent.kind == nnkTypeDef:
       if parent[0].kind == nnkIdent:
@@ -153,8 +154,8 @@ macro exportAll*(body: untyped) =
 
   result = body
 
-## macro to import all files in the current directory non-recursively
 template importAll*(): untyped =
+  ## macro to import all files in the current directory non-recursively
   macro importAllDef(filename: static[string]): untyped =
     result = newNimNode(nnkImportStmt)
     
@@ -184,3 +185,44 @@ template printTime*(label: string, body: untyped): untyped =
   body
   let elapsed0 = ((cpuTime() - startTime0) * 1000.0)
   echo label, ": ", elapsed0.formatFloat(format = ffDecimal, precision = 2)
+
+when defined(windows):
+  import std/winlean
+
+  proc getUserNameImpl(lpBuffer: WideCString, pcbBuffer: ptr int32): int32
+    {.importc: "GetUserNameW", dynlib: "advapi32.dll", stdcall.}
+
+  proc getUserName*(): string =
+    var
+      size: int32 = 256
+      buf = newWideCString("", size.int)
+    if getUserNameImpl(buf, addr size) != 0:
+      result = $buf
+    else:
+      #fallback if the WinAPI call fails for some reason
+      result = getEnv("USERNAME")
+      if result.len == 0:
+        result = getEnv("USER")
+
+else: #linux/macOS
+  import std/posix
+
+  proc getUserName*(): string =
+    when nimvm:
+      result = getEnv("USER")
+      if result.len == 0:
+        result = getEnv("USERNAME")
+      if result.len == 0:
+        when defined(windows):
+          result = gorgeEx("cmd /c echo %USERNAME%").output.strip()
+        else:
+          result = gorgeEx("whoami").output.strip()
+    else:
+      
+      let pw = getpwuid(getuid())
+      if pw != nil:
+        result = $pw.pw_name
+      else:
+        result = getEnv("USER")
+        if result.len == 0:
+          result = getEnv("LOGNAME")

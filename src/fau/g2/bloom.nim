@@ -16,13 +16,15 @@ type Bloom* = object
   thresh, bloom, blur: Shader
   blurPasses*: int
   scaling*: int
+  premultiplied*: bool
 
 #note: the colorBlacklist parameter is injected straight into the if-statement for the threshold check.
-proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, combined = true, colorBlacklist = "", filter = tfLinear, maxAlpha = true, parent: Bloom = Bloom()): Bloom =
+proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, combined = true, colorBlacklist = "", filter = tfLinear, maxAlpha = true, premultiplied = false, parent: Bloom = Bloom()): Bloom =
   result.buffer = if parent.buffer == nil: newFramebuffer(depth = depth, filter = filter) else: parent.buffer
   result.p1 = if parent.p1 == nil: newFramebuffer(filter = tFLinear) else: parent.p1
   result.p2 = if parent.p2 == nil: newFramebuffer(filter = tFLinear) else: parent.p2
   result.scaling = scaling
+  result.premultiplied = premultiplied
   result.blurPasses = passes
 
   result.thresh = newShader(screenspace,
@@ -46,44 +48,68 @@ proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, c
   }
   """.replace("$BLACKLIST$", colorBlacklist)
   )
-
-  result.bloom = newShader(screenspace,
-  (if alpha: "#define ALPHA_BLEND\n" else: "") &
-  (if maxAlpha: "#define MAX_ALPHA\n" else: "") &
-  (if combined: "#define COMBINE_RESULT\n" else: "") &
-  """
-  uniform lowp sampler2D u_texture0;
-  uniform lowp sampler2D u_texture1;
-  uniform lowp float u_bloomIntensity;
-  uniform lowp float u_originalIntensity;
-
-  varying vec2 v_uv;
-
-  void main(){
-    vec4 original = texture2D(u_texture0, v_uv) * u_originalIntensity;
-    vec4 bloom = texture2D(u_texture1, v_uv) * u_bloomIntensity;
-    vec4 combined = original * (vec4(1.0) - bloom) + bloom;
-    #ifdef ALPHA_BLEND
-    float mx = min(max(combined.r, max(combined.g, combined.b)), 1.0);
-    #else
-    float mx = 1.0;
-    #endif
-
-    #ifdef COMBINE_RESULT
-
-    #ifdef MAX_ALPHA
-    gl_FragColor = vec4(combined.rgb / mx, max(mx, combined.a));
-    #else
-    gl_FragColor = vec4(combined.rgb / mx, mx);
-    #endif
-
-    #else
-    gl_FragColor = bloom;
-    #endif
-  }
-
-  """
-  )
+  
+  if premultiplied:
+    #'correct' premultiplied shader doesn't do any saturation/rgb adjusting nonsense
+    result.bloom = newShader(screenspace,
+    """
+    uniform lowp sampler2D u_texture0;
+    uniform lowp sampler2D u_texture1;
+    uniform lowp float u_bloomIntensity;
+    uniform lowp float u_originalIntensity;
+    
+    varying vec2 v_uv;
+    
+    void main(){
+      vec4 original = texture2D(u_texture0, v_uv) * u_originalIntensity;
+      vec4 bloom = texture2D(u_texture1, v_uv) * u_bloomIntensity;
+    
+      vec3 rgb = original.rgb + bloom.rgb;
+      float a = max(original.a, bloom.a);
+    
+      gl_FragColor = vec4(rgb, a);
+    }
+  
+    """
+    )
+  else:
+    result.bloom = newShader(screenspace,
+    (if alpha: "#define ALPHA_BLEND\n" else: "") &
+    (if maxAlpha: "#define MAX_ALPHA\n" else: "") &
+    (if combined: "#define COMBINE_RESULT\n" else: "") &
+    """
+    uniform lowp sampler2D u_texture0;
+    uniform lowp sampler2D u_texture1;
+    uniform lowp float u_bloomIntensity;
+    uniform lowp float u_originalIntensity;
+  
+    varying vec2 v_uv;
+  
+    void main(){
+      vec4 original = texture2D(u_texture0, v_uv) * u_originalIntensity;
+      vec4 bloom = texture2D(u_texture1, v_uv) * u_bloomIntensity;
+      vec4 combined = original * (vec4(1.0) - bloom) + bloom;
+      #ifdef ALPHA_BLEND
+      float mx = min(max(combined.r, max(combined.g, combined.b)), 1.0);
+      #else
+      float mx = 1.0;
+      #endif
+  
+      #ifdef COMBINE_RESULT
+  
+      #ifdef MAX_ALPHA
+      gl_FragColor = vec4(combined.rgb / mx, max(mx, combined.a));
+      #else
+      gl_FragColor = vec4(combined.rgb / mx, mx);
+      #endif
+  
+      #else
+      gl_FragColor = bloom;
+      #endif
+    }
+  
+    """
+    )
 
   result.blur = newShader(
   """
@@ -145,6 +171,9 @@ proc buffer*(bloom: Bloom, clearColor = colorClear, size = fau.sizei, scaling = 
 proc blit*(bloom: Bloom, params = meshParams(), intensity = 2.5f, threshold = 0.5f) =
   #no texture
   if bloom.buffer.texture.isNil: return
+  
+  var realParams = params
+  if bloom.premultiplied: realParams.blend = blendPremultiplied
 
   bloom.thresh.uniforms:
     threshold = threshold
@@ -165,7 +194,7 @@ proc blit*(bloom: Bloom, params = meshParams(), intensity = 2.5f, threshold = 0.
       texture = bloom.p2.sampler
       dir = vec2(0, 1)
 
-  blit(bloom.bloom, params):
+  blit(bloom.bloom, realParams):
     texture0 = bloom.buffer.sampler(0)
     texture1 = bloom.p1.sampler(1)
     bloomIntensity = intensity

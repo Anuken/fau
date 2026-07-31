@@ -38,8 +38,8 @@ type AnyVec2* = concept t
   t.y is float32
 
 type AnyVec2i* = concept t
-  t.x is int64 | int32
-  t.y is int64 | int32
+  t.x is SomeInteger
+  t.y is SomeInteger
 
 ## any type that can fade in linearly
 type Scaleable* = concept s
@@ -190,8 +190,8 @@ func round*(value, space: float32): float32 {.inline.} = round(value / space) * 
 
 func floor*(value, space: float32): float32 {.inline.} = floor(value / space) * space
 
-## hashes an integer to a random positive integer
 func hashInt*(value: int64): int {.inline.} =
+  ## hashes an integer to a random positive integer
   var x = value.uint64
   x = x xor (x shr 33)
   x *= 0xff51afd7ed558ccd'u64
@@ -322,8 +322,8 @@ proc randRangeVec*(r: Vec2): Vec2 {.inline.} = vec2(rand(-r.x..r.x), rand(-r.y..
 
 #vec2i stuff
 
-func vec2i*[T: int64 | int32](x, y: T): Vec2i {.inline.} = Vec2i(x: x.int32, y: y.int32)
-func vec2i*[T: int64 | int32](xy: T): Vec2i {.inline.} = Vec2i(x: xy.int32, y: xy.int32)
+func vec2i*[A: SomeInteger, B: SomeInteger](x: A, y: B): Vec2i {.inline.} = Vec2i(x: x.int32, y: y.int32)
+func vec2i*[T: SomeInteger](xy: T): Vec2i {.inline.} = Vec2i(x: xy.int32, y: xy.int32)
 func vec2i*(): Vec2i {.inline.} = Vec2i()
 func vec2*(v: Vec2i): Vec2 {.inline.} = vec2(v.x.float32, v.y.float32)
 func vec2i*(v: Vec2): Vec2i {.inline.} = vec2i(v.x.int, v.y.int)

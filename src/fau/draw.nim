@@ -493,7 +493,7 @@ proc poly*(pos: Vec2, sides: int, radius: float32, rotation = 0f, stroke = 1f.px
       color, z, blend
     )
 
-proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorWhite, z = 0f, blend = blendNormal) =
+proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, miterLimit = 4f, color = colorWhite, z = 0f, blend = blendNormal) =
   if points.len < 2: return
 
   if points.len == 2:
@@ -506,7 +506,7 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
 
   proc prepareStraightJoin(b: Vec2, ab: Vec2, hstroke: float32): (Vec2, Vec2) =
     let r = ab.setLen(hstroke)
-    return (vec2(-r.y, r.x) + b, vec2(r.y, -r.x) + b)
+    return (vec2(r.y, -r.x) + b, vec2(-r.y, r.x) + b)
 
   proc angleRef(v, reference: Vec2): float32 =
     arctan2(reference.x * v.y - reference.y * v.x, v.x * reference.x + v.y * reference.y).float32
@@ -520,10 +520,15 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
     if angle.almostEqual(0f) or angle.almostEqual(pi2):
       return prepareStraightJoin(b, ab, hstroke)
       
-    let
-      len = hstroke / sin(angle)
-      bendsLeft = angle < 0
-    
+    let len = hstroke / sin(angle)
+
+    if abs(len) > hstroke * miterLimit:
+      let
+        (e1, e2) = prepareFlatEndpoint(a, b, hstroke)
+        (f1, f2) = prepareFlatEndpoint(c, b, hstroke)
+      fillQuad(f1, e1, f2, e2, color = color, z = z, blend = blend)
+      return (f1, f2)
+
     ab.len = len
     bc.len = len
 
@@ -531,7 +536,7 @@ proc poly*(points: openArray[Vec2], wrap = false, stroke = 1f.px, color = colorW
       p1 = b - ab + bc
       p2 = b + ab - bc
     
-    return if bendsLeft: (p1, p2) else: (p2, p1)
+    return (p1, p2)
 
   let hstroke = stroke * 0.5f
 

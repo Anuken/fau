@@ -150,8 +150,8 @@ proc loadFontBytes*(bytes: string, size: float32 = 16f, textureSize = 256, outli
 
   result.updateTexture()
 
-proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true): Font =
-  return loadFontBytes(assetReadStatic(path), size, textureSize, outline, outlineColor, diagonalOutline)
+proc loadFont*(path: static[string], size: float32 = 16f, textureSize = 256, outline = false, outlineColor = colorBlack, diagonalOutline = true, filter = tfNearest): Font =
+  return loadFontBytes(assetReadStatic(path), size, textureSize, outline, outlineColor, diagonalOutline, filter)
 
 #return (color, length)
 proc parseTag(text: openArray[Rune], start: int): (Tag, int) =

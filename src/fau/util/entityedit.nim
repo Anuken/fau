@@ -1,4 +1,4 @@
-import pkg/polymorph, ../../core, ../g2/imgui, varedit
+import pkg/polymorph, ../core, ../g2/imgui, varedit
 import std/[sequtils, strutils]
 
 onEcsBuilt:

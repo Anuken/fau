@@ -1,4 +1,4 @@
-import ../../core, ../g2/imgui
+import ../core, ../g2/imgui
 
 
 var show_demo: bool = true

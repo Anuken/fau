@@ -1,6 +1,6 @@
 ## components for rendering effects
 
-import ../../core, ../util/misc, basic
+import ../core, ../util/misc, basic
 import std/strutils
 import pkg/polymorph
 
@@ -32,15 +32,15 @@ template scaled*(state: EffectState, scale: float32, body: untyped) =
       body
 
 ## Defines several effects. Requires makeEffectsSystem() to be called somewhere to function properly.
-## 
+##
 ## Usage:
-## 
+##
 ## defineEffects:
 ##   circle:
 ##     fillCircle(e.x, e.y, 0.1)
-## 
+##
 ## Instantiating the effect:
-## 
+##
 ## effectCircle(x, y)
 macro defineEffects*(body: untyped) =
   body.expectKind nnkStmtList
@@ -68,7 +68,7 @@ macro defineEffects*(body: untyped) =
 
   for child in body:
     child.expectKind nnkCall
-    let 
+    let
       name = child[0].repr
       capped = name.capitalizeAscii
       effectBody = child.last
@@ -108,7 +108,7 @@ macro defineEffects*(body: untyped) =
   let count = newLit(1 + body.len)
   
   result.add quote do:
-    const 
+    const
       allEffects* {.inject.}: array[`count`, EffectProc] = `brackets`
       effectNone* {.inject.} = -1.EffectId
       effectIdNone* {.inject.} = effectNone

@@ -20,9 +20,9 @@ type
   TiledProps* = TableRef[string, TileProp]
 
   TiledTile* = ref object
-    id*: int #an ID of 0 indicates an empty tile
-    imagewidth*, imageheight*: int
-    x*, y*, width*, height*: int
+    id*: int32 #an ID of 0 indicates an empty tile
+    imagewidth*, imageheight*: int32
+    x*, y*, width*, height*: int32
     empty*: bool
     image*: string
     properties*: TiledProps
@@ -33,7 +33,7 @@ type
 
   TiledObject* = ref object
     class*, name*: string
-    id*: int
+    id*: int32
     rotation*: float32
     pos*, size*: Vec2
     visible*: bool
@@ -42,25 +42,25 @@ type
     properties*: TiledProps
     tile*: TiledTile
     #internal
-    gid: int
+    gid: int32
     x, y, width, height: float32
 
   Tileset* = ref object
     image*, name*: string
-    imagewidth*, imageheight*: int
-    tilewidth*, tileheight*, columns*, margin*, spacing*: int
+    imagewidth*, imageheight*: int32
+    tilewidth*, tileheight*, columns*, margin*, spacing*: int32
     tiles*: seq[TiledTile]
     properties*: TiledProps
     #internal
-    firstgid: int
+    firstgid: int32
     source: string
-    tilecount: int
+    tilecount: int32
 
   TileLayer* = ref object
     name*: string
     visible*: bool
     properties*: TiledProps
-    width*, height*: int
+    width*, height*: int32
     hasTiles*: bool
     tiles*: seq[TileCell]
     objects*: seq[TiledObject]
@@ -70,8 +70,8 @@ type
     compression: string
 
   Tilemap* = ref object
-    width*, height*: int
-    tilewidth*, tileheight*: int
+    width*, height*: int32
+    tilewidth*, tileheight*: int32
     layers*: seq[TileLayer]
     tilesets*: seq[Tileset]
     properties*: TiledProps
@@ -144,7 +144,7 @@ proc postHook*(map: var Tilemap) =
       #clear old tiles (parsed with properties)
       tileset.tiles.setLen(0)
 
-      var curId = 0
+      var curId = 0'i32
       let tilesY = (tileset.imageheight - tileset.margin * 2) div (tileset.tileheight + tileset.spacing)
 
       for gridY in 0..<tilesY:
@@ -223,7 +223,7 @@ proc postHook*(map: var Tilemap) =
 
     layer.hasTiles = layer.tiles.len > 0
 
-# TiledProps CAN BE NIL. Why? Because ensuring that it isn't, or making it a Table (non-ref) crashes emscripten.
+# TiledProps CAN BE NIL. This is mostly for historical reasons, but it probably saves memory too.
 
 proc has*(props: TiledProps, key: string): bool = not props.isNil and props.hasKey(key)
 
@@ -290,7 +290,6 @@ proc findLayer*(map: Tilemap, name: string): TileLayer =
   for layer in map.layers:
     if layer.name == name:
       return layer
-  #TODO how
   raise Defect.newException("Layer not found: " & $name)
 
 proc size*(map: Tilemap): Vec2i = vec2i(map.width, map.height)
@@ -324,8 +323,3 @@ template loadFromProperties*(obj: typed, properties: TiledProps): untyped =
         elif value is Color: value = props.getColor(field)
 
   result
-
-when isMainModule:
-  import print
-
-  print readTilemapFile("/home/anuke/Projects/Inferno/core/assets/maps/map.tmj")

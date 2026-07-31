@@ -2,7 +2,7 @@ import globals, fmath
 
 const gamepadDeadzone* = 0.2
 
-var 
+var
   keysPressed*: array[KeyCode, bool]
   keysJustDown*: array[KeyCode, bool]
   keysJustUp*: array[KeyCode, bool]
@@ -32,8 +32,6 @@ proc ctrlDown*: bool {.inline.} = keyLCtrl.down or keyRCtrl.down
 proc down*(pad: Gamepad, button: GamepadButton): bool {.inline.} = pad.buttons[button]
 proc tapped*(pad: Gamepad, button: GamepadButton): bool {.inline.} = pad.buttonsJustDown[button]
 proc released*(pad: Gamepad, button: GamepadButton): bool {.inline.} = pad.buttonsJustUp[button]
-
-#TODO: deadzones
 
 proc axis*(pad: Gamepad, axis: GamepadAxis): float32 {.inline.} = pad.axes[axis].float32
 proc axis2*(pad: Gamepad, axes: GamepadAxis2): Vec2 {.inline.} =
@@ -73,7 +71,7 @@ proc gamepadAxis2*(axes: GamepadAxis2): Vec2 =
     let val = pad.axis2(axes)
     if not val.zero: return val
 
-proc gamepadDpadTap*(): Vec2 = 
+proc gamepadDpadTap*(): Vec2 =
   vec2(
     GamepadButton.dpadRight.gamepadTapped.float32 - GamepadButton.dpadLeft.gamepadTapped.float32,
     GamepadButton.dpadUp.gamepadTapped.float32 - GamepadButton.dpadDown.gamepadTapped.float32
@@ -100,7 +98,7 @@ proc name*(button: GamepadButton): string =
   of rightBumper: "Right Bumper"
   of back: "Back"
   of start: "Start"
-  of guide: "Guide" 
+  of guide: "Guide"
   of leftThumb: "Left Thumbstick"
   of rightThumb: "Right Thumbstick"
   of dpadUp: "D-Pad Up"
