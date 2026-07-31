@@ -1,5 +1,5 @@
-
-# Wrapper around malebolgia with a conditional dummy wrapper for web releases
+## Wrapper around malebolgia with a conditional dummy wrapper for web releases
+## This is used for cases where you want to spawn a bunch of tasks and await the result
 
 when compileOption("threads"):
   import pkg/malebolgia

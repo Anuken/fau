@@ -65,6 +65,15 @@ template drawStack*(body: untyped) =
   body
   fau.batch.applyState(prevState)
 
+template drawStackBuffer*(buffer: Framebuffer, body: untyped) =
+  let prevState = fau.batch.getState()
+  drawViewport(rect())
+  drawMat(ortho(buffer.size))
+  drawBuffer(buffer)
+  drawClip()
+  body
+  fau.batch.applyState(prevState)
+
 proc drawBuffer*(buffer: Framebuffer) =
   fau.batch.buffer(buffer)
 
