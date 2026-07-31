@@ -1,6 +1,6 @@
 import pkg/soloud
 import std/[monotimes, os, macros, strutils, tables]
-import assets, threading, util/misc
+import assets, spawning, util/misc
 
 # High-level soloud wrapper.
 

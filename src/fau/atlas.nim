@@ -1,4 +1,4 @@
-import strformat, tables, texture, patch, assets, streams, fmath, color, util/misc, threading
+import strformat, tables, texture, patch, assets, streams, fmath, color, util/misc, spawning
 
 #A single-texture atlas.
 type Atlas* = ref object
