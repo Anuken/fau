@@ -18,7 +18,7 @@ type ShaderUniType = enum
   u1i,
   u2i,
   umat4,
-  umat3conv
+  umat3
 
 type ShaderUniform = object
   loc: int
@@ -41,7 +41,7 @@ type ShaderUniform = object
     v2i: Vec2i
   of umat4:
     vmat4: array[16, float32]
-  of umat3conv:
+  of umat3:
     mat: Mat
 
 #OpenGL Shader program.
@@ -266,12 +266,11 @@ proc uniform*(shader: Shader, name: string, value: Vec2i) =
       glUniform2i(loc.GLint, value.x.GLint, value.y.GLint)
       shader.uniforms[name] = ShaderUniform(kind: u2i, v2i: value, loc: uni.loc)
 
-#converts a 2D matrix to 3D and sets it
 proc uniform*(shader: Shader, name: string, value: Mat) =
   shader.withUniform(name):
-    if not (uni.kind == umat3conv and uni.mat == value):
-      glUniformMatrix4fv(loc.GLint, 1, false, value.toMat4())
-      shader.uniforms[name] = ShaderUniform(kind: umat3conv, mat: value, loc: uni.loc)
+    if not (uni.kind == umat3 and uni.mat == value):
+      glUniformMatrix3fv(loc.GLint, 1, false, value)
+      shader.uniforms[name] = ShaderUniform(kind: umat3, mat: value, loc: uni.loc)
 
 #sets a 3D matrix; the input value should be a 4x4 matrix
 proc uniform*(shader: Shader, name: string, value: array[16, float32]) =

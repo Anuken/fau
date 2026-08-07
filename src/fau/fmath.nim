@@ -1046,7 +1046,7 @@ const
   M21 = 5
   M22 = 8
 
-#converts a 2D orthographics 3x3 matrix to a 4x4 matrix for shaders
+#converts a 2D orthographics 3x3 matrix to a 4x4 matrix
 proc toMat4*(matrix: Mat): array[16, float32] =
   result[4] = matrix[M01]
   result[1] = matrix[M10]
