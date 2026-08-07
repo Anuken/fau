@@ -80,22 +80,34 @@ macro editableVars*(vars: untyped) =
     result = newStmtList()
 
     var newSec = newNimNode(nnkVarSection)
-
-    for asgn in vars:
-      asgn.expectKind(nnkAsgn)
-      
-      newSec.add newIdentDefs(asgn[0], newEmptyNode(), asgn[1])
-
-      allFields.add asgn[0]
+    if vars.kind == nnkStmtList:
+      let inner = vars[0]
+      if inner.kind == nnkConstSection or inner.kind == nnkVarSection:
+        for asgn in inner:
+          newSec.add newIdentDefs(asgn[0], newEmptyNode(), asgn[2])
+    
+          allFields.add asgn[0]
+      else:
+        error("expected var/const in editable vars block, but was: " & $inner.kind, inner)
+    else:
+      for asgn in vars:
+        asgn.expectKind(nnkAsgn)
+        
+        newSec.add newIdentDefs(asgn[0], newEmptyNode(), asgn[1])
+  
+        allFields.add asgn[0]
     
     result.add newSec
 
   else:
-    result = newStmtList()
-
-    for asgn in vars:
-      asgn.expectKind(nnkAsgn)
-      result.add newConstStmt(asgn[0], asgn[1])
+    
+    if vars.kind == nnkStmtList:
+      result = vars
+    else:
+      result = newStmtList()
+      for asgn in vars:
+        asgn.expectKind(nnkAsgn)
+        result.add newConstStmt(asgn[0], asgn[1])
     
 when defined(debugVarEdit):
   import ../g2/imgui, strutils
