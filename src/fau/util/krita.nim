@@ -24,6 +24,7 @@ type KritaLayer* = ref object
   case kind*: KritaLayerKind
   of klImage:
     width*, height*: int32
+    #note that empty layers (width = height = 0) will have no data
     data*: seq[uint8]
   of klGroup:
     children*: seq[KritaLayer]
@@ -113,6 +114,7 @@ proc readImageData(data: string, offsetX, offsetY, width, height: int32, clipLay
     maxX = width
     maxY = height
   
+  #once bounds are computed, allocate buffer and blit in a separate pass
   if numTiles > 0:
     let w = (maxX - minX).int32
     let h = (maxY - minY).int32
@@ -142,14 +144,14 @@ proc readImageData(data: string, offsetX, offsetY, width, height: int32, clipLay
           let localIdx = rowLocalBase + lx
           let outIdx = (rowOutBase + gx) * 4
    
-          result.data[outIdx + 0] = plane[rPlaneOff + localIdx].uint8 # R
-          result.data[outIdx + 1] = plane[gPlaneOff + localIdx].uint8 # G
-          result.data[outIdx + 2] = plane[bPlaneOff + localIdx].uint8 # B
-          result.data[outIdx + 3] = plane[aPlaneOff + localIdx].uint8 # A
-  else: #empty layer
+          result.data[outIdx + 0] = plane[rPlaneOff + localIdx].uint8
+          result.data[outIdx + 1] = plane[gPlaneOff + localIdx].uint8
+          result.data[outIdx + 2] = plane[bPlaneOff + localIdx].uint8
+          result.data[outIdx + 3] = plane[aPlaneOff + localIdx].uint8
+  else: #empty layer, data/w/h will be 0 bytes
     discard
   
-proc readKritaFile*(path: string, clipLayers: bool = true): KritaDocument =
+proc readKritaFile*(path: string, clipLayers: bool = true, loadInvisible = true): KritaDocument =
   ## Loads a krita file from the specified filesystem path.
   ## If clipLayers is false, every single layer is sized to the entire canvas. This dramatically increases memory usage, but may be convenient for some image I/O operations.
 
@@ -178,6 +180,10 @@ proc readKritaFile*(path: string, clipLayers: bool = true): KritaDocument =
       ntype = node.attr("nodetype")
       channelFlags = node.attr("channelflags")
       filename = node.attr("filename")
+      visible = node.attr("visible") == "1"
+    
+    if not visible and not loadInvisible:
+      return nil #skip invisible layers
     
     if ntype == "grouplayer":
       var layers: seq[KritaLayer]
@@ -208,7 +214,7 @@ proc readKritaFile*(path: string, clipLayers: bool = true): KritaDocument =
     
     if result != nil:
       result.opacity = if node.attr("opacity") == "": 1f else: parseInt(node.attr("opacity")).float32 / 255f
-      result.visible = node.attr("visible") == "1"
+      result.visible = visible
       result.collapsed = node.attr("collapsed") == "1"
       result.locked = node.attr("locked") == "1"
       result.passthrough = node.attr("passthrough") == "1"
@@ -227,5 +233,4 @@ proc readKritaFile*(path: string, clipLayers: bool = true): KritaDocument =
   for layer in clonesToResolve:
     if layer.kind == klClone:
       layer.clone = idToLayer[layer.cloneId]
-      if layer.clone == nil:
-        echo "Unresolved clone ID! name=", layer.name, " targetid=", layer.cloneId
+      doAssert layer.clone != nil, "Unresolved clone ID! name=" & layer.name & " targetid=" & $layer.cloneId
