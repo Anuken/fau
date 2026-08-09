@@ -2,9 +2,14 @@ import ../globals, std/[times, os]
 
 proc listenFileChange*(file: string, callback: proc()) =
   var
-    currentModified = file.getFileInfo().lastWriteTime
-    lastChangeTime: Time
+    lastChangeTime, currentModified: Time
     waiting = false
+  
+  try:
+    currentModified = file.getFileInfo().lastWriteTime
+  except Exception as e:
+    echo "Failed to register file listener: ", file, ": ", e.msg
+    return
 
   addFauListener(feFrame):
     if fau.frameId mod 3 == 1:
