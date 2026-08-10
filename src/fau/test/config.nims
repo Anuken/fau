@@ -1,6 +1,3 @@
-#this is required for imgui
---path:"../../../../staticglfw/src"
-
 #pass this on the commandline if you need SDL
 #--d:fauUseSdl
 
