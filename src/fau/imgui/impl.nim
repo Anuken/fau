@@ -57,13 +57,22 @@ proc igInputText*(label: cstring, text: var string, bufSize = 64, flags: ImGuiIn
   buff.setLen(len)
   text = buff
 
+proc igInputTextMultiline*(label: cstring, text: var string, bufSize = 64, size = vec2(0f, 0f), flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags, callback: ImGuiInputTextCallback = nil, user_data: pointer = nil): bool {.discardable, inline.} =
+  var buff = newString(max(bufSize, text.len))
+  buff[0..text.high] = text
+
+  result = igInputTextMultiline(label, buff.cstring, bufSize.uint, size, flags, callback, user_data)
+
+  let len = buff.cstring.len
+  buff.setLen(len)
+  text = buff
+
 proc igInputTextWithHint*(label: cstring, hint: cstring, text: var string, bufSize = 64, flags: ImGuiInputTextFlags = 0.ImGuiInputTextFlags, callback: ImGuiInputTextCallback = nil, user_data: pointer = nil): bool {.discardable, inline.} =
   var buff = newString(max(bufSize, text.len))
   buff[0..text.high] = text
 
   result = igInputTextWithHint(label, hint, buff.cstring, bufSize.uint, flags, callback, user_data)
 
-  #I'm sure there's a better way to do this, but right now I don't care.
   let len = buff.cstring.len
   buff.setLen(len)
   text = buff
