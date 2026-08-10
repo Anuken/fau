@@ -15,4 +15,4 @@ proc run =
 proc init =
   echo "init() called"
 
-initFau(run, init, initParams(title = "Tiled Test"))
+initFau(run, init, initParams(title = "Basic Test"))

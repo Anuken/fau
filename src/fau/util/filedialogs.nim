@@ -1,4 +1,4 @@
-import tinyfd/tinyfd
+import tinyfd/tinyfd, std/strutils
 
 proc saveFileDialog*(title = "Save File", defaultPathAndFile = "", patterns: seq[string] = @["*.*"], filterDescription = "All Files"): string =
   var patList = patterns
@@ -22,7 +22,8 @@ proc saveFileDialog*(title = "Save File", defaultPathAndFile = "", patterns: seq
     result = $tinyfd_saveFileDialog(title.cstring, defaultPathAndFile.cstring, patList.len.cint, pats, filterDescription.cstring)
     pats.deallocCStringArray
 
-proc openFileDialog*(title = "Open File", defaultPathAndFile = "", patterns: seq[string] = @["*.*"], filterDescription = "All Files", multiSelect = false): string =
+#base proc that returns a string that may need to be split
+proc openFileDialogBase(title: string, defaultPathAndFile: string, patterns: seq[string], filterDescription: string, multiSelect = false): string =
   var patList = patterns
   #does not work properly on macos
   when defined(macosx): patList.insert("", 0)
@@ -43,6 +44,13 @@ proc openFileDialog*(title = "Open File", defaultPathAndFile = "", patterns: seq
     var pats = allocCStringArray(patList)
     result = $tinyfd_openFileDialog(title.cstring, defaultPathAndFile.cstring, patList.len.cint, pats, filterDescription.cstring, multiSelect.cint)
     pats.deallocCStringArray
+
+proc openFileDialog*(title = "Open File", defaultPathAndFile = "", patterns: seq[string] = @["*.*"], filterDescription = "All Files"): string =
+  openFileDialogBase(title, defaultPathAndFile, patterns, filterDescription, false)
+
+proc openFileDialogMulti*(title = "Open File", defaultPathAndFile = "", patterns: seq[string] = @["*.*"], filterDescription = "All Files"): seq[string] =
+  let str = openFileDialogBase(title, defaultPathAndFile, patterns, filterDescription, true)
+  return if str.len == 0: @[] else: str.split('|')
 
 when isMainModule:
   var patterns = @["*.png", "*.msav"]
