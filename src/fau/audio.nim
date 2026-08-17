@@ -12,11 +12,11 @@ type
     loaded: bool
     protect: bool
     filePath: string
-    ## minimum interval in ms between this sound being played
+    # minimum interval in ms between this sound being played
     minInterval*: int
     lastPlayTime: int64
     lastVolume: float32
-    ## last played voice
+    # last played voice
     voice*: Voice
     minInterruptValue = 0f
     maxConcurrentValue = 0

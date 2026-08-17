@@ -228,55 +228,6 @@ proc draw*(p: Patch9, bounds: Rect, z: float32 = 0f, color = colorWhite, mixColo
 proc drawBlit*(buffer: Framebuffer, color = colorWhite, blend = blendNormal, z = 0f, shader: Shader = nil) =
   draw(buffer.texture, fau.cam.pos, fau.cam.size * vec2(1f, -1f), color = color, blend = blend, z = z, shader = shader)
 
-#TODO does not support mid != 0
-#TODO divs could just be a single float value, arrays unnecessary
-proc drawBend*(p: Patch, pos: Vec2, divs: openArray[float32], mid = 0, rotation = 0f, z: float32 = 0f, size = p.size * fau.pixelScl, scl = vec2(1f, 1f), color = colorWhite, mixColor = colorClear) =
-  let
-    outs = size * scl
-    v = p.v
-    v2 = p.v2
-    segSpace = outs.x / divs.len.float32
-
-  var
-    cur = rotation
-    cpos = pos
-
-  template drawAt(i: int, sign: float32) =
-    let
-      mid1 = cpos
-      top1 = vec2l(cur + 90f.rad, outs.y / 2f)
-      top2 = vec2l(cur + 90f.rad + divs[i] * sign, outs.y / 2f)
-      progress = i / (divs.len).float32 - (1f / divs.len) * -(sign < 0).float32
-      u = lerp(p.u, p.u2, progress)
-      u2 = lerp(p.u, p.u2, progress + 1f / divs.len * sign)
-      
-    cpos += vec2l(cur, segSpace) * sign
-
-    let
-      mid2 = cpos
-      p1 = mid1 + top1
-      p2 = mid2 + top2
-      p3 = mid2 - top2
-      p4 = mid1 - top1
-    
-    drawVert(p.texture, [
-      vert2(p1, vec2(u, v), color, mixColor),
-      vert2(p2, vec2(u2, v), color, mixColor),
-      vert2(p3, vec2(u2, v2), color, mixColor),
-      vert2(p4, vec2(u, v2), color, mixColor)
-    ], z = z)
-
-    cur += divs[i] * sign
-
-  for i in mid..<divs.len:
-    drawAt(i, 1f)
-  
-  cur = rotation
-  cpos = pos
-
-  for i in countdown(mid - 1, 0):
-    drawAt(i, -1f)
-
 proc fillQuad*(texture: Texture,
     v1: Vec2, c1: Color, uv1: Vec2,
     v2: Vec2, c2: Color, uv2: Vec2,
