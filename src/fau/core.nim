@@ -1,4 +1,4 @@
-import fau/[fmath, globals, color, framebuffer, mesh, assets, patch, shader, texture, batch, atlas, draw, input, screenbuffer]
+import fmath, globals, color, framebuffer, mesh, assets, patch, shader, texture, batch, atlas, draw, input, screenbuffer
 import std/[os, times, random, monotimes]
 
 const isDebug* = defined(debug)
@@ -10,14 +10,14 @@ elif defined(fauUseSdl):
   import fau/backend/sdlcore
   export sdlcore
 else:
-  import fau/backend/glfwcore
+  import backend/glfwcore
   export glfwcore
 
 when isLinux:
   import fau/backend/linux_desktop
 
 when not defined(noAudio):
-  import fau/audio
+  import audio
   export audio
 
 when isDebug and not defined(noRecorder):
