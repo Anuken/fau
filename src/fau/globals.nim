@@ -57,29 +57,29 @@ type CursorType* = enum
 
 #discriminator for the various types of input events
 type FauEventKind* = enum
-  ## start of a new frame
+  # start of a new frame
   feFrame,
-  ## end of a new frame (after main loop proc)
+  # end of a new frame (after main loop proc)
   feEndFrame,
-  ## end of application (window destroyed/game exit)
+  # end of application (window destroyed/game exit)
   feDestroy,
-  ## any key down/up, including mouse
+  # any key down/up, including mouse
   feKey,
-  ## character typed on keyboard
+  # character typed on keyboard
   feText
-  ## mouse/pointer moved across screen
+  # mouse/pointer moved across screen
   feDrag,
-  ## finger up/down at location
+  # finger up/down at location
   feTouch,
-  ## mousewheel scroll up/down
+  # mousewheel scroll up/down
   feScroll,
-  ## window resized
+  # window resized
   feResize,
-  ## visibility changed (show/hide)
+  # visibility changed (show/hide)
   feVisible,
-  ## controller connected / disconnected
+  # controller connected / disconnected
   feGamepadChanged,
-  ## controller button pressed
+  # controller button pressed
   feGamepadButton
 
 #a generic input event
@@ -92,7 +92,7 @@ type FauEvent* = object
     key*: KeyCode
     keyDown*: bool
   of feText:
-    text*: uint32
+    text*: string
   of feDrag:
     dragId*: int
     dragPos*: Vec2

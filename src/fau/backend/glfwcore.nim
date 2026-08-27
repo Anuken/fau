@@ -1,4 +1,4 @@
-import pkg/staticglfw, std/[strutils, os]
+import pkg/staticglfw, std/[strutils, os, unicode]
 import ../[texture, globals, fmath, assets, input]
 import ../gl/[glad, glproc], ../util/misc
 
@@ -314,7 +314,7 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   )
 
   discard window.setCharCallback(proc(window: Window, character: cuint) {.cdecl.} =
-    fireFauEvent FauEvent(kind: feText, text: character.uint32)
+    fireFauEvent FauEvent(kind: feText, text: $Rune(character.int32))
   )
   discard window.setKeyCallback(proc(window: Window, key: cint, scancode: cint, action: cint, modifiers: cint) {.cdecl.} =
     let code = toKeyCode(key)

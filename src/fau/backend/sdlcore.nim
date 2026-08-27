@@ -250,7 +250,7 @@ proc processEvents() =
 
     of EventTextInput:
       if event.text.text != nil and event.text.text[0] != '\0':
-        fireFauEvent(FauEvent(kind: feText, text: event.text.text[0].uint32))
+        fireFauEvent(FauEvent(kind: feText, text: $event.text.text))
 
     of EventKeyDown, EventKeyUp:
       let down = event.type == EventKeyDown
@@ -402,6 +402,8 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
 
   checkError glMakeCurrent(window, glContext)
   checkError glSetSwapInterval(1)
+  
+  checkError startTextInput(window)
 
   if not loadGl(glGetProcAddress, glExtensionSupported):
     raise Exception.newException("Failed to load OpenGL.")
