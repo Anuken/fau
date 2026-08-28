@@ -248,7 +248,7 @@ proc parseMarkup(color: Color, text: openArray[char]): (string, seq[(Tag, int)])
   {.pop.}
 
 proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0), color: Color = rgba(1, 1, 1, 1),
-  align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false, doDraw = true): fmath.Rect {.discardable.} =
+  align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false, doDraw = true, multiplyColor = false): fmath.Rect {.discardable.} =
 
   var
     plainText: string
@@ -280,7 +280,10 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
       #encountered the next color
       if i >= next[1]:
         currentColor = next[0].color
-        currentColor.a = color.a * currentColor.a
+        if multiplyColor:
+          currentColor = currentColor * color
+        else:
+          currentColor.a = color.a * currentColor.a
 
         let style = next[0].style
         if style != None:
@@ -359,8 +362,8 @@ proc draw*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixel
     lineRect(fmath.rect(pos, bounds), stroke = scale, color = colorPurple, z = z)
     lineRect(result, stroke = scale, color = colorGreen, z = z)
 
-proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false): fmath.Rect {.discardable.} =
-  return draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier, markup)
+proc draw*(font: Font, text: string, bounds: fmath.Rect, scale: float32 = fau.pixelScl, color: Color = rgba(1, 1, 1, 1), align: Align = daCenter, z: float32 = 0.0, modifier: GlyphProc = nil, markup = false, multiplyColor = false): fmath.Rect {.discardable.} =
+  return draw(font, text, bounds.xy, scale, bounds.wh, color, align, z, modifier, markup, multiplyColor = multiplyColor)
 
 proc textBounds*(font: Font, text: string, pos: fmath.Vec2, scale: float32 = fau.pixelScl, bounds = fmath.vec2(0, 0),
   align: Align = daCenter, modifier: GlyphProc = nil, markup = false): fmath.Rect =

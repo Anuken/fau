@@ -1,4 +1,4 @@
-import fau/[assets, core], std/[os, unicode]
+import fau/[assets, core], std/os
 import wrapper
 
 #loosely based on https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_glfw.cpp
@@ -402,8 +402,7 @@ proc imguiInitFau*(useCursor = true, theme: proc() = nil, font: static string = 
       if mapped != ImGuiKey.None:
         io.addKeyEvent(mapped, e.keyDown)
     of feText:
-      for c in e.text.toRunes:
-        io.addInputCharacter(c.uint32)
+      io.addInputCharactersUTF8(e.text.cstring)
     of feTouch:
       if e.touchButton in {keyMouseLeft, keyMouseRight, keyMouseMiddle}:
         let code = case e.touchButton:

@@ -21,7 +21,7 @@ proc createDesktopFile*(appName: string, appTitle: string, hidden = false) =
         if read != -1:
           path.setLen(read)
 
-          let 
+          let
             appFile = dir / (appName & ".desktop")
             iconPath = dir / (appName & ".png")
           
@@ -29,7 +29,7 @@ proc createDesktopFile*(appName: string, appTitle: string, hidden = false) =
             writeFile(iconPath, assetReadStatic("icon.png"))
 
           const temp = """
-          [Desktop Entry] 
+          [Desktop Entry]
           Version=1.0
           Type=Application
           Terminal=false
