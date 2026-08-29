@@ -97,7 +97,6 @@ proc blit*(blur: Blur, params = meshParams(), strength = 1f, alphaScale = 1f) =
   #no texture
   if blur.p1.texture.isNil: return
 
-  #TODO uniform blocks bad
   blur.shader.uniforms:
     size = blur.p1.size.vec2
 
