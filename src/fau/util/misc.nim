@@ -62,6 +62,26 @@ template findIt*[T](list: openArray[T], body: untyped): int =
   
   result
 
+#ordered version
+template deleteAll*[T](list: var seq[T], body: untyped) =
+  var i = 0
+  while i < list.len:
+    let it {.inject.} = list[i]
+    if body:
+      list.delete(i)
+    else:
+      i.inc
+
+#unordered version
+template delAll*[T](list: var seq[T], body: untyped) =
+  var i = 0
+  while i < list.len:
+    let it {.inject.} = list[i]
+    if body:
+      list.delete(i)
+    else:
+      i.inc
+
 template findItBlock*[T](list: openArray[T], body: untyped, calledBlock: untyped) =
   for i {.inject.}, it {.inject.} in list:
     if body:
