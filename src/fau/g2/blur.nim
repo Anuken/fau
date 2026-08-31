@@ -2,6 +2,7 @@ import ../mesh, ../framebuffer, ../shader, ../texture, ../fmath, ../color, ../gl
 
 type Blur* = object
   p1, p2: Framebuffer
+  scene: Framebuffer
   shader: Shader
   blitShader: Shader
   passes*: int
@@ -10,6 +11,7 @@ type Blur* = object
 proc newBlur*(scaling: int = 4, passes: int = 1): Blur =
   result.p1 = newFramebuffer(filter = tfLinear)
   result.p2 = newFramebuffer(filter = tfLinear)
+  result.scene = newFramebuffer(filter = tfLinear)
   result.scaling = scaling
   result.passes = passes
 
@@ -24,19 +26,25 @@ proc newBlur*(scaling: int = 4, passes: int = 1): Blur =
   varying vec2 v_texCoords2;
   varying vec2 v_texCoords3;
   varying vec2 v_texCoords4;
-  const vec2 futher = vec2(3.2307692308, 3.2307692308);
-  const vec2 closer = vec2(1.3846153846, 1.3846153846);
+  varying vec2 v_texCoords5;
+  varying vec2 v_texCoords6;
+  const vec2 near = vec2(1.4231349116, 1.4231349116);
+  const vec2 mid = vec2(3.3267017996, 3.3267017996);
+  const vec2 far = vec2(5.2429886272, 5.2429886272);
 
   void main(){
     vec2 sizeAndDir = u_dir / u_size;
-    vec2 f = futher*sizeAndDir;
-    vec2 c = closer*sizeAndDir;
+    vec2 n = near*sizeAndDir;
+    vec2 m = mid*sizeAndDir;
+    vec2 f = far*sizeAndDir;
     
     v_texCoords0 = a_uv - f;
-    v_texCoords1 = a_uv - c;
-    v_texCoords2 = a_uv;
-    v_texCoords3 = a_uv + c;
-    v_texCoords4 = a_uv + f;
+    v_texCoords1 = a_uv - m;
+    v_texCoords2 = a_uv - n;
+    v_texCoords3 = a_uv;
+    v_texCoords4 = a_uv + n;
+    v_texCoords5 = a_uv + m;
+    v_texCoords6 = a_uv + f;
     
     gl_Position = a_pos;
   }
@@ -49,16 +57,21 @@ proc newBlur*(scaling: int = 4, passes: int = 1): Blur =
   varying vec2 v_texCoords2;
   varying vec2 v_texCoords3;
   varying vec2 v_texCoords4;
-  const float center = 0.2270270270;
-  const float close = 0.3162162162;
-  const float far = 0.0702702703;
+  varying vec2 v_texCoords5;
+  varying vec2 v_texCoords6;
+  const float center = 0.1818615348;
+  const float near = 0.2843161064;
+  const float mid = 0.1065975459;
+  const float far = 0.0181555804;
 
   void main(){
     gl_FragColor = far * texture2D(u_texture, v_texCoords0)
-        + close * texture2D(u_texture, v_texCoords1)
-        + center * texture2D(u_texture, v_texCoords2)
-        + close * texture2D(u_texture, v_texCoords3)
-        + far * texture2D(u_texture, v_texCoords4);
+        + mid * texture2D(u_texture, v_texCoords1)
+        + near * texture2D(u_texture, v_texCoords2)
+        + center * texture2D(u_texture, v_texCoords3)
+        + near * texture2D(u_texture, v_texCoords4)
+        + mid * texture2D(u_texture, v_texCoords5)
+        + far * texture2D(u_texture, v_texCoords6);
   }
   """
   )
@@ -76,11 +89,16 @@ proc newBlur*(scaling: int = 4, passes: int = 1): Blur =
     """,
     """
     uniform sampler2D u_texture;
+    uniform sampler2D u_scene;
     uniform float u_alphaScale;
+    uniform float u_blurBlend;
     varying vec2 v_uv;
 
     void main(){
-      gl_FragColor = texture2D(u_texture, v_uv) * vec4(1.0, 1.0, 1.0, u_alphaScale);
+      //mix between the sharp scene and the blurred texture
+      vec4 c = mix(texture2D(u_scene, v_uv), texture2D(u_texture, v_uv), u_blurBlend) * u_alphaScale;
+      //premultiply alpha
+      gl_FragColor = vec4(c.rgb * c.a, c.a);
     }
     """
   )
@@ -89,28 +107,37 @@ proc buffer*(blur: Blur, clearColor = colorClear, size = fau.sizei): Framebuffer
   blur.p1.resize(size div blur.scaling)
   blur.p2.resize(size div blur.scaling)
 
-  blur.p1.clear(clearColor)
-  return blur.p1
+  blur.scene.resize(size)
+  blur.scene.clear(clearColor)
+  return blur.scene
 
-proc blit*(blur: Blur, params = meshParams(), strength = 1f, alphaScale = 1f) =
+proc blit*(blur: Blur, params = meshParams(), strength = 1f, alphaScale = 1f, blurBlend = 1f) =
   
   #no texture
   if blur.p1.texture.isNil: return
+
+  blit(blur.scene, params = meshParams(buffer = blur.p1))
 
   blur.shader.uniforms:
     size = blur.p1.size.vec2
 
   for i in 0..<blur.passes:
+    let passStrength = strength * (1f + i.float32 * 0.5f)
     #horizontal
     blit(blur.shader, meshParams(buffer = blur.p2)):
       texture = blur.p1.sampler
-      dir = vec2(1, 0) * strength
+      dir = vec2(1, 0) * passStrength
     #vertical
     blit(blur.shader, meshParams(buffer = blur.p1)):
       texture = blur.p2.sampler
-      dir = vec2(0, 1) * strength
+      dir = vec2(0, 1) * passStrength
 
-  blit(blur.blitShader, params):
+  #output is premultiplied, so blend accordingly
+  var realParams = params
+  realParams.blend = realParams.blend.premultiplied
+
+  blit(blur.blitShader, realParams):
     alphaScale = alphaScale
+    blurBlend = blurBlend
     texture = blur.p1.sampler(0)
-  
+    scene = blur.scene.sampler(1)

@@ -34,6 +34,8 @@ proc drawViewport*(rect = rect()) =
 
 proc drawGetViewport*: Rect = fau.batch.viewport
 
+proc drawGetBuffer*: Framebuffer = fau.batch.buffer
+
 #TODO should use a stack.
 proc drawClip*(clipped = rect(), view = fau.cam.screenBounds): bool {.discardable.} =
   if clipped.w.int > 0 and clipped.h.int > 0:

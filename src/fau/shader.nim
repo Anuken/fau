@@ -234,8 +234,12 @@ proc findUniform(shader: Shader, name: string): var ShaderUniform =
   shader.uniforms[name] = uni
   return shader.uniforms[name]
 
-proc sampler*(tex: Texture, index = 0): Sampler = Sampler(texture: tex, index: index)
-proc sampler*(buf: Framebuffer, index = 0): Sampler = Sampler(texture: buf.texture, index: index)
+proc sampler*(tex: Texture, index = 0): Sampler =
+  doAssert tex != nil, "Texture must not be nil!"
+  Sampler(texture: tex, index: index)
+proc sampler*(buf: Framebuffer, index = 0): Sampler =
+  doAssert buf.texture != nil, "Buffer must have a valid texture to sample!"
+  Sampler(texture: buf.texture, index: index)
 
 #TODO all of these functions should not be exported
 
