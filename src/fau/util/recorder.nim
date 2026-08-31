@@ -136,26 +136,24 @@ proc record*() =
 
     if recording:
       color = %"f54033"
-
-    drawMat(ortho(vec2(), fau.size))
-
-    if resizeKey.down and not recording and not fau.captureKeyboard:
-      color = %"f59827"
-      recordSize = ((fau.size/2f + recordOffset - fau.mouse).abs * 2f).round(2f)
-
-    if shiftKey.down and not fau.captureKeyboard:
-      recordOffset = fau.mouse - fau.size/2f
-      color = %"27e67a"
-
-    if keyF12.tapped:
-      mp4 = not mp4
-
-    for entry in [(color: colorBlack, stroke: 8f), (color: color, stroke: 2f)]:
-      lineRect(
-        recordOffset + fau.size/2f - recordSize/2f,
-        recordSize,
-        color = entry.color,
-        stroke = entry.stroke
-      )
-
-    drawFlush()
+    
+    drawStack:
+  
+      if resizeKey.down and not recording and not fau.captureKeyboard:
+        color = %"f59827"
+        recordSize = ((fau.size/2f + recordOffset - fau.mouse).abs * 2f).round(2f)
+  
+      if shiftKey.down and not fau.captureKeyboard:
+        recordOffset = fau.mouse - fau.size/2f
+        color = %"27e67a"
+  
+      if keyF12.tapped:
+        mp4 = not mp4
+  
+      for entry in [(color: colorBlack, stroke: 8f), (color: color, stroke: 2f)]:
+        lineRect(
+          recordOffset + fau.size/2f - recordSize/2f,
+          recordSize,
+          color = entry.color,
+          stroke = entry.stroke
+        )
