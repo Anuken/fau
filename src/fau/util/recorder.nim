@@ -132,12 +132,11 @@ proc record*() =
 
   #draw selection UI
   if open:
-    var color = if mp4: %"1dc5b7" else: %"2890eb"
-
-    if recording:
-      color = %"f54033"
-    
     drawStack:
+      var color = if mp4: %"1dc5b7" else: %"2890eb"
+  
+      if recording:
+        color = %"f54033"
   
       if resizeKey.down and not recording and not fau.captureKeyboard:
         color = %"f59827"
