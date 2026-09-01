@@ -138,9 +138,6 @@ proc hasDepth*(buffer: Framebuffer): bool =
 
 #disposes all current texture/renderbuffer attachments, without touching the framebuffer handle itself
 proc disposeAttachments(buffer: Framebuffer) =
-  for tex in buffer.textureAttachments:
-    if tex != nil:
-      `=destroy`(tex)
   buffer.textureAttachments.setLen(0)
   buffer.texture = nil
   buffer.depthTexture = nil
