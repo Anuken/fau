@@ -19,8 +19,8 @@ type Bloom* = object
   premultiplied*: bool
 
 #note: the colorBlacklist parameter is injected straight into the if-statement for the threshold check.
-proc newBloom*(scaling: int = 4, passes: int = 1, depth = false, alpha = true, combined = true, colorBlacklist = "", filter = tfLinear, maxAlpha = true, premultiplied = false, parent: Bloom = Bloom()): Bloom =
-  result.buffer = if parent.buffer == nil: newFramebuffer(depth = depth, filter = filter) else: parent.buffer
+proc newBloom*(scaling: int = 4, passes: int = 1, formats = defaultColorFormats, alpha = true, combined = true, colorBlacklist = "", filter = tfLinear, maxAlpha = true, premultiplied = false, parent: Bloom = Bloom()): Bloom =
+  result.buffer = if parent.buffer == nil: newFramebuffer(formats = formats, filter = filter) else: parent.buffer
   result.p1 = if parent.p1 == nil: newFramebuffer(filter = tFLinear) else: parent.p1
   result.p2 = if parent.p2 == nil: newFramebuffer(filter = tFLinear) else: parent.p2
   result.scaling = scaling

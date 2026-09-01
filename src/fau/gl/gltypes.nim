@@ -346,3 +346,63 @@ const
   GlMaxRenderbufferSize* = GLenum(0x84E8)
   GlInvalidFramebufferOperation* = GLenum(0x0506)
   GlVertexArrayBinding* = 0x85B5.GLenum
+  
+  GlRgba8* = GLenum(0x8058)
+  GlRgb10A2* = GLenum(0x8059)
+  GlSrgb8Alpha8* = GLenum(0x8C43)
+  GlRgba16f* = GLenum(0x881A)
+  GlRgba32f* = GLenum(0x8814)
+  GlR11fG11fB10f* = GLenum(0x8C3A)
+  GlUnsignedInt10f11f11fRev* = GLenum(0x8C3B)
+
+  GlR8* = GLenum(0x8229)
+  GlR16f* = GLenum(0x822D)
+  GlR32f* = GLenum(0x822E)
+  GlRg8* = GLenum(0x822B)
+  GlRg16f* = GLenum(0x822F)
+  GlRg32f* = GLenum(0x8230)
+
+  GlRgba8i* = GLenum(0x8D8E)
+  GlRgba8ui* = GLenum(0x8D7C)
+  GlRgba16i* = GLenum(0x8D88)
+  GlRgba16ui* = GLenum(0x8D76)
+  GlRgba32i* = GLenum(0x8D82)
+  GlRgba32ui* = GLenum(0x8D70)
+  GlRgb10A2ui* = GLenum(0x906F)
+
+  GlRg8i* = GLenum(0x8237)
+  GlRg8ui* = GLenum(0x8238)
+  GlRg16i* = GLenum(0x8239)
+  GlRg16ui* = GLenum(0x823A)
+  GlRg32i* = GLenum(0x823B)
+  GlRg32ui* = GLenum(0x823C)
+
+  GlR8i* = GLenum(0x8231)
+  GlR8ui* = GLenum(0x8232)
+  GlR16i* = GLenum(0x8233)
+  GlR16ui* = GLenum(0x8234)
+  GlR32i* = GLenum(0x8235)
+  GlR32ui* = GLenum(0x8236)
+
+  GlDepthComponent24* = GLenum(0x81A6)
+  GlDepthComponent32f* = GLenum(0x8CAC)
+  GlDepth24Stencil8* = GLenum(0x88F0)
+  GlDepth32fStencil8* = GLenum(0x8CAD)
+  GlDepthStencilAttachment* = GLenum(0x821A)
+  GlDepthStencil* = GLenum(0x84F9)
+  GlUnsignedInt248* = GLenum(0x84FA)
+  GlFloat32UnsignedInt248Rev* = GLenum(0x8DAD)
+  GlStencilIndex* = GLenum(0x1901)
+
+  GlRed* = GLenum(0x1903)
+  GlRg* = GLenum(0x8227)
+  GlRgbaInteger* = GLenum(0x8D99)
+  GlRgInteger* = GLenum(0x8228)
+  GlRedInteger* = GLenum(0x8D94)
+
+  GlHalfFloat* = GLenum(0x140B)
+  GlByteV* = cGlByte
+  GlShortV* = cGlShort
+  GlIntV* = cGlInt
+  GlFloatV* = cGlFloat
+  GlUnsignedInt2101010Rev* = GLenum(0x8368)

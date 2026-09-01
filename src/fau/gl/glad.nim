@@ -829,3 +829,5 @@ proc loadGl*(load: proc, extensionProc: ExtensionProcInt | ExtensionProcBool): b
     return gladLoadGLES2(load, checkExtension)
   else:
     return gladLoadGL(load, checkExtension)
+
+proc extensionSupported*(name: string): bool = checkExtension(name.cstring)

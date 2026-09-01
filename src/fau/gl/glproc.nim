@@ -4,7 +4,7 @@ import gltypes
 export gltypes
 
 import glad as wrap
-export wrap.supportsVertexArrays, wrap.glVersionMinor, wrap.glVersionMajor
+export wrap.supportsVertexArrays, wrap.glVersionMinor, wrap.glVersionMajor, wrap.extensionSupported
 
 #Thrown when something goes wrong with openGL
 type
@@ -42,7 +42,7 @@ var glInitialized* = false
 #openGL wrapper functions. these are optimized
 
 #last active texture unit - 0 is default
-var 
+var
   lastActiveTextureUnit = 0.GLenum
   #last bound texture2ds, mapping from texture unit to texture handle
   lastBoundTextures: array[32, int]
@@ -79,7 +79,7 @@ var
 #fill with -1, since no texture can have that value
 for x in lastBoundTextures.mitems: x = -1
 
-proc glActiveTexture*(texture: GLenum) {.inline.} = 
+proc glActiveTexture*(texture: GLenum) {.inline.} =
   #don't active texture0 twice
   if lastActiveTextureUnit == texture: return
 
@@ -90,7 +90,7 @@ proc glActiveTexture*(texture: GLenum) {.inline.} =
 proc glAttachShader*(program: GLuint, shader: GLuint) {.inline.} = glCheck(): wrap.glAttachShader(program, shader)
 proc glBindAttribLocation*(program: GLuint, index: GLuint, name: cstring) {.inline.} = glCheck(): wrap.glBindAttribLocation(program, index, name)
 
-proc glBindBuffer*(target: GLenum, buffer: GLuint) {.inline.} = 
+proc glBindBuffer*(target: GLenum, buffer: GLuint) {.inline.} =
   #don't bind the same array buffer twice
   #TODO make sure this works
   if target == GlArrayBuffer and buffer.int == lastArrayBuffer: return
@@ -99,7 +99,7 @@ proc glBindBuffer*(target: GLenum, buffer: GLuint) {.inline.} =
 
   if target == GLArrayBuffer: lastArrayBuffer = buffer.int
 
-proc glBindFramebuffer*(target: GLenum, framebuffer: GLuint) {.inline.} = 
+proc glBindFramebuffer*(target: GLenum, framebuffer: GLuint) {.inline.} =
   if lastFramebuffer == framebuffer.int: return
 
   glCheck(): wrap.glBindFramebuffer(target, framebuffer)
@@ -108,7 +108,7 @@ proc glBindFramebuffer*(target: GLenum, framebuffer: GLuint) {.inline.} =
 
 proc glBindRenderbuffer*(target: GLenum, renderbuffer: GLuint) {.inline.} = glCheck(): wrap.glBindRenderbuffer(target, renderbuffer)
 
-proc glBindTexture*(target: GLenum, texture: GLuint) {.inline.} = 
+proc glBindTexture*(target: GLenum, texture: GLuint) {.inline.} =
   if target == GlTexture2D:
     #get current bound texture unit
     let index = lastActiveTextureUnit.int - GLTexture0.int
@@ -121,7 +121,7 @@ proc glBindTexture*(target: GLenum, texture: GLuint) {.inline.} =
 
 proc glBlendColor*(red: GLfloat, green: GLfloat, blue: GLfloat, alpha: GLfloat) {.inline.} = glCheck(): wrap.glBlendColor(red, green, blue, alpha)
 
-proc glBlendEquation*(mode: GLenum) {.inline.} = 
+proc glBlendEquation*(mode: GLenum) {.inline.} =
   if lastBlendEquationAlpha == mode and lastBlendEquationRGB == mode: return
 
   glCheck(): wrap.glBlendEquation(mode)
@@ -129,7 +129,7 @@ proc glBlendEquation*(mode: GLenum) {.inline.} =
   lastBlendEquationAlpha = mode
   lastBlendEquationRGB = mode
 
-proc glBlendEquationSeparate*(modeRGB: GLenum, modeAlpha: GLenum) {.inline.} = 
+proc glBlendEquationSeparate*(modeRGB: GLenum, modeAlpha: GLenum) {.inline.} =
   if lastBlendEquationAlpha == modeAlpha and lastBlendEquationRGB == modeRGB: return
 
   glCheck(): wrap.glBlendEquationSeparate(modeRGB, modeAlpha)
@@ -137,7 +137,7 @@ proc glBlendEquationSeparate*(modeRGB: GLenum, modeAlpha: GLenum) {.inline.} =
   lastBlendEquationAlpha = modeAlpha
   lastBlendEquationRGB = modeRGB
 
-proc glBlendFunc*(sfactor: GLenum, dfactor: GLenum) {.inline.} = 
+proc glBlendFunc*(sfactor: GLenum, dfactor: GLenum) {.inline.} =
   if lastSfactorRGB == sfactor and lastDfactorRGB == dfactor and lastSfactorAlpha == sfactor and lastDfactorAlpha == dfactor: return
 
   glCheck(): wrap.glBlendFunc(sfactor, dfactor)
@@ -148,7 +148,7 @@ proc glBlendFunc*(sfactor: GLenum, dfactor: GLenum) {.inline.} =
   lastSfactorAlpha = sfactor
   lastDfactorAlpha = dfactor
 
-proc glBlendFuncSeparate*(sfactorRGB: GLenum, dfactorRGB: GLenum, sfactorAlpha: GLenum, dfactorAlpha: GLenum) {.inline.} = 
+proc glBlendFuncSeparate*(sfactorRGB: GLenum, dfactorRGB: GLenum, sfactorAlpha: GLenum, dfactorAlpha: GLenum) {.inline.} =
   if lastSfactorRGB == sfactorRGB and lastDfactorRGB == dfactorRGB and lastSfactorAlpha == sfactorAlpha and lastDfactorAlpha == dfactorAlpha: return
 
   glCheck(): wrap.glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha)
@@ -164,7 +164,7 @@ proc glBufferSubData*(target: GLenum, offset: GLintptr, size: GLsizeiptr, data: 
 proc glCheckFramebufferStatus*(target: GLenum): GLenum {.inline.} = glCheck(): result = wrap.glCheckFramebufferStatus(target)
 proc glClear*(mask: GLbitfield) {.inline.} = glCheck(): wrap.glClear(mask)
 
-proc glClearColor*(red: GLfloat, green: GLfloat, blue: GLfloat, alpha: GLfloat) {.inline.} = 
+proc glClearColor*(red: GLfloat, green: GLfloat, blue: GLfloat, alpha: GLfloat) {.inline.} =
   if red == lastClearColor[0] and green == lastClearColor[1] and blue == lastClearColor[2] and alpha == lastClearColor[3]: return
 
   glCheck(): wrap.glClearColor(red, green, blue, alpha)
@@ -182,24 +182,24 @@ proc glCopyTexSubImage2D*(target: GLenum, level: GLint, xoffset: GLint, yoffset:
 proc glCreateProgram*(): GLuint {.inline.} = glCheck(): result = wrap.glCreateProgram()
 proc glCreateShader*(`type`: GLenum): GLuint {.inline.} = glCheck(): result = wrap.glCreateShader(`type`)
 
-proc glCullFace*(mode: GLenum) {.inline.} = 
+proc glCullFace*(mode: GLenum) {.inline.} =
   if mode == lastCullFace: return
   lastCullFace = mode
   
   glCheck(): wrap.glCullFace(mode)
 
-proc glDeleteBuffer*(buffer: GLuint) {.inline.} = 
+proc glDeleteBuffer*(buffer: GLuint) {.inline.} =
   lastArrayBuffer = -1
 
   glCheck(): wrap.glDeleteBuffer(buffer)
 
-proc glDeleteFramebuffer*(framebuffer: GLuint) {.inline.} = 
+proc glDeleteFramebuffer*(framebuffer: GLuint) {.inline.} =
   #reset last used buffer when deleted.
   if framebuffer == lastFramebuffer.GLuint: lastFramebuffer = -1
 
   glCheck(): wrap.glDeleteFramebuffer(framebuffer)
 
-proc glDeleteProgram*(program: GLuint) {.inline.} = 
+proc glDeleteProgram*(program: GLuint) {.inline.} =
   #reset last used program when deleted.
   if program == lastProgram.GLuint: lastProgram = -1
 
@@ -208,16 +208,16 @@ proc glDeleteProgram*(program: GLuint) {.inline.} =
 proc glDeleteRenderbuffer*(renderbuffer: GLuint) {.inline.} = glCheck(): wrap.glDeleteRenderbuffer(renderbuffer)
 proc glDeleteShader*(shader: GLuint) {.inline.} = glCheck(): wrap.glDeleteShader(shader)
 
-proc glDeleteTexture*(texture: GLuint) {.inline.} = 
+proc glDeleteTexture*(texture: GLuint) {.inline.} =
   #clear bound textures, their IDs may be reused after deletion
-  for tex in lastBoundTextures.mitems: 
+  for tex in lastBoundTextures.mitems:
     if tex == texture.int: tex = -1
 
   glCheck(): wrap.glDeleteTexture(texture)
 
 #TODO
 proc glDepthFunc*(`func`: GLenum) {.inline.} = glCheck(): wrap.glDepthFunc(`func`)
-proc glDepthMask*(flag: GLboolean) {.inline.} = 
+proc glDepthMask*(flag: GLboolean) {.inline.} =
   if lastDepthMask == flag: return
 
   lastDepthMask = flag
@@ -226,7 +226,7 @@ proc glDepthMask*(flag: GLboolean) {.inline.} =
 proc glDepthRangef*(n: GLfloat, f: GLfloat) {.inline.} = glCheck(): wrap.glDepthRangef(n, f)
 proc glDetachShader*(program: GLuint, shader: GLuint) {.inline.} = glCheck(): wrap.glDetachShader(program, shader)
 
-proc glDisable*(cap: GLenum) {.inline.} = 
+proc glDisable*(cap: GLenum) {.inline.} =
   #skip disabling twice
   if lastEnabled[cap.int] == 1: return
   
@@ -237,7 +237,7 @@ proc glDisableVertexAttribArray*(index: GLuint) {.inline.} = glCheck(): wrap.glD
 proc glDrawArrays*(mode: GLenum, first: GLint, count: GLsizei) {.inline.} = glCheck(): wrap.glDrawArrays(mode, first, count)
 proc glDrawElements*(mode: GLenum, count: GLsizei, `type`: GLenum, indices: pointer) {.inline.} = glCheck(): wrap.glDrawElements(mode, count, `type`, indices)
 
-proc glEnable*(cap: GLenum) {.inline.} = 
+proc glEnable*(cap: GLenum) {.inline.} =
   #skip enabling twice
   if lastEnabled[cap.int] == 2: return
   
@@ -317,7 +317,7 @@ proc glUniformMatrix2fv*(location: GLint, count: GLsizei, transpose: GLboolean, 
 proc glUniformMatrix3fv*(location: GLint, count: GLsizei, transpose: GLboolean, value: openArray[GLfloat]) {.inline.} = glCheck(): wrap.glUniformMatrix3fv(location, count, transpose, value)
 proc glUniformMatrix4fv*(location: GLint, count: GLsizei, transpose: GLboolean, value: openArray[GLfloat]) {.inline.} = glCheck(): wrap.glUniformMatrix4fv(location, count, transpose, value)
 
-proc glUseProgram*(program: GLuint) {.inline.} = 
+proc glUseProgram*(program: GLuint) {.inline.} =
   #don't use programs twice
   if lastProgram == program.int: return
 
@@ -335,7 +335,7 @@ proc glVertexAttrib4f*(index: GLuint, x: GLfloat, y: GLfloat, z: GLfloat, w: GLf
 proc glVertexAttrib4fv*(index: GLuint, v: openArray[GLfloat]) {.inline.} = glCheck(): wrap.glVertexAttrib4fv(index, v)
 proc glVertexAttribPointer*(index: GLuint, size: GLint, `type`: GLenum, normalized: GLboolean, stride: GLsizei, pointer: pointer) {.inline.} = glCheck(): wrap.glVertexAttribPointer(index, size, `type`, normalized, stride, pointer)
 
-proc glViewport*(x: GLint, y: GLint, width: GLsizei, height: GLsizei) {.inline.} = 
+proc glViewport*(x: GLint, y: GLint, width: GLsizei, height: GLsizei) {.inline.} =
   if x == lastViewX and y == lastViewY and width == lastViewW and height == lastViewH: return
 
   glCheck(): wrap.glViewport(x, y, width, height)

@@ -26,9 +26,9 @@ template initPoint(pos: Vec2, w: float32): TrailPoint = TrailPoint(v: pos, width
 
 proc draw*(trail: var Trail, color: Color, width: float32, z = 0f, blend = blendNormal, cap = false, color2 = color) =
   if cap and trail.points.len > 0:
-    let 
+    let
       p = trail.points[^1]
-      w = p.width * width / trail.points.len * (trail.points.len - 1) * 2f 
+      w = p.width * width / trail.points.len * (trail.points.len - 1) * 2f
     
     if p.width > 0.001f:
       draw("hcircle".patch, trail.lastPos, size = vec2(w), rotation = -trail.lastAngle + 180f.rad, color = color, z = z, blend = blend)
@@ -93,7 +93,7 @@ proc update*(trail: var Trail, pos: Vec2, scale = 1f) =
     if count == 1 or trail.lastAngle == -1f:
       trail.points.add initPoint(pos, scale)
     else:
-      let 
+      let
         lastp = trail.lastPos
         lastw = trail.lastWidth
       for i in 0..<count:
