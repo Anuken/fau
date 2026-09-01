@@ -173,7 +173,7 @@ proc blit*(bloom: Bloom, params = meshParams(), intensity = 2.5f, threshold = 0.
   if bloom.buffer.texture.isNil: return
   
   var realParams = params
-  if bloom.premultiplied: realParams.blend = blendPremultiplied
+  if bloom.premultiplied: realParams.blend = params.blend.premultiplied
 
   bloom.thresh.uniforms:
     threshold = threshold

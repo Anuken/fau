@@ -85,15 +85,24 @@ proc igCombo*(label: cstring, current_item: ptr int, items: openArray[string], p
   deallocCStringArray(itemArray)
 
 proc igComboEnum*[T: Ordinal](label: cstring, current: var T, popup_max_height_in_items: int32 = -1): bool =
-  var
-    values: seq[string]
-    index = current.int
-  for i, val in low(T)..high(T):
-    values.add($val)
-  
-  result = igCombo(label, index, values, popup_max_height_in_items)
+  const count = ord(high(T)) - ord(low(T)) + 1
 
-  current = index.T
+  var names: array[count, string]
+  var i = 0
+  for e in low(T) .. high(T):
+    names[i] = $e
+    inc i
+
+  var cstrs: array[count, cstring]
+  for j in 0 ..< count:
+    cstrs[j] = cstring(names[j])
+
+  var currentIdx: int32 = int32(ord(current)) - int32(ord(low(T)))
+
+  result = igCombo(label, addr currentIdx, addr cstrs[0], int32(count), popup_max_height_in_items)
+
+  if result:
+    current = T(int(currentIdx) + int(ord(low(T))))
 
 type IVert = object
   pos: Vec2
