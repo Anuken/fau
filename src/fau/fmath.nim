@@ -514,6 +514,10 @@ func approach*(vec: var Vec2, other: Vec2, alpha: float32) {.inline.} =
   else:
     vec = other
 
+func approach*(vec: Vec2, other: Vec2, alpha: float32): Vec2 {.inline.} =
+  result = vec
+  result.approach(other, alpha)
+
 func bezier*(p0, p1, p2: Vec2, t: float32): Vec2 =
   let dt = 1f - t
   return p0 * dt * dt + p1 * 2 * dt * t + p2 * t * t
