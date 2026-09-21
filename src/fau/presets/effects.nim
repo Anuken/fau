@@ -1,7 +1,7 @@
 ## components for rendering effects
 
 import ../core, ../util/misc, basic
-import std/strutils
+import std/[strutils, tables]
 import pkg/polymorph
 
 type
@@ -48,7 +48,11 @@ macro defineEffects*(body: untyped) =
   result = newStmtList()
   
   result.add quote do:
+    var nameToEffectId*: Table[string, EffectId]
+    
     proc rendererNone*(e: EffectState) {.inject.} = discard
+    
+    proc getEffectByName*(name: string): EffectId = nameToEffectId.getOrDefault(name, -1.EffectId)
 
     onEcsBuilt:
       proc makeEffect*(eid: EffectId, pos: Vec2, rotation: float32 = 0, color: Color = colorWhite, life: float32 = 0.2, size = 0f, parent = NoEntityRef, parentDelete = false, sizeVec = vec2()): EntityRef {.discardable.} =
