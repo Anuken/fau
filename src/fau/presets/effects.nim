@@ -48,7 +48,7 @@ macro defineEffects*(body: untyped) =
   result = newStmtList()
   
   result.add quote do:
-    var nameToEffectId*: Table[string, EffectId]
+    var nameToEffectId* {.inject.}: Table[string, EffectId]
     
     proc rendererNone*(e: EffectState) {.inject.} = discard
     
@@ -74,6 +74,7 @@ macro defineEffects*(body: untyped) =
     child.expectKind nnkCall
     let
       name = child[0].repr
+      nameStr = name.newStrLitNode
       capped = name.capitalizeAscii
       effectBody = child.last
       procName = ident "renderer" & capped
@@ -95,6 +96,7 @@ macro defineEffects*(body: untyped) =
     
     result.add quote do:
       const `idName`* {.inject.}: EffectId = `id`.EffectId
+      nameToEffectId[`nameStr`] = `idName`
 
       proc `procName`(e {.inject.}: EffectState) =
         `effectBody`
