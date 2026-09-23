@@ -92,11 +92,19 @@ proc assetRead*(fname: string): string =
     #standard asset reading
     return readFile(filename.assetFile)
 
+proc assetExists*(fname: string): bool =
+  let filename = fname.replace('\\', '/')
+  
+  when staticAssets:
+    filename in preloadedAssets
+  else:
+    return fileExists(rootDir & "/assets/" & filename)
+
 template assetReadStatic*(filename: string): string =
+  ## Reads a static-only asset
   when not staticAssets:
     assetRead(filename)
   else:
-    ## Reads a static-only asset
     const realDir = rootDir & "/assets/" & filename
     const str = staticRead(realDir)
     str
