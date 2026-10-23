@@ -471,17 +471,32 @@ proc filterEcho*(sound: Sound, delay = 0.4, decay = 0.9, filtering = 0.5) =
 macro defineAudio*() =
   result = newStmtList()
 
-  proc getFileLen(path: string): int =
-    return staticExec("wc -c < " & quoteShellPosix(resolveStaticAssetPath(path))).strip.parseInt
+  #get all file sizes with a single process instead of spawning one per file
+  var fileSizes: Table[string, int]
+  for line in staticExec("find " & quoteShellPosix(resolveStaticAssetPath("")) & " -name '*.ogg' -exec wc -c {} +").splitLines:
+    let
+      line = line.strip
+      split = line.find(' ')
+    if split > 0 and not line.endsWith(" total"):
+      fileSizes[line.substr(split + 1).strip] = line[0..<split].parseInt
 
+  proc getFileLen(path: string): int =
+    let resolved = resolveStaticAssetPath(path)
+    return
+      if resolved in fileSizes: fileSizes[resolved]
+      else: staticExec("wc -c < " & quoteShellPosix(resolved)).strip.parseInt
+
+  #the spawn calls are wrapped in a template, so that malebolgia's checkBody macro doesn't need to scan them
   let loadProc = quote do:
     proc loadAudio*() =
       var exec {.inject.} = createMaster()
-      exec.awaitAll:
+      template spawnAll() =
         discard
+      exec.awaitAll:
+        spawnAll()
   
   let
-    loadBody = loadProc[6].last[1]
+    loadBody = loadProc[6][1].body
     outerBody = loadProc[6]
 
   const lazyLoad = defined(audioLazyLoad)

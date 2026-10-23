@@ -45,7 +45,8 @@ onEcsBuilt:
 
                     igSeparator()
 
-                    var data = componentInstanceType()(compRef.index.int).access
+                    let inst = componentInstanceType()(compRef.index.int)
+                    var data = inst.access
 
                     var fieldCount = 0
                     for _, _ in data.fieldpairs:
@@ -59,7 +60,7 @@ onEcsBuilt:
                       
                       listFieldsUi(data)
 
-                      ent.addOrUpdate data
+                      inst.update data
 
                       igTreePop()
                     
