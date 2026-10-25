@@ -100,6 +100,20 @@ proc assetExists*(fname: string): bool =
   else:
     return fileExists(rootDir & "/assets/" & filename)
 
+proc assetSize*(fname: string): int =
+  ## Size of an asset in bytes, without reading it (except when static). Returns -1 if the asset does not exist.
+  let filename = fname.replace('\\', '/')
+
+  when staticAssets:
+    return if filename in preloadedAssets: preloadedAssets[filename].len else: -1
+  elif defined(Android):
+    return glfmReadFileSize(filename).int
+  else:
+    try:
+      return getFileSize(filename.assetFile).int
+    except OSError:
+      return -1
+
 template assetReadStatic*(filename: string): string =
   ## Reads a static-only asset
   when not staticAssets:

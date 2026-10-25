@@ -49,6 +49,8 @@ const
   fEchoFilter* = 3.FilterParam
   NoVoice* = 0.Voice
   defaultMaxConcurrent = 7
+  ## sounds at least this many bytes large are streamed instead of fully decoded into memory
+  streamSizeThreshold = 1000 * 55
 
 let soundNone* = Sound()
 
@@ -471,21 +473,6 @@ proc filterEcho*(sound: Sound, delay = 0.4, decay = 0.9, filtering = 0.5) =
 macro defineAudio*() =
   result = newStmtList()
 
-  #get all file sizes with a single process instead of spawning one per file
-  var fileSizes: Table[string, int]
-  for line in staticExec("find " & quoteShellPosix(resolveStaticAssetPath("")) & " -name '*.ogg' -exec wc -c {} +").splitLines:
-    let
-      line = line.strip
-      split = line.find(' ')
-    if split > 0 and not line.endsWith(" total"):
-      fileSizes[line.substr(split + 1).strip] = line[0..<split].parseInt
-
-  proc getFileLen(path: string): int =
-    let resolved = resolveStaticAssetPath(path)
-    return
-      if resolved in fileSizes: fileSizes[resolved]
-      else: staticExec("wc -c < " & quoteShellPosix(resolved)).strip.parseInt
-
   #the spawn calls are wrapped in a template, so that malebolgia's checkBody macro doesn't need to scan them
   let loadProc = quote do:
     proc loadAudio*() =
@@ -509,31 +496,49 @@ macro defineAudio*() =
         if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext == ".ogg":
           let
             mus = file.startsWith("music")
-            isStream = mus or getFileLen(file) >= (1000 * 55)
             name = file.splitFile.name
             nameid = ident(if mus: "music" & name.capitalizeAscii() else: "sound" & name.capitalizeAscii())
           result.add quote do:
             var `nameid`*: Sound
-          
-          if isStream:
-            loadBody.add quote do:
-              `nameid` = newEmptyMusic(`file`, not `mus`)
-              registerSound(`name`, `nameid`)
-              exec.spawn loadMusicHandle(`file`, `nameid`.handle) -> `nameid`.loaded
-          else:
+
+          let streamLoad = quote do:
+            `nameid` = newEmptyMusic(`file`, not `mus`)
+            registerSound(`name`, `nameid`)
+            exec.spawn loadMusicHandle(`file`, `nameid`.handle) -> `nameid`.loaded
+
+          if mus:
+            loadBody.add streamLoad
+            continue
+
+          let soundLoad =
             when lazyLoad:
-              outerBody.insert(0, quote do:
+              quote do:
                 `nameid` = newEmptySound(`file`)
                 `nameid`.lazy = true
                 registerSound(`name`, `nameid`)
                 when staticAssets:
                   `nameid`.staticData = assetReadStatic(`file`)
-              )
             else:
-              loadBody.add quote do:
+              quote do:
                 `nameid` = newEmptySound(`file`)
                 registerSound(`name`, `nameid`)
                 exec.spawn loadSoundHandle(`file`, `nameid`.handle) -> `nameid`.loaded
+
+          #large sounds are streamed; static assets are embedded anyway, so their size is known now, otherwise it is checked when loading
+          when staticAssets:
+            if staticRead(resolveStaticAssetPath(file)).len >= streamSizeThreshold:
+              loadBody.add streamLoad
+            elif lazyLoad:
+              outerBody.insert(0, soundLoad)
+            else:
+              loadBody.add soundLoad
+          else:
+            let check = quote do:
+              if assetSize(`file`) >= streamSizeThreshold:
+                `streamLoad`
+              else:
+                `soundLoad`
+            loadBody.add check
   
   result.add loadProc
 
