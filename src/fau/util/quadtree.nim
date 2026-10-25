@@ -32,10 +32,8 @@ proc newQuadtree*[E: Quadable](bounds: Rect): Quadtree[E] = Quadtree[E](bounds: 
 ## Yields every child node of this non-leaf node.
 iterator children*[E: Quadable](tree: Quadtree[E]): Quadtree[E] =
   if not tree.leaf:
-    yield tree.topLeft
-    yield tree.botLeft
-    yield tree.topRight
-    yield tree.botRight
+    for child in [tree.topLeft, tree.botLeft, tree.topRight, tree.botRight]:
+      yield child
 
 ## Removes all objects from the tree.
 proc clear*[E: Quadable](tree: Quadtree[E]) =

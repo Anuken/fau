@@ -81,16 +81,14 @@ type Cam* = ref object
   size*: Vec2
   #target bounds for screen, used for mouse projection
   screenBounds*: Rect
-  #projection and inverse projection matrix
+  #projection and inverse projection matrices
   mat*, inv*: Mat
 
 iterator signs*(): float32 =
-  yield 1f
-  yield -1f
+  for s in [1f, -1f]: yield s
 
 iterator signsi*(): int =
-  yield 1
-  yield -1
+  for s in [1, -1]: yield s
 
 func parseAlign*(text: string): Align =
   case text:
@@ -543,44 +541,19 @@ const
   d4fedge* = [vec2(1, 1), vec2(-1, 1), vec2(-1, -1), vec2(1, -1)]
 
 iterator d4*(): Vec2i =
-  yield vec2i(1, 0)
-  yield vec2i(0, 1)
-  yield vec2i(-1, 0)
-  yield vec2i(0, -1)
+  for p in d4i: yield p
 
 iterator d4mid*(): Vec2i =
-  yield vec2i(0, 0)
-  yield vec2i(1, 0)
-  yield vec2i(0, 1)
-  yield vec2i(-1, 0)
-  yield vec2i(0, -1)
+  for p in [vec2i(0, 0), vec2i(1, 0), vec2i(0, 1), vec2i(-1, 0), vec2i(0, -1)]: yield p
 
 iterator d4edge*(): Vec2i =
-  yield vec2i(1, 1)
-  yield vec2i(-1, 1)
-  yield vec2i(-1, -1)
-  yield vec2i(1, -1)
+  for p in d4iedge: yield p
 
 iterator d8*(): Vec2i =
-  yield vec2i(1, 0)
-  yield vec2i(1, 1)
-  yield vec2i(0, 1)
-  yield vec2i(-1, 1)
-  yield vec2i(-1, 0)
-  yield vec2i(-1, -1)
-  yield vec2i(0, -1)
-  yield vec2i(1, -1)
+  for p in d8i: yield p
 
 iterator d8mid*(): Vec2i =
-  yield vec2i(0, 0)
-  yield vec2i(1, 0)
-  yield vec2i(1, 1)
-  yield vec2i(0, 1)
-  yield vec2i(-1, 1)
-  yield vec2i(-1, 0)
-  yield vec2i(-1, -1)
-  yield vec2i(0, -1)
-  yield vec2i(1, -1)
+  for p in [vec2i(0, 0), vec2i(1, 0), vec2i(1, 1), vec2i(0, 1), vec2i(-1, 1), vec2i(-1, 0), vec2i(-1, -1), vec2i(0, -1), vec2i(1, -1)]: yield p
 
 proc inside*(x, y, w, h: int): bool {.inline.} = x >= 0 and y >= 0 and x < w and y < h
 proc inside*(p: Vec2i, w, h: int): bool {.inline.} = p.x >= 0 and p.y >= 0 and p.x < w and p.y < h

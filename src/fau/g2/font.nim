@@ -2,7 +2,7 @@ import std/[tables, unicode, bitops, math]
 import ../texture, ../patch, ../color, ../globals, ../util/misc, ../draw, ../assets, packer
 
 from ../fmath import `+`, `*`, `-`, xy, wh, Align, asBot, asTop, asLeft, asRight, daCenter, daBotLeft, rect, Rect
-from pkg/pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, parseSomePaint, `[]`, `[]=`, dataIndex
+from pkg/pixie import Image, draw, copy, newImage, typeset, getGlyphPath, scale, fillPath, lineHeight, ascent, descent, transform, computeBounds, `[]`, `[]=`, dataIndex
 from pkg/vmath import x, y, `*`, `-`, `+`, isNaN, translate
 from pkg/bumpy import xy
 from pkg/chroma import nil
@@ -112,7 +112,8 @@ proc getGlyphImage(font: pixie.Font, r: Rune, outline: bool, outlineColor: Color
   let bxy = -bounds.xy
   let sizeOffset = if outline: 4 else: 0
   result[0] = newImage(bounds.w.int + sizeOffset, bounds.h.int + sizeOffset)
-  result[0].fillPath(path, chroma.rgba(255, 255, 255, 255), pixie.translate(bxy + vmath.vec2(if outline: sizeOffset.float32 / 2f else: 0f)))
+  #parseSomePaint is a converter; it is not imported because converters are visible in every module that (transitively) imports this one, which slows down overload resolution
+  result[0].fillPath(path, pixie.parseSomePaint(chroma.rgba(255, 255, 255, 255)), pixie.translate(bxy + vmath.vec2(if outline: sizeOffset.float32 / 2f else: 0f)))
   #TODO this method of outlining only works for pixel fonts. there's almost certainly a better way
   if outline: result[0].outline(cast[chroma.ColorRGBA](outlineColor), diagonalOutline)
   result[1] = fmath.vec2(bounds.xy) + fmath.vec2(if outline: -(sizeOffset.float32 / 2f) else: 0f)
