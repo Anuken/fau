@@ -11,7 +11,7 @@ requires "https://github.com/Anuken/staticglfw#bdebaf70e0669c130fed2f9b61924611d
 requires "https://github.com/nim-lang/sdl3#3d98171f5aea71a29d639049372d4f570b2ddd5c"
 requires "https://github.com/Anuken/glfm#8f1e2fa5ec6f6a96fc7eeb2bb6727d921a9259c4"
 requires "https://github.com/Anuken/nimsoloud#7e23039c4790f36f233733171845bae02044708c"
-requires "https://github.com/Anuken/polymorph#2d3805a658f5fbc0f19dd5a870204ce3b0f0ea89"
+requires "https://github.com/Anuken/polymorph#9b552749e9c3fe085a62b0de8a91361a69386e84"
 requires "https://github.com/Araq/malebolgia#ab17bef08e8e84fabc33e0b039b324438e1ce27b"
 requires "cligen >= 1.6.17"
 requires "chroma >= 0.2.7"
