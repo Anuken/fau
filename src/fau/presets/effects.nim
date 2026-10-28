@@ -70,6 +70,8 @@ macro defineEffects*(body: untyped) =
 
   var curid = 1
 
+  let lifeCase = nnkCaseStmt.newTree(newDotExpr(ident"eid", ident"int"))
+
   for child in body:
     child.expectKind nnkCall
     let
@@ -93,6 +95,8 @@ macro defineEffects*(body: untyped) =
         let name = node[0].repr
         if name == "lifetime":
           lifeVal = node[1]
+
+    lifeCase.add nnkOfBranch.newTree(newLit(curid - 1), newStmtList(newCall(ident"float32", lifeVal)))
     
     result.add quote do:
       const `idName`* {.inject.}: EffectId = `id`.EffectId
@@ -112,6 +116,10 @@ macro defineEffects*(body: untyped) =
       `procName`.EffectProc
   
   let count = newLit(1 + body.len)
+
+  lifeCase.add nnkElse.newTree(newStmtList(newLit(1f)))
+
+  result.add newProc(nnkPostfix.newTree(ident"*", ident"effectDefaultLife"), [ident"float32", newIdentDefs(ident"eid", ident"EffectId")], lifeCase)
   
   result.add quote do:
     const

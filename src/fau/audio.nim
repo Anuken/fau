@@ -243,7 +243,8 @@ proc `volume=`*(bus: AudioBus, value: float32) {.inline.} =
 
 proc initAudio*() =
   so = SoloudCreate()
-  let err = so.SoloudInit()
+  #fauNullAudio never opens an audio device, for headless runs
+  let err = when defined(fauNullAudio): -1.cint else: so.SoloudInit()
   if err != 0:
     echo "[Audio] Failed to initialize: ", so.SoloudGetErrorString(err), " (", err, ")"
     #create to prevent nil access errors...

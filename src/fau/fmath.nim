@@ -66,7 +66,7 @@ type Spring2* = object
   damping*: float32 = 0.1f
   frequency*: float32 = 4f
 
-#TODO xywh can be vec2s, maybe?
+#TODO xywh can be vec2s, maybe
 type Rect* = object
   x*, y*, w*, h*: float32
 
