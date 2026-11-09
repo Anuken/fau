@@ -1,4 +1,4 @@
-import fau/[assets, core], std/os
+import fau/[assets, core], std/[os, tables]
 import wrapper
 
 #loosely based on https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_glfw.cpp
@@ -111,6 +111,8 @@ type IVert = object
 
 var
   fontTexture: Texture
+  #textures referenced by ImTextureIDs; holding them here keeps them alive while imgui may draw them
+  textureIds: Table[pointer, Texture]
   mesh: Mesh[IVert]
   shader: Shader
   cursors: array[ImGuiMouseCursor.high.int + 1, Cursor]
@@ -206,6 +208,14 @@ proc igGlfwGetClipboardText(userData: pointer): cstring {.cdecl.} =
 proc igGlfwSetClipboardText(userData: pointer, text: cstring): void {.cdecl.} =
   setClipboardString($text)
 
+## Returns an ID for passing a texture to igImage and similar; the texture is kept alive until imguiForgetTexture.
+proc imguiTexture*(texture: Texture): ImTextureID =
+  result = cast[pointer](texture)
+  textureIds[result] = texture
+
+proc imguiForgetTexture*(texture: Texture) =
+  textureIds.del(cast[pointer](texture))
+
 proc reloadFontTexture =
   let io = igGetIO()
 
@@ -215,8 +225,10 @@ proc reloadFontTexture =
     height: int32
   
   io.fonts.getTexDataAsRGBA32(pixels.addr, width.addr, height.addr)
+  if fontTexture != nil:
+    textureIds.del(cast[pointer](fontTexture))
   fontTexture = loadTexturePtr(vec2i(width, height), pixels, filter = tfLinear)
-  io.fonts.texID = fontTexture.addr
+  io.fonts.texID = imguiTexture(fontTexture)
 
 proc imguiLoadFont*(path: static string, size: float32) =
   let io = igGetIO()
@@ -346,8 +358,7 @@ proc imguiRenderFau =
               blend = blendNormal
             )):
             proj = matrix
-            #should use pcmd.textureId, but I only supplied one texture so I will use that for now
-            texture = fontTexture.sampler(7)
+            texture = textureIds.getOrDefault(pcmd.textureId, fontTexture).sampler(7)
         
         indexBufferOffset += pcmd.elemCount.int
 
