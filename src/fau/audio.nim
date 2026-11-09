@@ -202,10 +202,9 @@ proc play*(sound: Sound, volume = 1.0f, pitch = 1.0f, pan = 0f, loop = false, pa
   if sound.handle.isNil or not initialized or not sound.loaded: return
 
   let id = if bus == nil: 
-    so.SoloudPlayEx(sound.handle, volume, pan, paused.cint, 0)
+    so.SoloudPlayEx(sound.handle, volume, pan, pitch, paused.cint, loop.cint, 0)
   else:
-    BusPlayEx(bus.handle, sound.handle, volume, pan, paused.cint)
-  if pitch != 1.0f: discard so.SoloudSetRelativePlaySpeed(id, pitch)
+    BusPlayEx(bus.handle, sound.handle, volume, pan, pitch, paused.cint, loop.cint)
   if loop: so.SoloudSetLooping(id, 1)
   if sound.protect: so.SoloudSetProtectVoice(id, 1)
   sound.voice = id.Voice
@@ -273,7 +272,7 @@ macro defineAudio*() =
   for folder in walkDir("assets"):
     if folder.kind == pcDir:
       for f in walkDir(folder.path):
-        let file = f.path.substr("assets/".len)
+        let file = f.path.substr("assets/".len).replace("\\", "/")
         #all assets MUST be ogg, I don't care to support other formats.
         if (file.startsWith("music/") or file.startsWith("sounds/")) and file.splitFile.ext == ".ogg":
           let
