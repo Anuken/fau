@@ -143,6 +143,11 @@ func elasticOut*(alpha: float32, value = 2f, power = 10f, scale = 1f, bounceCoun
   a = 1f - a
   return (1f - pow(value, power * (a - 1f)) * sin(a * bounces.float32) * scale);
 
+func swingIn*(alpha: float32, scale = 2f): float32 = alpha * alpha * ((scale + 1) * alpha - scale)
+func swingOut*(alpha: float32, scale = 2f): float32 =
+  let a = alpha - 1f
+  a * a * ((scale + 1) * a + scale) + 1
+
 #utility functions
 
 func square*(val: float32): float32 {.inline.} = val * val
@@ -209,6 +214,7 @@ proc randSign*(r: var Rand): int =
 proc randAngle*(): float32 = rand(0f..(PI * 2f).float32)
 proc randAngle*(r: var Rand): float32 = r.rand(0f..(PI * 2f).float32)
 proc range*[T](r: var Rand, value: T): T = r.rand((-value)..value)
+proc rand*(r: Rect): Vec2 = vec2(rand(r.x..(r.x + r.w)), rand(r.y..(r.y + r.h)))
 
 {.pop.}
 
