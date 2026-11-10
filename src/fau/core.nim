@@ -52,7 +52,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
         keysJustUp[e.key] = true
         keysPressed[e.key] = false
     of feScroll:
-      fau.scroll = e.scroll
+      fau.scroll += e.scroll
     of feResize:
       fau.sizei = e.size
       fau.size = e.size.vec2
