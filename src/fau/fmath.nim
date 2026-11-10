@@ -214,7 +214,7 @@ proc randSign*(r: var Rand): int =
 proc randAngle*(): float32 = rand(0f..(PI * 2f).float32)
 proc randAngle*(r: var Rand): float32 = r.rand(0f..(PI * 2f).float32)
 proc range*[T](r: var Rand, value: T): T = r.rand((-value)..value)
-proc rand*(r: Rect): Vec2 = vec2(rand(r.x..(r.x + r.w)), rand(r.y..(r.y + r.h)))
+proc rand*(r: Rect): Vec2 = Vec2(x: rand(r.x..(r.x + r.w)), y: rand(r.y..(r.y + r.h)))
 
 {.pop.}
 
