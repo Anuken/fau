@@ -35,10 +35,13 @@ proc currentSourceDir(): string {.compileTime.} =
   " -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1" &
   " -DCIMGUI_DEFINE_ENUMS_AND_STRUCTS=1".}
 
-{.compile: "cimgui_shim.cpp".}
+#clang rejects a C -std from global passC on C++ files, so the last -std must be a C++ one
+const cppArgs = "-std=gnu++17"
+
+{.compile("cimgui_shim.cpp", cppArgs).}
 
 template compileCpp(file: string) =
-  {.compile: "cimgui/" & file.}
+  {.compile("cimgui/" & file, cppArgs).}
 
 compileCpp("imgui/imgui.cpp")
 compileCpp("imgui/imgui_draw.cpp")
