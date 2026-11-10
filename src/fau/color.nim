@@ -93,6 +93,8 @@ func `*`*(a: Color, b: float32): Color {.inline.} = rgba(a.r * b, a.g * b, a.b *
 func `+`*(a, b: Color): Color {.inline.} = rgba(a.r + b.r, a.g + b.g, a.b + b.b, a.a + b.a)
 func `+`*(a: Color, b: float32): Color {.inline.} = rgba(a.r + b, a.g + b, a.b + b, a.a)
 
+func mul*(col: Color, r, g, b: float32, a = 1f): Color {.inline.} = rgba(col.r * r, col.g * g, col.b * b, col.a * a)
+
 proc rgbaToColor*(val: uint32): Color =
   var reversed = val
   swapEndian32(addr reversed, addr val)
