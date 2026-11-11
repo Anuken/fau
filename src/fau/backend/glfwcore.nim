@@ -293,9 +293,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   echo "[Fau] Initialized OpenGL v", glVersionMajor, ".", glVersionMinor, " [VAO: ", supportsVertexArrays, "]"
 
   #load window icon if possible
-  when assetExistsStatic("icon.png") and not defined(macosx) and not defined(wayland):
+  when assetExistsStatic(fauIcon) and not defined(macosx) and not defined(wayland):
     let
-      textureBytes = assetReadStatic("icon.png")
+      textureBytes = assetReadStatic(fauIcon)
       img = loadRawImageMem(textureBytes)
       glfwImage = img.toGlfwImage
 

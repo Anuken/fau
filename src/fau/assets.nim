@@ -9,6 +9,8 @@ when defined(Android):
 const staticAssets* = not defined(localAssets) and not defined(emscripten) and not defined(Android)
 ## override of asset directory
 const fauAssetDir {.strdefine.} = ""
+## window icon path, relative to the asset folder
+const fauIcon* {.strdefine.} = "icon.png"
 ## project root directory
 const rootDir = if fauAssetDir != "": fauAssetDir elif getProjectPath().endsWith("src"): getProjectPath()[0..^5] else: getProjectPath()
 ## maps asset names relative to the asset folder to static string data

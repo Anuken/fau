@@ -411,9 +411,9 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   echo "[Fau] Initialized OpenGL v", glVersionMajor, ".", glVersionMinor, " [VAO: ", supportsVertexArrays, "]"
 
   #load window icon
-  when assetExistsStatic("icon.png") and not defined(macosx):
+  when assetExistsStatic(fauIcon) and not defined(macosx):
     let
-      textureBytes = assetReadStatic("icon.png")
+      textureBytes = assetReadStatic(fauIcon)
       img = loadRawImageMem(textureBytes)
       surface = createSurfaceFrom(img.width.cint, img.height.cint, PixelFormatRgba32, cast[pointer](img.data), (img.width * 4).cint)
     

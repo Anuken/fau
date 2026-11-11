@@ -7,7 +7,7 @@ proc createDesktopFile*(appName: string, appTitle: string, hidden = false) =
   ## Linux-specific utility function to auto-generate a .desktop file to give the application an icon.
   ## This is useful for testing, but probably annoying for real users.
 
-  when assetExistsStatic("icon.png"):
+  when assetExistsStatic(fauIcon):
     let dir = getHomeDir() / ".local/share/applications"
     if dir.dirExists:
       try:
@@ -26,7 +26,7 @@ proc createDesktopFile*(appName: string, appTitle: string, hidden = false) =
             iconPath = dir / (appName & ".png")
           
           if not iconPath.fileExists:
-            writeFile(iconPath, assetReadStatic("icon.png"))
+            writeFile(iconPath, assetReadStatic(fauIcon))
 
           const temp = """
           [Desktop Entry]
