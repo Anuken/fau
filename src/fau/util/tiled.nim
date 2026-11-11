@@ -259,6 +259,8 @@ proc getColor*(props: TiledProps, name: string, def = colorWhite): Color =
   result = def
   if p.kind == tpColor: return p.colorVal
 
+proc getVec2*(props: TiledProps, name: string, def = Vec2()): Vec2 = vec2(props.getFloat(name & "X", def.x), props.getFloat(name & "Y", def.y))
+
 proc contains*(layer: TileLayer, x, y: int): bool =
   return not(x < 0 or y < 0 or x >= layer.width or y >= layer.height)
 
