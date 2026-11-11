@@ -349,6 +349,10 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
       else: discard
   )
 
+  window.setDropCallback(proc(window: Window, count: cint, paths: cstringArray) {.cdecl.} =
+    fireFauEvent FauEvent(kind: feFileDrop, files: cstringArrayToSeq(paths, count))
+  )
+
   discard window.setWindowIconifyCallback(proc(window: Window, iconified: cint) {.cdecl.} =
     fireFauEvent FauEvent(kind: feVisible, shown: iconified.bool)
   )

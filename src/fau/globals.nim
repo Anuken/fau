@@ -80,7 +80,9 @@ type FauEventKind* = enum
   # controller connected / disconnected
   feGamepadChanged,
   # controller button pressed
-  feGamepadButton
+  feGamepadButton,
+  # files dragged from outside and dropped onto the window
+  feFileDrop
 
 #a generic input event
 type FauEvent* = object
@@ -114,6 +116,8 @@ type FauEvent* = object
     buttonGamepad*: Gamepad
     button*: GamepadButton
     buttonDown*: bool
+  of feFileDrop:
+    files*: seq[string]
 
 type FauListener* = proc(e: FauEvent)
 
