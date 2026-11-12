@@ -48,7 +48,7 @@ const
   fEchoDecay* = 2.FilterParam
   fEchoFilter* = 3.FilterParam
   NoVoice* = 0.Voice
-  defaultMaxConcurrent = 7
+  defaultMaxConcurrent = 8
   ## sounds at least this many bytes large are streamed instead of fully decoded into memory
   streamSizeThreshold = 1000 * 55
 
