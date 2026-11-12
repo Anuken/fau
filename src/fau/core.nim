@@ -195,7 +195,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     fau.screenspace = newShader(screenspaceVertex, screenspaceFragment)
 
     #load sprites - always atlas.dat
-    when assetExistsStatic("atlas.dat"):
+    when assetExistsStatic("atlas.dat") and not defined(fauNoAtlas):
       fau.atlas = loadAtlas("atlas")
     else:
       fau.atlas = newEmptyAtlas()
