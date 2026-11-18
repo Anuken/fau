@@ -27,6 +27,16 @@ proc ctrlTapped*: bool {.inline.} = keyLCtrl.tapped or keyRCtrl.tapped
 proc shiftDown*: bool {.inline.} = keyLShift.down or keyRShift.down
 proc ctrlDown*: bool {.inline.} = keyLCtrl.down or keyRCtrl.down
 
+#the modifier for shortcuts and multi-selection: Cmd on macOS, Ctrl elsewhere
+
+const shortcutKeyName* = when defined(macosx): "Cmd" else: "Ctrl"
+
+proc shortcutTapped*: bool {.inline.} =
+  when defined(macosx): keyLsuper.tapped or keyRsuper.tapped else: ctrlTapped()
+
+proc shortcutDown*: bool {.inline.} =
+  when defined(macosx): keyLsuper.down or keyRsuper.down else: ctrlDown()
+
 #gamepad (indexed)
 
 proc down*(pad: Gamepad, button: GamepadButton): bool {.inline.} = pad.buttons[button]

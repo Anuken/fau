@@ -53,6 +53,8 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
         keysPressed[e.key] = false
     of feScroll:
       fau.scroll += e.scroll
+    of fePinch:
+      fau.pinch *= e.pinchScale
     of feResize:
       fau.sizei = e.size
       fau.size = e.size.vec2
@@ -149,6 +151,7 @@ proc initFau*(loopProc: proc(), initProc: proc() = (proc() = discard), params = 
     for x in keysJustDown.mitems: x = false
     for x in keysJustUp.mitems: x = false
     fau.scroll = vec2()
+    fau.pinch = 1f
     for touch in fau.touches.mitems:
       touch.justDown = false
   ),

@@ -73,6 +73,8 @@ type FauEventKind* = enum
   feTouch,
   # mousewheel scroll up/down
   feScroll,
+  # trackpad/touchscreen pinch gesture update
+  fePinch,
   # window resized
   feResize,
   # visibility changed (show/hide)
@@ -105,6 +107,9 @@ type FauEvent* = object
     touchButton*: KeyCode
   of feScroll:
     scroll*: Vec2
+  of fePinch:
+    #scale change since the last pinch event; > 1 zooms in
+    pinchScale*: float32
   of feResize:
     size*: Vec2i
   of feVisible:
@@ -217,6 +222,8 @@ type FauState* = object
   mouse*: Vec2
   #Last scroll values
   scroll*: Vec2
+  #Pinch scale change this frame; 1 when there was no pinch
+  pinch*: float32 = 1f
   #All last known touch pointer states
   touches*: array[10, Touch]
 

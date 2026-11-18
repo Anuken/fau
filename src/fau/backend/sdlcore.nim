@@ -235,6 +235,14 @@ proc fixMouse(x, y: float32): Vec2 =
 
   return pos
 
+type PinchFingerEvent {.bycopy.} = object
+  `type`: uint32
+  reserved: uint32
+  timestamp: uint64
+  scale: cfloat
+
+const eventPinchUpdate = 0x711'u32
+
 proc processEvents() =
   var event: Event
   while pollEvent(event):
@@ -285,7 +293,9 @@ proc processEvents() =
         fireFauEvent(FauEvent(kind: feGamepadChanged, connected: false, gamepad: fau.gamepads[index]))
         fau.gamepads.delete(index)
 
-    else: discard
+    else:
+      if event.common.`type` == eventPinchUpdate:
+        fireFauEvent(FauEvent(kind: fePinch, pinchScale: cast[ptr PinchFingerEvent](addr event).scale))
 
 proc updateGamepads() =
   for pad in fau.gamepads:
@@ -451,6 +461,29 @@ proc initCore*(loopProc: proc(), initProc: proc() = (proc() = discard), params: 
   discard glDestroyContext(glContext)
   destroyWindow(window)
   sdl3.quit()
+
+when defined(macosx):
+  proc objc_getClass(name: cstring): pointer {.importc, cdecl.}
+  proc sel_registerName(name: cstring): pointer {.importc, cdecl.}
+  proc objc_msgSend() {.importc, cdecl.}
+
+  template msg(target: pointer, name: string): pointer =
+    cast[proc(self, sel: pointer): pointer {.cdecl.}](objc_msgSend)(target, sel_registerName(name))
+
+  proc clearKeyEquivalents(menu, empty: pointer) =
+    if menu == nil: return
+    let items = msg(menu, "itemArray")
+    let count = cast[proc(self, sel: pointer): uint {.cdecl.}](objc_msgSend)(items, sel_registerName("count"))
+    for i in 0'u..<count:
+      let item = cast[proc(self, sel: pointer, index: uint): pointer {.cdecl.}](objc_msgSend)(items, sel_registerName("objectAtIndex:"), i)
+      cast[proc(self, sel, value: pointer) {.cdecl.}](objc_msgSend)(item, sel_registerName("setKeyEquivalent:"), empty)
+      clearKeyEquivalents(msg(item, "submenu"), empty)
+
+#Removes the key equivalents (Cmd+Q, Cmd+W, Cmd+H...) from SDL's default macOS menu bar, so the app can handle them as regular shortcuts.
+proc disableMacMenuShortcuts*() =
+  when defined(macosx):
+    let app = msg(objc_getClass("NSApplication"), "sharedApplication")
+    clearKeyEquivalents(msg(app, "mainMenu"), msg(objc_getClass("NSString"), "string"))
 
 proc setWindowTitle*(title: string) =
   discard window.setWindowTitle(title.cstring)
